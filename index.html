@@ -1618,6 +1618,20 @@ td.plan-zruseno{color:var(--muted);text-decoration:line-through}
   html.view-mobile .meas-table td:has(> .zs-lim-ikona) > input{width:calc(100% - 44px)!important}
 }
 
+/* ── Mobil: náhledy a tisk ── */
+@media (max-width:600px), (pointer:coarse) and (max-height:500px){
+  .pdf-toolbar{position:static;flex-wrap:wrap;padding:.5rem .6rem;gap:.5rem}
+  .pdf-actions{flex-wrap:wrap}
+  /* stránka A4 se posouvá uvnitř rámečku a začíná od levého kraje */
+  .pdf-pages{align-items:flex-start;overflow-x:auto;padding:.75rem;max-width:100%}
+}
+
+/* ── Mobil: plán revizí ── */
+@media (max-width:600px), (pointer:coarse) and (max-height:500px){
+  .plan-plus{display:inline-flex;align-items:center;justify-content:center;min-width:44px;min-height:44px}
+  .plan-nazev{display:inline-flex;align-items:center;min-height:44px}
+}
+
 /* ═══ /MOBIL ═══ */
 </style>
 </head>
