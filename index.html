@@ -1632,6 +1632,33 @@ td.plan-zruseno{color:var(--muted);text-decoration:line-through}
   .plan-nazev{display:inline-flex;align-items:center;min-height:44px}
 }
 
+/* ── Mobil: dialogy a nabídky ── */
+@media (max-width:600px), (pointer:coarse) and (max-height:500px){
+  .modal-overlay{align-items:center;padding:8px}
+  .modal{width:100%!important;max-width:100%!important;min-width:0!important;padding:1rem!important;
+    max-height:calc(100vh - 16px)!important;max-height:calc(100dvh - 16px)!important;overflow-y:auto!important;overflow-x:hidden}
+  .modal-actions{flex-wrap:wrap}
+  /* náhled typického textu celý (na PC se uřízne po 4,5 řádku) */
+  #typy-textu-list div[style*="max-height:4.5rem"]{max-height:none!important}
+  #typy-textu-list .btn{margin:4px 4px 0 0!important}
+  #vnorit-list > div{min-height:44px}
+  /* plán — termín v buňce roku: druh revize na řádek, měsíc a stav pod ním */
+  table:has(> #plan-termin-druhy) thead tr,#plan-termin-druhy tr{display:grid;grid-template-columns:1fr 1fr;gap:4px .5rem}
+  table:has(> #plan-termin-druhy) th,#plan-termin-druhy td{display:block;padding:0 0 .2rem!important}
+  table:has(> #plan-termin-druhy) thead th:first-child{display:none}
+  #plan-termin-druhy td:first-child{grid-column:1 / -1}
+  #plan-termin-druhy tr{padding:.35rem 0;border-bottom:1px solid var(--border)}
+  /* plán — lhůty v okně objektu: totéž */
+  table:has(#plan-o-cyklus-el) thead tr,table:has(#plan-o-cyklus-el) tbody tr{display:grid;grid-template-columns:5.5rem 1fr;gap:4px .5rem}
+  table:has(#plan-o-cyklus-el) th,table:has(#plan-o-cyklus-el) td{display:block;padding:0 0 .2rem!important}
+  table:has(#plan-o-cyklus-el) td:last-child{display:flex!important;flex-wrap:wrap;gap:.3rem}
+  table:has(#plan-o-cyklus-el) td:last-child select{flex:1 1 100%!important}
+  table:has(#plan-o-cyklus-el) thead th:first-child{display:none}
+  table:has(#plan-o-cyklus-el) tbody td:first-child{grid-column:1 / -1}
+  table:has(#plan-o-cyklus-el) tbody tr{padding:.35rem 0;border-bottom:1px solid var(--border)}
+  table:has(#plan-o-cyklus-el) input{width:100%!important}
+  table:has(#plan-o-cyklus-el) td:last-child input{width:5rem!important;flex:0 0 5rem}
+}
 /* ═══ /MOBIL ═══ */
 </style>
 </head>
