@@ -197,6 +197,12 @@ jste nic neudělali.
      *musí se uživatel kvůli tomu naučit něco nového, aby program ovládal?*
      Když ne — žádná karta, i když je to milé a pracné.
 
+4. **Každá nová funkce se musí zkontrolovat i v šířce 375 px — spustit
+   `testy/test-mobil.js`** (pokyn uživatele 2026-10-15). Nová obrazovka,
+   záložka nebo dialog = přidat stav do `vsechnyStavy()` v testu. Úprava
+   pro telefon patří **jen do bloku MOBIL** (oddíl „Mobil" níž), verze
+   pro PC se jí nesmí změnit.
+
 ## 🧪 Testy jsou v repozitáři — `testy/` (2026-10-07)
 
 Do 2026-10-07 žily testy jen ve scratchpadu session a s každou novou session
@@ -215,6 +221,76 @@ v `.claude/settings.json`) a na začátku regrese.
   Výstupy (snímky, sešity) jen do `testy/_beh/`.
 - `testy/` se nasazuje na Pages s celým repem; program ani `sw.js` na ni
   neodkazují, takže to nevadí.
+
+## Mobil — telefon na výšku i na šířku (blok `MOBIL` na konci stylu)
+
+Zadání uživatele 2026-10-15 (vyvinuto v labu): program musí jít ovládat na
+telefonu a **„verze pro PC se nesmí změnit ani o pixel"**. Logika, uložená
+data (JSON) ani PDF se nemění.
+
+- **Jen CSS, jen v bloku `/* ═══ MOBIL ═══ … ═══ /MOBIL ═══ */` na konci
+  `<style>`** — na konci schválně, při stejné specificitě vyhrává pozdější
+  pravidlo. JavaScript se neměnil vůbec.
+- **Podmínka `@media (max-width:600px), (pointer:coarse) and (max-height:500px)`**
+  = telefon na výšku a telefon na šířku (dotyk + výška ≤ 500 px). Samotné
+  `max-width:600px` by telefon na šířku (844 px) nechytilo. Na PC s myší
+  neplatí nikdy — test to hlídá přes `matchMedia`. Výjimky: ⓘ u Zs má pruh
+  44 px jen na dotyku, a v zobrazení Mobil na úzkém okně.
+- **Nové pravidlo pro telefon = jen dovnitř bloku a té podmínky.** Pravidla
+  mimo blok se kvůli telefonu nemění.
+- Co blok dělá:
+  - **písmo ve vstupních polích 16 px** — iPhone jinak při klepnutí do pole
+    přiblíží stránku,
+  - **ovládací prvky aspoň 44 × 44 px**; text tlačítka se smí zalomit,
+    záložky a tlačítka v hlášce mají `flex-shrink:0` (jinak by min-width
+    zrušila „nejmenší šířku podle obsahu" a text by přetekl přes souseda),
+  - **vlastní zaškrtávátko a přepínač** (`appearance:none`, vidět je čtverec
+    22 px, průhledný rámeček 11 px kolem = 44 px na klepnutí). Je to jediná
+    věc, která nahrazuje vzhled prvku — na PC se proto ověřilo zvlášť
+    (styly, poloha, klik myší, mezerník, klik na popisek, uložená data
+    shodné před a po),
+  - lišta nahoře není přilepená (zabírala třetinu displeje), lišta záložek
+    se lepí k hornímu kraji,
+  - postranní archiv přes celou obrazovku, úchyt šířky schovaný,
+  - **tabulka měření** má pevnou šířku 1260 px a posouvá se ve svém rámečku;
+    ukotvené Č. + Název obvodu jsou užší (44 + 100 px), `scroll-padding-left`
+    drží buňku po Tab mimo ukotvený sloupec, ⓘ u Zsm je pruh 44 px vpravo
+    v buňce (sloupec Zsm 104 px), hlavička 11 px,
+  - malé tabulky (`.data-table`) se posouvají ve svém rámečku, rozbalovátka
+    v nich mají aspoň 8,5 rem,
+  - spotřebiče: list se nezmenšuje (`transform:none`), posouvá se v rámečku,
+  - náhledy PDF: lišta nepřilepená a zalomená, stránka A4 se posouvá v rámečku
+    od levého kraje,
+  - dialogy na celou šířku, nejvýš `100dvh − 16px` s vlastním posunem,
+    tlačítka se zalamují; okno termínu a okno objektu v plánu skládají
+    tabulku lhůt pod sebe (`:has()`).
+
+Test: `testy/test-mobil.js` (375 kontrol, běží ~4,5 min) — 70 stavů (všechny obrazovky,
+záložky každého typu zprávy, dialogy, nabídky, bubliny) × 5 šířek (360 / 375
+/ 390 / 414 na výšku, 844 × 390 na šířku). Hledá posun celé stránky, přesah,
+oříznutý text, nedosažitelné a zakryté prvky, velké pevné prvky, dialog mimo
+displej, písmo < 16 px, prvky < 40 px a nalepené prvky. Navíc ukotvení
+Č. + Název při posunu tabulky, vyplnění buňky klepnutím (hodnota v
+`getData()`) a na PC 1366 / 1920, že se mobilní pravidla neuplatní
+a zaškrtávátka mají nativní vzhled. Obsah v rámečku s vlastním posunem
+(tabulka, A4) je povolený, jen se vypíše.
+
+- `REZIM=soupis` = snímky 375 px + JSON (z toho soupis `testy/mobil-soupis.md` — je jen v labu),
+  `REZIM=pc` = snímky celé stránky 1366 / 1920, **`REZIM=pcstyly`** = otisk
+  spočítaných stylů a polohy každého prvku ve všech stavech na PC.
+- **PC se porovnává přes `REZIM=pcstyly`, snímky jsou jen doplněk.** Snímky
+  celé stránky se mezi verzemi liší o pár pixelů i bez jediné změny stylu:
+  Chrome vykreslí text o 1 px jinak podle velikosti souboru (ověřeno —
+  samotný komentář `/*kkk…*/` o 1 000 znacích dal v postranním archivu
+  přesně tentýž rozdíl 643 px jako mobilní blok).
+- Výsledek (lab v1.4): **před 1846 problémů v 70 stavech, po 0**
+  (soupis se snímky v labu). PC: otisky stylů a polohy shodné ve všech
+  stavech (liší se jen prvky zachycené uprostřed animace — hláška, přechod). PDF všech čtyř typů vygenerované na telefonu (375 px, na šířku)
+  i na PC je bajtově shodné s verzí před úpravou.
+- **Co emulace neověří** (zkusit na skutečném telefonu): přiblížení iOS při
+  klepnutí do pole, `100dvh` s vysunutou klávesnicí, nativní výběr
+  v rozbalovátku, vzhled vlastního zaškrtávátka v Safari, dlouhý stisk prstem
+  (kontextové menu), PDF z html2canvas na slabém telefonu, výřez displeje.
 
 ## Zs mez — vyhodnocení impedance poruchové smyčky (blok `zsLim…`)
 
