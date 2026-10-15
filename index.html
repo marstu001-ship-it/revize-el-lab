@@ -806,6 +806,13 @@ html.dark .meas-table td.zs-lim-ok{background-color:rgba(63,185,80,.26)!importan
 html.dark .meas-table td.zs-lim-chyba{background-color:rgba(248,81,73,.30)!important}
 html.dark .meas-table td.zs-lim-rcd{background-color:rgba(240,150,30,.32)!important}
 .meas-table td input.zs-lim-ph::placeholder{font-size:.66rem;color:#9a958a;opacity:1}
+.meas-table td .zs-lim-ikona{position:absolute;top:0;right:0;padding:1px 2px;font-size:.6rem;line-height:1;
+  color:#8a857a;cursor:pointer;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+.meas-table td .zs-lim-ikona:hover{color:var(--accent2)}
+html.view-mobile .meas-table td .zs-lim-ikona{font-size:.82rem;padding:2px 3px}
+.zs-lim-bublina{position:fixed;z-index:9500;background:var(--surface);color:var(--text);border:1px solid var(--border);
+  border-radius:4px;box-shadow:0 4px 16px rgba(0,0,0,.2);padding:.5rem .65rem;font-family:var(--sans);font-size:.8rem;
+  line-height:1.45;max-width:min(340px,calc(100vw - 16px));white-space:pre-line}
 .zs-c1-nabidka{font-size:.74rem;color:var(--muted);margin:.4rem 0 .6rem}
 .zs-c1-nabidka button{background:none;border:none;padding:0;font:inherit;color:var(--accent);
   text-decoration:underline dotted;cursor:pointer}
@@ -11083,6 +11090,13 @@ function zsLimFmt(x, mista) {
 
 // Charakteristika jističe z volného textu: „B", „b", „char. B", „B16",
 // „B 16 A", „B/A" (RCBO). Vrací { ch, inZCh } nebo { pojistka } nebo null.
+// Mez se UKAZUJE zaokrouhlená DOLŮ na setiny (C16: 0,9583 → „≤ 0,95 Ω"),
+// porovnává se s přesnou hodnotou. Dolů proto, aby hodnota, která podle
+// nápovědy vyhovuje, vyhověla i podle přesného výpočtu.
+function zsLimMezText(mez) {
+  return zsLimFmt(Math.floor(mez * 100 + 1e-9) / 100, 2);
+}
+
 function zsLimCharakteristika(text) {
   var s = String(text == null ? '' : text).normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase();
   if (s.indexOf('/') !== -1) s = s.split('/')[0];          // RCBO „B/A" → B
@@ -11161,10 +11175,10 @@ function zsLimVypocet(radek, soustava) {
   var mez = (2 / 3) * ZS_LIM_U0 / ia;
   var kat = zsLimVadaKatalog();
   var norma = kat ? kat.norma : 'ČSN 33 2000-4-41 ed.3';
-  var mezText = zsLimFmt(mez, 2);
+  var mezText = zsLimMezText(mez);
   var txt = p.ch + zsLimFmt(In) + ': Ia = ' + nasobek + ' × ' + zsLimFmt(In) + ' = ' + zsLimFmt(ia) + ' A; ' +
-            'Zs,lim = 2/3 × ' + ZS_LIM_U0 + ' / ' + zsLimFmt(ia) + ' = ' + mezText + ' Ω';
-  var vysl = { mez: mez, ia: ia, stav: 'mez', vysvetleni: '' };
+            'Zs,lim = 2/3 × ' + ZS_LIM_U0 + ' / ' + zsLimFmt(ia) + ' = ' + zsLimFmt(mez, 4) + ' Ω (≤ ' + mezText + ' Ω)';
+  var vysl = { mez: mez, mezText: mezText, ia: ia, stav: 'mez', vysvetleni: '' };
   var nam = zsLimNamereno(radek.zsm);
   var zsmText = String(radek.zsm == null ? '' : radek.zsm).trim();
   if (!zsmText) {
@@ -11186,9 +11200,6 @@ function zsLimVypocet(radek, soustava) {
     vysl.vysvetleni = txt + '; ' + namText + ' — nejde jednoznačně posoudit. (' + norma + ')';
     return vysl;
   }
-  // Mez se ukazuje zaokrouhlená na setiny, porovnává se ale přesně. Kdyby
-  // zaokrouhlení vypadalo jako „vyhovuje", řekne se přesná hodnota.
-  var presne = (!ok && nam.h <= parseFloat(mezText.replace(',', '.'))) ? ' (přesně ' + zsLimFmt(mez, 4) + ' Ω)' : '';
   var idn = String(radek.idn == null ? '' : radek.idn).trim();
   var maRcd = idn && !/^[-–—]+$/.test(idn);
   if (ok) {
@@ -11196,11 +11207,11 @@ function zsLimVypocet(radek, soustava) {
     vysl.vysvetleni = txt + '; ' + namText + ' → vyhovuje. (' + norma + ')';
   } else if (maRcd) {
     vysl.stav = 'rcd';
-    vysl.vysvetleni = txt + presne + '; ' + namText + ' → nevyhovuje jistič, obvod chráněn RCD IΔn = ' +
+    vysl.vysvetleni = txt + '; ' + namText + ' → nevyhovuje jistič, obvod chráněn RCD IΔn = ' +
       zsLimIdnText(idn) + ' – posuďte. (' + norma + ')';
   } else {
     vysl.stav = 'nevyhovuje';
-    vysl.vysvetleni = txt + presne + '; ' + namText + ' → nevyhovuje. (' + norma + ')';
+    vysl.vysvetleni = txt + '; ' + namText + ' → nevyhovuje. (' + norma + ')';
   }
   return vysl;
 }
@@ -11243,22 +11254,81 @@ function zsLimVykreslitRadek(tr, v) {
     inp.placeholder = inp.dataset.zsPh;
     inp.classList.remove('zs-lim-ph');
     if (inp.dataset.zsTitle) { inp.removeAttribute('title'); td.removeAttribute('title'); delete inp.dataset.zsTitle; }
+    var ik0 = td.querySelector('.zs-lim-ikona');
+    if (ik0) ik0.remove();
+    if (__zsLimBublina && __zsLimBublina.td === td) zsLimBublinaSkryj();
     return;
   }
-  inp.placeholder = '≤ ' + zsLimFmt(v.mez, 2) + ' Ω';
+  inp.placeholder = '≤ ' + v.mezText + ' Ω';
   inp.classList.add('zs-lim-ph');
   inp.title = v.vysvetleni; td.title = v.vysvetleni;
   inp.dataset.zsTitle = '1';
   if (v.stav === 'vyhovuje') td.classList.add('zs-lim-ok');
   else if (v.stav === 'nevyhovuje') td.classList.add('zs-lim-chyba');
   else if (v.stav === 'rcd') td.classList.add('zs-lim-rcd');
+  // Ikonka ⓘ — bublina s výpočtem i na dotyku, kde `title` nefunguje.
+  // Je to <span>, ne <button>: u dokončené zprávy se tlačítka v tabu
+  // schovávají, výpočet se ale má dát přečíst i tam.
+  if (!td.querySelector('.zs-lim-ikona')) {
+    var ik = document.createElement('span');
+    ik.className = 'zs-lim-ikona';
+    ik.textContent = 'ⓘ';
+    ik.setAttribute('role', 'button');
+    ik.setAttribute('aria-label', 'Výpočet meze Zs');
+    td.appendChild(ik);
+  }
+  if (__zsLimBublina && __zsLimBublina.td === td) zsLimBublinaText(v.vysvetleni);
+}
+
+// ── Bublina s výpočtem (dotyk, režim Mobil) ──
+// Otevře ji klepnutí na ⓘ (všude) nebo klepnutí do buňky Zsm na dotykovém
+// zařízení / v zobrazení Mobil. Leží v <body>, aby ji neořízl posouvaný
+// rámeček tabulky; při rolování se jen přesune, zavírá se klepnutím jinam,
+// Escapem nebo odchodem z buňky (když ji otevřelo klepnutí do buňky).
+var __zsLimBublina = null;   // { el, td, rezim: 'ikona' | 'fokus' }
+function zsLimDotyk() {
+  return document.documentElement.classList.contains('view-mobile') ||
+    !!(window.matchMedia && window.matchMedia('(hover: none)').matches);
+}
+function zsLimBublinaText(text) {
+  if (!__zsLimBublina) return;
+  __zsLimBublina.el.textContent = String(text || '').replace(/; /g, '\n');
+  zsLimBublinaPozice();
+}
+function zsLimBublinaUkaz(td, rezim) {
+  var text = td && td.title;
+  if (!text) return;
+  zsLimBublinaSkryj();
+  var el = document.createElement('div');
+  el.className = 'zs-lim-bublina';
+  el.setAttribute('role', 'tooltip');
+  document.body.appendChild(el);
+  __zsLimBublina = { el: el, td: td, rezim: rezim };
+  zsLimBublinaText(text);
+}
+function zsLimBublinaSkryj() {
+  if (!__zsLimBublina) return;
+  if (__zsLimBublina.el.parentNode) __zsLimBublina.el.parentNode.removeChild(__zsLimBublina.el);
+  __zsLimBublina = null;
+}
+function zsLimBublinaPozice() {
+  var b = __zsLimBublina;
+  if (!b) return;
+  if (!b.td.isConnected) { zsLimBublinaSkryj(); return; }
+  var r = b.td.getBoundingClientRect(), el = b.el;
+  var w = el.offsetWidth, h = el.offsetHeight, vw = window.innerWidth, vh = window.innerHeight;
+  var top = r.bottom + 6;
+  if (top + h > vh - 8 && r.top - h - 6 > 8) top = r.top - h - 6;
+  var left = Math.min(Math.max(8, r.left + r.width / 2 - w / 2), Math.max(8, vw - w - 8));
+  el.style.top = top + 'px';
+  el.style.left = left + 'px';
 }
 
 // Popis obvodu do vady: „RH: č. 3 Zásuvky kuchyně (Zs 2,50 Ω, mez 1,92 Ω)"
 function zsLimPopisObvodu(r, v, rozv) {
   var s = (r.c ? 'č. ' + String(r.c).trim() : '') + (r.n ? (r.c ? ' ' : '') + String(r.n).trim() : '');
   if (!s) s = 'obvod bez označení';
-  return (rozv ? rozv + ': ' : '') + s + ' (Zs ' + zsLimNamereno(r.zsm).text + ' Ω, mez ' + zsLimFmt(v.mez, 2) + ' Ω)';
+  return (rozv ? rozv + ': ' : '') + s + ' (Zs ' + zsLimNamereno(r.zsm).text + ' Ω, mez ' + v.mezText + ' Ω)';
 }
 
 var __zsLimCervene = [];
@@ -11378,6 +11448,33 @@ function zsLimPridatC1() {
 // závady (nabídka C1). Strukturální změny tabulek (nový / smazaný /
 // zkopírovaný řádek, vložení z Excelu, načtení zprávy) hlídá observer.
 function zsLimInit() {
+  // Ikonka: pointerdown s preventDefault, aby klepnutí nevzalo buňce
+  // fokus (na telefonu by vyjela klávesnice).
+  document.addEventListener('pointerdown', function (e) {
+    var ik = e.target.closest && e.target.closest('.zs-lim-ikona');
+    if (ik) { e.preventDefault(); return; }
+    if (__zsLimBublina && !__zsLimBublina.el.contains(e.target) && !__zsLimBublina.td.contains(e.target)) zsLimBublinaSkryj();
+  }, true);
+  document.addEventListener('click', function (e) {
+    var ik = e.target.closest && e.target.closest('.zs-lim-ikona');
+    if (!ik) return;
+    e.preventDefault(); e.stopPropagation();
+    var td = ik.closest('td');
+    if (__zsLimBublina && __zsLimBublina.td === td) zsLimBublinaSkryj();
+    else zsLimBublinaUkaz(td, 'ikona');
+  }, true);
+  document.addEventListener('focusin', function (e) {
+    var t = e.target;
+    if (!t || t.tagName !== 'INPUT' || !t.dataset.zsTitle || !zsLimDotyk()) return;
+    zsLimBublinaUkaz(t.closest('td'), 'fokus');
+  });
+  document.addEventListener('focusout', function (e) {
+    var b = __zsLimBublina;
+    if (b && b.rezim === 'fokus' && b.td.contains(e.target)) zsLimBublinaSkryj();
+  });
+  document.addEventListener('keydown', function (e) { if (e.key === 'Escape') zsLimBublinaSkryj(); });
+  document.addEventListener('scroll', zsLimBublinaPozice, true);
+  window.addEventListener('resize', zsLimBublinaPozice);
   ['input', 'change'].forEach(function (typ) {
     document.addEventListener(typ, function (e) {
       var t = e.target;

@@ -34,11 +34,12 @@ const res = []; const check = (n, ok, d) => res.push((ok ? '✅' : '❌') + ' ' 
       rcdTyp: v('A', '25', '2,50', '0,03', null, 'rcd-header'),
       rcbo: v('B/A', '16', '2,50', '0,03', null, 'rcd-header'),
       podradek: v('B', '16', '2,50', '', null, 'rcd-mereni'),
-      hranice: v('C', '16', '0,96')
+      hranice: v('C', '16', '0,96'), hraniceOk: v('C', '16', '0,95'),
+      txtB16: v('B', '16', '').mezText, txtC16: v('C', '16', '').mezText, txtD10: v('D', '10', '').mezText, txtB10: v('B', '10', '').mezText
     };
   });
   check('B16 s 1,10 → vyhovuje, mez 1,92', f.b16ok.stav === 'vyhovuje' && f.b16ok.mez.toFixed(2) === '1.92', f.b16ok.stav);
-  check('bublina: výpočet krok za krokem', f.b16ok.vysvetleni.indexOf('B16: Ia = 5 × 16 = 80 A; Zs,lim = 2/3 × 230 / 80 = 1,92 Ω; naměřeno 1,10 Ω → vyhovuje') === 0, f.b16ok.vysvetleni);
+  check('bublina: výpočet krok za krokem', f.b16ok.vysvetleni.indexOf('B16: Ia = 5 × 16 = 80 A; Zs,lim = 2/3 × 230 / 80 = 1,9167 Ω (≤ 1,91 Ω); naměřeno 1,10 Ω → vyhovuje') === 0, f.b16ok.vysvetleni);
   check('bublina odkazuje na normu (z katalogu vad C1)', /ČSN 33 2000-4-41 ed\.3/.test(f.b16ok.vysvetleni));
   check('B16 s 2,50 → nevyhovuje', f.b16ko.stav === 'nevyhovuje', f.b16ko.stav);
   check('C16 s 0,90 → vyhovuje, mez 0,96', f.c16ok.stav === 'vyhovuje' && f.c16ok.mez.toFixed(2) === '0.96');
@@ -59,7 +60,10 @@ const res = []; const check = (n, ok, d) => res.push((ok ? '✅' : '❌') + ' ' 
   check('hlavička chrániče s typem „A" (ne jistič) → nevyhodnoceno', f.rcdTyp.stav === 'nevyhodnoceno');
   check('RCBO „B/A" → vyhodnoceno podle B, s IΔn oranžově', f.rcbo.stav === 'rcd');
   check('podřádek chrániče se nevyhodnocuje', f.podradek.stav === 'nevyhodnoceno');
-  check('na hranici (0,96 > 0,9583) se řekne přesná mez', f.hranice.stav === 'nevyhovuje' && /přesně 0,9583 Ω/.test(f.hranice.vysvetleni), f.hranice.vysvetleni);
+  check('zobrazená mez zaokrouhlená DOLŮ: B16 1,91 · C16 0,95 · D10 0,76 · B10 3,06', f.txtB16 === '1,91' && f.txtC16 === '0,95' && f.txtD10 === '0,76' && f.txtB10 === '3,06',
+    [f.txtB16, f.txtC16, f.txtD10, f.txtB10].join(' '));
+  check('porovnává se s přesnou mezí: C16 0,96 > 0,9583 nevyhovuje, 0,95 vyhovuje', f.hranice.stav === 'nevyhovuje' && f.hraniceOk.stav === 'vyhovuje');
+  check('bublina ukazuje přesnou i zaokrouhlenou mez', /= 0,9583 Ω \(≤ 0,95 Ω\)/.test(f.hranice.vysvetleni), f.hranice.vysvetleni);
 
   // ── formulář ─────────────────────────────────────────────────────────
   await p.evaluate(async () => {
@@ -92,14 +96,14 @@ const res = []; const check = (n, ok, d) => res.push((ok ? '✅' : '❌') + ' ' 
   check('formulář: nevyhovující obvod je červený', s[1].cls === 'zs-lim-chyba', JSON.stringify(s[1]));
   check('formulář: obvod s RCD je oranžový', s[2].cls === 'zs-lim-rcd' && /posuďte/.test(s[2].title), JSON.stringify(s[2]));
   check('formulář: pojistka Gg zůstane neutrální (bez barvy, bez bubliny, původní nápověda)', s[3].cls === '' && s[3].title === '' && s[3].ph === '0,23', JSON.stringify(s[3]));
-  check('formulář: prázdná buňka ukazuje mez jako nápovědu „≤ 0,96 Ω"', s[4].ph === '≤ 0,96 Ω' && s[4].cls === '', JSON.stringify(s[4]));
+  check('formulář: prázdná buňka ukazuje mez zaokrouhlenou dolů „≤ 0,95 Ω"', s[4].ph === '≤ 0,95 Ω' && s[4].cls === '', JSON.stringify(s[4]));
   check('formulář: bublina u buňky s výpočtem', /^B16: Ia = 5 × 16 = 80 A/.test(s[0].title), s[0].title);
 
   // změna In → přepočet
   await p.evaluate(async () => { const tr = document.querySelectorAll('#rozvadece-container tr[data-rowtype="obvod"]')[1];
     const i = fillCilovyInput(tr, 4); i.value = '6'; i.dispatchEvent(new Event('input', { bubbles: true })); await new Promise(r => setTimeout(r, 80)); });
   s = await stavy();
-  check('změna In (16 → 6) přepočítá: 2,50 ≤ 5,11 → zelená', s[1].cls === 'zs-lim-ok' && /= 5,11 Ω/.test(s[1].title), s[1].title);
+  check('změna In (16 → 6) přepočítá: 2,50 ≤ 5,1111 → zelená', s[1].cls === 'zs-lim-ok' && /≤ 5,11 Ω/.test(s[1].title), s[1].title);
   await p.evaluate(async () => { const tr = document.querySelectorAll('#rozvadece-container tr[data-rowtype="obvod"]')[1];
     const i = fillCilovyInput(tr, 4); i.value = '16'; i.dispatchEvent(new Event('input', { bubbles: true })); await new Promise(r => setTimeout(r, 80)); });
 
@@ -153,7 +157,7 @@ const res = []; const check = (n, ok, d) => res.push((ok ? '✅' : '❌') + ' ' 
              dirty: !!window.__formDirty, nabidka: Array.from(document.querySelectorAll('.zs-c1-nabidka')).map(h => h.style.display) };
   });
   check('po kliknutí přibude právě jedna vada C1', po.n === 1 && po.kod === 'C1', JSON.stringify(po));
-  check('popis = položka C1 z katalogu + obvody', /^Impedance poruchové smyčky Zsm přesahuje \(2\/3\) × U0\/Ia — obvody: RH: č\. 2 Zásuvky kuchyně \(Zs 2,50 Ω, mez 1,92 Ω\); RH: č\. 6 Pračka \(Zs 3,00 Ω, mez 1,92 Ω\)\.$/.test(po.popis), po.popis);
+  check('popis = položka C1 z katalogu + obvody', /^Impedance poruchové smyčky Zsm přesahuje \(2\/3\) × U0\/Ia — obvody: RH: č\. 2 Zásuvky kuchyně \(Zs 2,50 Ω, mez 1,91 Ω\); RH: č\. 6 Pračka \(Zs 3,00 Ω, mez 1,91 Ω\)\.$/.test(po.popis), po.popis);
   check('oranžový obvod (Koupelna) ve vadě není', po.popis.indexOf('Koupelna') === -1);
   check('norma z katalogu', /411\.3\.2/.test(po.norma), po.norma);
   check('zpráva je označená jako změněná', po.dirty);
@@ -186,7 +190,83 @@ const res = []; const check = (n, ok, d) => res.push((ok ? '✅' : '❌') + ' ' 
   // PDF se nemění
   const pdf = await p.evaluate(async () => { generujPDF(); await new Promise(r => setTimeout(r, 1500));
     const t = document.getElementById('pdf-pages').innerText; showScreen('form'); return t; });
-  check('do PDF se mez ani výpočet nedostane', !/Zs,lim|≤ 1,92/.test(pdf));
+  check('do PDF se mez ani výpočet nedostane', !/Zs,lim|≤ 1,91|ⓘ/.test(pdf));
+
+  // ── bublina myší: klik na ⓘ ──────────────────────────────────────────
+  const mys = await p.evaluate(async () => {
+    switchTab('mereni');
+    const tr = document.querySelectorAll('#rozvadece-container tr[data-rowtype="obvod"]')[1];
+    const ik = zsLimBunka(tr, 7).querySelector('.zs-lim-ikona');
+    const ggTr = Array.from(document.querySelectorAll('#rozvadece-container tr[data-rowtype="obvod"]')).find(t => fillCilovyInput(t, 3).value === 'Gg');
+    const gg = zsLimBunka(ggTr, 7).querySelector('.zs-lim-ikona');
+    return { ik: !!ik, gg: !!gg };
+  });
+  check('ⓘ je u vyhodnocené buňky, u pojistky Gg ne', mys.ik && !mys.gg, JSON.stringify(mys));
+  await p.locator('#rozvadece-container tr[data-rowtype="obvod"]:nth-child(2) .zs-lim-ikona').click();
+  const b1 = await p.evaluate(() => { const b = document.querySelector('.zs-lim-bublina'); return b ? { t: b.textContent, h: b.offsetHeight } : null; });
+  check('klik na ⓘ myší otevře bublinu s výpočtem', b1 && b1.h > 0 && /Zs,lim = 2\/3 × 230 \/ 80/.test(b1.t), JSON.stringify(b1));
+  check('klik na ⓘ nevezme buňce Zsm fokus ani nezmění data', await p.evaluate(() => !document.activeElement || !document.activeElement.closest || !document.activeElement.closest('.meas-table')));
+  await p.keyboard.press('Escape');
+  check('Esc bublinu zavře', await p.evaluate(() => !document.querySelector('.zs-lim-bublina')));
+
+  // ── dotyk: režim Mobil na telefonu ────────────────────────────────────
+  const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, deviceScaleFactor: 2 });
+  const m = await ctx.newPage();
+  m.on('pageerror', e => err.push('mobil: ' + e.message));
+  await m.addInitScript(() => { try { navigator.serviceWorker.register = () => new Promise(() => {}); } catch (e) {} });
+  await m.goto('http://127.0.0.1:' + PORT + '/index.html', { waitUntil: 'load' });
+  await m.waitForTimeout(900);
+  await m.evaluate(async () => {
+    localStorage.clear(); archiv.length = 0; STORE.archiv = archiv;
+    applyView('mobile');
+    aktTyp = 'elektro'; aktPodtyp = 'dum'; novaZprava('elektro');
+    await new Promise(r => setTimeout(r, 300));
+    switchTab('mereni');
+    const tbody = document.querySelector('#rozvadece-container .meas-table tbody');
+    const rows = Array.from(tbody.querySelectorAll('tr[data-rowtype="obvod"]'));
+    const nastav = (tr, sl, v) => { const i = fillCilovyInput(tr, sl); i.value = v; i.dispatchEvent(new Event('input', { bubbles: true })); };
+    nastav(rows[0], 1, 'Zásuvky'); nastav(rows[0], 3, 'B'); nastav(rows[0], 4, '16'); nastav(rows[0], 7, '2,50');
+    nastav(rows[1], 1, 'Sporák'); nastav(rows[1], 3, 'C'); nastav(rows[1], 4, '16');
+    await new Promise(r => setTimeout(r, 120));
+    document.activeElement && document.activeElement.blur();
+  });
+  check('mobil: zobrazení Mobil je zapnuté', await m.evaluate(() => document.documentElement.classList.contains('view-mobile')));
+  // Skutečné klepnutí prstem na místo, kde ⓘ na obrazovce je (stránka je
+  // v mobilu širší než displej, locator.tap() by se o posouvání zasekl).
+  const klepni = async (sel, i) => {
+    const r = await m.evaluate(({ sel, i }) => { const el = document.querySelectorAll(sel)[i]; el.scrollIntoView({ block: 'center', inline: 'center' });
+      const q = el.getBoundingClientRect(); const vv = window.visualViewport;
+      return { x: q.left + q.width / 2 - (vv ? vv.offsetLeft : 0), y: q.top + q.height / 2 - (vv ? vv.offsetTop : 0), w: q.width, trefa: (document.elementFromPoint(q.left + q.width / 2, q.top + q.height / 2) || {}).className };
+    }, { sel, i });
+    await m.waitForTimeout(150);
+    await m.touchscreen.tap(r.x, r.y);
+    return r;
+  };
+  const ikBox = await klepni('#rozvadece-container .zs-lim-ikona', 0);
+  check('mobil: ⓘ je vidět a dá se na něj klepnout', ikBox.w > 0 && ikBox.trefa === 'zs-lim-ikona', JSON.stringify(ikBox));
+  await m.waitForTimeout(100);
+  const mb = await m.evaluate(() => { const b = document.querySelector('.zs-lim-bublina'); if (!b) return null; const r = b.getBoundingClientRect();
+    return { t: b.textContent, l: r.left, r: r.right, top: r.top, bottom: r.bottom, vw: innerWidth, vh: innerHeight,
+             fokus: !!(document.activeElement && document.activeElement.closest && document.activeElement.closest('.meas-table')) }; });
+  check('mobil: klepnutí na ⓘ otevře bublinu s výpočtem', mb && /B16: Ia = 5 × 16 = 80 A/.test(mb.t) && /nevyhovuje/.test(mb.t), JSON.stringify(mb));
+  check('mobil: bublina se vejde na obrazovku', mb && mb.l >= 0 && mb.r <= mb.vw && mb.top >= 0 && mb.bottom <= mb.vh, mb && [mb.l, mb.r, mb.top, mb.bottom].join(','));
+  check('mobil: klepnutí na ⓘ nevysune klávesnici (buňka nedostane fokus)', mb && !mb.fokus);
+  await m.screenshot({ path: __dirname + '/_beh/zs-mez-mobil.png' });
+  await klepni('#tab-mereni .scard-title', 0);
+  check('mobil: klepnutí jinam bublinu zavře', await m.evaluate(() => !document.querySelector('.zs-lim-bublina')));
+  // klepnutí přímo do buňky
+  await m.evaluate(() => { const i = zsLimBunka(document.querySelectorAll('#rozvadece-container tr[data-rowtype="obvod"]')[1], 7).querySelector('input'); i.id = 'zs-test-bunka'; });
+  await klepni('#zs-test-bunka', 0);
+  await m.waitForTimeout(100);
+  const mf = await m.evaluate(() => { const b = document.querySelector('.zs-lim-bublina'); return b ? b.textContent : null; });
+  check('mobil: klepnutí do buňky Zsm ukáže bublinu', mf && /C16: Ia = 10 × 16 = 160 A/.test(mf) && /≤ 0,95 Ω/.test(mf), mf);
+  await m.keyboard.type('1,2');
+  await m.waitForTimeout(150);
+  const mf2 = await m.evaluate(() => { const b = document.querySelector('.zs-lim-bublina'); return b ? b.textContent : null; });
+  check('mobil: bublina se při psaní hodnoty sama přepočítá', mf2 && /naměřeno 1,2 Ω → nevyhovuje/.test(mf2), mf2);
+  await m.evaluate(() => document.activeElement.blur());
+  check('mobil: odchod z buňky bublinu zavře', await m.evaluate(() => !document.querySelector('.zs-lim-bublina')));
+  await ctx.close();
 
   // ── stará zpráva: data beze změny ────────────────────────────────────
   const stara = await p.evaluate(async () => {

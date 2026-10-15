@@ -241,8 +241,19 @@ technik přidával ručně z katalogu.
   a normou (bere se z položky C1 katalogu `TYPICKE_ZAVADY`).
 - Naměřená hodnota „1,1" = „1.1"; „<X" vyhovuje jen když X ≤ mez, „>X"
   nevyhovuje jen když X ≥ mez, jinak (a u textu) bez barvy.
-- **Porovnává se s PŘESNOU mezí**, ukazuje se zaokrouhlená na setiny. Na
-  hranici (C16: 0,96 > 0,9583) bublina řekne „přesně 0,9583 Ω".
+- **Porovnává se s PŘESNOU mezí, ukazuje se zaokrouhlená DOLŮ na setiny**
+  (pokyn uživatele 2026-10-15: C16 = 0,9583 → „≤ 0,95 Ω", B16 → 1,91,
+  D10 → 0,76) — co podle nápovědy vyhovuje, vyhoví i přesně. Bublina ukáže
+  obojí: „Zs,lim = 2/3 × 230 / 160 = 0,9583 Ω (≤ 0,95 Ω)". Vada C1 píše
+  zaokrouhlenou mez (`zsLimMezText`).
+- **Bublina jde otevřít i na dotyku** (`title` tam nefunguje): ikonka **ⓘ**
+  v rohu vyhodnocené buňky (klepnutí/klik otevře a zavře; `<span>`, ne
+  `<button>` — u dokončené zprávy se tlačítka schovávají, výpočet se má dát
+  přečíst) a na dotykovém zařízení / v zobrazení Mobil **klepnutí do buňky**
+  Zsm (bublina se při psaní přepočítává, odchodem z buňky zmizí). Bublina
+  `.zs-lim-bublina` leží v `<body>`, zavře ji klepnutí jinam a Esc. Klepnutí
+  na ⓘ buňce nebere fokus (`pointerdown` s `preventDefault`) — na telefonu
+  by jinak vyjela klávesnice.
 - **Vada C1 se NIKDY nepřidá sama.** Při červeném obvodu se pod tabulkami
   měření i nad „+ Přidat závadu" ukáže odkaz **„Přidat vadu C1 (obvody: RH 2,
   RH 6)"**; klik přidá položku C1 z katalogu a do popisu dopíše rozváděč,
@@ -259,7 +270,14 @@ technik přidával ručně z katalogu.
   a v `renumberRows()` (ZPĚT vložení vrací hodnoty bez událostí),
   `zsLimPrepocet()` na konci `nacistData()`.
 
-Test: `testy/test-zs-mez.js` (53 kontrol). Karta v Novinkách se nedělala (pokyn uživatele).
+Test: `testy/test-zs-mez.js` (68 kontrol, včetně telefonu 390 px s dotykem
+a zobrazením Mobil — klepnutí se tam dělá `touchscreen.tap` na souřadnice,
+`locator.tap()` se o posouvanou stránku zasekne). Karta v Novinkách se
+nedělala (pokyn uživatele).
+
+**Ověřeno, že se data nemění:** uložený JSON téže zprávy (vyplněné v UI
+i otevřené z archivu a znovu uložené; zmrazený čas a náhoda) je ve verzi
+před funkcí a po ní **bajtově shodný** (archiv i `getData()`, sha256).
 
 ## Plán revizí: lhůta se bere ze ZPRÁVY (v9.122)
 
