@@ -92,6 +92,14 @@ Pravidla, aby oddělení drželo:
   revize-el nepřenáší.
 - Před přenosem musí v labu projít celá regrese (`testy/regrese.sh`,
   `CELKEM ŠPATNĚ: 0`) včetně `test-typy-krizem.js` a `test-lab-oddeleni.js`.
+- **Rychlé testy v labu (pokyn uživatele 2026-10-15):** během vývoje funkce
+  se celá regrese NEPOUŠTÍ — jen `./regrese.sh` s vybranými testy: test té
+  funkce + `test-mobil.js`, `test-zs-mez.js`, `test-lab-oddeleni.js`
+  a `test-typy-krizem.js` (dohromady ~6 min), a to stačí na commit, bump labu
+  i push do main labu. Celá regrese (a `porovnani2.js`) běží až při přenosu
+  do revize-el. Důkaz, že se PC verze nezměnila, se dělá jednou na konci
+  (`test-mobil.js` `REZIM=pcstyly` před × po, ~25 min) a neopakuje se;
+  když uživatel řekne „stop ověřování", další kontroly se nepřidávají.
 
 ## Postup přenosu funkce do revize-el
 
