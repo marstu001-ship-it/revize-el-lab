@@ -1553,6 +1553,30 @@ td.plan-zruseno{color:var(--muted);text-decoration:line-through}
   .archiv-table th{font-size:.62rem}
 }
 
+/* ── Mobil: formulář zprávy ── */
+@media (max-width:600px), (pointer:coarse) and (max-height:500px){
+  /* hodnoty na svorkách rozváděče: čtyři sloupce se smrsknou */
+  .scard-rv div[style*="grid-template-columns:32px"]{grid-template-columns:24px repeat(4,minmax(0,1fr))!important}
+  .scard-rv div[style*="grid-template-columns:32px"] input{min-width:0!important;width:100%}
+  /* závada: rozbalovátka pod sebou */
+  .zavada-header{flex-wrap:wrap}
+  .zavada-header select{flex:1 1 100%!important;max-width:100%!important;width:100%}
+  /* prohlídka LPS: odkaz na normu pod textem, ne vedle */
+  #lps-prohlidka-container div[style*="display:flex"]{flex-wrap:wrap}
+  #lps-prohlidka-container span[style*="flex:0 0 200px"]{flex:1 1 100%!important;text-align:left!important}
+  /* menší tabulky (dokumentace, přístroje, stroje, zemniče…) — posun uvnitř */
+  .data-table:not(.meas-table){display:block;overflow-x:auto;max-width:100%;-webkit-overflow-scrolling:touch}
+  /* protokol spotřebičů: na telefonu se list nezmenšuje (pole by byla
+     drobná) — posouvá se uvnitř svého rámečku */
+  #spotrebice-list .sp-sheet{transform:none!important}
+  #spotrebice-list .sp-sheet-wrap{height:auto!important;overflow-x:auto;overflow-y:hidden;max-width:100%}
+  .sp-slot > input,.sp-slot > textarea,.sp-slot > select{font-size:16px!important}
+  /* rozbalovátko v tabulce (D.3 zkoušky…) — aby byla vidět zvolená hodnota */
+  .data-table td select{min-width:8.5rem!important}
+  .sp-lista-vlevo{min-width:0}
+  .sp-lista-vpravo{flex-wrap:wrap;max-width:100%}
+}
+
 /* ═══ /MOBIL ═══ */
 </style>
 </head>
