@@ -1,3 +1,138 @@
+# 🧪 Tohle je LAB — `revize-el-lab`
+
+**Tenhle repozitář je ZKUŠEBNÍ verze programu Revize EL** pro vývoj nových
+funkcí. **Ostrý program je `marstu001-ship-it/revize-el`** — ten mají
+uživatelé a jejich data. Hotová funkce se z labu přenese do revize-el přes
+`git cherry-pick` (postup níž). Lab běží na
+**https://marstu001-ship-it.github.io/revize-el-lab/**, ostrý program na
+`…github.io/revize-el/`.
+
+- Remote **`origin`** = `revize-el-lab` (sem se pushuje).
+- Remote **`upstream`** = `revize-el` **jen pro čtení** (push URL je
+  schválně nesmyslná `NEPUSHOVAT-do-revize-el`). **Z labu se do revize-el
+  NIKDY nic nepushuje** — přenos dělá session nad revize-el (postup níž).
+- Celý zbytek tohoto souboru (od „CLAUDE.md — pravidla pro tento
+  repozitář") je převzatý z revize-el **beze změny pravidel** a platí i tady.
+
+## Oddělení dat od ostrého programu — NIKDY NEPŘENÁŠET do revize-el
+
+Lab a ostrý program běží na **témže původu** (`marstu001-ship-it.github.io`),
+takže prohlížeč jim dává **společné** localStorage, IndexedDB, BroadcastChannel,
+úložiště cache i Origin Private FS. **Lab nesmí nikdy přečíst ani přepsat data
+ostrého programu.** Oddělení dělá commit „LAB: oddělení od ostrého programu"
+a skládá se z těchto LAB-only míst:
+
+| kde | co |
+|---|---|
+| `index.html` — **jediný `<script>` hned za `<title>`** (blok „LAB — ODDĚLENÍ OD OSTRÉHO PROGRAMU") | běží před vším ostatním a obaluje API prohlížeče, takže zbytek `index.html` je **bajt po bajtu stejný jako v revize-el** |
+| `sw.js` | `CACHE_NAME = 'revize-el-lab-v…'`, `activate` maže jen `revize-el-lab-…`, čte se jen z vlastní cache (`zCache`) |
+| `manifest.json` | „Revize EL – LAB" / „Revize LAB", `id`/`start_url`/`scope` = `/revize-el-lab/`, oranžová ikona s nápisem LAB |
+| `testy/test-lab-oddeleni.js` | důkaz oddělení (32 kontrol, port 8930) |
+| tahle sekce `CLAUDE.md` | |
+
+Co blok přesměruje (program sám pořád píše `revize_el_…`, `revize-el-db`…):
+
+| ostrý program | lab |
+|---|---|
+| localStorage / sessionStorage `revize_el_X` (store, autosave, novinky_seen, email_rezim, email_migrace, banner_dismissed, theme, view, form_archiv, form_archiv_sirka, archiv_razeni) | `revize_lab_X`; jiný klíč `K` → `revize_lab__K`; `key()`/`length`/`clear()` vidí a mažou jen labové |
+| událost `storage` | zápisy ostrého programu se zahodí, labové dostane program pod `revize_el_…` |
+| IndexedDB `revize-el-db` (i s odkazem na složku zálohy `backup_dir_handle`) | `revize-lab-db` (jiný název `N` → `revize-lab--N`) |
+| `BroadcastChannel('revize-el-store')` (hlídání dvou oken) | `revize-lab-store` |
+| cache `revize-el-v…` | `revize-el-lab-v…` (sw.js) |
+| automatická záloha `revize-el-zaloha-RRRR-MM-DD_HH-MM.json` | `revize-lab-zaloha-…`; soubory `revize-el-…` ve složce **lab nevidí**, takže je jeho rotace nesmaže |
+| výběr složky zálohy | **složku, ve které jsou zálohy ostrého programu, lab odmítne**; dialog má vlastní zapamatovanou složku (`id: 'revize-lab-zalohy'`) |
+| Uložit jako / stažení (PDF, `Zpravy_…json`, plán, záloha, xlsx, zip) | název dostane předponu **`LAB_`**, dialog má vlastní zapamatovanou složku (`id: 'revize-lab'`) |
+| vzhled | oranžová lišta, štítek **LAB vX.Y** v liště, titulek „Revize EL – LAB", ikona LAB |
+
+**Formáty souborů zůstávají stejné** (`revize-el-backup`, `revize-el-zpravy`,
+`revize-el-plan`) — soubor uložený v labu jde načíst v revize-el a naopak,
+**když to uživatel sám udělá**. Lab sám od sebe do dat ostrého programu nesáhne.
+
+Pravidla, aby oddělení drželo:
+
+- **V kódu jen `localStorage.getItem/setItem/removeItem`**, nikdy
+  `localStorage.klic` ani `localStorage['klic']` — to blok nezachytí.
+- Nové úložiště (nový název IndexedDB, nový kanál, nový typ souboru do
+  složky…) = zkontrolovat, že ho blok pokrývá, a doplnit kontrolu do
+  `test-lab-oddeleni.js`. **Úprava bloku je commit `LAB:`, nikdy `FUNKCE:`.**
+- **Známý zbytek, který z labu opravit nejde:** `sw.js` ostrého programu při
+  aktivaci nové verze maže **všechny** cizí cache, tedy i labovou. Data to
+  neohrožuje (lab si cache doplní při dalším načtení online), jen lab hned
+  po aktualizaci ostrého programu nejde otevřít offline. Opravit by to šlo
+  jen v revize-el (mazat jen `revize-el-v…`), a to jen na pokyn uživatele.
+
+## Verze labu
+
+- **Lišta ukazuje verzi ostrého programu, ze které lab vychází**
+  (`<span class="ver">` zůstává jako v revize-el — ten řádek se mění
+  v každém vydání revize-el a měnit ho i tady by dělalo konflikty).
+- **Vlastní verze labu** je `LAB_VERZE` v labovém bloku (štítek „LAB v1.0 ·
+  2026-10-15") a `CACHE_NAME = 'revize-el-lab-vMAJOR.MINOR-YYYYMMDD'` v `sw.js`.
+  Pravidlo „bumpni při každé změně" platí i v labu, jen se bumpují tyhle
+  dvě věci (minor +1, datum = systémové datum session) — **v samostatném
+  commitu `LAB: verze vX.Y`** hned za commity funkce, ne v nich.
+- Čísla labu a revize-el spolu nesouvisí. Při přenosu dostane funkce v revize-el
+  **další číslo revize-el** podle jeho pravidel.
+
+## Nová funkce = commity `FUNKCE:`, které jdou přenést cherry-pickem
+
+- **Každá funkce = jeden nebo víc commitů s předponou `FUNKCE:`**
+  (`FUNKCE: Plán revizí — tisk dopisů zákazníkům`). Commit obsahuje **jen kód
+  té funkce, její test v `testy/` a její oddíl v CLAUDE.md** — nic dalšího.
+- **Nikdy nemíchat s úpravami specifickými pro lab** (blok oddělení,
+  `manifest.json`, labové řádky `sw.js`, verze labu, tahle sekce). Ty jdou
+  do commitů **`LAB:`**, které se nepřenášejí nikdy.
+- **Nebumpovat v `FUNKCE:` commitu `CACHE_NAME` ani verzi** — konflikt
+  s revize-el by byl zaručený. Bump labu = samostatný `LAB: verze …`.
+- **Nová pole v JSON zprávy jen jako VOLITELNÁ** (`D.nove || výchozí`),
+  staré zprávy se musí dál načíst beze změny a beze ztráty dat; uložená data
+  se při načtení nepřepisují (past z v9.39). Totéž nové klíče STORE (pravidlo
+  „čtyři místa" z oddílu o záloze platí dál).
+- Dokud funkce není hotová, nechává se jen v labu; rozpracovaný stav se do
+  revize-el nepřenáší.
+- Před přenosem musí v labu projít celá regrese (`testy/regrese.sh`,
+  `CELKEM ŠPATNĚ: 0`) včetně `test-typy-krizem.js` a `test-lab-oddeleni.js`.
+
+## Postup přenosu funkce do revize-el
+
+Dělá se v session (pracovní kopii) **nad revize-el**, ne v labu:
+
+```bash
+git remote add lab https://github.com/marstu001-ship-it/revize-el-lab   # jednou
+git fetch lab
+git log --oneline --grep '^FUNKCE:' lab/main          # vybrat commity funkce
+git cherry-pick -x -n <sha1> <sha2> …                 # jen FUNKCE:, NIKDY LAB:
+```
+
+1. `-n` = bez commitu, ať jde verze do **stejného commitu** jako kód
+   (pravidlo revize-el).
+2. **Kontrola, že s funkcí nepřišlo nic z labu** — musí vrátit prázdno:
+   `git diff --cached | grep -nE 'revize_lab|revize-lab|revize-el-lab|LAB_VERZE|lab-stitek|LAB —'`
+3. **Bump podle pravidel revize-el:** `CACHE_NAME` v `sw.js`
+   (`revize-el-vMAJOR.MINOR-YYYYMMDD`) a `<span class="ver">` v topbaru,
+   „Aktuální verze" nahoře v CLAUDE.md; Novinky jen když si o kartu uživatel
+   sám řekne.
+4. Testy v revize-el: `testy/regrese.sh` → **`CELKEM ŠPATNĚ: 0`**, čte se podle ❌,
+   povinně `test-typy-krizem.js`. (`test-lab-oddeleni.js` v revize-el není.)
+5. Commit `vX.Y: <popis>` (cherry-pick `-x` přidá odkaz na commit v labu)
+   a push podle pravidel revize-el.
+
+Konflikt při cherry-picku = v revize-el se mezitím změnil tentýž kód.
+Vyřešit ručně, nikdy nepřebírat labové řádky.
+
+## Aktualizace labu z revize-el
+
+```bash
+git fetch upstream && git merge upstream/main
+```
+
+Čekané konflikty: **`sw.js` řádek `CACHE_NAME`** (ponechat labový a bumpnout
+labovou verzi) a případně `manifest.json` (ponechat labový). Blok oddělení
+ani tuhle sekci revize-el nezná, takže se přes ně sloučí bez konfliktu.
+Po sloučení spustit `test-lab-oddeleni.js` a regresi.
+
+---
+
 # CLAUDE.md — pravidla pro tento repozitář
 
 Revize EL je single-page PWA (HTML + JS + service worker). Obsah se cachuje
