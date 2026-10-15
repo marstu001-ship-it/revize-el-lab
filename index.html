@@ -10,6 +10,187 @@
 <link rel="manifest" href="manifest.json">
 <link rel="apple-touch-icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='64' fill='%231c3a5e'/><text x='256' y='340' text-anchor='middle' font-size='280' fill='%23fff'>⚡</text></svg>">
 <title>Revize EL – Revizní zprávy</title>
+<!-- ═══════════════════════════════════════════════════════════════════════
+     LAB — ODDĚLENÍ OD OSTRÉHO PROGRAMU. NIKDY NEPŘENÁŠET DO revize-el!
+     Lab (/revize-el-lab/) a ostrý program (/revize-el/) běží na TÉMŽE
+     původu (marstu001-ship-it.github.io), takže sdílejí localStorage,
+     IndexedDB, BroadcastChannel, cache i soubory v Origin Private FS.
+     Tenhle blok běží PŘED vším ostatním a přesměruje všechno na labové
+     názvy — zbytek programu je bajt po bajtu stejný jako v revize-el,
+     takže commity FUNKCE: jdou přenést cherry-pickem bez konfliktů.
+       localStorage/sessionStorage  revize_el_X → revize_lab_X (jiné klíče → revize_lab__X)
+       IndexedDB                    revize-el-db → revize-lab-db
+       BroadcastChannel             revize-el-store → revize-lab-store
+       událost 'storage'            klíče ostrého programu se zahodí
+       soubory zálohy ve složce     revize-el-zaloha-… → revize-lab-zaloha-…
+                                    (soubory ostrého programu lab nevidí)
+       výběr složky zálohy          složku se zálohami ostrého programu odmítne
+       Uložit jako / stažení        název souboru dostane předponu LAB_
+     Cache: vlastní CACHE_NAME v sw.js (revize-el-lab-…) — viz sw.js.
+     Kód programu musí používat localStorage.getItem/setItem/removeItem,
+     NE localStorage.klic ani localStorage['klic'] (to blok nezachytí).
+     ═══════════════════════════════════════════════════════════════════════ -->
+<script>
+(function() {
+  'use strict';
+  var LAB_VERZE = 'v1.0 · 2026-10-15';   // bumpni spolu s CACHE_NAME v sw.js
+
+  // ── klíče localStorage / sessionStorage ────────────────────────────────
+  function klic(k) {
+    k = String(k);
+    return k.indexOf('revize_el_') === 0 ? 'revize_lab_' + k.slice(10) : 'revize_lab__' + k;
+  }
+  function klicZpet(k) {                  // skutečný klíč → klíč, jak ho vidí program
+    if (typeof k !== 'string') return null;
+    if (k.indexOf('revize_lab__') === 0) return k.slice(12);
+    if (k.indexOf('revize_lab_') === 0) return 'revize_el_' + k.slice(11);
+    return null;                          // klíč ostrého programu nebo cizí
+  }
+  var SP = window.Storage && Storage.prototype;
+  if (SP) {
+    var oGet = SP.getItem, oSet = SP.setItem, oRem = SP.removeItem, oKey = SP.key;
+    var oLen = Object.getOwnPropertyDescriptor(SP, 'length').get;
+    var nase = function(st) {
+      var v = [], n = oLen.call(st);
+      for (var i = 0; i < n; i++) { var k = oKey.call(st, i); if (klicZpet(k) !== null) v.push(k); }
+      return v;
+    };
+    SP.getItem = function(k) { return oGet.call(this, klic(k)); };
+    SP.setItem = function(k, v) { return oSet.call(this, klic(k), v); };
+    SP.removeItem = function(k) { return oRem.call(this, klic(k)); };
+    SP.key = function(i) { var k = nase(this)[i]; return k === undefined ? null : klicZpet(k); };
+    SP.clear = function() { var st = this; nase(st).forEach(function(k) { oRem.call(st, k); }); };
+    Object.defineProperty(SP, 'length', { configurable: true, enumerable: true,
+      get: function() { return nase(this).length; } });
+  }
+
+  // Událost 'storage' z jiného okna: zápisy ostrého programu se zahodí,
+  // labové se programu podají pod klíčem, jaký zná (revize_el_…).
+  var oAdd = window.addEventListener, oDel = window.removeEventListener, obaly = [];
+  window.addEventListener = function(typ, fn, o) {
+    if (typ === 'storage' && typeof fn === 'function') {
+      var orig = fn;
+      fn = function(e) {
+        var k = klicZpet(e.key);
+        if (k === null) return;
+        orig.call(this, { type: 'storage', key: k, oldValue: e.oldValue, newValue: e.newValue,
+                          url: e.url, storageArea: e.storageArea });
+      };
+      obaly.push([orig, fn]);
+    }
+    return oAdd.call(this, typ, fn, o);
+  };
+  window.removeEventListener = function(typ, fn, o) {
+    if (typ === 'storage') for (var i = 0; i < obaly.length; i++) if (obaly[i][0] === fn) { fn = obaly[i][1]; break; }
+    return oDel.call(this, typ, fn, o);
+  };
+
+  // ── IndexedDB a BroadcastChannel ───────────────────────────────────────
+  function nazev(n) {
+    n = String(n);
+    return n.indexOf('revize-el') === 0 ? 'revize-lab' + n.slice(9) : 'revize-lab--' + n;
+  }
+  var IF = window.IDBFactory && IDBFactory.prototype;
+  if (IF) {
+    var oOpen = IF.open, oSmaz = IF.deleteDatabase, oDbs = IF.databases;
+    IF.open = function(n) { var a = [].slice.call(arguments); a[0] = nazev(n); return oOpen.apply(this, a); };
+    IF.deleteDatabase = function(n) { return oSmaz.call(this, nazev(n)); };
+    if (oDbs) IF.databases = function() {
+      return oDbs.call(this).then(function(seznam) {
+        return seznam.filter(function(d) { return d.name.indexOf('revize-lab') === 0; }).map(function(d) {
+          return { name: d.name.indexOf('revize-lab--') === 0 ? d.name.slice(12) : 'revize-el' + d.name.slice(10), version: d.version };
+        });
+      });
+    };
+  }
+  if (window.BroadcastChannel) {
+    var OBC = window.BroadcastChannel;
+    var BC = function BroadcastChannel(n) { return new OBC(nazev(n)); };
+    BC.prototype = OBC.prototype;
+    window.BroadcastChannel = BC;
+  }
+
+  // ── soubory ve složce (automatická záloha) ─────────────────────────────
+  // Lab píše revize-lab-zaloha-…; soubory ostrého programu (revize-el-…)
+  // nevidí, takže je ani rotace záloh nesmaže.
+  function soubor(n) { n = String(n); return n.indexOf('revize-el-') === 0 ? 'revize-lab-' + n.slice(10) : n; }
+  function souborZpet(n) {
+    if (n.indexOf('revize-el-') === 0) return null;
+    if (n.indexOf('revize-lab-') === 0) return 'revize-el-' + n.slice(11);
+    return n;
+  }
+  function prejmenuj(h, n) {
+    if (n === h.name) return h;
+    return new Proxy(h, { get: function(t, p) {
+      if (p === 'name') return n;
+      var x = t[p]; return typeof x === 'function' ? x.bind(t) : x;
+    } });
+  }
+  var DH = window.FileSystemDirectoryHandle && FileSystemDirectoryHandle.prototype;
+  var oEntries = DH && DH.entries;
+  if (DH) {
+    var oFile = DH.getFileHandle, oDir = DH.getDirectoryHandle, oRemE = DH.removeEntry;
+    DH.getFileHandle = function(n, o) { return oFile.call(this, soubor(n), o); };
+    DH.getDirectoryHandle = function(n, o) { return oDir.call(this, soubor(n), o); };
+    DH.removeEntry = function(n, o) { return oRemE.call(this, soubor(n), o); };
+    DH.entries = async function*() {
+      for await (var e of oEntries.call(this)) {
+        var n = souborZpet(e[0]);
+        if (n !== null) yield [n, prejmenuj(e[1], n)];
+      }
+    };
+    DH.values = async function*() { for await (var e of DH.entries.call(this)) yield e[1]; };
+    DH.keys = async function*() { for await (var e of DH.entries.call(this)) yield e[0]; };
+    DH[Symbol.asyncIterator] = DH.entries;
+  }
+  if (window.showDirectoryPicker) {
+    var oPick = window.showDirectoryPicker;
+    window.showDirectoryPicker = async function(o) {
+      var h = await oPick.call(window, Object.assign({ id: 'revize-lab-zalohy' }, o || {}));
+      if (oEntries) for await (var e of oEntries.call(h)) {
+        if (/^revize-el-zaloha-/.test(e[0])) throw new Error('ve složce „' + h.name +
+          '" jsou zálohy ostrého programu Revize EL. Lab musí mít vlastní složku — vyberte jinou.');
+      }
+      return h;
+    };
+  }
+  // Uložit jako / stažení: předpona LAB_ a vlastní zapamatovaná složka dialogu
+  function labNazev(n) { n = String(n || ''); return !n || n.indexOf('LAB_') === 0 ? n : 'LAB_' + n; }
+  if (window.showSaveFilePicker) {
+    var oSave = window.showSaveFilePicker;
+    window.showSaveFilePicker = function(o) {
+      o = Object.assign({ id: 'revize-lab' }, o || {});
+      if (o.suggestedName) o.suggestedName = labNazev(o.suggestedName);
+      return oSave.call(window, o);
+    };
+  }
+  var AP = HTMLAnchorElement.prototype, oClick = AP.click;
+  AP.click = function() { if (this.hasAttribute('download')) this.download = labNazev(this.download); return oClick.call(this); };
+
+  // ── vzhled: štítek LAB, oranžová lišta, titulek, ikona ─────────────────
+  var IKONA = "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='64' fill='%23c2410c'/><text x='256' y='290' text-anchor='middle' font-size='230' fill='%23fff'>⚡</text><text x='256' y='450' text-anchor='middle' font-size='150' font-family='Arial,sans-serif' font-weight='bold' fill='%23fff'>LAB</text></svg>";
+  document.title = 'Revize EL – LAB';
+  var m = document.querySelector('meta[name="theme-color"]'); if (m) m.content = '#c2410c';
+  m = document.querySelector('meta[name="apple-mobile-web-app-title"]'); if (m) m.content = 'Revize LAB';
+  m = document.querySelector('link[rel="apple-touch-icon"]'); if (m) m.href = IKONA;
+  var css = document.createElement('style');
+  css.textContent =
+    '.topbar,html.dark .topbar{background:#c2410c!important;border-bottom:3px solid #fbbf24!important}' +
+    '.lab-stitek{display:inline-block;margin-left:.5rem;padding:.05rem .45rem;border-radius:4px;' +
+    'background:#fbbf24;color:#3b1d00;font:700 .72rem/1.4 var(--mono,monospace);letter-spacing:.06em;vertical-align:middle}';
+  document.head.appendChild(css);
+  document.addEventListener('DOMContentLoaded', function() {
+    var b = document.querySelector('.topbar .brand');
+    if (!b || b.querySelector('.lab-stitek')) return;
+    var s = document.createElement('span');
+    s.className = 'lab-stitek';
+    s.title = 'Zkušební verze — data jsou oddělená od ostrého programu Revize EL';
+    s.textContent = 'LAB ' + LAB_VERZE;
+    b.appendChild(s);
+  });
+  window.__LAB = { verze: LAB_VERZE, klic: klic, nazev: nazev, soubor: soubor };
+})();
+</script>
 <link href="https://fonts.googleapis.com/css2?family=DM+Mono:wght@400;500&family=DM+Sans:wght@300;400;500;600&family=Courier+Prime:wght@400;700&display=swap" rel="stylesheet">
 <!-- Knihovny z cdnjs mají kontrolní otisk (SRI): prohlížeč spustí soubor, JEN
      když sedí bajt po bajtu. Kdyby někdo cdnjs podvrhl, skript se nenačte a

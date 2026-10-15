@@ -1,4 +1,12 @@
-var CACHE_NAME = 'revize-el-v9.122-20261013';
+var CACHE_NAME = 'revize-el-lab-v1.0-20261015';
+// LAB: ostrý program (/revize-el/) sdílí s labem původ, a tedy i úložiště
+// cache. Lab proto maže JEN své staré cache (revize-el-lab-…) a čte JEN ze
+// své (zCache), nikdy z cache ostrého programu. Rozsah SW je složka, ze
+// které se registruje (/revize-el-lab/), takže do /revize-el/ nezasahuje.
+var LAB_PREDPONA = 'revize-el-lab-';
+function zCache(req) {
+  return caches.open(CACHE_NAME).then(function(c) { return c.match(req); });
+}
 // Vlastní soubory — bez nich aplikace offline nefunguje.
 var URLS_TO_CACHE = [
   './',
@@ -41,7 +49,7 @@ self.addEventListener('activate', function(e) {
   e.waitUntil(
     caches.keys().then(function(names) {
       return Promise.all(
-        names.filter(function(n) { return n !== CACHE_NAME; })
+        names.filter(function(n) { return n.indexOf(LAB_PREDPONA) === 0 && n !== CACHE_NAME; })
              .map(function(n) { return caches.delete(n); })
       );
     }).then(function() {
@@ -77,8 +85,8 @@ self.addEventListener('fetch', function(e) {
         }
         return response;
       }).catch(function() {
-        return caches.match(req).then(function(cached) {
-          return cached || caches.match('./index.html');
+        return zCache(req).then(function(cached) {
+          return cached || zCache('./index.html');
         });
       })
     );
@@ -87,7 +95,7 @@ self.addEventListener('fetch', function(e) {
 
   // Stale-while-revalidate pro vše ostatní
   e.respondWith(
-    caches.match(req).then(function(cached) {
+    zCache(req).then(function(cached) {
       var fetchPromise = fetch(req).then(function(response) {
         if (response && response.status === 200 && req.method === 'GET') {
           var clone = response.clone();

@@ -1,15 +1,17 @@
 {
-  "name": "Revize EL – Revizní zprávy",
-  "short_name": "Revize EL",
-  "description": "Profesionální nástroj pro tvorbu revizních zpráv elektrických zařízení",
-  "start_url": "./index.html",
+  "id": "/revize-el-lab/",
+  "name": "Revize EL – LAB",
+  "short_name": "Revize LAB",
+  "description": "Zkušební verze programu Revize EL pro vývoj nových funkcí — data jsou oddělená od ostrého programu",
+  "start_url": "/revize-el-lab/index.html",
+  "scope": "/revize-el-lab/",
   "display": "standalone",
   "orientation": "portrait",
   "background_color": "#edeae4",
-  "theme_color": "#1c3a5e",
+  "theme_color": "#c2410c",
   "icons": [
     {
-      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='64' fill='%231c3a5e'/><text x='256' y='340' text-anchor='middle' font-size='280' fill='%23fff'>⚡</text></svg>",
+      "src": "data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 512 512'><rect width='512' height='512' rx='64' fill='%23c2410c'/><text x='256' y='290' text-anchor='middle' font-size='230' fill='%23fff'>⚡</text><text x='256' y='450' text-anchor='middle' font-size='150' font-family='Arial,sans-serif' font-weight='bold' fill='%23fff'>LAB</text></svg>",
       "sizes": "512x512",
       "type": "image/svg+xml",
       "purpose": "any maskable"
