@@ -192,22 +192,33 @@ const res = []; const check = (n, ok, d) => res.push((ok ? '✅' : '❌') + ' ' 
     const t = document.getElementById('pdf-pages').innerText; showScreen('form'); return t; });
   check('do PDF se mez ani výpočet nedostane', !/Zs,lim|≤ 1,91|ⓘ/.test(pdf));
 
-  // ── bublina myší: klik na ⓘ ──────────────────────────────────────────
-  const mys = await p.evaluate(async () => {
+  // ── PC: ikonka ⓘ se neukazuje, bublina je po najetí myší (title) ──
+  const pc = await p.evaluate(async () => {
     switchTab('mereni');
     const tr = document.querySelectorAll('#rozvadece-container tr[data-rowtype="obvod"]')[1];
-    const ik = zsLimBunka(tr, 7).querySelector('.zs-lim-ikona');
+    const td = zsLimBunka(tr, 7);
+    const ik = td.querySelector('.zs-lim-ikona');
     const ggTr = Array.from(document.querySelectorAll('#rozvadece-container tr[data-rowtype="obvod"]')).find(t => fillCilovyInput(t, 3).value === 'Gg');
     const gg = zsLimBunka(ggTr, 7).querySelector('.zs-lim-ikona');
-    return { ik: !!ik, gg: !!gg };
+    return { mobil: document.documentElement.classList.contains('view-mobile'), coarse: matchMedia('(pointer:coarse)').matches,
+             ik: !!ik, vidIk: ik ? (getComputedStyle(ik).display !== 'none' && ik.offsetWidth > 0) : null, gg: !!gg,
+             title: td.title, titleInp: td.querySelector('input').title };
   });
-  check('ⓘ je u vyhodnocené buňky, u pojistky Gg ne', mys.ik && !mys.gg, JSON.stringify(mys));
+  check('PC (myš, zobrazení PC): ikonka ⓘ se neukazuje', !pc.mobil && !pc.coarse && pc.ik && pc.vidIk === false, JSON.stringify(pc));
+  check('PC: bublina po najetí myší zůstává (title u buňky i pole)', /^B16: Ia = 5 × 16 = 80 A/.test(pc.title) && pc.title === pc.titleInp, pc.title);
+  check('u pojistky Gg ikonka v DOM vůbec není', !pc.gg);
+  // zobrazení Mobil na PC → ikonka se ukáže a jde na ni kliknout myší
+  await p.evaluate(() => applyView('mobile'));
+  const vidM = await p.evaluate(() => { const ik = zsLimBunka(document.querySelectorAll('#rozvadece-container tr[data-rowtype="obvod"]')[1], 7).querySelector('.zs-lim-ikona');
+    return getComputedStyle(ik).display !== 'none' && ik.offsetWidth > 0; });
+  check('zobrazení Mobil (i na PC): ikonka ⓘ je vidět', vidM);
   await p.locator('#rozvadece-container tr[data-rowtype="obvod"]:nth-child(2) .zs-lim-ikona').click();
   const b1 = await p.evaluate(() => { const b = document.querySelector('.zs-lim-bublina'); return b ? { t: b.textContent, h: b.offsetHeight } : null; });
-  check('klik na ⓘ myší otevře bublinu s výpočtem', b1 && b1.h > 0 && /Zs,lim = 2\/3 × 230 \/ 80/.test(b1.t), JSON.stringify(b1));
+  check('zobrazení Mobil: klik na ⓘ myší otevře bublinu s výpočtem', b1 && b1.h > 0 && /Zs,lim = 2\/3 × 230 \/ 80/.test(b1.t), JSON.stringify(b1));
   check('klik na ⓘ nevezme buňce Zsm fokus ani nezmění data', await p.evaluate(() => !document.activeElement || !document.activeElement.closest || !document.activeElement.closest('.meas-table')));
   await p.keyboard.press('Escape');
   check('Esc bublinu zavře', await p.evaluate(() => !document.querySelector('.zs-lim-bublina')));
+  await p.evaluate(() => applyView('pc'));
 
   // ── dotyk: režim Mobil na telefonu ────────────────────────────────────
   const ctx = await b.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true, deviceScaleFactor: 2 });
@@ -230,6 +241,10 @@ const res = []; const check = (n, ok, d) => res.push((ok ? '✅' : '❌') + ' ' 
     await new Promise(r => setTimeout(r, 120));
     document.activeElement && document.activeElement.blur();
   });
+  // dotykové zařízení se zobrazením PC — ikonka je vidět kvůli dotyku (pointer: coarse)
+  const dotykPc = await m.evaluate(() => { applyView('pc'); const ik = document.querySelector('#rozvadece-container .zs-lim-ikona');
+    const v = { coarse: matchMedia('(pointer:coarse)').matches, vid: getComputedStyle(ik).display !== 'none' && ik.offsetWidth > 0 }; applyView('mobile'); return v; });
+  check('dotyk + zobrazení PC: ikonka ⓘ je vidět (pointer: coarse)', dotykPc.coarse && dotykPc.vid, JSON.stringify(dotykPc));
   check('mobil: zobrazení Mobil je zapnuté', await m.evaluate(() => document.documentElement.classList.contains('view-mobile')));
   // Skutečné klepnutí prstem na místo, kde ⓘ na obrazovce je (stránka je
   // v mobilu širší než displej, locator.tap() by se o posouvání zasekl).

@@ -806,10 +806,13 @@ html.dark .meas-table td.zs-lim-ok{background-color:rgba(63,185,80,.26)!importan
 html.dark .meas-table td.zs-lim-chyba{background-color:rgba(248,81,73,.30)!important}
 html.dark .meas-table td.zs-lim-rcd{background-color:rgba(240,150,30,.32)!important}
 .meas-table td input.zs-lim-ph::placeholder{font-size:.66rem;color:#9a958a;opacity:1}
-.meas-table td .zs-lim-ikona{position:absolute;top:0;right:0;padding:1px 2px;font-size:.6rem;line-height:1;
+/* Ikonka ⓘ jen tam, kde nejde najet myší (dotyk) a v zobrazení Mobil.
+   Na PC stačí bublina po najetí myší (`title`), ikonka se tam neukazuje. */
+.meas-table td .zs-lim-ikona{display:none;position:absolute;top:0;right:0;padding:1px 2px;font-size:.6rem;line-height:1;
   color:#8a857a;cursor:pointer;user-select:none;-webkit-user-select:none;touch-action:manipulation}
+@media (pointer:coarse){.meas-table td .zs-lim-ikona{display:block}}
+html.view-mobile .meas-table td .zs-lim-ikona{display:block;font-size:.82rem;padding:2px 3px}
 .meas-table td .zs-lim-ikona:hover{color:var(--accent2)}
-html.view-mobile .meas-table td .zs-lim-ikona{font-size:.82rem;padding:2px 3px}
 .zs-lim-bublina{position:fixed;z-index:9500;background:var(--surface);color:var(--text);border:1px solid var(--border);
   border-radius:4px;box-shadow:0 4px 16px rgba(0,0,0,.2);padding:.5rem .65rem;font-family:var(--sans);font-size:.8rem;
   line-height:1.45;max-width:min(340px,calc(100vw - 16px));white-space:pre-line}

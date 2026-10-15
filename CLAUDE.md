@@ -247,7 +247,10 @@ technik přidával ručně z katalogu.
   obojí: „Zs,lim = 2/3 × 230 / 160 = 0,9583 Ω (≤ 0,95 Ω)". Vada C1 píše
   zaokrouhlenou mez (`zsLimMezText`).
 - **Bublina jde otevřít i na dotyku** (`title` tam nefunguje): ikonka **ⓘ**
-  v rohu vyhodnocené buňky (klepnutí/klik otevře a zavře; `<span>`, ne
+  v rohu vyhodnocené buňky — **jen na dotykovém zařízení (`pointer: coarse`)
+  a v zobrazení Mobil** (pokyn uživatele 2026-10-15; na PC ji CSS schová,
+  bublina po najetí myší tam zůstává; ověřeno snímky 1366/1920 px, že se jinak
+  nic nezměnilo) (klepnutí/klik otevře a zavře; `<span>`, ne
   `<button>` — u dokončené zprávy se tlačítka schovávají, výpočet se má dát
   přečíst) a na dotykovém zařízení / v zobrazení Mobil **klepnutí do buňky**
   Zsm (bublina se při psaní přepočítává, odchodem z buňky zmizí). Bublina
@@ -270,7 +273,7 @@ technik přidával ručně z katalogu.
   a v `renumberRows()` (ZPĚT vložení vrací hodnoty bez událostí),
   `zsLimPrepocet()` na konci `nacistData()`.
 
-Test: `testy/test-zs-mez.js` (68 kontrol, včetně telefonu 390 px s dotykem
+Test: `testy/test-zs-mez.js` (72 kontrol, včetně telefonu 390 px s dotykem
 a zobrazením Mobil — klepnutí se tam dělá `touchscreen.tap` na souřadnice,
 `locator.tap()` se o posouvanou stránku zasekne). Karta v Novinkách se
 nedělala (pokyn uživatele).
