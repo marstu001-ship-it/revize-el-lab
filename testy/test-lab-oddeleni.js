@@ -199,7 +199,13 @@ async function snimek(p) {
     const zal = await lab.evaluate(async () => {
       backupDirHandle = window.__testSlozka;
       const ok = await autoZaloha(true);
-      await rotaceZaloh();   // autoZaloha ji pouští bez čekání — doběhnout dřív, než se složka změní
+      // autoZaloha pouští rotaci bez čekání. Počkat, až TA doběhne — nespouštět
+      // druhou souběžně: dvě rotace nad jednou složkou se pobijí (první chyba
+      // removeEntry ukončí smyčku) a hned následující `backupDirHandle = null`
+      // pak uřízne i tu první. Tak vznikalo občasné „21 souborů" (ne přechodem
+      // minuty — ten se ukázal jako mylná domněnka).
+      const pocet = async () => { let n = 0; for await (const [nm] of backupDirHandle.entries()) if (/^revize-el-zaloha-/.test(nm)) n++; return n; };
+      for (let i = 0; i < 100 && await pocet() > AUTOZALOHA_LIMIT; i++) await new Promise(r => setTimeout(r, 50));
       return { ok, jmeno: STORE.auto_zaloha_soubor };
     });
     check('lab zálohu zapsal', zal.ok, JSON.stringify(zal));
