@@ -216,6 +216,51 @@ v `.claude/settings.json`) a na začátku regrese.
 - `testy/` se nasazuje na Pages s celým repem; program ani `sw.js` na ni
   neodkazují, takže to nevadí.
 
+## Zs mez — vyhodnocení impedance poruchové smyčky (blok `zsLim…`)
+
+Zadání uživatele 2026-10-15 (vyvinuto v labu): program dosud mez Zs nikde
+nepočítal a vadu C1 „Impedance poruchové smyčky Zsm přesahuje (2/3) × U0/Ia"
+technik přidával ručně z katalogu.
+
+- **Mez:** Zs,lim = 2/3 × U0 / Ia, U0 = 230 V, **Ia = 5 / 10 / 20 × In pro
+  jistič B / C / D**. Charakteristika z `m.ch` tolerantně („b", „char. B",
+  „B16", „B/A" u RCBO — bere se část před lomítkem), In z `m.a` („16",
+  „16 A", „3x16A", desetinná čárka); když `m.a` chybí a Ch. je „B16", vezme
+  se In odtud.
+- **Hlavička chrániče bez lomítka** („A", „AC", „B", „F") je TYP CHRÁNIČE,
+  ne charakteristika — nevyhodnocuje se (jinak by RCD typu B vypadal jako
+  jistič B). RCBO („B/A") se vyhodnotí. Podřádky chrániče nikdy.
+- **Pojistky (gG/gL/aM) a cokoli nečitelného se NEVYHODNOCUJE** — buňka
+  zůstane neutrální, žádná chyba. Tabulku Ia pro pojistky dodá uživatel
+  **ověřenou**; místo je připravené (`ZS_LIM_POJISTKY`, větev `p.pojistka`
+  v `zsLimVypocet`). **Nevymýšlet ani nepřebírat z internetu.**
+- **Jen síť TN** (text zaškrtnuté napěťové soustavy obsahuje „TN"). TT, IT nic.
+- **Jen formulář, PDF se nemění.** Buňka Zsm: šedá nápověda „≤ 1,92 Ω",
+  zelená (vyhovuje) / červená (nevyhovuje) / **oranžová** (nevyhovuje jistič,
+  ale v řádku je vyplněné IΔn — „posuďte"), bublina s výpočtem krok za krokem
+  a normou (bere se z položky C1 katalogu `TYPICKE_ZAVADY`).
+- Naměřená hodnota „1,1" = „1.1"; „<X" vyhovuje jen když X ≤ mez, „>X"
+  nevyhovuje jen když X ≥ mez, jinak (a u textu) bez barvy.
+- **Porovnává se s PŘESNOU mezí**, ukazuje se zaokrouhlená na setiny. Na
+  hranici (C16: 0,96 > 0,9583) bublina řekne „přesně 0,9583 Ω".
+- **Vada C1 se NIKDY nepřidá sama.** Při červeném obvodu se pod tabulkami
+  měření i nad „+ Přidat závadu" ukáže odkaz **„Přidat vadu C1 (obvody: RH 2,
+  RH 6)"**; klik přidá položku C1 z katalogu a do popisu dopíše rozváděč,
+  číslo, název, naměřenou hodnotu a mez. Oranžové obvody se nepočítají.
+  Odkaz zmizí, když už nějaká vada C1 všechny červené obvody jmenuje; nový
+  červený obvod ho vrátí. Má ZPĚT. U dokončené zprávy je schovaný.
+- **Žádná nová data v JSON** — počítá se za běhu, staré zprávy beze změny.
+  Na buňce zůstávají jen pomocné `data-zs-ph` (původní nápověda) a třídy.
+- **Přepočet:** vlastní posluchače `input`/`change` (buňky, napěťová
+  soustava, závady) + `MutationObserver` na `#rozvadece-container`,
+  `#napetova-checkboxy`, `#zavady-list` (nový / smazaný / zkopírovaný řádek,
+  vložení z Excelu a `.xlsx`). Do zbytku programu sahají jen tři řádky:
+  `zsLimNaplanovat()` v `autoSave()` (táhlo hodnoty nevolá události)
+  a v `renumberRows()` (ZPĚT vložení vrací hodnoty bez událostí),
+  `zsLimPrepocet()` na konci `nacistData()`.
+
+Test: `testy/test-zs-mez.js` (53 kontrol). Karta v Novinkách se nedělala (pokyn uživatele).
+
 ## Plán revizí: lhůta se bere ze ZPRÁVY (v9.122)
 
 Hlášení uživatele 2026-10-13 (stroj od kolegy, kontrola 10/2026, příští

@@ -797,6 +797,20 @@ th[data-action="toggleAutoCislovani"]:hover .cisl-ico{background:var(--gold);
 .meas-table td input::-webkit-calendar-picker-indicator{display:none!important;opacity:0}
 .meas-table td input::-webkit-list-button{display:none!important;opacity:0}
 .meas-table td select{font-size:.72rem}
+/* Zs mez — vyhodnocení impedance poruchové smyčky (blok zsLim…). Barví se
+   jen buňka Zsm, ne celý řádek; jde jen o formulář, do PDF se nic nedostane. */
+.meas-table td.zs-lim-ok{background-color:rgba(46,160,67,.20)!important}
+.meas-table td.zs-lim-chyba{background-color:rgba(207,34,46,.22)!important}
+.meas-table td.zs-lim-rcd{background-color:rgba(232,140,0,.28)!important}
+html.dark .meas-table td.zs-lim-ok{background-color:rgba(63,185,80,.26)!important}
+html.dark .meas-table td.zs-lim-chyba{background-color:rgba(248,81,73,.30)!important}
+html.dark .meas-table td.zs-lim-rcd{background-color:rgba(240,150,30,.32)!important}
+.meas-table td input.zs-lim-ph::placeholder{font-size:.66rem;color:#9a958a;opacity:1}
+.zs-c1-nabidka{font-size:.74rem;color:var(--muted);margin:.4rem 0 .6rem}
+.zs-c1-nabidka button{background:none;border:none;padding:0;font:inherit;color:var(--accent);
+  text-decoration:underline dotted;cursor:pointer}
+.zs-c1-nabidka button:hover{text-decoration:underline}
+#screen-form.form-readonly .zs-c1-nabidka{display:none!important}
 .add-row{font-family:var(--mono);font-size:.62rem;letter-spacing:.1em;
   text-transform:uppercase;color:var(--accent2);background:none;
   border:1px dashed var(--accent2);padding:.38rem .9rem;cursor:pointer;
@@ -10555,6 +10569,7 @@ function getNextRowNum(tbody) {
 // (dokumentace, přístroje, závady) — nic se nestane.
 function renumberRows(tbody) {
   if (!tbody) return;
+  if (typeof zsLimNaplanovat === 'function') zsLimNaplanovat();   // Zs mez
   // Režim vlastního číslování — na hodnoty ve sloupci Č. se nesahá.
   if (!autoCislovaniProTbody(tbody)) return;
   var n = 0;
@@ -11035,6 +11050,351 @@ var TYPICKE_ZAVADY = [
   { kod: 'C3', popis: 'Doporučujeme doplnit svodič přepětí T2 na vstupu rozváděče', norma: 'ČSN 33 2000-4-44 ed.3, čl. 443' },
   { kod: 'C3', popis: 'Doporučujeme kontrolu kapacity jističů s ohledem na aktuální odběr', norma: 'ČSN 33 2000-5-52 ed.2, čl. 523, 525' }
 ];
+
+// ── Zs mez — vyhodnocení impedance poruchové smyčky ─────────────────────
+// U každého obvodu v síti TN spočítá mez Zs,lim = 2/3 × U0 / Ia a naměřenou
+// hodnotu Zsm s ní porovná. **Nic se neukládá** — všechno se počítá za běhu
+// z polí, která v řádku už jsou (Ch./Typ, A, IΔn, Zsm), takže staré zprávy
+// fungují beze změny a JSON zprávy se nemění. Jen formulář: buňka Zsm dostane
+// šedou nápovědu s mezí, barvu a bublinu s výpočtem. PDF se nemění.
+//
+// Vada C1 se NIKDY nepřidává sama — u zprávy s červeným obvodem se nabídne
+// odkaz „Přidat vadu C1 (obvody: …)" a vada vznikne až po kliknutí.
+//
+// Celý blok je samostatný (předpona zsLim…), do zbytku programu sahají jen
+// tři jednořádková volání zsLimNaplanovat()/zsLimPrepocet() (nacistData,
+// autoSave, renumberRows) — kvůli přenosu do revize-el.
+var ZS_LIM_U0 = 230;
+// Ia jističe = násobek In podle charakteristiky (okamžitá spoušť).
+var ZS_LIM_NASOBKY = { B: 5, C: 10, D: 20 };
+// Pojistky (gG / gL / aM…) se ZATÍM NEVYHODNOCUJÍ. Tabulku Ia pro pojistky
+// dodá uživatel ověřenou — nic se nevymýšlí ani nepřebírá z internetu.
+// Až bude, patří sem a do větve `p.pojistka` v zsLimVypocet().
+var ZS_LIM_POJISTKY = null;
+// Vizuální sloupce tabulky měření (shodné s getMeasTableHtml / TEREN_KOLONKY)
+var ZS_LIM_SL = { c: 0, n: 1, ch: 3, a: 4, idn: 5, zsm: 7 };
+
+function zsLimFmt(x, mista) {
+  if (mista == null) {                 // celé číslo bez nul, jinak co třeba
+    return String(Math.round(x * 1000) / 1000).replace('.', ',');
+  }
+  return x.toFixed(mista).replace('.', ',');
+}
+
+// Charakteristika jističe z volného textu: „B", „b", „char. B", „B16",
+// „B 16 A", „B/A" (RCBO). Vrací { ch, inZCh } nebo { pojistka } nebo null.
+function zsLimCharakteristika(text) {
+  var s = String(text == null ? '' : text).normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase();
+  if (s.indexOf('/') !== -1) s = s.split('/')[0];          // RCBO „B/A" → B
+  s = s.replace(/CHARAKTERISTIKA|CHAR|TYP/g, '').replace(/[\s.:\-]/g, '');
+  if (!s) return null;
+  if (/^(GG|GL|AM|GM)/.test(s)) return { pojistka: s.slice(0, 2) };
+  var m = s.match(/^([BCD])(\d+(?:[.,]\d+)?)?A?$/);
+  if (!m) return null;
+  return { ch: m[1], inZCh: m[2] ? parseFloat(m[2].replace(',', '.')) : null };
+}
+
+// Jmenovitý proud z „16", „16 A", „16A", „3x16A", „6,5".
+function zsLimProud(text) {
+  var s = String(text == null ? '' : text).trim().replace(',', '.');
+  var m = s.match(/^(?:\d+\s*[x×]\s*)?(\d+(?:\.\d+)?)\s*A?$/i);
+  if (!m) return null;
+  var v = parseFloat(m[1]);
+  return v > 0 ? v : null;
+}
+
+// Naměřená hodnota: „1,10", „1.1", „1,1 Ω", „<0,1", „>20", „≤ 0,5".
+// Vrací { op: '' | '<' | '>', h, text } nebo null.
+function zsLimNamereno(text) {
+  var s = String(text == null ? '' : text).trim();
+  if (!s) return null;
+  var m = s.match(/^([<>≤≥]=?)?\s*(\d+(?:[.,]\d+)?|[.,]\d+)\s*(?:Ω|ohm[uů]?)?$/i);
+  if (!m) return null;
+  var op = m[1] ? (/[<≤]/.test(m[1]) ? '<' : '>') : '';
+  var cislo = m[2].replace(',', '.');
+  return { op: op, h: parseFloat(cislo), text: (m[1] || '') + m[2].replace('.', ',') };
+}
+
+// Odkaz na normu se bere z položky C1 v katalogu vad — jeden zdroj pravdy.
+function zsLimVadaKatalog() {
+  for (var i = 0; i < TYPICKE_ZAVADY.length; i++) {
+    if (TYPICKE_ZAVADY[i].kod === 'C1' && /^Impedance poruchové smyčky/.test(TYPICKE_ZAVADY[i].popis)) return TYPICKE_ZAVADY[i];
+  }
+  return null;
+}
+
+function zsLimIdnText(idn) {
+  var s = String(idn).trim();
+  var v = parseFloat(s.replace(',', '.'));
+  if (/^\d+(?:[.,]\d+)?$/.test(s) && v > 0) {
+    return v < 1 ? s + ' A (' + zsLimFmt(v * 1000) + ' mA)' : s + ' mA';
+  }
+  return s;
+}
+
+// ČISTÁ FUNKCE. radek = { rowtype, ch, a, idn, zsm }, soustava = text
+// napěťové soustavy („1NPE ~50Hz 230V / TN-C-S"). Vrací
+// { mez, ia, stav, vysvetleni }; stav = 'nevyhodnoceno' | 'mez' (mez známá,
+// naměřená hodnota chybí nebo nejde jednoznačně posoudit) | 'vyhovuje' |
+// 'nevyhovuje' | 'rcd' (nevyhovuje jistič, obvod je ale chráněn RCD).
+function zsLimVypocet(radek, soustava) {
+  var nic = { mez: null, ia: null, stav: 'nevyhodnoceno', vysvetleni: '' };
+  if (!radek) return nic;
+  var rt = radek.rowtype || 'obvod';
+  if (rt !== 'obvod' && rt !== 'rcd-header') return nic;
+  if (!/TN/i.test(String(soustava || ''))) return nic;      // TT, IT: nic
+  var chText = String(radek.ch == null ? '' : radek.ch);
+  // Hlavička chrániče: „A", „AC", „B", „F" je TYP CHRÁNIČE, ne charakteristika
+  // jističe. Jistič má jen RCBO („B/A", „C/AC").
+  if (rt === 'rcd-header' && chText.indexOf('/') === -1) return nic;
+  var p = zsLimCharakteristika(chText);
+  if (!p) return nic;
+  if (p.pojistka) {
+    // Tabulka Ia pro pojistky zatím není (ZS_LIM_POJISTKY) — nevyhodnocovat.
+    return nic;
+  }
+  var In = zsLimProud(radek.a);
+  if (In == null && p.inZCh) In = p.inZCh;                  // „B16" v Ch./Typ
+  if (In == null) return nic;
+  var nasobek = ZS_LIM_NASOBKY[p.ch];
+  var ia = nasobek * In;
+  var mez = (2 / 3) * ZS_LIM_U0 / ia;
+  var kat = zsLimVadaKatalog();
+  var norma = kat ? kat.norma : 'ČSN 33 2000-4-41 ed.3';
+  var mezText = zsLimFmt(mez, 2);
+  var txt = p.ch + zsLimFmt(In) + ': Ia = ' + nasobek + ' × ' + zsLimFmt(In) + ' = ' + zsLimFmt(ia) + ' A; ' +
+            'Zs,lim = 2/3 × ' + ZS_LIM_U0 + ' / ' + zsLimFmt(ia) + ' = ' + mezText + ' Ω';
+  var vysl = { mez: mez, ia: ia, stav: 'mez', vysvetleni: '' };
+  var nam = zsLimNamereno(radek.zsm);
+  var zsmText = String(radek.zsm == null ? '' : radek.zsm).trim();
+  if (!zsmText) {
+    vysl.vysvetleni = txt + '; naměřená hodnota zatím chybí. (' + norma + ')';
+    return vysl;
+  }
+  if (!nam) {
+    vysl.vysvetleni = txt + '; naměřenou hodnotu „' + zsmText + '" nejde přečíst jako číslo — nevyhodnoceno. (' + norma + ')';
+    return vysl;
+  }
+  // „<X" vyhovuje, jen když X ≤ mez; „>X" nevyhovuje, jen když X ≥ mez.
+  // Jinak to jednoznačně říct nejde.
+  var ok;
+  if (nam.op === '<') ok = (nam.h <= mez) ? true : null;
+  else if (nam.op === '>') ok = (nam.h >= mez) ? false : null;
+  else ok = nam.h <= mez;
+  var namText = 'naměřeno ' + nam.text + ' Ω';
+  if (ok === null) {
+    vysl.vysvetleni = txt + '; ' + namText + ' — nejde jednoznačně posoudit. (' + norma + ')';
+    return vysl;
+  }
+  // Mez se ukazuje zaokrouhlená na setiny, porovnává se ale přesně. Kdyby
+  // zaokrouhlení vypadalo jako „vyhovuje", řekne se přesná hodnota.
+  var presne = (!ok && nam.h <= parseFloat(mezText.replace(',', '.'))) ? ' (přesně ' + zsLimFmt(mez, 4) + ' Ω)' : '';
+  var idn = String(radek.idn == null ? '' : radek.idn).trim();
+  var maRcd = idn && !/^[-–—]+$/.test(idn);
+  if (ok) {
+    vysl.stav = 'vyhovuje';
+    vysl.vysvetleni = txt + '; ' + namText + ' → vyhovuje. (' + norma + ')';
+  } else if (maRcd) {
+    vysl.stav = 'rcd';
+    vysl.vysvetleni = txt + presne + '; ' + namText + ' → nevyhovuje jistič, obvod chráněn RCD IΔn = ' +
+      zsLimIdnText(idn) + ' – posuďte. (' + norma + ')';
+  } else {
+    vysl.stav = 'nevyhovuje';
+    vysl.vysvetleni = txt + presne + '; ' + namText + ' → nevyhovuje. (' + norma + ')';
+  }
+  return vysl;
+}
+
+// Buňka podle VIZUÁLNÍHO sloupce (jako fillCilovyInput, ale vrací i buňky
+// zamčené zprávy — ta se vyhodnocuje taky).
+function zsLimBunka(tr, sloupec) {
+  var c = 0, deti = tr.children;
+  for (var i = 0; i < deti.length; i++) {
+    var span = deti[i].colSpan || 1;
+    if (sloupec >= c && sloupec < c + span) return span === 1 ? deti[i] : null;
+    c += span;
+  }
+  return null;
+}
+function zsLimHodnota(tr, sloupec) {
+  var td = zsLimBunka(tr, sloupec);
+  var el = td && td.querySelector('select, input');
+  return el ? el.value : '';
+}
+function zsLimRadekZDom(tr) {
+  return {
+    rowtype: tr.dataset.rowtype || 'obvod',
+    c: zsLimHodnota(tr, ZS_LIM_SL.c), n: zsLimHodnota(tr, ZS_LIM_SL.n),
+    ch: zsLimHodnota(tr, ZS_LIM_SL.ch), a: zsLimHodnota(tr, ZS_LIM_SL.a),
+    idn: zsLimHodnota(tr, ZS_LIM_SL.idn), zsm: zsLimHodnota(tr, ZS_LIM_SL.zsm)
+  };
+}
+function zsLimSoustava() {
+  return typeof getNapetoveSoustavy === 'function' ? getNapetoveSoustavy() : '';
+}
+
+function zsLimVykreslitRadek(tr, v) {
+  var td = zsLimBunka(tr, ZS_LIM_SL.zsm);
+  var inp = td && td.querySelector('input');
+  if (!inp) return;
+  if (inp.dataset.zsPh === undefined) inp.dataset.zsPh = inp.placeholder || '';
+  td.classList.remove('zs-lim-ok', 'zs-lim-chyba', 'zs-lim-rcd');
+  if (v.stav === 'nevyhodnoceno') {
+    inp.placeholder = inp.dataset.zsPh;
+    inp.classList.remove('zs-lim-ph');
+    if (inp.dataset.zsTitle) { inp.removeAttribute('title'); td.removeAttribute('title'); delete inp.dataset.zsTitle; }
+    return;
+  }
+  inp.placeholder = '≤ ' + zsLimFmt(v.mez, 2) + ' Ω';
+  inp.classList.add('zs-lim-ph');
+  inp.title = v.vysvetleni; td.title = v.vysvetleni;
+  inp.dataset.zsTitle = '1';
+  if (v.stav === 'vyhovuje') td.classList.add('zs-lim-ok');
+  else if (v.stav === 'nevyhovuje') td.classList.add('zs-lim-chyba');
+  else if (v.stav === 'rcd') td.classList.add('zs-lim-rcd');
+}
+
+// Popis obvodu do vady: „RH: č. 3 Zásuvky kuchyně (Zs 2,50 Ω, mez 1,92 Ω)"
+function zsLimPopisObvodu(r, v, rozv) {
+  var s = (r.c ? 'č. ' + String(r.c).trim() : '') + (r.n ? (r.c ? ' ' : '') + String(r.n).trim() : '');
+  if (!s) s = 'obvod bez označení';
+  return (rozv ? rozv + ': ' : '') + s + ' (Zs ' + zsLimNamereno(r.zsm).text + ' Ω, mez ' + zsLimFmt(v.mez, 2) + ' Ω)';
+}
+
+var __zsLimCervene = [];
+function zsLimPrepocet() {
+  var soustava = zsLimSoustava();
+  var cervene = [];
+  var cont = document.getElementById('rozvadece-container');
+  if (cont) {
+    cont.querySelectorAll('[data-rozvadec-id]').forEach(function (karta) {
+      var nazevEl = karta.querySelector('.rozv-nazev');
+      var rozv = nazevEl ? String(nazevEl.value || '').trim() : '';
+      karta.querySelectorAll('.meas-table tbody tr').forEach(function (tr) {
+        var rt = tr.dataset.rowtype || 'obvod';
+        if (rt !== 'obvod' && rt !== 'rcd-header') return;
+        var r = zsLimRadekZDom(tr);
+        var v = zsLimVypocet(r, soustava);
+        zsLimVykreslitRadek(tr, v);
+        if (v.stav === 'nevyhovuje') cervene.push({ tr: tr, r: r, v: v, rozv: rozv, text: zsLimPopisObvodu(r, v, rozv) });
+      });
+    });
+  }
+  __zsLimCervene = cervene;
+  zsLimNabidkaC1();
+}
+
+var __zsLimTimer = null;
+function zsLimNaplanovat() {
+  if (__zsLimTimer) return;
+  __zsLimTimer = setTimeout(function () { __zsLimTimer = null; zsLimPrepocet(); }, 30);
+}
+
+// Nabídka vady C1 — dvě místa: pod tabulkami měření a nad „+ Přidat závadu".
+function zsLimHosty() {
+  var hosty = [];
+  [['rozvadece-container', 'za'], ['zavady-list', 'za']].forEach(function (d) {
+    var el = document.getElementById(d[0]);
+    if (!el) return;
+    var h = el.nextElementSibling;
+    if (!h || !h.classList.contains('zs-c1-nabidka')) {
+      h = document.createElement('div');
+      h.className = 'zs-c1-nabidka';
+      h.style.display = 'none';
+      h.addEventListener('click', function (e) {
+        if (e.target.closest('button')) zsLimPridatC1();
+      });
+      el.parentNode.insertBefore(h, el.nextSibling);
+    }
+    hosty.push(h);
+  });
+  return hosty;
+}
+
+// Je už v závadách C1 vada, která všechny červené obvody jmenuje?
+function zsLimC1Pokryto(cervene) {
+  var kat = zsLimVadaKatalog();
+  if (!kat) return false;
+  var hotovo = false;
+  document.querySelectorAll('#zavady-list .zavada-item textarea').forEach(function (ta) {
+    var t = String(ta.value || '').replace(/<[^>]*>/g, '');
+    if (t.indexOf(kat.popis) === -1) return;
+    if (cervene.every(function (c) { return t.indexOf(c.text) !== -1; })) hotovo = true;
+  });
+  return hotovo;
+}
+
+function zsLimNabidkaC1() {
+  var hosty = zsLimHosty();
+  var cervene = __zsLimCervene;
+  var ukazat = cervene.length > 0 && (typeof aktTyp === 'undefined' || aktTyp === 'elektro') && !zsLimC1Pokryto(cervene);
+  var kratce = cervene.map(function (c) {
+    return (c.rozv ? c.rozv + ' ' : '') + (String(c.r.c || '').trim() || String(c.r.n || '').trim() || '?');
+  }).join(', ');
+  hosty.forEach(function (h) {
+    if (!ukazat) { h.style.display = 'none'; h.innerHTML = ''; return; }
+    h.style.display = '';
+    h.innerHTML = '⚠ Impedance smyčky nad mezí: ' + cervene.length + '× · ' +
+      '<button type="button" title="' + esc(cervene.map(function (c) { return c.text; }).join('\n')) + '">' +
+      'Přidat vadu C1 (obvody: ' + esc(kratce) + ')</button>';
+  });
+}
+
+function zsLimPridatC1() {
+  if (window.__formReadOnly) { showToast('Zpráva je dokončená — nejdřív ji vraťte mezi rozpracované.'); return; }
+  zsLimPrepocet();
+  var cervene = __zsLimCervene;
+  var kat = zsLimVadaKatalog();
+  if (!cervene.length || !kat) return;
+  addZavada();
+  var items = document.querySelectorAll('#zavady-list .zavada-item');
+  var div = items[items.length - 1];
+  if (!div) return;
+  // Vyplní se tou samou cestou jako výběr z nabídky typických závad
+  var typSel = div.querySelector('.zavada-header select:not([data-action])');
+  var idx = getTypickeZavady().indexOf(kat);
+  if (typSel && idx !== -1) {
+    typSel.value = String(idx);
+    typSel.dispatchEvent(new Event('change', { bubbles: true }));
+  }
+  var ta = div.querySelector('textarea');
+  var kodSel = div.querySelector('select[data-action="updZavadaKod"]');
+  if (kodSel && kodSel.value !== 'C1') { kodSel.value = 'C1'; updZavadaKod(kodSel); }
+  var inps = div.querySelectorAll('input[type=text]');
+  if (inps[1] && !inps[1].value) inps[1].value = citaceNormy(kat.norma);
+  if (ta) ta.value = kat.popis + ' — obvody: ' + cervene.map(function (c) { return c.text; }).join('; ') + '.';
+  window.__formDirty = true;
+  if (typeof updateUlozitStav === 'function') updateUlozitStav();
+  if (typeof autoSave === 'function') autoSave();
+  zsLimNabidkaC1();
+  showToast('Přidána vada C1 — ' + (cervene.length === 1 ? '1 obvod' : cervene.length + ' obvody') + ' (záložka Závěr & Závady).', {
+    timeout: 9000,
+    actionLabel: '↩ ZPĚT',
+    action: function () { if (div.parentNode) div.parentNode.removeChild(div); window.__formDirty = true; zsLimNabidkaC1(); }
+  });
+}
+
+// Přepočet při změně buňky, Ch./Typ, A, IΔn, napěťové soustavy i textu
+// závady (nabídka C1). Strukturální změny tabulek (nový / smazaný /
+// zkopírovaný řádek, vložení z Excelu, načtení zprávy) hlídá observer.
+function zsLimInit() {
+  ['input', 'change'].forEach(function (typ) {
+    document.addEventListener(typ, function (e) {
+      var t = e.target;
+      if (t && t.closest && (t.closest('#rozvadece-container') || t.closest('#napetova-checkboxy') || t.closest('#zavady-list'))) zsLimNaplanovat();
+    }, true);
+  });
+  if (typeof MutationObserver === 'function') {
+    var mo = new MutationObserver(function () { zsLimNaplanovat(); });
+    ['rozvadece-container', 'napetova-checkboxy', 'zavady-list'].forEach(function (id) {
+      var el = document.getElementById(id);
+      if (el) mo.observe(el, { childList: true, subtree: true });
+    });
+  }
+  zsLimNaplanovat();
+}
+if (document.readyState === 'loading') document.addEventListener('DOMContentLoaded', zsLimInit);
+else zsLimInit();
 
 // Typické závady pro LPS (hromosvod) — dle ČSN EN 62305-3 ed.2 a ČSN 33 1500.
 var TYPICKE_ZAVADY_LPS = [
@@ -17674,6 +18034,7 @@ function tiskZpravuPrimo() {
 // ═══ AUTO-SAVE ═══
 var autoSaveTimer = null;
 function autoSave() {
+  if (typeof zsLimNaplanovat === 'function') zsLimNaplanovat();   // Zs mez
   if (autoSaveTimer) clearTimeout(autoSaveTimer);
   autoSaveTimer = setTimeout(function() {
     try {
@@ -18172,6 +18533,7 @@ function nacistData(D) {
   // Druh revize se načetl až teď — přepnout viditelnost pole s důvodem
   updateDuvodMimoradne();
   updateBreadcrumb();
+  if (typeof zsLimPrepocet === 'function') zsLimPrepocet();   // Zs mez
   // Načtení z archivu = výchozí stav, žádné neuložené změny
   window.__formDirty = false;
 }
