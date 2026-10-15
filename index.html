@@ -1479,6 +1479,76 @@ td.plan-zruseno{color:var(--muted);text-decoration:line-through}
 .plan-pdf-tab td.plan{background:#fdf3d0}
 .plan-pdf-tab td.po{background:#f7dad6}
 .plan-pdf-tab .m{display:block;font-size:6pt;color:#444}
+/* ═══ MOBIL ═══════════════════════════════════════════════════════════════
+   Telefon na výšku (≤ 600 px) a telefon na šířku (dotyk + výška ≤ 500 px).
+   Platí JEN tady — verze pro PC se tím nemění ani o pixel (hlídá
+   testy/test-mobil.js a porovnání snímků 1366/1920 px). Blok stojí na konci
+   stylu schválně: při stejné specificitě vyhrává pozdější pravidlo.
+   - stránka nesmí mít vodorovný posun; široké tabulky a náhled A4 se
+     posouvají uvnitř svého rámečku,
+   - písmo ve vstupních polích ≥ 16 px (jinak iPhone při klepnutí přiblíží),
+   - ovládací prvky ≥ 44 × 44 px a ne nalepené na sobě. */
+
+/* ── Mobil: obecně (pole, tlačítka, zaškrtávátka, lišty) ── */
+@media (max-width:600px), (pointer:coarse) and (max-height:500px){
+  html,body{max-width:100%}
+  input:not([type=checkbox]):not([type=radio]):not([type=range]):not([type=color]):not([type=file]),
+  select,textarea,.rich-edit,[contenteditable="true"]{font-size:16px!important}
+  button,.btn,select,textarea,summary,[role=button],input[type=color],
+  input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not([type=range]){min-height:44px!important}
+  /* text tlačítka se smí zalomit — jinak je dlouhý popisek širší než displej */
+  .btn{white-space:normal;max-width:100%}
+  /* min-width výš zruší flexboxu „nejmenší šířku podle obsahu" — záložka
+     nebo tlačítko v hlášce by se smrsklo a text přetekl přes souseda */
+  .tab-btn,.toast button{flex-shrink:0}
+  select{max-width:100%}
+  .pdf-actions{max-width:100%}
+  button,.btn,[role=button],select,input[type=color],
+  input:not([type=checkbox]):not([type=radio]):not([type=hidden]):not([type=range]){min-width:44px!important}
+  /* Zaškrtávátko a přepínač: vidět je čtverec 22 px, klepnout jde na 44 px
+     (průhledný rámeček kolem). */
+  input[type=checkbox],input[type=radio]{-webkit-appearance:none;appearance:none;
+    width:44px!important;height:44px!important;min-width:44px;flex:0 0 44px!important;margin:0!important;padding:0!important;
+    border:11px solid transparent!important;background-clip:padding-box!important;background-color:var(--input-bg,#fff)!important;
+    box-shadow:inset 0 0 0 2px var(--border-dark);border-radius:4px;cursor:pointer;vertical-align:middle}
+  input[type=radio]{border-radius:50%}
+  input[type=checkbox]:checked{background:var(--accent2) url("data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 16 16'%3E%3Cpath d='M3 8.5l3 3 7-7' fill='none' stroke='%23fff' stroke-width='2.4' stroke-linecap='round' stroke-linejoin='round'/%3E%3C/svg%3E") center/16px no-repeat padding-box!important;
+    box-shadow:inset 0 0 0 2px var(--accent2)}
+  input[type=radio]:checked{box-shadow:inset 0 0 0 2px var(--accent2),inset 0 0 0 6px var(--input-bg,#fff);background-color:var(--accent2)!important}
+  input[type=checkbox]:disabled,input[type=radio]:disabled{opacity:.5}
+  input[type=checkbox]:focus-visible,input[type=radio]:focus-visible{outline:2px solid var(--accent2);outline-offset:-9px}
+  /* horní lišta: nelepí se (s tlačítky ≥ 44 px by zabrala čtvrtinu displeje),
+     přilepená zůstane jen tenká lišta záložek */
+  .topbar{position:static;padding:.4rem .6rem;gap:.4rem}
+  .topbar .brand{min-height:44px;display:flex;align-items:center;flex-wrap:wrap;gap:0 .4rem}
+  .topbar-right{gap:.4rem}
+  .topbar .btn,html.view-mobile .topbar .btn{padding:.35rem .6rem}
+  .tab-bar{top:0;padding:0 .5rem}
+  /* drobečková navigace — celý název zprávy, zalomený */
+  .breadcrumb{flex-wrap:wrap}
+  .breadcrumb a{display:inline-flex;align-items:center;min-height:44px;min-width:44px;padding:0 .3rem}
+  #bc-typ{white-space:normal;overflow:visible;max-width:100%}
+  /* záhlaví karet s tlačítky vpravo se zalomí */
+  .scard-title{flex-wrap:wrap;gap:.4rem}
+  .scard-title > span{flex-wrap:wrap;flex-shrink:1!important;min-width:0;max-width:100%}
+  /* stavový řádek dole — posouvá se uvnitř sebe */
+  #stavovy-radek{overflow-x:auto;overflow-y:hidden}
+  /* lišta formátování textu — zalomí se, nesmí přes kraj */
+  .txt-lista{flex-wrap:wrap;max-width:calc(100vw - 12px);gap:4px}
+  #txt-format{display:inline-flex;flex-wrap:wrap;gap:4px;max-width:100%}
+  .sp-volby{max-height:45vh}
+  /* proužek se znaky pod tabulkami */
+  .sym-proužek{gap:4px}
+  /* postranní archiv — přes celý displej */
+  .form-archiv{top:0;z-index:400;width:100%!important;max-width:100%}
+  .fa-datum{white-space:normal}
+  .fa-resize{display:none}
+}
+@media (pointer:coarse) and (max-height:500px){
+  .sp-volby{max-height:40vh}
+}
+
+/* ═══ /MOBIL ═══ */
 </style>
 </head>
 <body>
