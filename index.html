@@ -1481,6 +1481,9 @@ td.plan-zruseno{color:var(--muted);text-decoration:line-through}
 .plan-pdf-tab .m{display:block;font-size:6pt;color:#444}
 /* ═══ TVORBA DOKUMENTACE (lab 2026-10-16) — samostatná část mimo revize ═══ */
 .dok-typy{display:flex;flex-wrap:wrap;gap:.75rem}
+.dok-drobky{margin:0 0 .5rem}
+.dok-dlazdice-pocet{margin-top:.7rem;font-size:.78rem;color:#0f7b5f;font-weight:600}
+html.dark .dok-dlazdice-pocet{color:#7fcfae}
 .dok-typ{flex:1 1 280px;display:flex;gap:.8rem;align-items:flex-start;text-align:left;background:var(--surface);
   border:1px solid var(--border);border-left:4px solid #0f7b5f;padding:.9rem 1rem;cursor:pointer;
   font-family:inherit;color:var(--text);border-radius:2px;transition:border-color .15s}
@@ -4186,13 +4189,25 @@ html.dark .dk-kod-vysv{color:#7fcfae}
 </div>
 
 <!-- ═══════════════════════════════════════════════
-     TVORBA DOKUMENTACE — seznam dokumentů (samostatná část, mimo revize)
+     TVORBA DOKUMENTACE — dlaždice typů dokumentů (samostatná část, mimo revize)
 ═══════════════════════════════════════════════ -->
 <div class="screen" id="screen-dokumentace">
 <div class="home-wrap">
   <div class="home-header">
     <h1>📐 Tvorba dokumentace</h1>
     <p>Dokumenty mimo revizní zprávy — vlastní seznam, vlastní číslování a vlastní PDF</p>
+  </div>
+  <div class="home-grid" id="dok-dlazdice"></div>
+</div>
+</div>
+
+<!-- TVORBA DOKUMENTACE — seznam dokumentů jednoho typu -->
+<div class="screen" id="screen-dok-seznam">
+<div class="home-wrap">
+  <div class="dok-drobky"><button class="dok-mini" data-action="tdTypy" title="Zpět na typy dokumentů">← Tvorba dokumentace</button></div>
+  <div class="home-header">
+    <h1 id="dok-seznam-titul"></h1>
+    <p id="dok-seznam-popis"></p>
   </div>
   <div class="scard">
     <div class="scard-title">➕ Nový dokument</div>
@@ -4203,7 +4218,7 @@ html.dark .dk-kod-vysv{color:#7fcfae}
     <input type="text" id="dok-hledat" class="dok-hledat" autocomplete="off" placeholder="🔍 Hledat (číslo, stavba, investor, místo, prostor…)">
     <div id="dok-seznam"></div>
   </div>
-  <div class="scard">
+  <div class="scard" id="dok-vzory-karta">
     <div class="scard-title">🧩 Vzory skupin prostorů <span style="font-size:.65rem;color:var(--muted);font-weight:normal;margin-left:.5rem">předvyplní kódy, poznámku a texty oddílu B</span></div>
     <div id="dok-katalog-info"></div>
     <div id="dok-vzory"></div>
@@ -27392,6 +27407,9 @@ var DOK_TYPY = {
     ikona: '🌦',
     prefix: 'POUVV',
     norma: 'ČSN 33 2000-5-51 ed.3',
+    dlazdice: 'Dle ČSN 33 2000-5-51 ed.3',
+    tvary: ['protokol', 'protokoly', 'protokolů'],
+    vzory: true,                     // má vzory skupin prostorů a katalog kódů
     popis: 'Určení vnějších vlivů komisí podle ČSN 33 2000-5-51 ed.3 — prostory, kódy vlivů, zdůvodnění, podpisy komise.'
   }
 };
@@ -27650,9 +27668,39 @@ function dokVzor(id) {
 function dokVvSouhrn(kody) {
   return dokVvRadky(kody).map(function (r) { return r.kody.join(', '); }).join(' | ');
 }
-// ── Obrazovka „Tvorba dokumentace": nový dokument, seznam, vzory ────────
-function dokOtevritSeznam() {
+// ── Obrazovka „Tvorba dokumentace": dlaždice typů dokumentů ────────────
+// Dlaždice se skládají z DOK_TYPY — nový typ dokumentu = nová dlaždice.
+// Prázdné „připravuje se" dlaždice se nekreslí.
+var __dokTyp = 'pouvv';   // typ, jehož seznam je otevřený
+
+function dokOtevritTypy() {
   showScreen('dokumentace');
+  dokDlazdiceVykreslit();
+}
+
+function dokPocetTvar(n, tvary) {
+  return n + ' ' + (n === 1 ? tvary[0] : (n >= 2 && n <= 4 ? tvary[1] : tvary[2]));
+}
+
+function dokDlazdiceVykreslit() {
+  var box = document.getElementById('dok-dlazdice');
+  if (!box) return;
+  box.innerHTML = Object.keys(DOK_TYPY).map(function (k) {
+    var t = DOK_TYPY[k];
+    var n = DOK.dokumenty.filter(function (x) { return x.typ === k; }).length;
+    return '<button class="home-card dok-dlazdice" data-action="tdTyp" data-typ="' + k + '" style="border-top-color:#0f7b5f">' +
+      '<div class="home-card-icon">' + t.ikona + '</div>' +
+      '<div class="home-card-title">' + esc(t.nazev) + '</div>' +
+      '<div class="home-card-desc">' + esc(t.dlazdice || t.popis) + '</div>' +
+      '<div class="dok-dlazdice-pocet">' + (n ? 'Uloženo: ' + dokPocetTvar(n, t.tvary || ['dokument', 'dokumenty', 'dokumentů']) : 'Zatím žádný uložený') + '</div>' +
+    '</button>';
+  }).join('');
+}
+
+// ── Obrazovka se seznamem dokumentů jednoho typu ────────────────────────
+function dokOtevritSeznam(typ) {
+  if (typ && DOK_TYPY[typ]) __dokTyp = typ;
+  showScreen('dok-seznam');
   dokSeznamVykreslit();
 }
 
@@ -27672,14 +27720,17 @@ function dokHledatText(x) {
 }
 
 function dokSeznamVykreslit() {
+  var t = DOK_TYPY[__dokTyp];
+  var tit = document.getElementById('dok-seznam-titul'), pop = document.getElementById('dok-seznam-popis');
+  if (tit) tit.textContent = t.ikona + ' ' + t.nazev;
+  if (pop) pop.textContent = t.popis;
   var typy = document.getElementById('dok-typy');
-  if (typy) typy.innerHTML = Object.keys(DOK_TYPY).map(function (k) {
-    var t = DOK_TYPY[k];
-    return '<button class="dok-typ" data-action="tdNovy" data-typ="' + k + '"><span class="dok-typ-ico">' + t.ikona + '</span>' +
-      '<span><b>' + esc(t.nazev) + '</b><small>' + esc(t.popis) + '</small></span></button>';
-  }).join('');
+  if (typy) typy.innerHTML = '<button class="dok-typ" data-action="tdNovy" data-typ="' + __dokTyp + '"><span class="dok-typ-ico">' + t.ikona + '</span>' +
+      '<span><b>Nový: ' + esc(t.nazev) + '</b><small>Dostane další číslo ' + esc(t.prefix) + '-…</small></span></button>';
+  var vk = document.getElementById('dok-vzory-karta');
+  if (vk) vk.style.display = t.vzory ? '' : 'none';
   dokSeznamPolozky();
-  dokVzorySpravaVykreslit();
+  if (t.vzory) dokVzorySpravaVykreslit();
 }
 
 function dokSeznamPolozky() {
@@ -27687,7 +27738,8 @@ function dokSeznamPolozky() {
   if (!box) return;
   var q = ((document.getElementById('dok-hledat') || {}).value || '').toLowerCase()
     .normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
-  var vse = DOK.dokumenty.slice().sort(function (a, b) { return cisloPorovnat(b.cislo, a.cislo); });
+  var vse = DOK.dokumenty.filter(function (x) { return x.typ === __dokTyp; })
+    .sort(function (a, b) { return cisloPorovnat(b.cislo, a.cislo); });
   var seznam = q ? vse.filter(function (x) {
     var h = dokHledatText(x);
     return q.split(/\s+/).every(function (w) { return h.indexOf(w) !== -1; });
@@ -27913,12 +27965,16 @@ async function dokVzorSkrytPrepnout(id) {
 
 // Data se změnila v jiném okně — překreslit, co je zrovna vidět.
 function dokPoNacteniZJinehoOkna() {
-  var s = document.getElementById('screen-dokumentace');
+  var d = document.getElementById('screen-dokumentace');
+  if (d && d.classList.contains('active')) dokDlazdiceVykreslit();
+  var s = document.getElementById('screen-dok-seznam');
   if (s && s.classList.contains('active')) dokSeznamVykreslit();
   if (typeof dokFormZJinehoOkna === 'function') dokFormZJinehoOkna();
 }
 
-TD_AKCE.tdOtevrit = function () { attemptLeaveForm(function () { dokOtevritSeznam(); }); };
+TD_AKCE.tdOtevrit = function () { attemptLeaveForm(function () { dokOtevritTypy(); }); };
+TD_AKCE.tdTypy = function () { dokOtevritTypy(); };
+TD_AKCE.tdTyp = function (el) { dokOtevritSeznam(el.getAttribute('data-typ')); };
 TD_AKCE.tdNovy = function (el) { if (typeof dokNovy === 'function') dokNovy(el.getAttribute('data-typ')); };
 TD_AKCE.tdDokOtevrit = function (el) { if (typeof dokOtevrit === 'function') dokOtevrit(dokUidZ(el)); };
 TD_AKCE.tdDokPdf = function (el) { if (typeof dokNahledZeSeznamu === 'function') dokNahledZeSeznamu(dokUidZ(el)); };
@@ -28495,7 +28551,10 @@ document.addEventListener('keydown', function (e) {
 });
 
 // ── Akce ────────────────────────────────────────────────────────────────
-TD_AKCE.tdZpetNaSeznam = function () { dokDopsat().then(dokOtevritSeznam); };
+TD_AKCE.tdZpetNaSeznam = function () {
+  var typ = window.__dokOtevreny ? window.__dokOtevreny.typ : __dokTyp;
+  dokDopsat().then(function () { dokOtevritSeznam(typ); });
+};
 TD_AKCE.tdUlozit = function () { dokUlozitOtevreny().then(function () { showToast('💾 Dokument uložen ✓'); }); };
 TD_AKCE.tdNahled = function () { if (typeof dokNahled === 'function') dokNahled(); };
 TD_AKCE.tdCisloDalsi = function () {
@@ -28718,7 +28777,7 @@ async function dokNahled() {
 async function dokNahledZeSeznamu(uid) {
   await dokNacist();
   var x = dokNajit(uid); if (!x) return;
-  __dokPdf = { x: x, zpet: 'dokumentace' };
+  __dokPdf = { x: x, zpet: 'dok-seznam' };
   dokPdfVykreslit(x);
 }
 
@@ -28731,8 +28790,8 @@ function dokPdfNazev() {
 function dokPdfStranky() { return Array.prototype.slice.call(document.querySelectorAll('#dok-pdf-pages .a4')); }
 
 TD_AKCE.tdPdfZpet = function () {
-  var z = __dokPdf ? __dokPdf.zpet : 'dokumentace';
-  if (z === 'dokumentace') dokOtevritSeznam(); else showScreen(z);
+  var z = __dokPdf ? __dokPdf.zpet : 'dok-seznam';
+  if (z === 'dok-seznam') dokOtevritSeznam(__dokPdf && __dokPdf.x.typ); else showScreen(z);
 };
 TD_AKCE.tdPdfUlozit = function () {
   var els = dokPdfStranky(); if (!els.length || !__dokPdf) return;
@@ -28780,7 +28839,9 @@ function dokObnovitZeZalohy(z) {
   DOK = dokNormalizovat(z);
   window.__dokOtevreny = null;
   dokZapsat();
-  var s = document.getElementById('screen-dokumentace');
+  var d = document.getElementById('screen-dokumentace');
+  if (d && d.classList.contains('active')) dokDlazdiceVykreslit();
+  var s = document.getElementById('screen-dok-seznam');
   if (s && s.classList.contains('active')) dokSeznamVykreslit();
   var f = document.getElementById('screen-dok-form');
   if (f && f.classList.contains('active')) dokOtevritSeznam();

@@ -371,11 +371,15 @@ před funkcí a po ní **bajtově shodný** (archiv i `getData()`, sha256).
 
 Zadání uživatele 2026-10-16 (vyvinuto v labu): čtvrtá karta na úvodu
 **„Tvorba dokumentace"** (na PC v řádku s Elektro, LPS a Plánem revizí,
-na telefonu pod nimi) → obrazovka `#screen-dokumentace` se seznamem
-dokumentů a tlačítky pro nový dokument. První typ: **Protokol o určení
-vnějších vlivů** dle ČSN 33 2000-5-51 ed.3. Další typy přibudou — **nový typ
-= nový záznam v `DOK_TYPY`** (`nazev`, `prefix`, `novy()`, `form(d)`,
-`cist(koren)`, `pdf(d)` → bloky).
+na telefonu pod nimi) → **dlaždice typů dokumentů** `#screen-dokumentace`
+(vzhled karet z úvodu: název, krátký popis `dlazdice`, počet uložených) →
+klik na dlaždici → **seznam dokumentů toho typu** `#screen-dok-seznam`
+(nový dokument, hledání, vzory, katalog; cesta zpět „← Tvorba dokumentace").
+První typ: **Protokol o určení vnějších vlivů** dle ČSN 33 2000-5-51 ed.3.
+Další typy přibudou — **nový typ = nový záznam v `DOK_TYPY`** (`nazev`,
+`dlazdice`, `tvary`, `prefix`, `vzory`, `novy()`, `form(d)`, `cist(koren)`,
+`pdf(d)` → bloky); dlaždice se z něj kreslí sama, prázdné „připravuje se"
+dlaždice se nedělají.
 
 **ZÁSADA Č. 1: ÚPLNĚ ODDĚLENO OD REVIZÍ.**
 - **Vlastní úložiště** `DOK` — localStorage `revize_el_dok`, v IndexedDB klíče

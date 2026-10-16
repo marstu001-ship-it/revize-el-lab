@@ -61,9 +61,23 @@ function pomocnik() {
   check('úvod: čtvrtá karta „Tvorba dokumentace"', karty.length === 4 && karty[3].t === 'Tvorba dokumentace', karty.map(k => k.t).join(' | '));
   check('úvod: na PC všechny čtyři karty v jednom řádku', new Set(karty.map(k => k.top)).size === 1, JSON.stringify(karty.map(k => k.top)));
   await p.click('#screen-home [data-action="tdOtevrit"]'); await w(300);
-  check('karta otevře obrazovku Tvorba dokumentace', await p.evaluate(() => document.getElementById('screen-dokumentace').classList.contains('active')));
-  check('nabídka typů dokumentů je z DOK_TYPY (protokol o vnějších vlivech)',
-    await p.evaluate(() => Array.from(document.querySelectorAll('#dok-typy [data-action="tdNovy"]')).map(x => x.getAttribute('data-typ')).join() === Object.keys(DOK_TYPY).join() && !!document.querySelector('#dok-typy [data-typ="pouvv"]')));
+  const dl = await p.evaluate(() => ({
+    akt: document.querySelector('.screen.active').id,
+    typy: Array.from(document.querySelectorAll('#dok-dlazdice .dok-dlazdice')).map(x => x.getAttribute('data-typ')).join(),
+    text: document.getElementById('dok-dlazdice').innerText,
+    vzhled: !!document.querySelector('#dok-dlazdice.home-grid .home-card.dok-dlazdice')
+  }));
+  check('karta otevře nejdřív dlaždice typů dokumentů (ne seznam)', dl.akt === 'screen-dokumentace', dl.akt);
+  check('dlaždice se skládají z DOK_TYPY, vzhled jako karty na úvodu', dl.typy === 'pouvv' && dl.vzhled, dl.typy);
+  check('dlaždice: název, popis normy a počet uložených', /Protokol o určení vnějších vlivů/i.test(dl.text) && /Dle ČSN 33 2000-5-51 ed\.3/.test(dl.text) && /Zatím žádný uložený/.test(dl.text), dl.text.replace(/\n/g, ' | '));
+  check('dlaždice „připravuje se" nejsou', !/připravuje/i.test(dl.text));
+  await p.click('#dok-dlazdice [data-typ="pouvv"]'); await w(300);
+  const sez = await p.evaluate(() => ({ akt: document.querySelector('.screen.active').id, tit: document.getElementById('dok-seznam-titul').textContent,
+    zpet: !!document.querySelector('#screen-dok-seznam [data-action="tdTypy"]') && document.querySelector('#screen-dok-seznam [data-action="tdTypy"]').textContent }));
+  check('dlaždice otevře seznam protokolů s cestou „← Tvorba dokumentace"', sez.akt === 'screen-dok-seznam' && /vnějších vlivů/.test(sez.tit) && /← Tvorba dokumentace/.test(sez.zpet), JSON.stringify(sez));
+  await p.click('#screen-dok-seznam [data-action="tdTypy"]'); await w(200);
+  check('„← Tvorba dokumentace" vrátí na dlaždice', await p.evaluate(() => document.querySelector('.screen.active').id) === 'screen-dokumentace');
+  await p.click('#dok-dlazdice [data-typ="pouvv"]'); await w(300);
   check('upozornění „katalog čeká na kontrolu s normou" je vidět',
     await p.evaluate(() => /čeká na kontrolu s normou/.test(document.getElementById('dok-katalog-info').textContent)));
 
@@ -308,6 +322,8 @@ function pomocnik() {
     await dokNacist();
     return { nalez, po, zpet: DOK.dokumenty.length, polozek: document.querySelectorAll('#dok-seznam .dok-polozka').length };
   });
+  const pocetDl = await p.evaluate(() => { dokOtevritTypy(); return document.getElementById('dok-dlazdice').innerText; });
+  check('dlaždice ukazuje počet uložených protokolů', /Uloženo: 3 protokoly/.test(pocetDl), pocetDl.replace(/\n/g, ' | '));
   check('hledání v seznamu dokumentů (i podle prostoru, bez háčků)', r9.nalez === 2, String(r9.nalez));
   check('smazání dokumentu se ZPĚT', r9.po === 2 && r9.zpet === 3 && r9.polozek === 3, JSON.stringify(r9));
 

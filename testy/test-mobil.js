@@ -457,6 +457,7 @@ function vsechnyStavy(zalozky) {
     cb.forEach(c => c.click()); await __M.w(120);
   }));
   // tvorba dokumentace (samostatná část mimo revize)
+  add('dokumentace – typy dokumentů', 'Tvorba dokumentace', E(async () => { dokOtevritTypy(); await __M.w(100); }));
   add('dokumentace – seznam', 'Tvorba dokumentace', E(async () => { dokOtevritSeznam(); await __M.w(100); }));
   add('dokumentace – protokol', 'Tvorba dokumentace', E(async () => { await __M.dok(); }));
   add('dokumentace – protokol, skupiny prostorů', 'Tvorba dokumentace', E(async () => {
