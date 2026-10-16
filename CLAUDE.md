@@ -107,6 +107,24 @@ Pravidla, aby oddělení drželo:
   `test-typy-krizem.js`, `porovnani2.js`) jen **u větších funkcí** a **vždy
   před přenosem do revize-el**.
 
+## 🧭 Přívětivost obrazovek — platí pro KAŽDOU novou obrazovku (pokyn uživatele 2026-10-16)
+
+Skutečný uživatel na seznamu protokolů nenašel, kde se protokol zakládá —
+klikal na vzory a na „Jako vlastní". Proto u každé nové obrazovky (a při
+úpravě stávající):
+
+- **Na obrazovce je JEDNA hlavní akce, vidět na první pohled** — plné
+  barevné tlačítko se slovesem („Vytvořit…", „Uložit…", „Vygenerovat PDF"),
+  nahoře, na telefonu přes celou šířku. Nesmí vypadat jako položka seznamu.
+- **Nastavení a málo používané věci jsou schované** — sbalené (`<details>`)
+  nebo na vlastní obrazovce přes malý odkaz. Upozornění, která nic
+  nevyžadují, jsou jeden nenápadný řádek, ne barevný rámeček.
+- **Tlačítka mají popisky, které říkají, co se stane**, ne zkratky ani
+  samotné symboly („🗑 Smazat", ne „✕").
+- **Před pushem projít obrazovku očima staršího revizního technika**, který
+  ji vidí poprvé a nečte návody. V odpovědi napsat, **jestli ví, kam
+  kliknout** — a když ne, opravit to ještě před pushem.
+
 ## Postup přenosu funkce do revize-el
 
 Dělá se v session (pracovní kopii) **nad revize-el**, ne v labu:
