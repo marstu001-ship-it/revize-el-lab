@@ -402,7 +402,20 @@ na telefonu pod nimi) → **dlaždice typů dokumentů** `#screen-dokumentace`
 (vzhled karet z úvodu: název, krátký popis `dlazdice`, počet uložených;
 vlevo nahoře „← Úvod") →
 klik na dlaždici → **seznam dokumentů toho typu** `#screen-dok-seznam`
-(nový dokument, hledání, vzory, katalog; cesta zpět „← Tvorba dokumentace").
+(cesta zpět „← Tvorba dokumentace").
+
+**Seznam má jednu hlavní akci** (pokyn uživatele 2026-10-16 — skutečný
+uživatel nenašel, kde se protokol zakládá, a klikal na vzory): nahoře velké
+plné zelené tlačítko **„＋ Vytvořit nový protokol"** (`.dok-hlavni-akce`,
+text z `DOK_TYPY[typ].vytvorit`, na telefonu přes celou šířku), pod ním
+číslo, které dokument dostane. Pod tím seznam — **klik kamkoli na řádek
+dokument otevře** (`data-action` je na celém `.dok-polozka`; tlačítka
+📄 PDF / ⧉ Kopie / 🗑 Smazat mají vlastní akci). Prázdný seznam: „Zatím tu nic
+není. Začněte tlačítkem Vytvořit nový protokol." a hledání se schová.
+Upozornění na katalog je jeden nenápadný řádek s odkazem „zobrazit katalog
+kódů". **Vzory jsou úplně dole ve sbalené části „⚙ Správa vzorů"**
+(`<details id="dok-vzory-karta">`, výchozí zavřená) — vybírají se v protokolu,
+tady se jen upravují.
 První typ: **Protokol o určení vnějších vlivů** dle ČSN 33 2000-5-51 ed.3.
 Další typy přibudou — **nový typ = nový záznam v `DOK_TYPY`** (`nazev`,
 `dlazdice`, `tvary`, `prefix`, `vzory`, `novy()`, `form(d)`, `cist(koren)`,
@@ -481,7 +494,8 @@ Telefon: obrazovky a dialogy jsou v `test-mobil.js` (stavy „dokumentace – �
 `modal-dok-*`); pro telefon jen blok „Mobil: tvorba dokumentace" (lišta
 formuláře se nelepí).
 
-Test: `testy/test-dokumentace.js` (108 kontrol — karta, dlaždice, dvě skupiny, vzory
+Test: `testy/test-dokumentace.js` (115 kontrol — karta, dlaždice, hlavní akce a sbalená
+správa vzorů na seznamu (i na telefonu), klik na řádek, dvě skupiny, vzory
 (každý vestavěný proti zadání, upozornění mimo PDF, starý protokol se Sprchou,
 dotaz při stejném jménu),
 ruční kód, restart, číslování, kopie, vlastní vzor, PDF bez vysvětlivek,

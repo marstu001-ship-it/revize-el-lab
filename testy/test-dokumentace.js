@@ -90,6 +90,37 @@ function pomocnik() {
   await p.click('#dok-dlazdice [data-typ="pouvv"]'); await w(300);
   check('upozornění „katalog čeká na kontrolu s normou" je vidět',
     await p.evaluate(() => /čeká na kontrolu s normou/.test(document.getElementById('dok-katalog-info').textContent)));
+  // přívětivost: jedna hlavní akce nahoře, vzory schované dole, katalog jeden řádek
+  const ux = await p.evaluate(() => {
+    const b = document.querySelector('#screen-dok-seznam .dok-hlavni-akce'), cs = b && getComputedStyle(b);
+    const tlac = Array.from(document.querySelectorAll('#screen-dok-seznam button')).filter(x => x.offsetHeight);
+    const sp = document.getElementById('dok-vzory-karta'), wrap = sp.parentElement;
+    const ki = document.getElementById('dok-katalog-info'), lh = parseFloat(getComputedStyle(ki).lineHeight) || 18;
+    return {
+      text: b ? b.textContent.replace(/\s+/g, ' ').trim() : '', akce: b && b.getAttribute('data-action'),
+      bg: cs && cs.backgroundColor, barva: cs && cs.color, pismo: cs ? parseFloat(cs.fontSize) : 0, vyska: b ? b.offsetHeight : 0,
+      // první viditelné tlačítko za cestou zpět = hlavní akce, nad seznamem
+      prvni: tlac[1] === b, nadSeznamem: b && b.getBoundingClientRect().bottom < document.getElementById('dok-seznam').getBoundingClientRect().top,
+      prazdno: document.getElementById('dok-seznam').textContent.trim(),
+      hledatSchovane: document.getElementById('dok-hledat').offsetHeight === 0,
+      sprava: sp.tagName + '|' + sp.open + '|' + sp.querySelector('summary').textContent,
+      spravaPosledni: wrap.lastElementChild === sp, vzoryVSprave: sp.contains(document.getElementById('dok-vzory')),
+      vzoryVidet: sp.offsetHeight - sp.querySelector('summary').offsetHeight > 8,   // sbalená = jen řádek s nadpisem
+      katalogRadek: ki.offsetHeight <= lh * 1.6, katalogBg: getComputedStyle(ki).backgroundColor, katalogH: ki.offsetHeight
+    };
+  });
+  check('hlavní akce: velké plné tlačítko „＋ Vytvořit nový protokol" nahoře nad seznamem',
+    ux.text === '＋ Vytvořit nový protokol' && ux.akce === 'tdNovy' && ux.prvni && ux.nadSeznamem && ux.pismo >= 18 && ux.vyska >= 48 &&
+    ux.bg === 'rgb(15, 123, 95)' && ux.barva === 'rgb(255, 255, 255)', JSON.stringify(ux));
+  check('prázdný seznam: „Zatím tu nic není. Začněte tlačítkem Vytvořit nový protokol." a bez hledání',
+    ux.prazdno === 'Zatím tu nic není. Začněte tlačítkem Vytvořit nový protokol.' && ux.hledatSchovane, ux.prazdno);
+  check('vzory jsou ve sbalené „⚙ Správa vzorů" úplně dole', /^DETAILS\|false\|⚙ Správa vzorů/.test(ux.sprava) && ux.spravaPosledni && ux.vzoryVSprave && !ux.vzoryVidet, ux.sprava);
+  check('upozornění na katalog je jeden nenápadný řádek', ux.katalogRadek && /rgba\(0, 0, 0, 0\)|transparent/.test(ux.katalogBg), ux.katalogH + ' ' + ux.katalogBg);
+  await p.click('#dok-vzory-karta > summary'); await w(150);
+  check('klik na „⚙ Správa vzorů" ji rozbalí se vzory a „+ Nový vlastní vzor"', await p.evaluate(() =>
+    document.getElementById('dok-vzory-karta').open && document.getElementById('dok-vzory-karta').offsetHeight > 300 &&
+    document.querySelector('[data-action="tdVzorNovy"]').offsetHeight > 0));
+  await p.click('#dok-vzory-karta > summary'); await w(100);
 
   // ── 2. nový protokol, dvě skupiny ─────────────────────────────────────
   await p.click('#dok-typy [data-typ="pouvv"]'); await w(300);
@@ -145,10 +176,13 @@ function pomocnik() {
   const r3 = await p.evaluate(async () => {
     dokOtevritSeznam(); await __T.w(100);
     const seznam = document.getElementById('dok-seznam').textContent;
-    document.querySelector('#dok-seznam [data-action="tdDokOtevrit"]').click(); await __T.w(400);
+    const hledat = document.getElementById('dok-hledat').offsetHeight > 0;
+    // klik kamkoli na řádek (ne na tlačítko) otevře protokol
+    document.querySelector('#dok-seznam .dok-polozka').click(); await __T.w(400);
+    const otevreno = document.getElementById('screen-dok-form').classList.contains('active');
     const f = dokForm(), sk = f.querySelectorAll('.dk-skupina');
     return {
-      seznam, stavba: f.querySelector('[data-dk="stavba"]').value, ico: f.querySelector('[data-dk="investor.ico"]').value,
+      seznam, hledat, otevreno, stavba: f.querySelector('[data-dk="stavba"]').value, ico: f.querySelector('[data-dk="investor.ico"]').value,
       skupin: sk.length, prostory1: Array.from(sk[0].querySelectorAll('[data-k="n"]')).map(i => i.value),
       c2: Array.from(sk[1].querySelectorAll('[data-k="c"]')).map(i => i.value),
       ad2: sk[1].querySelector('select[data-kod="AD"]').value, vzor2: sk[1].querySelector('.dk-vzor-vyber').value,
@@ -157,6 +191,7 @@ function pomocnik() {
     };
   });
   check('seznam ukazuje číslo a stavbu', /POUVV-0001/.test(r3.seznam) && /Vymyšlená administrativní budova/.test(r3.seznam));
+  check('s protokoly je vidět hledání a klik na řádek protokol otevře', r3.hledat && r3.otevreno, JSON.stringify({ h: r3.hledat, o: r3.otevreno }));
   check('po restartu: hlavička zůstala', r3.stavba === 'Vymyšlená administrativní budova' && r3.ico === '12345678');
   check('po restartu: dvě skupiny, prostory (hlavička tabulky přeskočena)', r3.skupin === 2 && r3.prostory1.join('|') === 'Kancelář|Chodba|Kancelář vedoucího' && r3.c2.join('|') === '104|105', JSON.stringify([r3.prostory1, r3.c2]));
   check('po restartu: ručně změněný kód AD3 a vybraný vzor zůstaly', r3.ad2 === 'AD3' && r3.vzor2 === 'vest-sprcha');
@@ -530,6 +565,16 @@ function pomocnik() {
     const b = document.querySelector('#screen-dokumentace [data-action="tdUvod"]'), r = b.getBoundingClientRect();
     return { w: r.width, h: r.height, left: r.left, right: r.right, vw: innerWidth };
   });
+  const mh = await pm.evaluate(async () => {
+    dokOtevritSeznam('pouvv'); await new Promise(r => setTimeout(r, 100));
+    const b = document.querySelector('#screen-dok-seznam .dok-hlavni-akce').getBoundingClientRect();
+    const k = document.querySelector('#screen-dok-seznam .scard').getBoundingClientRect();
+    const s = document.querySelector('#dok-vzory-karta > summary').getBoundingClientRect();
+    return { w: Math.round(b.width), kw: Math.round(k.width), h: Math.round(b.height), top: Math.round(b.top), vh: innerHeight, sh: Math.round(s.height) };
+  });
+  check('telefon: „Vytvořit nový protokol" přes celou šířku a vidět bez posouvání, „Správa vzorů" aspoň 44 px',
+    Math.abs(mh.w - mh.kw) <= 2 && mh.h >= 44 && mh.top + mh.h <= mh.vh && mh.sh >= 44, JSON.stringify(mh));
+  await pm.evaluate(async () => { dokOtevritTypy(); await new Promise(r => setTimeout(r, 100)); });
   await pm.tap('#screen-dokumentace [data-action="tdUvod"]'); await w(200);
   const muAkt = await pm.evaluate(() => document.querySelector('.screen.active').id);
   check('telefon: „← Úvod" aspoň 44 × 44 px, v displeji, klepnutí vrátí na úvod', mu.w >= 44 && mu.h >= 44 && mu.left >= 0 && mu.right <= mu.vw && muAkt === 'screen-home', JSON.stringify(mu) + ' ' + muAkt);

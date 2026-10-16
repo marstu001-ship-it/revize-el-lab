@@ -1481,19 +1481,23 @@ td.plan-zruseno{color:var(--muted);text-decoration:line-through}
 .plan-pdf-tab .m{display:block;font-size:6pt;color:#444}
 /* ═══ TVORBA DOKUMENTACE (lab 2026-10-16) — samostatná část mimo revize ═══ */
 .dok-typy{display:flex;flex-wrap:wrap;gap:.75rem}
+/* hlavní akce seznamu dokumentů — plné barevné tlačítko, na první pohled */
+.dok-hlavni-wrap{margin:0 0 1.2rem}
+.dok-hlavni-akce{display:inline-flex;align-items:center;gap:.6rem;min-height:56px;padding:.85rem 1.8rem;
+  background:#0f7b5f;color:#fff;border:none;border-radius:4px;cursor:pointer;font-family:var(--sans);
+  font-size:1.2rem;font-weight:700;letter-spacing:.01em;box-shadow:0 2px 6px rgba(15,123,95,.35);transition:background .15s}
+.dok-hlavni-akce:hover{background:#0b6650}
+.dok-hlavni-akce:focus-visible{outline:3px solid #7fcfae;outline-offset:2px}
+.dok-hlavni-plus{font-size:1.5rem;line-height:1}
+.dok-hlavni-pod{display:block;margin-top:.4rem;font-size:.8rem;color:var(--muted)}
 .dok-drobky{margin:0 0 .5rem}
 .dok-dlazdice-pocet{margin-top:.7rem;font-size:.78rem;color:#0f7b5f;font-weight:600}
 html.dark .dok-dlazdice-pocet{color:#7fcfae}
-.dok-typ{flex:1 1 280px;display:flex;gap:.8rem;align-items:flex-start;text-align:left;background:var(--surface);
-  border:1px solid var(--border);border-left:4px solid #0f7b5f;padding:.9rem 1rem;cursor:pointer;
-  font-family:inherit;color:var(--text);border-radius:2px;transition:border-color .15s}
-.dok-typ:hover{border-color:#0f7b5f}
-.dok-typ-ico{font-size:1.5rem;line-height:1}
-.dok-typ b{display:block;font-size:.95rem;margin-bottom:.2rem}
-.dok-typ small{display:block;font-size:.8rem;color:var(--muted);line-height:1.45}
 .dok-hledat{width:100%;padding:.45rem .6rem;border:1px solid var(--border);border-radius:2px;font-size:.88rem;
   margin-bottom:.6rem;background:var(--input-bg);color:var(--text);font-family:var(--sans)}
-.dok-polozka{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem .8rem;padding:.35rem 0;border-bottom:1px solid var(--border)}
+.dok-polozka{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem .8rem;padding:.35rem 0;border-bottom:1px solid var(--border);cursor:pointer}
+.dok-polozka:hover{background:#f0f4ff}
+html.dark .dok-polozka:hover{background:#2a3242}
 .dok-polozka:last-child{border-bottom:none}
 .dok-p-otevrit{flex:1 1 260px;display:flex;flex-wrap:wrap;align-items:baseline;gap:.15rem .8rem;min-width:0;text-align:left;
   background:none;border:none;padding:.35rem .4rem;cursor:pointer;color:var(--text);font-family:var(--sans);border-radius:3px}
@@ -1522,11 +1526,18 @@ html.dark .dok-stitek-skryty{background:#333;color:#aaa}
 .dok-vzor-radek.skryty{opacity:.6}
 .dok-vzor-n{flex:1 1 300px;min-width:0;font-size:.86rem}
 .dok-vzor-kody{display:block;font-family:var(--mono);font-size:.68rem;color:var(--muted);margin-top:.15rem;overflow-wrap:anywhere}
-.dok-katalog-info{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem .8rem;font-size:.8rem;color:#8a5200;
-  background:#fff8e1;border:1px solid #ffe082;border-radius:2px;padding:.5rem .7rem;margin-bottom:.6rem}
-.dok-katalog-info.overeno{color:var(--muted);background:none;border:none;padding:0}
-html.dark .dok-katalog-info{background:#33290f;border-color:#6b5414;color:#e8c07a}
-html.dark .dok-katalog-info.overeno{background:none;color:var(--muted)}
+/* upozornění na katalog — jeden nenápadný řádek */
+.dok-katalog-info{font-size:.76rem;color:var(--muted);margin:.2rem 0 1rem;line-height:1.5}
+.dok-katalog-odkaz{background:none;border:none;padding:0;font:inherit;color:var(--accent2);text-decoration:underline;cursor:pointer}
+/* Správa vzorů — výchozí sbalená, úplně dole */
+.dok-sprava{border:1px solid var(--border);border-radius:2px;background:var(--surface);margin-bottom:1rem}
+.dok-sprava>summary{display:flex;flex-wrap:wrap;align-items:baseline;gap:.2rem .7rem;padding:.75rem 1rem;cursor:pointer;
+  font-size:.92rem;font-weight:600;color:var(--text);list-style:none}
+.dok-sprava>summary::-webkit-details-marker{display:none}
+.dok-sprava>summary::before{content:'▸';color:var(--muted);width:.8rem}
+.dok-sprava[open]>summary::before{content:'▾'}
+.dok-sprava>summary small{font-weight:normal;font-size:.76rem;color:var(--muted)}
+.dok-sprava-obsah{padding:0 1rem 1rem}
 .dk-blok-t{font-family:var(--mono);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--accent2);
   margin:1rem 0 .45rem}
 /* výběr kódů vnějších vlivů (protokol i vlastní vzor) */
@@ -1780,6 +1791,11 @@ html.dark .dk-upozorneni.vyrazne{color:#ffc29a;background:#3d2210;border-color:#
   .dok-wrap{padding:.75rem .6rem 4rem}
   .dk-skupina{padding:.75rem .6rem}
   .dk-prostor .dk-c{flex-basis:5.5rem;width:5.5rem}
+  /* hlavní akce přes celou šířku */
+  .dok-hlavni-akce{display:flex;width:100%;justify-content:center;padding:.85rem 1rem}
+  .dok-sprava>summary{min-height:44px;align-items:center}
+  .dok-katalog-odkaz{display:inline-block;padding:12px 0;margin:-12px 0}
+  .dok-sprava>summary small{flex-basis:100%;padding-left:1rem}
 }
 
 /* ── Mobil: plán revizí ── */
@@ -4217,21 +4233,22 @@ html.dark .dk-upozorneni.vyrazne{color:#ffc29a;background:#3d2210;border-color:#
     <h1 id="dok-seznam-titul"></h1>
     <p id="dok-seznam-popis"></p>
   </div>
+  <!-- hlavní akce obrazovky: jedno velké plné tlačítko, nic jiného nahoře -->
+  <div class="dok-hlavni-wrap" id="dok-typy"></div>
   <div class="scard">
-    <div class="scard-title">➕ Nový dokument</div>
-    <div class="dok-typy" id="dok-typy"></div>
-  </div>
-  <div class="scard">
-    <div class="scard-title">📁 Vytvořené dokumenty <span id="dok-pocet" style="font-size:.65rem;color:var(--muted);font-weight:normal;margin-left:.5rem"></span></div>
+    <div class="scard-title"><span id="dok-seznam-nadpis">📁 Vytvořené dokumenty</span> <span id="dok-pocet" style="font-size:.65rem;color:var(--muted);font-weight:normal;margin-left:.5rem"></span></div>
     <input type="text" id="dok-hledat" class="dok-hledat" autocomplete="off" placeholder="🔍 Hledat (číslo, stavba, investor, místo, prostor…)">
     <div id="dok-seznam"></div>
   </div>
-  <div class="scard" id="dok-vzory-karta">
-    <div class="scard-title">🧩 Vzory skupin prostorů <span style="font-size:.65rem;color:var(--muted);font-weight:normal;margin-left:.5rem">předvyplní kódy, poznámku a texty oddílu B</span></div>
-    <div id="dok-katalog-info"></div>
-    <div id="dok-vzory"></div>
-    <button class="add-row" data-action="tdVzorNovy">+ Nový vlastní vzor</button>
-  </div>
+  <div class="dok-katalog-info" id="dok-katalog-info"></div>
+  <!-- vzory se vybírají v protokolu; tady jen jejich úprava — schovaná, ať nepřekáží -->
+  <details class="dok-sprava" id="dok-vzory-karta">
+    <summary>⚙ Správa vzorů <small>úprava vzorů skupin prostorů — vzor se vybírá přímo v protokolu</small></summary>
+    <div class="dok-sprava-obsah">
+      <div id="dok-vzory"></div>
+      <button class="add-row" data-action="tdVzorNovy">+ Nový vlastní vzor</button>
+    </div>
+  </details>
 </div>
 </div>
 
@@ -27427,6 +27444,8 @@ var DOK_TYPY = {
   pouvv: {
     nazev: 'Protokol o určení vnějších vlivů',
     kratce: 'Vnější vlivy',
+    vytvorit: 'Vytvořit nový protokol',   // hlavní tlačítko seznamu (sloveso + co vznikne)
+    seznamNadpis: 'Vytvořené protokoly',
     ikona: '🌦',
     prefix: 'POUVV',
     norma: 'ČSN 33 2000-5-51 ed.3',
@@ -27886,14 +27905,21 @@ function dokSeznamVykreslit() {
   var tit = document.getElementById('dok-seznam-titul'), pop = document.getElementById('dok-seznam-popis');
   if (tit) tit.textContent = t.ikona + ' ' + t.nazev;
   if (pop) pop.textContent = t.popis;
+  // Hlavní akce obrazovky: jedno velké plné tlačítko se slovesem.
   var typy = document.getElementById('dok-typy');
-  if (typy) typy.innerHTML = '<button class="dok-typ" data-action="tdNovy" data-typ="' + __dokTyp + '"><span class="dok-typ-ico">' + t.ikona + '</span>' +
-      '<span><b>Nový: ' + esc(t.nazev) + '</b><small>Dostane další číslo ' + esc(t.prefix) + '-…</small></span></button>';
-  var vk = document.getElementById('dok-vzory-karta');
+  if (typy) typy.innerHTML = '<button class="dok-hlavni-akce" data-action="tdNovy" data-typ="' + __dokTyp + '">' +
+      '<span class="dok-hlavni-plus">＋</span> <span>' + esc(dokVytvoritText(t)) + '</span></button>' +
+      '<span class="dok-hlavni-pod">Dostane číslo ' + esc(dokDalsiCislo(__dokTyp)) + ' — jde ho pak přepsat.</span>';
+  var sn = document.getElementById('dok-seznam-nadpis');
+  if (sn) sn.textContent = '📁 ' + (t.seznamNadpis || 'Vytvořené dokumenty');
+  var vk = document.getElementById('dok-vzory-karta'), ki = document.getElementById('dok-katalog-info');
   if (vk) vk.style.display = t.vzory ? '' : 'none';
+  if (ki) ki.style.display = t.vzory ? '' : 'none';
   dokSeznamPolozky();
   if (t.vzory) dokVzorySpravaVykreslit();
 }
+
+function dokVytvoritText(t) { return t.vytvorit || 'Vytvořit nový dokument'; }
 
 function dokSeznamPolozky() {
   var box = document.getElementById('dok-seznam');
@@ -27908,12 +27934,15 @@ function dokSeznamPolozky() {
   }) : vse;
   var pocet = document.getElementById('dok-pocet');
   if (pocet) pocet.textContent = vse.length ? (q ? seznam.length + ' z ' + vse.length : String(vse.length)) : '';
-  if (!vse.length) { box.innerHTML = '<div class="dok-prazdno">Zatím žádné dokumenty. Založte první výše. 👆</div>'; return; }
+  var hl = document.getElementById('dok-hledat');
+  if (hl) hl.style.display = vse.length ? '' : 'none';   // hledat v prázdném seznamu nemá smysl
+  if (!vse.length) { box.innerHTML = '<div class="dok-prazdno">Zatím tu nic není. Začněte tlačítkem ' +
+    esc(dokVytvoritText(DOK_TYPY[__dokTyp])) + '.</div>'; return; }
   if (!seznam.length) { box.innerHTML = '<div class="dok-prazdno">Hledání nic nenašlo.</div>'; return; }
   box.innerHTML = seznam.map(function (x) {
     var d = x.data || {}, t = DOK_TYPY[x.typ] || { kratce: x.typ };
     var pod = [t.kratce, d.investor && d.investor.nazev, d.misto].filter(Boolean).map(esc).join(' · ');
-    return '<div class="dok-polozka" data-uid="' + esc(x.uid) + '">' +
+    return '<div class="dok-polozka" data-uid="' + esc(x.uid) + '" data-action="tdDokOtevrit" title="Otevřít ' + esc(x.cislo || 'dokument') + '">' +
       '<button class="dok-p-otevrit" data-action="tdDokOtevrit" title="Otevřít dokument">' +
         '<span class="dok-p-cislo">' + esc(x.cislo || '—') + '</span>' +
         '<span class="dok-p-hlavni"><b>' + esc(d.stavba || '(bez názvu stavby)') + '</b><span class="dok-p-pod">' + pod + '</span></span>' +
@@ -27922,7 +27951,7 @@ function dokSeznamPolozky() {
       '<span class="dok-p-akce">' +
         '<button class="dok-mini" data-action="tdDokPdf" title="Náhled PDF, tisk a uložení">📄 PDF</button>' +
         '<button class="dok-mini" data-action="tdDokKopie" title="Založit nový dokument jako kopii tohoto (dostane další číslo)">⧉ Kopie</button>' +
-        '<button class="dok-mini dok-mini-del" data-action="tdDokSmazat" title="Smazat dokument">✕</button>' +
+        '<button class="dok-mini dok-mini-del" data-action="tdDokSmazat" title="Smazat dokument (jde vzít zpět)">🗑 Smazat</button>' +
       '</span></div>';
   }).join('');
 }
@@ -27973,10 +28002,8 @@ async function dokKopirovat(uid) {
 function dokVzorySpravaVykreslit() {
   var info = document.getElementById('dok-katalog-info');
   if (info) {
-    info.className = 'dok-katalog-info' + (DOK_VV_KATALOG_OVERENO ? ' overeno' : '');
-    info.innerHTML = (DOK_VV_KATALOG_OVERENO ? '' :
-      '<span>⚠ Katalog kódů vnějších vlivů je návrh — čeká na kontrolu s normou ČSN 33 2000-5-51 ed.3.</span>') +
-      '<button class="dok-mini" data-action="tdKatalog">📖 Zobrazit katalog kódů</button>';
+    info.innerHTML = (DOK_VV_KATALOG_OVERENO ? '' : '⚠ Katalog kódů čeká na kontrolu s normou ČSN 33 2000-5-51 ed.3 · ') +
+      '<button class="dok-katalog-odkaz" data-action="tdKatalog">zobrazit katalog kódů</button>';
   }
   var box = document.getElementById('dok-vzory');
   if (!box) return;

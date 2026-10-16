@@ -459,6 +459,9 @@ function vsechnyStavy(zalozky) {
   // tvorba dokumentace (samostatná část mimo revize)
   add('dokumentace – typy dokumentů', 'Tvorba dokumentace', E(async () => { dokOtevritTypy(); await __M.w(100); }));
   add('dokumentace – seznam', 'Tvorba dokumentace', E(async () => { dokOtevritSeznam(); await __M.w(100); }));
+  add('dokumentace – seznam, správa vzorů rozbalená', 'Tvorba dokumentace', E(async () => {
+    dokOtevritSeznam(); await __M.w(100); document.getElementById('dok-vzory-karta').open = true; await __M.w(100);
+  }));
   add('dokumentace – protokol', 'Tvorba dokumentace', E(async () => { await __M.dok(); }));
   add('dokumentace – protokol, skupiny prostorů', 'Tvorba dokumentace', E(async () => {
     await __M.dok(); document.querySelector('.dk-skupina').scrollIntoView({ block: 'start' }); await __M.w(100);
