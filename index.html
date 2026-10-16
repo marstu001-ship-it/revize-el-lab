@@ -19426,7 +19426,9 @@ function buildZalohaBlob() {
     strojeKontroly: STORE.strojeKontroly || [],
     teren: STORE.teren || {},
     auto_cislovani: STORE.auto_cislovani !== false,
-    tisk_migrace_kolonky: STORE.tisk_migrace_kolonky || 0
+    tisk_migrace_kolonky: STORE.tisk_migrace_kolonky || 0,
+    // Tvorba dokumentace — samostatná část, oddělená od zpráv
+    dokumentace: dokZalohaData()
   };
   return new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
 }
@@ -20181,6 +20183,7 @@ function obnovZeZalohy(data) {
     '• Vlastní texty: ' + ((data.snippety || []).length) + '\n' +
     (vlastniNormyPocet ? '• Vlastní normy: ' + vlastniNormyPocet + '\n' : '') +
     planRadek +
+    dokZalohaRadek(data) +
     '• Profil technika: ' + (data.technik && data.technik.jmeno ? 'ano' : 'ne') + '\n\n' +
     'Tyto údaje nahradí aktuální data v prohlížeči.';
   if (!confirm(msg)) return;
@@ -20201,6 +20204,8 @@ function obnovZeZalohy(data) {
   if (data.teren) STORE.teren = data.teren;
   if (data.tisk_migrace_kolonky) STORE.tisk_migrace_kolonky = data.tisk_migrace_kolonky;
   if (data.auto_cislovani !== undefined) STORE.auto_cislovani = (data.auto_cislovani !== false);
+  // Tvorba dokumentace — starší záloha část nemá, pak se dokumenty nechají být
+  if (data.dokumentace) dokObnovitZeZalohy(data.dokumentace);
   archiv = STORE.archiv;
   odberatele = STORE.odberatele;
   saveStore();
@@ -28745,6 +28750,32 @@ TD_AKCE.tdPdfTisk = function () {
     alert('Chyba při přípravě tisku: ' + ((err && err.message) || err));
   });
 };
+// ── Záloha ───────────────────────────────────────────────────────────────
+// V souboru zálohy je tvorba dokumentace SAMOSTATNÁ část `dokumentace`
+// (vlastní _format), oddělená od zpráv. Obnova ji vrátí celou; záloha
+// z doby před touto částí ji nemá a dokumenty se pak nechají být.
+function dokZalohaData() {
+  return { _format: 'revize-el-dokumentace', _version: 1,
+           dokumenty: DOK.dokumenty, vzory: DOK.vzory, vzorySkryte: DOK.vzorySkryte, osoby: DOK.osoby };
+}
+
+function dokZalohaRadek(data) {
+  var z = data && data.dokumentace;
+  if (!z) return '• Tvorba dokumentace: v této záloze není — vaše dokumenty zůstanou\n';
+  var n = (z.dokumenty || []).length, ted = DOK.dokumenty.length;
+  return '• Dokumenty (tvorba dokumentace): ' + n + ((z.vzory || []).length ? ', vlastní vzory: ' + z.vzory.length : '') +
+    (ted > n ? '   ⚠ teď jich máte ' + ted + ' — přijdete o rozdíl!' : '') + '\n';
+}
+
+function dokObnovitZeZalohy(z) {
+  DOK = dokNormalizovat(z);
+  window.__dokOtevreny = null;
+  dokZapsat();
+  var s = document.getElementById('screen-dokumentace');
+  if (s && s.classList.contains('active')) dokSeznamVykreslit();
+  var f = document.getElementById('screen-dok-form');
+  if (f && f.classList.contains('active')) dokOtevritSeznam();
+}
 // ═══ /TVORBA DOKUMENTACE ═══
 
 // Init wrapnutý — kdyby v něm něco selhalo (např. IDB v Safari iOS PWA),
