@@ -85,12 +85,17 @@ async function snimek(p) {
       localStorage.setItem('revize_el_novinky_seen', '2099-01-01');
       localStorage.setItem('revize_el_autosave', JSON.stringify({ _t: '2026-10-01T08:00:00Z', uid: '', data: { ev_cislo: 'OSTRA-KONCEPT', typ: 'elektro' } }));
       localStorage.setItem('revize_el_fiktivni_klic', 'ostrý program — nesahat');
+      // tvorba dokumentace ostrého programu (až se funkce přenese do revize-el)
+      const ostryDok = [{ uid: 'ostry-dok', typ: 'pouvv', cislo: 'POUVV-9999', upraveno: '2026-10-01T08:00:00.000Z', data: { cislo: 'POUVV-9999', stavba: 'Ostrá stavba' } }];
+      localStorage.setItem('revize_el_dok', JSON.stringify({ _zapsano: '2099-01-01T00:00:00.000Z', dokumenty: ostryDok, vzory: [], vzorySkryte: [], osoby: [] }));
       await new Promise(res => {
         const r = indexedDB.open('revize-el-db', 1);
         r.onupgradeneeded = () => r.result.createObjectStore('kv');
         r.onsuccess = () => {
           const tx = r.result.transaction('kv', 'readwrite'), s = tx.objectStore('kv');
           s.put(st.technik, 'technik'); s.put(st.archiv, 'archiv'); s.put([], 'pristroje');
+          s.put([{ uid: 'ostry-dok', typ: 'pouvv', cislo: 'POUVV-9999', data: { stavba: 'Ostrá stavba' } }], 'dok_dokumenty');
+          s.put('2099-01-01T00:00:00.000Z', 'dok_zapsano');
           tx.oncomplete = () => { r.result.close(); res(); };
         };
       });
@@ -106,8 +111,8 @@ async function snimek(p) {
     });
     const pred = await snimek(surova);
     const ostreKlice = Object.keys(pred.ls).filter(k => k.startsWith('revize_el_'));
-    check('data ostrého programu založena (5 klíčů, IDB, cache, 25 záloh)',
-      ostreKlice.length === 5 && pred.idb.ostra && pred.cache.length === 1 &&
+    check('data ostrého programu založena (6 klíčů vč. tvorby dokumentace, IDB, cache, 25 záloh)',
+      ostreKlice.length === 6 && pred.idb.ostra && pred.cache.length === 1 &&
       Object.keys(pred.opfs).filter(n => n.startsWith('revize-el-')).length === 25);
 
     // ── 2. lab se načte a data ostrého programu nevidí ─────────────────
@@ -149,6 +154,49 @@ async function snimek(p) {
       localStorage.removeItem('revize_el_fiktivni_klic');   // smí smazat jen svou kopii
     });
     await lab.waitForTimeout(800);
+
+    // ── 3b. tvorba dokumentace (vlastní úložiště revize_el_dok / dok_…) ─
+    await surova.evaluate(() => {
+      window.__dokKanaly = { ostry: 0, lab: 0 };
+      window.__dk1 = new BroadcastChannel('revize-el-dok'); window.__dk1.onmessage = () => window.__dokKanaly.ostry++;
+      window.__dk2 = new BroadcastChannel('revize-lab-dok'); window.__dk2.onmessage = () => window.__dokKanaly.lab++;
+    });
+    const dok = await lab.evaluate(async () => {
+      await dokNacist();
+      const videl = JSON.stringify(DOK);
+      dokOtevritSeznam();
+      const seznam = document.getElementById('dok-seznam').innerText;
+      await dokNovy('pouvv');
+      const cislo = dokForm().querySelector('[data-dk="cislo"]').value;
+      const st = dokForm().querySelector('[data-dk="stavba"]'); st.value = 'Labová stavba';
+      st.dispatchEvent(new Event('input', { bubbles: true }));
+      await dokUlozitOtevreny();
+      await dokNacist();
+      return { videl, seznam, cislo, n: DOK.dokumenty.length, ls: localStorage.getItem('revize_el_dok') };
+    });
+    check('dokumentace: lab nevidí dokumenty ostrého programu (localStorage ani IDB)',
+      !/POUVV-9999|Ostrá stavba/.test(dok.videl) && !/Ostrá stavba/.test(dok.seznam), dok.videl.slice(0, 80));
+    check('dokumentace: číslování labu nezná čísla ostrého programu', dok.cislo === 'POUVV-0001', dok.cislo);
+    check('dokumentace: lab si protokol uloží a přečte zpátky', dok.n === 1 && /Labová stavba/.test(dok.ls || ''));
+    await lab.waitForTimeout(400);
+    const dokSur = await surova.evaluate(async () => {
+      const dump = name => new Promise(res => {
+        const r = indexedDB.open(name);
+        r.onsuccess = () => {
+          const db = r.result, out = {}, tx = db.transaction('kv'), c = tx.objectStore('kv').openCursor();
+          c.onsuccess = () => { const x = c.result; if (x) { if (/^dok_/.test(x.key)) out[x.key] = JSON.stringify(x.value); x.continue(); } };
+          tx.oncomplete = () => { db.close(); res(out); };
+        };
+      });
+      return { lsLab: localStorage.getItem('revize_lab_dok'), lsOstry: localStorage.getItem('revize_el_dok'),
+               idbLab: await dump('revize-lab-db'), idbOstra: await dump('revize-el-db'), kanaly: window.__dokKanaly };
+    });
+    check('dokumentace: lab píše do revize_lab_dok, revize_el_dok nechá', /Labová stavba/.test(dokSur.lsLab || '') &&
+      /Ostrá stavba/.test(dokSur.lsOstry) && !/Labová/.test(dokSur.lsOstry));
+    check('dokumentace: v IndexedDB jen revize-lab-db (dok_…), revize-el-db beze změny',
+      /Labová stavba/.test(dokSur.idbLab.dok_dokumenty || '') && /Ostrá stavba/.test(dokSur.idbOstra.dok_dokumenty || '') &&
+      !/Labová/.test(JSON.stringify(dokSur.idbOstra)), Object.keys(dokSur.idbLab).join(', '));
+    check('dokumentace: kanál revize-el-dok přesměrován na revize-lab-dok', dokSur.kanaly.lab >= 1 && dokSur.kanaly.ostry === 0, JSON.stringify(dokSur.kanaly));
 
     // ── 4. okna: lab ↔ ostrý program se neslyší, lab ↔ lab ano ──────────
     await lab.evaluate(() => {
@@ -209,6 +257,15 @@ async function snimek(p) {
       return { ok, jmeno: STORE.auto_zaloha_soubor };
     });
     check('lab zálohu zapsal', zal.ok, JSON.stringify(zal));
+    const zalDok = await lab.evaluate(async () => {
+      const f = await (await window.__testSlozka.getFileHandle(STORE.auto_zaloha_soubor)).getFile();
+      const j = JSON.parse(await f.text());
+      return { jmeno: f.name, format: j.dokumentace && j.dokumentace._format, n: j.dokumentace ? j.dokumentace.dokumenty.length : -1,
+               stavba: j.dokumentace ? j.dokumentace.dokumenty.map(x => x.data.stavba).join() : '' };
+    });
+    check('dokumentace: záloha labu (revize-lab-zaloha-…) nese část dokumentace jen s labovými dokumenty',
+      /^revize-lab-zaloha-/.test(zalDok.jmeno) && zalDok.format === 'revize-el-dokumentace' && zalDok.n === 1 && zalDok.stavba === 'Labová stavba',
+      JSON.stringify(zalDok));
     await lab.evaluate(async () => {
       const root = await navigator.storage.getDirectory();
       window.__testSlozka = await root.getDirectoryHandle('ciste');
@@ -242,7 +299,7 @@ async function snimek(p) {
     // ── 8. surový pohled: ostrá data bajt po bajtu stejná ──────────────
     const po = await snimek(surova);
     const zmeny = ostreKlice.filter(k => po.ls[k] !== pred.ls[k]);
-    check('všech 5 klíčů ostrého programu v localStorage beze změny', zmeny.length === 0, zmeny.join(', '));
+    check('všech 6 klíčů ostrého programu v localStorage beze změny', zmeny.length === 0, zmeny.join(', '));
     const noveOstre = Object.keys(po.ls).filter(k => k.startsWith('revize_el_') && !(k in pred.ls));
     check('lab nezaložil žádný klíč revize_el_…', noveOstre.length === 0, noveOstre.join(', '));
     check('IndexedDB revize-el-db beze změny', JSON.stringify(po.idb.ostra) === JSON.stringify(pred.idb.ostra));
