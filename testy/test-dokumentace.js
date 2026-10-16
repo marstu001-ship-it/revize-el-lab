@@ -71,6 +71,16 @@ function pomocnik() {
   check('dlaždice se skládají z DOK_TYPY, vzhled jako karty na úvodu', dl.typy === 'pouvv' && dl.vzhled, dl.typy);
   check('dlaždice: název, popis normy a počet uložených', /Protokol o určení vnějších vlivů/i.test(dl.text) && /Dle ČSN 33 2000-5-51 ed\.3/.test(dl.text) && /Zatím žádný uložený/.test(dl.text), dl.text.replace(/\n/g, ' | '));
   check('dlaždice „připravuje se" nejsou', !/připravuje/i.test(dl.text));
+  const uvod = await p.evaluate(() => {
+    const b = document.querySelector('#screen-dokumentace .dok-drobky [data-action="tdUvod"]');
+    const r = b ? b.getBoundingClientRect() : null;
+    return { text: b ? b.textContent : '', vlevoNahore: !!r && r.left < 200 && r.top < 200,
+             styl: !!b && b.className === document.querySelector('#screen-dok-seznam [data-action="tdTypy"]').className };
+  });
+  check('dlaždice: vlevo nahoře „← Úvod" ve stylu „← Tvorba dokumentace"', uvod.text === '← Úvod' && uvod.vlevoNahore && uvod.styl, JSON.stringify(uvod));
+  await p.click('#screen-dokumentace [data-action="tdUvod"]'); await w(200);
+  check('„← Úvod" vrátí na úvodní obrazovku', await p.evaluate(() => document.querySelector('.screen.active').id) === 'screen-home');
+  await p.click('#screen-home [data-action="tdOtevrit"]'); await w(300);
   await p.click('#dok-dlazdice [data-typ="pouvv"]'); await w(300);
   const sez = await p.evaluate(() => ({ akt: document.querySelector('.screen.active').id, tit: document.getElementById('dok-seznam-titul').textContent,
     zpet: !!document.querySelector('#screen-dok-seznam [data-action="tdTypy"]') && document.querySelector('#screen-dok-seznam [data-action="tdTypy"]').textContent }));
@@ -515,6 +525,14 @@ function pomocnik() {
   await pm.addInitScript(() => { try { navigator.serviceWorker.register = () => new Promise(() => {}); } catch (e) {} });
   await pm.goto(URL); await w(1000);
   const km = await pm.evaluate(() => Array.from(document.querySelectorAll('#screen-home .home-grid .home-card')).map(k => Math.round(k.getBoundingClientRect().top)));
+  const mu = await pm.evaluate(async () => {
+    dokOtevritTypy(); await new Promise(r => setTimeout(r, 100));
+    const b = document.querySelector('#screen-dokumentace [data-action="tdUvod"]'), r = b.getBoundingClientRect();
+    return { w: r.width, h: r.height, left: r.left, right: r.right, vw: innerWidth };
+  });
+  await pm.tap('#screen-dokumentace [data-action="tdUvod"]'); await w(200);
+  const muAkt = await pm.evaluate(() => document.querySelector('.screen.active').id);
+  check('telefon: „← Úvod" aspoň 44 × 44 px, v displeji, klepnutí vrátí na úvod', mu.w >= 44 && mu.h >= 44 && mu.left >= 0 && mu.right <= mu.vw && muAkt === 'screen-home', JSON.stringify(mu) + ' ' + muAkt);
   check('telefon: karta Tvorba dokumentace pod ostatními', km.length === 4 && km[3] > km[2] && km[2] > km[1], JSON.stringify(km));
   await m.close();
 

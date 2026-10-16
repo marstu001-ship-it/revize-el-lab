@@ -392,7 +392,8 @@ před funkcí a po ní **bajtově shodný** (archiv i `getData()`, sha256).
 Zadání uživatele 2026-10-16 (vyvinuto v labu): čtvrtá karta na úvodu
 **„Tvorba dokumentace"** (na PC v řádku s Elektro, LPS a Plánem revizí,
 na telefonu pod nimi) → **dlaždice typů dokumentů** `#screen-dokumentace`
-(vzhled karet z úvodu: název, krátký popis `dlazdice`, počet uložených) →
+(vzhled karet z úvodu: název, krátký popis `dlazdice`, počet uložených;
+vlevo nahoře „← Úvod") →
 klik na dlaždici → **seznam dokumentů toho typu** `#screen-dok-seznam`
 (nový dokument, hledání, vzory, katalog; cesta zpět „← Tvorba dokumentace").
 První typ: **Protokol o určení vnějších vlivů** dle ČSN 33 2000-5-51 ed.3.
@@ -473,7 +474,7 @@ Telefon: obrazovky a dialogy jsou v `test-mobil.js` (stavy „dokumentace – �
 `modal-dok-*`); pro telefon jen blok „Mobil: tvorba dokumentace" (lišta
 formuláře se nelepí).
 
-Test: `testy/test-dokumentace.js` (105 kontrol — karta, dlaždice, dvě skupiny, vzory
+Test: `testy/test-dokumentace.js` (108 kontrol — karta, dlaždice, dvě skupiny, vzory
 (každý vestavěný proti zadání, upozornění mimo PDF, starý protokol se Sprchou,
 dotaz při stejném jménu),
 ruční kód, restart, číslování, kopie, vlastní vzor, PDF bez vysvětlivek,

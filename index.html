@@ -4200,6 +4200,7 @@ html.dark .dk-upozorneni.vyrazne{color:#ffc29a;background:#3d2210;border-color:#
 ═══════════════════════════════════════════════ -->
 <div class="screen" id="screen-dokumentace">
 <div class="home-wrap">
+  <div class="dok-drobky"><button class="dok-mini" data-action="tdUvod" title="Zpět na úvodní obrazovku">← Úvod</button></div>
   <div class="home-header">
     <h1>📐 Tvorba dokumentace</h1>
     <p>Dokumenty mimo revizní zprávy — vlastní seznam, vlastní číslování a vlastní PDF</p>
@@ -28172,6 +28173,7 @@ function dokPoNacteniZJinehoOkna() {
 
 TD_AKCE.tdOtevrit = function () { attemptLeaveForm(function () { dokOtevritTypy(); }); };
 TD_AKCE.tdTypy = function () { dokOtevritTypy(); };
+TD_AKCE.tdUvod = function () { showScreen('home'); };
 TD_AKCE.tdTyp = function (el) { dokOtevritSeznam(el.getAttribute('data-typ')); };
 TD_AKCE.tdNovy = function (el) { if (typeof dokNovy === 'function') dokNovy(el.getAttribute('data-typ')); };
 TD_AKCE.tdDokOtevrit = function (el) { if (typeof dokOtevrit === 'function') dokOtevrit(dokUidZ(el)); };
