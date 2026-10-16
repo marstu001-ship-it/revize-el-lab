@@ -99,6 +99,13 @@ Pravidla, aby oddělení drželo:
   do revize-el. Důkaz, že se PC verze nezměnila, se dělá jednou na konci
   (`test-mobil.js` `REZIM=pcstyly` před × po, ~25 min) a neopakuje se;
   když uživatel řekne „stop ověřování", další kontroly se nepřidávají.
+- **Drobné úpravy (pokyn uživatele 2026-10-16):** u drobné úpravy (text,
+  tlačítko, vzhled jedné obrazovky) se pouští **jen test dotčené části**
+  (např. `test-dokumentace.js`; jde-li o vzhled, i `test-mobil.js`) a pak
+  se pushne do main labu. **Všechny povinné testy** (test funkce,
+  `test-mobil.js`, `test-zs-mez.js`, `test-lab-oddeleni.js`,
+  `test-typy-krizem.js`, `porovnani2.js`) jen **u větších funkcí** a **vždy
+  před přenosem do revize-el**.
 
 ## Postup přenosu funkce do revize-el
 
