@@ -27246,6 +27246,148 @@ document.addEventListener('click', function (e) {
   if (fn) fn(el, e);
 });
 
+// ── Katalog kódů vnějších vlivů (ČSN 33 2000-5-51 ed.3) ────────────────
+// ⚠ NÁVRH, KTERÝ MUSÍ UŽIVATEL ZKONTROLOVAT S NORMOU. Obsah je přesně ten,
+// který dodal (2026-10-16) — nic se nedoplňovalo z internetu ani z hlavy.
+// Třetí hodnota u třídy (`op`) = opatření / krytí; je vyplněná JEN tam,
+// kde ji uživatel uvedl. Dokud katalog neověří, ukazuje program nenápadné
+// upozornění „katalog čeká na kontrolu s normou" — po ověření stačí
+// přepnout DOK_VV_KATALOG_OVERENO na true.
+// AM (elektromagnetické vlivy) a BB se ve skutečných protokolech
+// nepoužívají, proto v katalogu nejsou. Pořadí = pořadí ve výběru.
+// Vysvětlivky (text tříd) jsou JEN NÁPOVĚDA v programu — do PDF jdou kódy.
+var DOK_VV_KATALOG_OVERENO = false;
+var DOK_VV_SKUPINY = [
+  { id: 'a', pismeno: 'A', nazev: 'Vnější vlivy' },
+  { id: 'b', pismeno: 'B', nazev: 'Využití' },
+  { id: 'c', pismeno: 'C', nazev: 'Konstrukce budov' }
+];
+var DOK_VV_AA = [['AA1', '−60 až +5 °C'], ['AA2', '−40 až +5 °C'], ['AA3', '−25 až +5 °C'], ['AA4', '−5 až +40 °C'],
+                 ['AA5', '+5 až +40 °C'], ['AA6', '+5 až +60 °C'], ['AA7', '−25 až +55 °C'], ['AA8', '−50 až +40 °C']];
+var DOK_VV_KATALOG = [
+  { kod: 'AA', nazev: 'Teplota okolí', tridy: DOK_VV_AA },
+  { kod: 'AB', nazev: 'Atmosférické podmínky (teplota a vlhkost)',
+    tridy: DOK_VV_AA.map(function (t) { return ['AB' + t[0].slice(2), t[1]]; }) },
+  { kod: 'AC', nazev: 'Nadmořská výška', tridy: [['AC1', '≤ 2 000 m'], ['AC2', '> 2 000 m']] },
+  { kod: 'AD', nazev: 'Výskyt vody', tridy: [
+    ['AD1', 'zanedbatelný', 'IPX0'], ['AD2', 'volně padající kapky', 'IPX1/IPX2'], ['AD3', 'kropení', 'IPX3'],
+    ['AD4', 'stříkání', 'IPX4'], ['AD5', 'tryskání', 'IPX5'], ['AD6', 'vlny', 'IPX6'],
+    ['AD7', 'ponoření', 'IPX7'], ['AD8', 'potopení', 'IPX8']] },
+  { kod: 'AE', nazev: 'Cizí pevná tělesa', tridy: [
+    ['AE1', 'zanedbatelný'], ['AE2', 'malé předměty ≥ 2,5 mm', 'IP3X'], ['AE3', 'velmi malé předměty ≥ 1 mm', 'IP4X'],
+    ['AE4', 'slabá prašnost', 'IP5X, IP6X pokud prach nesmí vniknout'], ['AE5', 'střední prašnost', 'IP6X'],
+    ['AE6', 'silná prašnost', 'IP6X']] },
+  { kod: 'AF', nazev: 'Korozivní nebo znečišťující látky', tridy: [
+    ['AF1', 'zanedbatelný'], ['AF2', 'atmosférický'], ['AF3', 'občasný nebo náhodný'], ['AF4', 'trvalý']] },
+  { kod: 'AG', nazev: 'Mechanický ráz', tridy: [['AG1', 'slabý'], ['AG2', 'střední'], ['AG3', 'silný']] },
+  { kod: 'AH', nazev: 'Vibrace', tridy: [['AH1', 'slabé'], ['AH2', 'střední'], ['AH3', 'silné']] },
+  { kod: 'AK', nazev: 'Rostlinstvo, plísně', tridy: [['AK1', 'bez nebezpečí'], ['AK2', 'nebezpečí']] },
+  { kod: 'AL', nazev: 'Živočichové', tridy: [['AL1', 'bez nebezpečí'], ['AL2', 'nebezpečí']] },
+  { kod: 'AN', nazev: 'Sluneční záření', tridy: [['AN1', 'nízké'], ['AN2', 'střední'], ['AN3', 'vysoké']] },
+  { kod: 'AP', nazev: 'Seismické účinky', tridy: [['AP1', 'zanedbatelné'], ['AP2', 'slabé'], ['AP3', 'střední'], ['AP4', 'silné']] },
+  { kod: 'AQ', nazev: 'Bouřková činnost', tridy: [['AQ1', 'zanedbatelná'], ['AQ2', 'nepřímé ohrožení'], ['AQ3', 'přímé ohrožení']] },
+  { kod: 'AR', nazev: 'Pohyb vzduchu', tridy: [['AR1', 'pomalý'], ['AR2', 'střední'], ['AR3', 'silný']] },
+  { kod: 'AS', nazev: 'Vítr', tridy: [['AS1', 'slabý'], ['AS2', 'střední'], ['AS3', 'silný']] },
+  { kod: 'BA', nazev: 'Schopnost osob', tridy: [
+    ['BA1', 'běžné (laici)'], ['BA2', 'děti'], ['BA3', 'osoby nemocné a postižené'], ['BA4', 'poučené'], ['BA5', 'znalé']] },
+  { kod: 'BC', nazev: 'Dotyk osob s potenciálem země', tridy: [['BC1', 'žádný'], ['BC2', 'malý'], ['BC3', 'častý'], ['BC4', 'trvalý']] },
+  { kod: 'BD', nazev: 'Podmínky úniku v případě nebezpečí', tridy: [
+    ['BD1', 'nízká hustota osob, snadný únik'], ['BD2', 'nízká hustota, obtížný únik'],
+    ['BD3', 'vysoká hustota, snadný únik'], ['BD4', 'vysoká hustota, obtížný únik']] },
+  { kod: 'BE', nazev: 'Povaha zpracovávaných nebo skladovaných látek', tridy: [
+    ['BE1', 'bez významného nebezpečí'], ['BE2', 'nebezpečí požáru'], ['BE3', 'nebezpečí výbuchu'], ['BE4', 'nebezpečí kontaminace']] },
+  { kod: 'CA', nazev: 'Stavební materiály', tridy: [['CA1', 'nehořlavé'], ['CA2', 'hořlavé']] },
+  { kod: 'CB', nazev: 'Konstrukce budov', tridy: [
+    ['CB1', 'zanedbatelná rizika'], ['CB2', 'šíření požáru'], ['CB3', 'pohyb'], ['CB4', 'pružné nebo nestabilní']] }
+];
+
+// Třída podle kódu ('AD4' → { kod:'AD4', text:'stříkání', op:'IPX4', vliv }).
+function dokVvTrida(k) {
+  k = String(k || '');
+  for (var i = 0; i < DOK_VV_KATALOG.length; i++) {
+    var v = DOK_VV_KATALOG[i];
+    if (k.indexOf(v.kod) !== 0) continue;
+    for (var j = 0; j < v.tridy.length; j++) {
+      if (v.tridy[j][0] === k) return { kod: k, text: v.tridy[j][1], op: v.tridy[j][2] || '', vliv: v };
+    }
+  }
+  return null;
+}
+
+// Kódy skupiny prostorů seřazené podle katalogu a rozdělené na a) b) c).
+// Vrací jen skupiny, které mají aspoň jeden kód — tak jde i do PDF.
+function dokVvRadky(kody) {
+  kody = kody || {};
+  return DOK_VV_SKUPINY.map(function (s) {
+    var seznam = DOK_VV_KATALOG.filter(function (v) { return v.kod.charAt(0) === s.pismeno && kody[v.kod]; })
+      .map(function (v) { return kody[v.kod]; });
+    return { id: s.id, nazev: s.nazev, kody: seznam };
+  }).filter(function (r) { return r.kody.length; });
+}
+
+// ── Vzory skupin prostorů ──────────────────────────────────────────────
+// Vestavěné vzory jsou JEN ze skutečných protokolů, které uživatel dodal —
+// nic se nevymýšlelo. Další si doplní sám jako vlastní vzory (DOK.vzory).
+// Vestavěné nejdou smazat, jen skrýt (DOK.vzorySkryte).
+function dokVvKody(seznam) {
+  var o = {};
+  seznam.split(/[\s,|]+/).forEach(function (k) { if (k) o[k.slice(0, 2)] = k; });
+  return o;
+}
+var DOK_VV_VZORY_VESTAVENE = [
+  { id: 'vest-admin', nazev: 'Administrativa / kanceláře / sociální zázemí',
+    kody: dokVvKody('AA5, AB5, AC1, AD1, AE1, AF1, AG1, AH1, AK1, AL1, AN1, AP1, AQ1, AR1, AS1 | BA1, BC1, BD1, BE1 | CA1, CB1'),
+    pozn: '', texty: {} },
+  { id: 'vest-sprcha', nazev: 'Sprcha / umývárna',
+    kody: dokVvKody('AA5, AB5, AC1, AD4, AE1, AF1, AG2, AH2, AK1, AL1, AN1, AP1, AQ1, AR1, AS1 | BA1, BC1, BD1, BE1 | CA1, CB1'),
+    pozn: 'Prostory umýváren a sprchovacích koutů jsou určeny dle ČSN 33 2000-7-701 zóny dle obrázku 701 A-f: ' +
+          'AD4 vliv stříkající vody všemi směry v prostoru sprch. koutu a 600 mm kolem vstupu se závěsem, ' +
+          'AD2 do vzdálenosti 2,4 m od hranice AD4.',
+    texty: {} },
+  { id: 'vest-technicka', nazev: 'Technická místnost / sklad čerpadel',
+    kody: dokVvKody('AA5, AB5, AC1, AD2, AE1, AF1, AG2, AH2, AK1, AL1, AN1, AP1, AQ1, AR1, AS1 | BA1, BC1, BD1, BE1 | CA1, CB1'),
+    pozn: '', texty: {} },
+  { id: 'vest-sklad', nazev: 'Nevytápěný sklad',
+    kody: dokVvKody('AA4, AB4, AC1, AD2, AE1, AF1, AG1, AH1, AK1, AL1, AN1, AP1, AQ1, AR1, AS1 | BA1, BC1, BD1, BE1 | CA1, CB1'),
+    pozn: '', texty: {} },
+  { id: 'vest-kotelna', nazev: 'Kotelna (plynová, bez trvalé obsluhy)',
+    kody: dokVvKody('AA5, AB5, AC1, AD1, AE1, AF1, AG1, AH1, AK1, AL1, AN1, AP1, AQ1, AR1, AS1 | BA4, BC2, BD1, BE1 | CA1, CB1'),
+    pozn: '',
+    texty: {
+      popis: 'Plně automatizovaný zdroj tepla pro vytápění a ohřev vody, provozovaný bez trvalé obsluhy. ' +
+             'Bezpečnost provozu je zajištěna interními ochrannými a blokovacími prvky samotných zdrojů tepla ' +
+             'a větráním prostoru kotelny.',
+      technologie: 'Plynové kotle s hořáky, vnitřní plynovod s uzavíracími armaturami, rozvody topné vody ' +
+                   's čerpadly, systém měření a regulace, větrání místnosti.',
+      chemikalie: 'Zemní plyn (palivo, hořlavý plyn); Otopná voda (médium v uzavřeném okruhu, případně s inhibitory koroze).'
+    } }
+];
+
+// Textová pole oddílu B — klíč v datech dokumentu i v `texty` vzoru.
+var DOK_VV_TEXTY_B = [
+  { k: 'popis', nazev: 'Popis stavebního objektu / technologie' },
+  { k: 'technologie', nazev: 'Technologie' },
+  { k: 'chemikalie', nazev: 'Používané chemikálie' }
+];
+
+// Všechny vzory: vestavěné (s příznakem) + vlastní. `vcetneSkrytych`
+// = i skryté vestavěné (správa vzorů, nebo vzor, který skupina už používá).
+function dokVzory(vcetneSkrytych) {
+  var skryte = DOK.vzorySkryte || [];
+  var vest = DOK_VV_VZORY_VESTAVENE.filter(function (v) { return vcetneSkrytych || skryte.indexOf(v.id) === -1; })
+    .map(function (v) { var o = dokKopie(v); o.vestaveny = true; o.skryty = skryte.indexOf(v.id) !== -1; return o; });
+  return vest.concat((DOK.vzory || []).map(function (v) { return dokKopie(v); }));
+}
+
+function dokVzor(id) {
+  var v = dokVzory(true).filter(function (x) { return x.id === id; });
+  return v.length ? v[0] : null;
+}
+
+// Krátký souhrn kódů vzoru / skupiny na jeden řádek („AA5, AB5 … | BA1 …").
+function dokVvSouhrn(kody) {
+  return dokVvRadky(kody).map(function (r) { return r.kody.join(', '); }).join(' | ');
+}
 // ═══ /TVORBA DOKUMENTACE ═══
 
 // Init wrapnutý — kdyby v něm něco selhalo (např. IDB v Safari iOS PWA),
