@@ -1583,6 +1583,13 @@ html.dark .dk-kod-vysv{color:#7fcfae}
 .dk-akce-radek{display:flex;flex-wrap:wrap;gap:0 .5rem}
 .dk-vzor-vyber-radek{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin-bottom:.6rem}
 .dk-vzor-vyber{flex:1 1 280px;width:auto}
+.dk-upozorneni{font-size:.8rem;line-height:1.45;color:#5f4a12;background:#fff8e1;border:1px solid #ffe082;
+  border-radius:2px;padding:.45rem .65rem;margin:0 0 .7rem}
+.dk-upozorneni.vyrazne{color:#7a2e00;background:#ffe9d6;border:2px solid #e8590c;font-weight:500}
+html.dark .dk-upozorneni{color:#e8c07a;background:#33290f;border-color:#6b5414}
+html.dark .dk-upozorneni.vyrazne{color:#ffc29a;background:#3d2210;border-color:#e8590c}
+.dok-vzor-upoz{display:block;font-size:.72rem;color:#8a5200;margin-top:.15rem}
+.dok-vzor-upoz.vyrazne{color:#c2410c;font-weight:600}
 .dk-souhrn{font-family:var(--mono);font-size:.74rem;background:var(--surface);border:1px dashed var(--border-dark);
   padding:.5rem .7rem;margin:.2rem 0 .8rem;line-height:1.6;overflow-wrap:anywhere}
 .dk-souhrn-t{font-family:var(--sans);font-size:.7rem;color:var(--muted)}
@@ -4245,8 +4252,10 @@ html.dark .dk-kod-vysv{color:#7fcfae}
     <div class="f" style="margin-bottom:.8rem"><label>Název vzoru <span class="req">*</span></label>
       <input type="text" id="dok-vzor-nazev" autocomplete="off" placeholder="Např. Rodinný dům – obytné místnosti"></div>
     <div id="dok-vzor-kody"></div>
-    <div class="f" style="margin-top:.8rem"><label>Poznámka ke skupině prostorů</label>
+    <div class="f" style="margin-top:.8rem"><label>Poznámka ke skupině prostorů <span class="dk-nepov">(jde do PDF)</span></label>
       <textarea id="dok-vzor-pozn" rows="3" spellcheck="true" lang="cs"></textarea></div>
+    <div class="f" style="margin-top:.6rem"><label>Upozornění <span class="dk-nepov">(jen nápověda ve formuláři po výběru vzoru, do PDF nejde)</span></label>
+      <textarea id="dok-vzor-upoz" rows="2" spellcheck="true" lang="cs"></textarea></div>
     <div class="dk-blok-t">Texty oddílu B — protokol je nabídne k vložení</div>
     <div class="f" style="margin-bottom:.5rem"><label>Popis stavebního objektu / technologie</label>
       <textarea id="dok-vzor-t-popis" rows="3" spellcheck="true" lang="cs"></textarea></div>
@@ -27606,41 +27615,172 @@ function dokVvRadky(kody) {
 }
 
 // ── Vzory skupin prostorů ──────────────────────────────────────────────
-// Vestavěné vzory jsou JEN ze skutečných protokolů, které uživatel dodal —
-// nic se nevymýšlelo. Další si doplní sám jako vlastní vzory (DOK.vzory).
-// Vestavěné nejdou smazat, jen skrýt (DOK.vzorySkryte).
+// Vestavěné vzory SCHVÁLIL UŽIVATEL 16. 10. 2026. Pět z nich vychází ze
+// skutečných protokolů (administrativa, sprcha → „koupelna, sprcha,
+// umývárna", technická místnost, nevytápěný sklad, kotelna), ostatní jsou
+// schválené VÝCHOZÍ HODNOTY, ne opis z protokolů — technik je v protokolu
+// vždy může upravit. Kódy, poznámky, texty B i upozornění jsou doslova
+// podle schváleného zadání; nic nedoplňovat z hlavy ani z internetu.
+// - `pozn`        poznámka ke skupině — jde DO PDF,
+// - `upozorneni`  nápověda pro technika — jen ve formuláři, DO PDF NIKDY
+//                 (`vyrazne` = oranžově, u prostředí s nebezpečím výbuchu),
+// - `skupina`     nadpis ve výběru vzoru (pořadí DOK_VV_VZORY_SKUPINY).
+// `id` se nemění ani při přejmenování (vest-sprcha) — protokoly ho mají
+// uložené ve skupině. Vestavěné nejdou smazat, jen skrýt (DOK.vzorySkryte).
 function dokVvKody(seznam) {
   var o = {};
   seznam.split(/[\s,|]+/).forEach(function (k) { if (k) o[k.slice(0, 2)] = k; });
   return o;
 }
+var DOK_VV_VZORY_SKUPINY = ['Bydlení', 'Bytový dům', 'Technické prostory', 'Administrativa a výroba', 'Venkovní'];
+var DOK_VV_ZONY_701 = 'Prostory umýváren a sprchovacích koutů jsou určeny dle ČSN 33 2000-7-701 zóny dle obrázku 701 A-f: ' +
+  'AD4 vliv stříkající vody všemi směry v prostoru sprch. koutu a 600 mm kolem vstupu se závěsem, ' +
+  'AD2 do vzdálenosti 2,4 m od hranice AD4.';
 var DOK_VV_VZORY_VESTAVENE = [
-  { id: 'vest-admin', nazev: 'Administrativa / kanceláře / sociální zázemí',
+  // ── Bydlení ──
+  { id: 'vest-byt', skupina: 'Bydlení', nazev: 'Byt – obytné místnosti, kuchyň, předsíň',
     kody: dokVvKody('AA5, AB5, AC1, AD1, AE1, AF1, AG1, AH1, AK1, AL1, AN1, AP1, AQ1, AR1, AS1 | BA1, BC1, BD1, BE1 | CA1, CB1'),
-    pozn: '', texty: {} },
-  { id: 'vest-sprcha', nazev: 'Sprcha / umývárna',
+    pozn: '', upozorneni: '',
+    texty: {
+      popis: 'Bytová jednotka v bytovém domě určená k trvalému bydlení. Obytné místnosti, kuchyň a předsíň jsou vytápěné ' +
+             'suché prostory bez zvýšeného výskytu vody, prachu a korozivních látek.',
+      technologie: 'Světelné a zásuvkové obvody, běžné domácí elektrické spotřebiče, spotřebiče v kuchyni (sporák, trouba, myčka, chladnička).',
+      chemikalie: 'Běžné čisticí prostředky pro domácnost v malém množství.' } },
+  { id: 'vest-sprcha', skupina: 'Bydlení', nazev: 'Koupelna, sprcha, umývárna',
     kody: dokVvKody('AA5, AB5, AC1, AD4, AE1, AF1, AG2, AH2, AK1, AL1, AN1, AP1, AQ1, AR1, AS1 | BA1, BC1, BD1, BE1 | CA1, CB1'),
-    pozn: 'Prostory umýváren a sprchovacích koutů jsou určeny dle ČSN 33 2000-7-701 zóny dle obrázku 701 A-f: ' +
-          'AD4 vliv stříkající vody všemi směry v prostoru sprch. koutu a 600 mm kolem vstupu se závěsem, ' +
-          'AD2 do vzdálenosti 2,4 m od hranice AD4.',
-    texty: {} },
-  { id: 'vest-technicka', nazev: 'Technická místnost / sklad čerpadel',
-    kody: dokVvKody('AA5, AB5, AC1, AD2, AE1, AF1, AG2, AH2, AK1, AL1, AN1, AP1, AQ1, AR1, AS1 | BA1, BC1, BD1, BE1 | CA1, CB1'),
-    pozn: '', texty: {} },
-  { id: 'vest-sklad', nazev: 'Nevytápěný sklad',
-    kody: dokVvKody('AA4, AB4, AC1, AD2, AE1, AF1, AG1, AH1, AK1, AL1, AN1, AP1, AQ1, AR1, AS1 | BA1, BC1, BD1, BE1 | CA1, CB1'),
-    pozn: '', texty: {} },
-  { id: 'vest-kotelna', nazev: 'Kotelna (plynová, bez trvalé obsluhy)',
+    pozn: DOK_VV_ZONY_701, upozorneni: '',
+    texty: {
+      popis: 'Koupelna se sprchovým koutem nebo vanou a umyvadlem. Prostor je rozdělen do zón podle ČSN 33 2000-7-701.',
+      technologie: 'Osvětlení, zásuvkové obvody, ohřívač vody, ventilátor, elektrické podlahové vytápění nebo otopný žebřík.',
+      chemikalie: 'Běžné hygienické a čisticí prostředky v malém množství.' } },
+  { id: 'vest-rd', skupina: 'Bydlení', nazev: 'Rodinný dům – obytné prostory',
+    kody: dokVvKody('AA5, AB5, AC1, AD1, AE1, AF1, AG1, AH1, AK1, AL1, AN1, AP1, AQ1, AR1, AS1 | BA1, BC1, BD1, BE1 | CA1, CB1'),
+    pozn: '', upozorneni: '',
+    texty: {
+      popis: 'Rodinný dům určený k trvalému bydlení. Obytné místnosti, kuchyň, chodby a schodiště jsou vytápěné suché ' +
+             'prostory bez zvýšeného výskytu vody, prachu a korozivních látek.',
+      technologie: 'Světelné a zásuvkové obvody, běžné domácí spotřebiče, zdroj tepla a ohřev vody, případně tepelné čerpadlo, ' +
+                   'fotovoltaika a nabíjení elektromobilu.',
+      chemikalie: 'Běžné čisticí prostředky pro domácnost v malém množství.' } },
+  { id: 'vest-rd-garaz', skupina: 'Bydlení', nazev: 'Rodinný dům – garáž',
+    kody: dokVvKody('AA4, AB4, AC1, AD2, AE1, AF1, AG2, AH1, AK1, AL1, AN1, AP1, AQ1, AR1, AS1 | BA1, BC2, BD1, BE1 | CA1, CB1'),
+    pozn: '', upozorneni: 'Při skladování pohonných hmot nebo hořlavin zvažte BE2.',
+    texty: {
+      popis: 'Garáž pro osobní automobily, nevytápěná nebo temperovaná.',
+      technologie: 'Osvětlení, zásuvkové obvody, pohon garážových vrat, případně nabíjecí stanice elektromobilu.',
+      chemikalie: 'Pohonné hmoty v nádržích vozidel, provozní kapaliny a autokosmetika v malém množství.' } },
+  { id: 'vest-sklep', skupina: 'Bydlení', nazev: 'Sklep, suterén',
+    kody: dokVvKody('AA4, AB4, AC1, AD2, AE1, AF1, AG1, AH1, AK1, AL1, AN1, AP1, AQ1, AR1, AS1 | BA1, BC2, BD1, BE1 | CA1, CB1'),
+    pozn: '', upozorneni: 'U trvale vlhkého sklepa zvažte vyšší třídu AB / AD.',
+    texty: {
+      popis: 'Nevytápěné nebo temperované podzemní prostory sloužící jako sklady a sklepní kóje.',
+      technologie: 'Osvětlení, zásuvkové obvody.',
+      chemikalie: 'Bez skladování nebezpečných látek.' } },
+  // ── Bytový dům ──
+  { id: 'vest-bd-spolecne', skupina: 'Bytový dům', nazev: 'Bytový dům – společné prostory (chodby, schodiště, vstup)',
+    kody: dokVvKody('AA5, AB5, AC1, AD1, AE1, AF1, AG1, AH1, AK1, AL1, AN1, AP1, AQ1, AR1, AS1 | BA1, BC1, BD1, BE1 | CA1, CB1'),
+    pozn: '', upozorneni: 'U nevytápěných společných prostor AA4 / AB4. U vícepodlažních domů s obtížným únikem zvažte BD2.',
+    texty: {
+      popis: 'Společné prostory bytového domu – vstupní prostor, chodby a schodiště přístupné všem obyvatelům domu.',
+      technologie: 'Společné osvětlení se schodišťovými automaty nebo čidly, domovní zvonky a dorozumívací zařízení, zásuvky pro úklid.',
+      chemikalie: 'Úklidové prostředky v malém množství.' } },
+  { id: 'vest-bd-sklepy', skupina: 'Bytový dům', nazev: 'Bytový dům – sklepní kóje, kočárkárna, kolárna, sušárna',
+    kody: dokVvKody('AA4, AB4, AC1, AD2, AE1, AF1, AG1, AH1, AK1, AL1, AN1, AP1, AQ1, AR1, AS1 | BA1, BC2, BD1, BE1 | CA1, CB1'),
+    pozn: '', upozorneni: '',
+    texty: {
+      popis: 'Společné nevytápěné prostory bytového domu – sklepní kóje, kočárkárna, kolárna a sušárna prádla.',
+      technologie: 'Osvětlení, zásuvkové obvody.',
+      chemikalie: 'Bez skladování nebezpečných látek.' } },
+  { id: 'vest-bd-elektro', skupina: 'Bytový dům', nazev: 'Bytový dům – elektroměrová rozvodna, hlavní domovní rozvodna',
     kody: dokVvKody('AA5, AB5, AC1, AD1, AE1, AF1, AG1, AH1, AK1, AL1, AN1, AP1, AQ1, AR1, AS1 | BA4, BC2, BD1, BE1 | CA1, CB1'),
-    pozn: '',
+    pozn: '', upozorneni: 'BA4 platí pro uzamčený prostor přístupný jen poučeným osobám. U nevytápěné rozvodny AA4 / AB4.',
+    texty: {
+      popis: 'Uzamčený prostor s hlavní domovní rozvodnicí a elektroměrovými rozvaděči, přístupný pouze poučeným osobám.',
+      technologie: 'Hlavní domovní rozvodnice, elektroměrové rozvaděče, rozvodnice společné spotřeby, osvětlení.',
+      chemikalie: 'Bez skladování nebezpečných látek.' } },
+  { id: 'vest-bd-vytah', skupina: 'Bytový dům', nazev: 'Bytový dům – strojovna výtahu',
+    kody: dokVvKody('AA5, AB5, AC1, AD1, AE1, AF1, AG1, AH2, AK1, AL1, AN1, AP1, AQ1, AR1, AS1 | BA4, BC2, BD1, BE1 | CA1, CB1'),
+    pozn: '', upozorneni: 'U nevytápěné strojovny AA4 / AB4. U hydraulického výtahu uveďte hydraulický olej v chemikáliích.',
+    texty: {
+      popis: 'Uzamčená strojovna výtahu přístupná pouze poučeným osobám.',
+      technologie: 'Pohon výtahu, řídicí rozvaděč výtahu, osvětlení a zásuvka pro údržbu.',
+      chemikalie: 'Maziva a převodové oleje v malém množství.' } },
+  // ── Technické prostory ──
+  { id: 'vest-kotelna', skupina: 'Technické prostory', nazev: 'Kotelna (plynová, bez trvalé obsluhy)',
+    kody: dokVvKody('AA5, AB5, AC1, AD1, AE1, AF1, AG1, AH1, AK1, AL1, AN1, AP1, AQ1, AR1, AS1 | BA4, BC2, BD1, BE1 | CA1, CB1'),
+    pozn: '', upozorneni: '',
     texty: {
       popis: 'Plně automatizovaný zdroj tepla pro vytápění a ohřev vody, provozovaný bez trvalé obsluhy. ' +
              'Bezpečnost provozu je zajištěna interními ochrannými a blokovacími prvky samotných zdrojů tepla ' +
              'a větráním prostoru kotelny.',
       technologie: 'Plynové kotle s hořáky, vnitřní plynovod s uzavíracími armaturami, rozvody topné vody ' +
                    's čerpadly, systém měření a regulace, větrání místnosti.',
-      chemikalie: 'Zemní plyn (palivo, hořlavý plyn); Otopná voda (médium v uzavřeném okruhu, případně s inhibitory koroze).'
-    } }
+      chemikalie: 'Zemní plyn (palivo, hořlavý plyn); Otopná voda (médium v uzavřeném okruhu, případně s inhibitory koroze).' } },
+  { id: 'vest-vymenik', skupina: 'Technické prostory', nazev: 'Výměníková stanice',
+    kody: dokVvKody('AA5, AB5, AC1, AD2, AE1, AF1, AG1, AH2, AK1, AL1, AN1, AP1, AQ1, AR1, AS1 | BA4, BC2, BD1, BE1 | CA1, CB1'),
+    pozn: '', upozorneni: 'AD2 kvůli možnému úkapu z armatur. Při vysoké teplotě v prostoru zvažte AA6. ' +
+                          'Při rozsáhlých uzemněných kovových rozvodech zvažte BC3.',
+    texty: {
+      popis: 'Výměníková stanice tepla provozovaná bez trvalé obsluhy, uzamčená a přístupná pouze poučeným osobám.',
+      technologie: 'Výměník tepla, oběhová čerpadla, ohřev teplé vody, systém měření a regulace, osvětlení.',
+      chemikalie: 'Otopná voda (médium v uzavřeném okruhu, případně s inhibitory koroze).' } },
+  { id: 'vest-technicka', skupina: 'Technické prostory', nazev: 'Technická místnost / sklad čerpadel',
+    kody: dokVvKody('AA5, AB5, AC1, AD2, AE1, AF1, AG2, AH2, AK1, AL1, AN1, AP1, AQ1, AR1, AS1 | BA1, BC1, BD1, BE1 | CA1, CB1'),
+    pozn: '', upozorneni: '', texty: {} },
+  { id: 'vest-sklad', skupina: 'Technické prostory', nazev: 'Nevytápěný sklad',
+    kody: dokVvKody('AA4, AB4, AC1, AD2, AE1, AF1, AG1, AH1, AK1, AL1, AN1, AP1, AQ1, AR1, AS1 | BA1, BC1, BD1, BE1 | CA1, CB1'),
+    pozn: '', upozorneni: '', texty: {} },
+  { id: 'vest-puda', skupina: 'Technické prostory', nazev: 'Půda, nevytápěné podkroví',
+    kody: dokVvKody('AA7, AB7, AC1, AD1, AE2, AF1, AG1, AH1, AK1, AL2, AN1, AP1, AQ1, AR1, AS1 | BA1, BC1, BD1, BE1 | CA2, CB1'),
+    pozn: '', upozorneni: 'CA2 platí pro dřevěný krov, u nehořlavé konstrukce CA1. Při skladování hořlavin zvažte BE2.',
+    texty: {
+      popis: 'Nevytápěný půdní prostor pod střechou, bez trvalého pobytu osob.',
+      technologie: 'Osvětlení, případně vedení rozvodů k anténám a fotovoltaice.',
+      chemikalie: 'Bez skladování nebezpečných látek.' } },
+  // ── Administrativa a výroba ──
+  { id: 'vest-admin', skupina: 'Administrativa a výroba', nazev: 'Administrativa / kanceláře / sociální zázemí',
+    kody: dokVvKody('AA5, AB5, AC1, AD1, AE1, AF1, AG1, AH1, AK1, AL1, AN1, AP1, AQ1, AR1, AS1 | BA1, BC1, BD1, BE1 | CA1, CB1'),
+    pozn: '', upozorneni: '', texty: {} },
+  { id: 'vest-vyroba-cista', skupina: 'Administrativa a výroba', nazev: 'Výrobní hala – čistá výroba (montáž)',
+    kody: dokVvKody('AA5, AB5, AC1, AD1, AE1, AF1, AG2, AH2, AK1, AL1, AN1, AP1, AQ1, AR1, AS1 | BA4, BC2, BD1, BE1 | CA1, CB1'),
+    pozn: '', upozorneni: 'Pokud se v hale pohybují nepoučené osoby, BA1.',
+    texty: {
+      popis: 'Výrobní hala pro montáž a lehkou výrobu, vytápěná, bez zvýšené prašnosti a výskytu vody.',
+      technologie: 'Montážní pracoviště, ruční elektrické nářadí, stroje a technologická zařízení, osvětlení haly.',
+      chemikalie: 'Provozní kapaliny a maziva v malém množství.' } },
+  { id: 'vest-vyroba-prasna', skupina: 'Administrativa a výroba', nazev: 'Výrobní hala – prašná výroba (nehořlavý prach)',
+    kody: dokVvKody('AA5, AB5, AC1, AD1, AE4, AF1, AG2, AH2, AK1, AL1, AN1, AP1, AQ1, AR1, AS1 | BA4, BC2, BD1, BE1 | CA1, CB1'),
+    pozn: '', vyrazne: true,
+    upozorneni: 'AE4 / AE5 / AE6 podle intenzity spadu prachu, AG3 u těžkého provozu (VZV). HOŘLAVÝ PRACH (dřevo, mouka, ' +
+                'plasty) = BE2 nebo BE3 – posoudit prostředí s nebezpečím výbuchu podle ČSN EN 60079-10-2, vzor nepoužít bez úpravy.',
+    texty: {
+      popis: 'Výrobní hala s prašným provozem, vytápěná.',
+      technologie: 'Stroje a technologická zařízení, odsávání, osvětlení haly.',
+      chemikalie: 'Provozní kapaliny a maziva v malém množství.' } },
+  { id: 'vest-dilna', skupina: 'Administrativa a výroba', nazev: 'Dílna, údržba',
+    kody: dokVvKody('AA5, AB5, AC1, AD1, AE2, AF1, AG2, AH2, AK1, AL1, AN1, AP1, AQ1, AR1, AS1 | BA4, BC2, BD1, BE1 | CA1, CB1'),
+    pozn: '', upozorneni: '',
+    texty: {
+      popis: 'Dílna údržby s ručním a stolním obráběním a opravami.',
+      technologie: 'Stolní a ruční elektrické nářadí, svářečka, kompresor, osvětlení.',
+      chemikalie: 'Maziva, oleje a čisticí prostředky v malém množství.' } },
+  { id: 'vest-sklad-horlaviny', skupina: 'Administrativa a výroba', nazev: 'Sklad hořlavých látek',
+    kody: dokVvKody('AA4, AB4, AC1, AD1, AE1, AF1, AG1, AH1, AK1, AL1, AN1, AP1, AQ1, AR1, AS1 | BA4, BC2, BD1, BE2 | CA1, CB1'),
+    pozn: '', vyrazne: true,
+    upozorneni: 'HOŘLAVÉ KAPALINY I. TŘÍDY NEBO HOŘLAVÉ PLYNY = BE3 – prostředí s nebezpečím výbuchu podle ' +
+                'ČSN EN 60079-10-1, vzor nepoužít bez úpravy.',
+    texty: {
+      popis: 'Sklad hořlavých látek a materiálů, nevytápěný.',
+      technologie: 'Osvětlení, případně větrání.',
+      chemikalie: 'Doplnit konkrétní skladované látky.' } },
+  // ── Venkovní ──
+  { id: 'vest-venkovni', skupina: 'Venkovní', nazev: 'Venkovní prostory',
+    kody: dokVvKody('AA7, AB7, AC1, AD4, AE2, AF2, AG2, AH1, AK2, AL2, AN2, AP1, AQ2, AR2, AS2 | BA1, BC3, BD1, BE1 | CA1, CB1'),
+    pozn: '', upozorneni: 'Pod přístřeškem zvažte AD3. Při trvalém přímém oslunění AN3, u exponovaných míst AQ3 a AS3.',
+    texty: {
+      popis: 'Venkovní prostory objektu vystavené povětrnostním vlivům – fasáda, venkovní osvětlení, přípojková a elektroměrová skříň.',
+      technologie: 'Venkovní osvětlení, venkovní zásuvky, pohony vjezdových bran, přípojková a elektroměrová skříň.',
+      chemikalie: 'Bez nebezpečných látek.' } }
 ];
 
 // Textová pole oddílu B — klíč v datech dokumentu i v `texty` vzoru.
@@ -27656,7 +27796,15 @@ function dokVzory(vcetneSkrytych) {
   var skryte = DOK.vzorySkryte || [];
   var vest = DOK_VV_VZORY_VESTAVENE.filter(function (v) { return vcetneSkrytych || skryte.indexOf(v.id) === -1; })
     .map(function (v) { var o = dokKopie(v); o.vestaveny = true; o.skryty = skryte.indexOf(v.id) !== -1; return o; });
-  return vest.concat((DOK.vzory || []).map(function (v) { return dokKopie(v); }));
+  return vest.concat((DOK.vzory || []).map(function (v) { var o = dokKopie(v); o.skupina = 'Vlastní vzory'; return o; }));
+}
+
+// Vzory rozdělené do skupin v pořadí DOK_VV_VZORY_SKUPINY + „Vlastní vzory"
+// — stejně ve výběru vzoru, v nabídce textů B i ve správě vzorů.
+function dokVzorySkupiny(seznam) {
+  return DOK_VV_VZORY_SKUPINY.concat(['Vlastní vzory']).map(function (s) {
+    return { nazev: s, vzory: seznam.filter(function (v) { return v.skupina === s; }) };
+  }).filter(function (g) { return g.vzory.length; });
 }
 
 function dokVzor(id) {
@@ -27818,7 +27966,12 @@ function dokVzorySpravaVykreslit() {
   }
   var box = document.getElementById('dok-vzory');
   if (!box) return;
-  box.innerHTML = dokVzory(true).map(function (v) {
+  box.innerHTML = dokVzorySkupiny(dokVzory(true)).map(function (g) {
+    return '<div class="dk-blok-t">' + esc(g.nazev) + '</div>' + g.vzory.map(dokVzorRadekHtml).join('');
+  }).join('');
+}
+
+function dokVzorRadekHtml(v) {
     var st = v.vestaveny
       ? '<span class="dok-stitek">vestavěný</span>' + (v.skryty ? '<span class="dok-stitek dok-stitek-skryty">skrytý</span>' : '')
       : '<span class="dok-stitek dok-stitek-vlastni">vlastní</span>';
@@ -27829,9 +27982,9 @@ function dokVzorySpravaVykreslit() {
         '<button class="dok-mini dok-mini-del" data-action="tdVzorSmazat">🗑 Smazat</button>';
     return '<div class="dok-vzor-radek' + (v.skryty ? ' skryty' : '') + '" data-vzor="' + esc(v.id) + '">' +
       '<span class="dok-vzor-n"><b>' + esc(v.nazev) + '</b>' + st +
-      '<span class="dok-vzor-kody">' + esc(dokVvSouhrn(v.kody) || 'bez kódů') + '</span></span>' +
-      '<span class="dok-p-akce">' + akce + '</span></div>';
-  }).join('');
+      '<span class="dok-vzor-kody">' + esc(dokVvSouhrn(v.kody) || 'bez kódů') + '</span>' +
+      (v.upozorneni ? '<span class="dok-vzor-upoz' + (v.vyrazne ? ' vyrazne' : '') + '">⚠ ' + esc(v.upozorneni) + '</span>' : '') +
+      '</span><span class="dok-p-akce">' + akce + '</span></div>';
 }
 
 function dokVzorIdZ(el) { var r = el.closest('[data-vzor]'); return r ? r.getAttribute('data-vzor') : ''; }
@@ -27909,6 +28062,7 @@ function dokVzorDialog(vzor, id, titul) {
   document.getElementById('dok-vzor-nazev').value = vzor.nazev || '';
   document.getElementById('dok-vzor-kody').innerHTML = dokKodyHtml(vzor.kody || {});
   document.getElementById('dok-vzor-pozn').value = vzor.pozn || '';
+  document.getElementById('dok-vzor-upoz').value = vzor.upozorneni || '';
   DOK_VV_TEXTY_B.forEach(function (b) {
     document.getElementById('dok-vzor-t-' + b.k).value = (vzor.texty || {})[b.k] || '';
   });
@@ -27925,7 +28079,8 @@ async function dokVzorUlozit() {
   });
   var v = { id: (__dokVzorEdit && __dokVzorEdit.id) || ('vl-' + dokUid()), nazev: nazev,
             kody: dokKodyCist(document.getElementById('dok-vzor-kody')),
-            pozn: document.getElementById('dok-vzor-pozn').value.trim(), texty: texty };
+            pozn: document.getElementById('dok-vzor-pozn').value.trim(),
+            upozorneni: document.getElementById('dok-vzor-upoz').value.trim(), texty: texty };
   await dokNacist();
   var i = -1;
   DOK.vzory.forEach(function (x, j) { if (x.id === v.id) i = j; });
@@ -28071,14 +28226,12 @@ function dkProstorHtml(p) {
 
 function dokVzorMoznosti(akt) {
   var vse = dokVzory(true).filter(function (v) { return !v.skryty || v.id === akt; });
-  var sk = function (seznam, titul) {
-    return seznam.length ? '<optgroup label="' + titul + '">' + seznam.map(function (v) {
-      return '<option value="' + esc(v.id) + '"' + (v.id === akt ? ' selected' : '') + '>' + esc(v.nazev) + '</option>';
-    }).join('') + '</optgroup>' : '';
-  };
   return '<option value="">— vybrat vzor (předvyplní kódy) —</option>' +
-    sk(vse.filter(function (v) { return v.vestaveny; }), 'Vestavěné vzory') +
-    sk(vse.filter(function (v) { return !v.vestaveny; }), 'Vlastní vzory');
+    dokVzorySkupiny(vse).map(function (g) {
+      return '<optgroup label="' + esc(g.nazev) + '">' + g.vzory.map(function (v) {
+        return '<option value="' + esc(v.id) + '"' + (v.id === akt ? ' selected' : '') + '>' + esc(v.nazev) + '</option>';
+      }).join('') + '</optgroup>';
+    }).join('');
 }
 
 function dkSouhrnHtml(kody) {
@@ -28103,6 +28256,7 @@ function dkSkupinaHtml(g) {
     '<div class="dk-vzor-vyber-radek"><select class="dk-in dk-vzor-vyber" title="Vzor předvyplní kódy, poznámku a nabídne texty oddílu B">' +
       dokVzorMoznosti(g.vzor) + '</select>' +
       '<button class="dok-mini" data-action="tdVzorZeSkupiny" title="Uložit kódy, poznámku a texty oddílu B jako vlastní vzor">💾 Uložit jako vlastní vzor</button></div>' +
+    dkUpozorneniHtml(g.vzor) +
     dokKodyHtml(g.kody) +
     '<div class="dk-souhrn">' + dkSouhrnHtml(g.kody) + '</div>' +
     '<div class="f"><label>Poznámka <span class="dk-nepov">(např. zóny dle ČSN 33 2000-7-701)</span></label>' +
@@ -28357,6 +28511,19 @@ function dkSouhrnObnovit(sk) {
 
 function dkSkupinaZ(el) { return el.closest('.dk-skupina'); }
 
+// Upozornění vzoru — JEN nápověda pro technika ve formuláři, do dat
+// protokolu ani do PDF se nedostane (bere se za běhu z vybraného vzoru).
+function dkUpozorneniHtml(id) {
+  var v = id ? dokVzor(id) : null;
+  if (!v || !v.upozorneni) return '<div class="dk-upozorneni" style="display:none"></div>';
+  return '<div class="dk-upozorneni' + (v.vyrazne ? ' vyrazne' : '') + '"><b>⚠ Upozornění ke vzoru:</b> ' + esc(v.upozorneni) + '</div>';
+}
+
+function dkUpozorneniObnovit(sk) {
+  var el = sk.querySelector('.dk-upozorneni'); if (!el) return;
+  el.outerHTML = dkUpozorneniHtml(sk.querySelector('.dk-vzor-vyber').value);
+}
+
 function dokVzorPouzit(sk, id) {
   var v = dokVzor(id); if (!v) return;
   var f = dokForm();
@@ -28371,6 +28538,7 @@ function dokVzorPouzit(sk, id) {
     if (t && !el.value.trim()) { el.value = t; doplneno.push(b.nazev.toLowerCase()); }
   });
   sk.setAttribute('data-vzor', id);
+  dkUpozorneniObnovit(sk);
   dkSouhrnObnovit(sk);
   dokNabidkyB();
   dokZmena();
@@ -28383,13 +28551,14 @@ function dokVzorPouzit(sk, id) {
       DOK_VV_TEXTY_B.forEach(function (b) { f.querySelector('[data-dk="' + b.k + '"]').value = pred.b[b.k]; });
       var sel = sk.querySelector('.dk-vzor-vyber'); sel.value = pred.vzor;
       sk.setAttribute('data-vzor', pred.vzor);
-      dkSouhrnObnovit(sk); dokNabidkyB(); dokZmena();
+      dkUpozorneniObnovit(sk); dkSouhrnObnovit(sk); dokNabidkyB(); dokZmena();
     } });
 }
 
 function dokFormVzoryObnovit() {
   var f = dokForm(); if (!f || !window.__dokOtevreny) return;
   f.querySelectorAll('.dk-vzor-vyber').forEach(function (s) { var v = s.value; s.innerHTML = dokVzorMoznosti(v); s.value = v; });
+  f.querySelectorAll('.dk-skupina').forEach(dkUpozorneniObnovit);
   dokNabidkyB();
 }
 
@@ -28402,11 +28571,12 @@ function dokNabidkyB() {
   f.querySelectorAll('.dk-b').forEach(function (box) {
     var k = box.getAttribute('data-b');
     var s = vzory.filter(function (v) { return v.texty && v.texty[k]; });
-    s.sort(function (a, b) { return (pouzite.indexOf(b.id) !== -1) - (pouzite.indexOf(a.id) !== -1); });
     var cil = box.querySelector('.dk-nabidka-b');
-    cil.innerHTML = s.length ? '<select class="dk-in dk-nabidka" title="Vloží text vzoru do pole (prázdné pole vyplní, jinak připojí na konec)">' +
-      '<option value="">📋 Vložit text ze vzoru…</option>' + s.map(function (v) {
-        return '<option value="' + esc(v.id) + '">' + (pouzite.indexOf(v.id) !== -1 ? '✓ ' : '') + esc(v.nazev) + '</option>';
+    cil.innerHTML = s.length ? '<select class="dk-in dk-nabidka" title="Vloží text vzoru do pole (prázdné pole vyplní, jinak připojí na konec). ✓ = vzor použitý ve skupině tohoto protokolu">' +
+      '<option value="">📋 Vložit text ze vzoru…</option>' + dokVzorySkupiny(s).map(function (g) {
+        return '<optgroup label="' + esc(g.nazev) + '">' + g.vzory.map(function (v) {
+          return '<option value="' + esc(v.id) + '">' + (pouzite.indexOf(v.id) !== -1 ? '✓ ' : '') + esc(v.nazev) + '</option>';
+        }).join('') + '</optgroup>';
       }).join('') + '</select>' : '';
   });
 }
@@ -28516,7 +28686,7 @@ document.addEventListener('change', function (e) {
   if (t.classList.contains('dk-vzor-vyber')) {
     var sk = dkSkupinaZ(t);
     if (t.value) dokVzorPouzit(sk, t.value);
-    else { sk.setAttribute('data-vzor', ''); dokNabidkyB(); dokZmena(); }
+    else { sk.setAttribute('data-vzor', ''); dkUpozorneniObnovit(sk); dokNabidkyB(); dokZmena(); }
     return;
   }
   if (t.classList.contains('dk-nabidka')) { dokVlozitTextB(t); return; }
@@ -28646,7 +28816,9 @@ TD_AKCE.tdVlozitPotvrdit = function () {
 TD_AKCE.tdVzorZeSkupiny = function (el) {
   var sk = dkSkupinaZ(el), f = dokForm(), texty = {};
   DOK_VV_TEXTY_B.forEach(function (b) { var v = f.querySelector('[data-dk="' + b.k + '"]').value.trim(); if (v) texty[b.k] = v; });
-  dokVzorDialog({ nazev: '', kody: dokKodyCist(sk), pozn: sk.querySelector('[data-k="pozn"]').value, texty: texty }, null,
+  var puv = dokVzor(sk.querySelector('.dk-vzor-vyber').value);
+  dokVzorDialog({ nazev: '', kody: dokKodyCist(sk), pozn: sk.querySelector('[data-k="pozn"]').value, texty: texty,
+                  upozorneni: puv ? puv.upozorneni || '' : '' }, null,
     '🧩 Uložit skupinu jako vlastní vzor');
 };
 // ── PDF dokumentu ────────────────────────────────────────────────────────

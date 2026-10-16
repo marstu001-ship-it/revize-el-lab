@@ -347,6 +347,112 @@ function pomocnik() {
   check('rozbor seznamu prostorů (Excel, text, bez čísla, hlavička)',
     r11 === JSON.stringify([{ c: '1.01', n: 'Zádveří' }, { c: 'A-12', n: 'Sklad' }, { c: '0.05', n: 'Kotelna' }, { c: '', n: 'Chodba bez čísla' }, { c: '2.03', n: 'Kuchyňka' }]), r11);
 
+  // ── 13. vestavěné vzory prostorů (schválené 16. 10. 2026) ─────────────
+  // Očekávané hodnoty jsou opsané ZE ZADÁNÍ, ne z programu.
+  const ZAKLAD = 'AA5 AB5 AC1 AD1 AE1 AF1 AG1 AH1 AK1 AL1 AN1 AP1 AQ1 AR1 AS1 BA1 BC1 BD1 BE1 CA1 CB1';
+  const SKLEP = 'AA4 AB4 AC1 AD2 AE1 AF1 AG1 AH1 AK1 AL1 AN1 AP1 AQ1 AR1 AS1 BA1 BC2 BD1 BE1 CA1 CB1';
+  const VZORY = [
+    ['Bydlení', 'vest-byt', 'Byt – obytné místnosti, kuchyň, předsíň', ZAKLAD, '', 'Bytová jednotka v bytovém domě', 'spotřebiče v kuchyni', 'Běžné čisticí prostředky pro domácnost'],
+    ['Bydlení', 'vest-sprcha', 'Koupelna, sprcha, umývárna', 'AA5 AB5 AC1 AD4 AE1 AF1 AG2 AH2 AK1 AL1 AN1 AP1 AQ1 AR1 AS1 BA1 BC1 BD1 BE1 CA1 CB1', '', 'Koupelna se sprchovým koutem nebo vanou', 'otopný žebřík', 'Běžné hygienické a čisticí prostředky'],
+    ['Bydlení', 'vest-rd', 'Rodinný dům – obytné prostory', ZAKLAD, '', 'Rodinný dům určený k trvalému bydlení', 'nabíjení elektromobilu', 'Běžné čisticí prostředky pro domácnost'],
+    ['Bydlení', 'vest-rd-garaz', 'Rodinný dům – garáž', 'AA4 AB4 AC1 AD2 AE1 AF1 AG2 AH1 AK1 AL1 AN1 AP1 AQ1 AR1 AS1 BA1 BC2 BD1 BE1 CA1 CB1', 'zvažte BE2', 'Garáž pro osobní automobily', 'pohon garážových vrat', 'Pohonné hmoty v nádržích vozidel'],
+    ['Bydlení', 'vest-sklep', 'Sklep, suterén', SKLEP, 'vyšší třídu AB / AD', 'Nevytápěné nebo temperované podzemní prostory', 'Osvětlení, zásuvkové obvody.', 'Bez skladování nebezpečných látek.'],
+    ['Bytový dům', 'vest-bd-spolecne', 'Bytový dům – společné prostory (chodby, schodiště, vstup)', ZAKLAD, 'zvažte BD2', 'Společné prostory bytového domu', 'schodišťovými automaty', 'Úklidové prostředky'],
+    ['Bytový dům', 'vest-bd-sklepy', 'Bytový dům – sklepní kóje, kočárkárna, kolárna, sušárna', SKLEP, '', 'Společné nevytápěné prostory bytového domu', 'Osvětlení, zásuvkové obvody.', 'Bez skladování nebezpečných látek.'],
+    ['Bytový dům', 'vest-bd-elektro', 'Bytový dům – elektroměrová rozvodna, hlavní domovní rozvodna', 'AA5 AB5 AC1 AD1 AE1 AF1 AG1 AH1 AK1 AL1 AN1 AP1 AQ1 AR1 AS1 BA4 BC2 BD1 BE1 CA1 CB1', 'BA4 platí pro uzamčený prostor', 'Uzamčený prostor s hlavní domovní rozvodnicí', 'elektroměrové rozvaděče', 'Bez skladování nebezpečných látek.'],
+    ['Bytový dům', 'vest-bd-vytah', 'Bytový dům – strojovna výtahu', 'AA5 AB5 AC1 AD1 AE1 AF1 AG1 AH2 AK1 AL1 AN1 AP1 AQ1 AR1 AS1 BA4 BC2 BD1 BE1 CA1 CB1', 'hydraulický olej', 'Uzamčená strojovna výtahu', 'Pohon výtahu', 'Maziva a převodové oleje'],
+    ['Technické prostory', 'vest-kotelna', 'Kotelna (plynová, bez trvalé obsluhy)', 'AA5 AB5 AC1 AD1 AE1 AF1 AG1 AH1 AK1 AL1 AN1 AP1 AQ1 AR1 AS1 BA4 BC2 BD1 BE1 CA1 CB1', '', 'Plně automatizovaný zdroj tepla', 'Plynové kotle s hořáky', 'Zemní plyn (palivo, hořlavý plyn)'],
+    ['Technické prostory', 'vest-vymenik', 'Výměníková stanice', 'AA5 AB5 AC1 AD2 AE1 AF1 AG1 AH2 AK1 AL1 AN1 AP1 AQ1 AR1 AS1 BA4 BC2 BD1 BE1 CA1 CB1', 'zvažte BC3', 'Výměníková stanice tepla', 'Výměník tepla', 'Otopná voda'],
+    ['Technické prostory', 'vest-technicka', 'Technická místnost / sklad čerpadel', 'AA5 AB5 AC1 AD2 AE1 AF1 AG2 AH2 AK1 AL1 AN1 AP1 AQ1 AR1 AS1 BA1 BC1 BD1 BE1 CA1 CB1', '', '', '', ''],
+    ['Technické prostory', 'vest-sklad', 'Nevytápěný sklad', 'AA4 AB4 AC1 AD2 AE1 AF1 AG1 AH1 AK1 AL1 AN1 AP1 AQ1 AR1 AS1 BA1 BC1 BD1 BE1 CA1 CB1', '', '', '', ''],
+    ['Technické prostory', 'vest-puda', 'Půda, nevytápěné podkroví', 'AA7 AB7 AC1 AD1 AE2 AF1 AG1 AH1 AK1 AL2 AN1 AP1 AQ1 AR1 AS1 BA1 BC1 BD1 BE1 CA2 CB1', 'CA2 platí pro dřevěný krov', 'Nevytápěný půdní prostor pod střechou', 'k anténám a fotovoltaice', 'Bez skladování nebezpečných látek.'],
+    ['Administrativa a výroba', 'vest-admin', 'Administrativa / kanceláře / sociální zázemí', ZAKLAD, '', '', '', ''],
+    ['Administrativa a výroba', 'vest-vyroba-cista', 'Výrobní hala – čistá výroba (montáž)', 'AA5 AB5 AC1 AD1 AE1 AF1 AG2 AH2 AK1 AL1 AN1 AP1 AQ1 AR1 AS1 BA4 BC2 BD1 BE1 CA1 CB1', 'nepoučené osoby, BA1', 'Výrobní hala pro montáž a lehkou výrobu', 'Montážní pracoviště', 'Provozní kapaliny a maziva'],
+    ['Administrativa a výroba', 'vest-vyroba-prasna', 'Výrobní hala – prašná výroba (nehořlavý prach)', 'AA5 AB5 AC1 AD1 AE4 AF1 AG2 AH2 AK1 AL1 AN1 AP1 AQ1 AR1 AS1 BA4 BC2 BD1 BE1 CA1 CB1', '!HOŘLAVÝ PRACH', 'Výrobní hala s prašným provozem', 'odsávání', 'Provozní kapaliny a maziva'],
+    ['Administrativa a výroba', 'vest-dilna', 'Dílna, údržba', 'AA5 AB5 AC1 AD1 AE2 AF1 AG2 AH2 AK1 AL1 AN1 AP1 AQ1 AR1 AS1 BA4 BC2 BD1 BE1 CA1 CB1', '', 'Dílna údržby', 'svářečka, kompresor', 'Maziva, oleje a čisticí prostředky'],
+    ['Administrativa a výroba', 'vest-sklad-horlaviny', 'Sklad hořlavých látek', 'AA4 AB4 AC1 AD1 AE1 AF1 AG1 AH1 AK1 AL1 AN1 AP1 AQ1 AR1 AS1 BA4 BC2 BD1 BE2 CA1 CB1', '!HOŘLAVÉ KAPALINY I. TŘÍDY', 'Sklad hořlavých látek a materiálů', 'případně větrání', 'Doplnit konkrétní skladované látky.'],
+    ['Venkovní', 'vest-venkovni', 'Venkovní prostory', 'AA7 AB7 AC1 AD4 AE2 AF2 AG2 AH1 AK2 AL2 AN2 AP1 AQ2 AR2 AS2 BA1 BC3 BD1 BE1 CA1 CB1', 'zvažte AD3', 'Venkovní prostory objektu', 'pohony vjezdových bran', 'Bez nebezpečných látek.'],
+  ];
+  const vz = await p.evaluate(async (VZORY) => {
+    const out = [];
+    await dokNovy('pouvv');
+    const sel = dokForm().querySelector('.dk-vzor-vyber');
+    const poradi = Array.from(sel.querySelectorAll('optgroup')).map(g => g.label + ':' + Array.from(g.children).map(o => o.value).join(','));
+    const nabB = Array.from(dokForm().querySelectorAll('.dk-b[data-b="popis"] .dk-nabidka optgroup')).map(g => g.label);
+    for (const [skupina, id] of VZORY) {
+      await dokNovy('pouvv');
+      clearTimeout(__dokCasovac);
+      const f = dokForm(), sk = f.querySelector('.dk-skupina'), s = sk.querySelector('.dk-vzor-vyber');
+      s.value = id; s.dispatchEvent(new Event('change', { bubbles: true }));
+      clearTimeout(__dokCasovac); __dokCasovac = null;
+      const up = sk.querySelector('.dk-upozorneni');
+      out.push({ id, nazev: s.selectedOptions[0].textContent, skupina: s.selectedOptions[0].parentNode.label,
+        kody: Object.values(dokKodyCist(sk)).join(' '),
+        popis: f.querySelector('[data-dk="popis"]').value, technologie: f.querySelector('[data-dk="technologie"]').value,
+        chemikalie: f.querySelector('[data-dk="chemikalie"]').value, pozn: sk.querySelector('[data-k="pozn"]').value,
+        upoz: up && up.offsetHeight > 0 ? up.textContent : '', vyrazne: !!(up && up.classList.contains('vyrazne')) });
+    }
+    window.__dokOtevreny = null;
+    return { out, poradi, nabB };
+  }, VZORY);
+  check('výběr vzoru: skupinové nadpisy v předepsaném pořadí',
+    vz.poradi.map(x => x.split(':')[0]).join('|') === 'Bydlení|Bytový dům|Technické prostory|Administrativa a výroba|Venkovní', vz.poradi.map(x => x.split(':')[0]).join('|'));
+  const ocekPoradi = ['Bydlení', 'Bytový dům', 'Technické prostory', 'Administrativa a výroba', 'Venkovní']
+    .map(s => s + ':' + VZORY.filter(v => v[0] === s).map(v => v[1]).join(','));
+  check('výběr vzoru: vzory uvnitř skupin v předepsaném pořadí', JSON.stringify(vz.poradi) === JSON.stringify(ocekPoradi), JSON.stringify(vz.poradi).slice(0, 200));
+  check('nabídka „Vložit text ze vzoru" má stejné skupiny ve stejném pořadí', vz.nabB.join('|') === 'Bydlení|Bytový dům|Technické prostory|Administrativa a výroba|Venkovní', vz.nabB.join('|'));
+  VZORY.forEach(([skupina, id, nazev, kody, upoz, popis, tech, chem], i) => {
+    const r = vz.out[i];
+    const kodyOk = r.kody === kody;
+    const textyOk = popis ? (r.popis.startsWith(popis) && r.technologie.indexOf(tech) !== -1 && r.chemikalie.startsWith(chem))
+                          : (r.popis === '' && r.technologie === '' && r.chemikalie === '');
+    const upozOk = upoz ? (r.upoz.indexOf(upoz.replace(/^!/, '')) !== -1 && r.vyrazne === upoz.startsWith('!')) : r.upoz === '';
+    check('vzor „' + nazev + '": kódy, texty B, upozornění', r.nazev === nazev && r.skupina === skupina && kodyOk && textyOk && upozOk,
+      [r.nazev, r.skupina, kodyOk ? 'kódy OK' : 'kódy ' + r.kody, textyOk ? 'texty OK' : 'texty ' + r.popis.slice(0, 40), upozOk ? 'upoz OK' : 'upoz ' + r.upoz.slice(0, 60)].join(' · '));
+  });
+  check('koupelna: poznámka o zónách ČSN 33 2000-7-701 zůstala', /ČSN 33 2000-7-701 zóny dle obrázku 701 A-f/.test(vz.out[1].pozn));
+
+  // upozornění nejde do PDF ani do dat protokolu
+  const upPdf = await p.evaluate(async () => {
+    await dokNovy('pouvv');
+    const f = dokForm();
+    const st = f.querySelector('[data-dk="stavba"]'); st.value = 'Vymyšlená prašná hala'; st.dispatchEvent(new Event('input', { bubbles: true }));
+    const s = f.querySelector('.dk-vzor-vyber'); s.value = 'vest-vyroba-prasna'; s.dispatchEvent(new Event('change', { bubbles: true }));
+    const videt = f.querySelector('.dk-upozorneni').offsetHeight > 0;
+    await dokNahled(); await new Promise(r => setTimeout(r, 200));
+    const text = Array.from(document.querySelectorAll('#dok-pdf-pages .a4')).map(x => x.innerText).join('\n');
+    const data = JSON.stringify(DOK.dokumenty.find(x => x.uid === __dokOtevreny.uid).data);
+    TD_AKCE.tdPdfZpet();
+    return { videt, text, data };
+  });
+  check('upozornění vzoru se ve formuláři ukáže', upPdf.videt);
+  check('upozornění vzoru NENÍ v PDF', !/HOŘLAVÝ PRACH|Upozornění|60079/.test(upPdf.text) && /AE4/.test(upPdf.text));
+  check('upozornění vzoru NENÍ v uložených datech protokolu', !/HOŘLAVÝ PRACH|upozorneni/.test(upPdf.data));
+
+  // protokol uložený se vzorem „Sprcha / umývárna" (před přejmenováním) se načte beze změny
+  const stary = await p.evaluate(async () => {
+    await dokNacist();
+    const zaznam = { uid: 'dok-stary-sprcha', typ: 'pouvv', cislo: 'POUVV-0099', vytvoreno: '2026-10-16T05:00:00.000Z', upraveno: '2026-10-16T05:00:00.000Z',
+      data: { cislo: 'POUVV-0099', stavba: 'Vymyšlená stará umývárna', investor: {}, zpracovatel: {}, projektant: {}, komise: [],
+              podklady: 'X', popis: '', technologie: '', chemikalie: '', zduvodneni: 'Z',
+              skupiny: [{ uid: 'g1', prostory: [{ c: '1', n: 'Sprcha' }], vzor: 'vest-sprcha',
+                          kody: { AA: 'AA5', AD: 'AD3', BA: 'BA1' }, pozn: 'Stará poznámka ze Sprcha / umývárna' }] } };
+    DOK.dokumenty.push(zaznam); await dokZapsat();
+    const pred = JSON.stringify(zaznam);
+    await dokOtevrit('dok-stary-sprcha'); await new Promise(r => setTimeout(r, 1200));
+    const f = dokForm(), sk = f.querySelector('.dk-skupina'), s = sk.querySelector('.dk-vzor-vyber');
+    const v = { nazev: s.selectedOptions[0].textContent, kody: dokKodyCist(sk), pozn: sk.querySelector('[data-k="pozn"]').value,
+                popis: f.querySelector('[data-dk="popis"]').value, stav: document.getElementById('dok-stav').textContent };
+    await dokNacist();
+    v.ulozene = JSON.stringify(DOK.dokumenty.find(x => x.uid === 'dok-stary-sprcha'));
+    v.pred = pred;
+    return v;
+  });
+  check('starý protokol se vzorem „Sprcha / umývárna" ukáže nový název vzoru', stary.nazev === 'Koupelna, sprcha, umývárna', stary.nazev);
+  check('starý protokol: kódy, poznámka a prázdné texty B beze změny', JSON.stringify(stary.kody) === '{"AA":"AA5","AD":"AD3","BA":"BA1"}' &&
+    stary.pozn === 'Stará poznámka ze Sprcha / umývárna' && stary.popis === '', JSON.stringify(stary.kody));
+  check('starý protokol: pouhé otevření uložená data nepřepíše', stary.ulozene === stary.pred);
+
   // ── 12. telefon: karta pod ostatními ──────────────────────────────────
   const m = await b.newContext({ viewport: { width: 375, height: 812 }, isMobile: true, hasTouch: true });
   const pm = await m.newPage();

@@ -422,9 +422,21 @@ s nabídkou textů ze vzorů), **C. Rozhodnutí a zdůvodnění** (obecný text
 `op` = krytí / opatření jen tam, kde ho uživatel uvedl. **Nic nedoplňovat
 z internetu ani z hlavy.** Dokud `DOK_VV_KATALOG_OVERENO = false`, ukazuje
 se „⚠ katalog čeká na kontrolu s normou". AM a BB v katalogu nejsou.
-**Vestavěné vzory (`DOK_VV_VZORY_VESTAVENE`) jsou jen ze skutečných
-protokolů** — administrativa, sprcha, technická místnost, nevytápěný sklad,
-kotelna (i s texty B). Další si uživatel dělá jako vlastní.
+**Vestavěné vzory (`DOK_VV_VZORY_VESTAVENE`) schválil uživatel 16. 10. 2026**
+— 20 vzorů ve skupinách (`DOK_VV_VZORY_SKUPINY`): Bydlení, Bytový dům,
+Technické prostory, Administrativa a výroba, Venkovní; vlastní vzory jdou
+jako poslední skupina. Pět vychází ze skutečných protokolů, ostatní jsou
+**schválené výchozí hodnoty, ne opis z protokolů** — technik je v protokolu
+vždy upraví. Kódy, poznámky, texty B i upozornění jsou doslova podle
+schváleného zadání; **nic nedoplňovat z hlavy**. Každý vzor má `pozn`
+(jde do PDF) a **`upozorneni`** — nápověda, kterou formulář ukáže pod
+výběrem vzoru (`.dk-upozorneni`, `vyrazne` = oranžově u prostředí
+s nebezpečím výbuchu); **do PDF ani do dat protokolu nejde nikdy** (bere se
+za běhu z vybraného vzoru). Skupinové nadpisy a pořadí platí i v nabídce
+„Vložit text ze vzoru…" a ve správě vzorů (`dokVzorySkupiny`).
+**`id` vzoru se nemění** ani při přejmenování („Sprcha / umývárna" →
+„Koupelna, sprcha, umývárna" je pořád `vest-sprcha`) — protokoly ho mají
+uložený ve skupině a staré se načtou beze změny (test).
 
 **PDF** (`#screen-dok-pdf`, vlastní stránkování, NE přes `generujPDF`):
 záhlaví s číslem na každé straně, „Strana i / N", titul, identifikace,
@@ -437,7 +449,8 @@ Telefon: obrazovky a dialogy jsou v `test-mobil.js` (stavy „dokumentace – �
 `modal-dok-*`); pro telefon jen blok „Mobil: tvorba dokumentace" (lišta
 formuláře se nelepí).
 
-Test: `testy/test-dokumentace.js` (63 kontrol — karta, dvě skupiny, vzory,
+Test: `testy/test-dokumentace.js` (98 kontrol — karta, dlaždice, dvě skupiny, vzory
+(každý vestavěný proti zadání, upozornění mimo PDF, starý protokol se Sprchou),
 ruční kód, restart, číslování, kopie, vlastní vzor, PDF bez vysvětlivek,
 záloha a obnova, dvě okna, rozbor seznamu prostorů a **oddělení**: protokol
 není v archivu, naposledy otevřených, plánu ani hledání a data revizí jsou
