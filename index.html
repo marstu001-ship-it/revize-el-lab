@@ -23130,6 +23130,7 @@ async function init() {
     if (!t.getAttribute('lang')) t.setAttribute('lang', 'cs');
   });
   await loadStore();
+  try { await dokNacist(); } catch (e) {}   // tvorba dokumentace — vlastní úložiště
   migraceKolonky();
   archiv = STORE.archiv || [];
   odberatele = STORE.odberatele || [];
@@ -27102,6 +27103,150 @@ document.addEventListener('focusout', function(e) {
 });
 
 document.getElementById('json-input').addEventListener('change', nacistJSON);
+
+// ═══════════════════════════════════════════════════════════════════════
+// TVORBA DOKUMENTACE (vyvinuto v labu 2026-10-16)
+//
+// Samostatná část programu VEDLE revizí. První dokument je Protokol o určení
+// vnějších vlivů (ČSN 33 2000-5-51 ed.3). Další typy přibudou — nový typ
+// dokumentu = nový záznam v DOK_TYPY (název, předpona čísla, funkce na
+// formulář, čtení formuláře a bloky PDF).
+//
+// **ÚPLNĚ ODDĚLENO OD REVIZÍ** (zadání uživatele):
+//  - vlastní úložiště — v localStorage klíč `revize_el_dok`, v IndexedDB
+//    klíče s předponou `dok_` (DOK_IDB). NENÍ ve STORE ani ve STORE_KEYS,
+//    takže ho saveStore() nezapisuje, loadStore() nečte a revize se s ním
+//    nemůžou smíchat ani přepsat,
+//  - vlastní seznam, číslování (POUVV-0001…), texty i PDF,
+//  - v archivu zpráv, naposledy otevřených, plánu revizí, katalogu vad,
+//    hledání ani filtrech se dokumenty neobjeví (nic z toho DOK nečte),
+//  - automatická záloha je nese jako SAMOSTATNOU část `dokumentace`
+//    (buildZalohaBlob / obnovZeZalohy).
+// Víc oken: vlastní kanál `revize-el-dok`; uložení dokumentu je
+// „načti – uprav – zapiš", takže okno nepřepíše dokument z jiného okna.
+// ═══════════════════════════════════════════════════════════════════════
+var DOK_LS = 'revize_el_dok';
+var DOK_IDB = ['dokumenty', 'vzory', 'vzorySkryte', 'osoby'];   // v IDB jako 'dok_' + název
+var DOK = dokPrazdny();
+var DOK_TYPY = {
+  pouvv: {
+    nazev: 'Protokol o určení vnějších vlivů',
+    kratce: 'Vnější vlivy',
+    ikona: '🌦',
+    prefix: 'POUVV',
+    norma: 'ČSN 33 2000-5-51 ed.3',
+    popis: 'Určení vnějších vlivů komisí podle ČSN 33 2000-5-51 ed.3 — prostory, kódy vlivů, zdůvodnění, podpisy komise.'
+  }
+};
+
+function dokPrazdny() { return { dokumenty: [], vzory: [], vzorySkryte: [], osoby: [] }; }
+
+function dokNormalizovat(d) {
+  var o = dokPrazdny();
+  if (d && typeof d === 'object') {
+    DOK_IDB.forEach(function (k) { if (Array.isArray(d[k])) o[k] = d[k]; });
+  }
+  return o;
+}
+
+function dokIdbSnimek(d) {
+  var o = {};
+  DOK_IDB.forEach(function (k) { o['dok_' + k] = d[k]; });
+  return o;
+}
+
+function dokUid() { return 'dok' + Date.now().toString(36) + Math.random().toString(36).slice(2, 8); }
+
+// Načte dokumenty z úložiště do DOK. Přednost má IndexedDB (jako u revizí),
+// localStorage je záloha a jediná cesta na iOS (tam se IDB nepoužívá).
+async function dokNacist() {
+  var d = null;
+  if (idb) {
+    var z = {}, nalez = false;
+    for (var i = 0; i < DOK_IDB.length; i++) {
+      var v = await idbGet('dok_' + DOK_IDB[i]);
+      if (v !== undefined && v !== null) { z[DOK_IDB[i]] = v; nalez = true; }
+    }
+    if (nalez) d = z;
+  }
+  if (!d) {
+    try { var s = localStorage.getItem(DOK_LS); if (s) d = JSON.parse(s); } catch (e) {}
+    if (d && idb) await idbSetMulti(dokIdbSnimek(dokNormalizovat(d)));
+  }
+  DOK = dokNormalizovat(d);
+  return DOK;
+}
+
+var __dokKanal = null;
+try { if ('BroadcastChannel' in window) __dokKanal = new BroadcastChannel('revize-el-dok'); } catch (e) {}
+
+async function dokZapsat() {
+  try { localStorage.setItem(DOK_LS, JSON.stringify(DOK)); } catch (e) {}
+  if (idb) await idbSetMulti(dokIdbSnimek(DOK));
+  try { if (__dokKanal) __dokKanal.postMessage({ okno: __oknoId, t: Date.now() }); } catch (e) {}
+  // Dokumenty jdou i do automatické zálohy (samostatná část souboru)
+  if (!window.__autoZalohaVlastni && typeof autoZalohaNaplanovat === 'function') autoZalohaNaplanovat();
+}
+
+// Další volné číslo pro typ dokumentu: POUVV-0001, POUVV-0002… (max + 1).
+function dokDalsiCislo(typ) {
+  var t = DOK_TYPY[typ]; if (!t) return '';
+  var re = new RegExp('^' + t.prefix + '-(\\d+)$'), max = 0;
+  DOK.dokumenty.forEach(function (x) {
+    var m = re.exec(String(x.cislo || '').trim());
+    if (m) max = Math.max(max, parseInt(m[1], 10));
+  });
+  return t.prefix + '-' + String(max + 1).padStart(4, '0');
+}
+
+function dokNajit(uid) {
+  for (var i = 0; i < DOK.dokumenty.length; i++) if (DOK.dokumenty[i].uid === uid) return DOK.dokumenty[i];
+  return null;
+}
+
+function dokKopie(o) { return JSON.parse(JSON.stringify(o)); }
+
+// Lidé z komisí — program si je pamatuje a nabízí je v dalších protokolech.
+function dokZapamatovatOsoby(seznam) {
+  seznam.forEach(function (p) {
+    var j = String(p.jmeno || '').trim(); if (!j) return;
+    var f = String(p.funkce || '').trim();
+    var naj = null;
+    DOK.osoby.forEach(function (o) { if (!naj && o.jmeno.toLowerCase() === j.toLowerCase()) naj = o; });
+    if (naj) { if (f) naj.funkce = f; }
+    else DOK.osoby.push({ jmeno: j, funkce: f });
+  });
+  if (DOK.osoby.length > 300) DOK.osoby = DOK.osoby.slice(-300);
+}
+
+// Data se změnila v jiném okně → načíst znovu a překreslit, co je vidět.
+var __dokZnovuCasovac = null;
+function dokZJinehoOkna() {
+  clearTimeout(__dokZnovuCasovac);
+  __dokZnovuCasovac = setTimeout(function () {
+    dokNacist().then(function () {
+      if (typeof dokPoNacteniZJinehoOkna === 'function') dokPoNacteniZJinehoOkna();
+    });
+  }, 150);
+}
+if (__dokKanal) {
+  __dokKanal.onmessage = function (e) { if (e && e.data && e.data.okno !== __oknoId) dokZJinehoOkna(); };
+} else {
+  window.addEventListener('storage', function (e) { if (e.key === DOK_LS) dokZJinehoOkna(); });
+}
+
+// Akce tlačítek této části: data-action="td…" (td = tvorba dokumentace).
+// Hlavní přepínač akcí je nezná, takže se nic nepere; každá fáze si sem
+// doplní své akce.
+var TD_AKCE = {};
+document.addEventListener('click', function (e) {
+  var el = e.target.closest && e.target.closest('[data-action^="td"]');
+  if (!el) return;
+  var fn = TD_AKCE[el.getAttribute('data-action')];
+  if (fn) fn(el, e);
+});
+
+// ═══ /TVORBA DOKUMENTACE ═══
 
 // Init wrapnutý — kdyby v něm něco selhalo (např. IDB v Safari iOS PWA),
 // chyba se v console zalogue, ale stránka neumře. Bez catch by error
