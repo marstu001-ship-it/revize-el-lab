@@ -1565,7 +1565,7 @@ html.dark .dk-kod-vysv{color:#7fcfae}
 .dk-pozn{font-size:.78rem;color:var(--muted);line-height:1.5;margin-bottom:.6rem}
 .dk-ares{display:flex;gap:.4rem;align-items:stretch}
 .dk-ares input{flex:1 1 auto;min-width:0}
-.dk-ares .magic-btn{margin:0;white-space:nowrap}
+.dk-ares .magic-btn,.dk-ares .dok-mini{margin:0;white-space:nowrap;flex:0 0 auto}
 .dk-osoba{display:flex;flex-wrap:wrap;gap:.4rem .5rem;align-items:center;margin-bottom:.4rem}
 .dk-osoba input[data-k="jmeno"],.dk-osoba input[data-k="funkce"]{flex:1 1 220px;width:auto}
 .dk-predseda{display:inline-flex;align-items:center;gap:.3rem;font-size:.8rem;color:var(--muted);cursor:pointer;white-space:nowrap}
@@ -1761,6 +1761,15 @@ html.dark .dk-kod-vysv{color:#7fcfae}
   .pdf-actions{flex-wrap:wrap}
   /* stránka A4 se posouvá uvnitř rámečku a začíná od levého kraje */
   .pdf-pages{align-items:flex-start;overflow-x:auto;padding:.75rem;max-width:100%}
+}
+
+/* ── Mobil: tvorba dokumentace ── */
+@media (max-width:600px), (pointer:coarse) and (max-height:500px){
+  /* lišta formuláře se zalomí do víc řádků — přilepená by zabrala displej */
+  .dok-lista{position:static;padding:.5rem .6rem}
+  .dok-wrap{padding:.75rem .6rem 4rem}
+  .dk-skupina{padding:.75rem .6rem}
+  .dk-prostor .dk-c{flex-basis:5.5rem;width:5.5rem}
 }
 
 /* ── Mobil: plán revizí ── */

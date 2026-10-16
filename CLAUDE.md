@@ -366,6 +366,78 @@ nedělala (pokyn uživatele).
 i otevřené z archivu a znovu uložené; zmrazený čas a náhoda) je ve verzi
 před funkcí a po ní **bajtově shodný** (archiv i `getData()`, sha256).
 
+## Tvorba dokumentace — Protokol o určení vnějších vlivů (blok `TVORBA DOKUMENTACE`)
+
+Zadání uživatele 2026-10-16 (vyvinuto v labu): čtvrtá karta na úvodu
+**„Tvorba dokumentace"** (na PC v řádku s Elektro, LPS a Plánem revizí,
+na telefonu pod nimi) → obrazovka `#screen-dokumentace` se seznamem
+dokumentů a tlačítky pro nový dokument. První typ: **Protokol o určení
+vnějších vlivů** dle ČSN 33 2000-5-51 ed.3. Další typy přibudou — **nový typ
+= nový záznam v `DOK_TYPY`** (`nazev`, `prefix`, `novy()`, `form(d)`,
+`cist(koren)`, `pdf(d)` → bloky).
+
+**ZÁSADA Č. 1: ÚPLNĚ ODDĚLENO OD REVIZÍ.**
+- **Vlastní úložiště** `DOK` — localStorage `revize_el_dok`, v IndexedDB klíče
+  `dok_dokumenty`, `dok_vzory`, `dok_vzorySkryte`, `dok_osoby`, `dok_zapsano`.
+  **NENÍ ve STORE ani ve STORE_KEYS** — saveStore/loadStore na něj nesahají,
+  takže revize se s dokumenty nemůžou smíchat. Pravidlo „čtyři místa"
+  pro klíče STORE se tu neuplatní; místo něj platí: nový klíč = `DOK_IDB`.
+- Vlastní seznam, číslování **`POUVV-0001`…** (`dokDalsiCislo`, max + 1,
+  jde přepsat, ⟳ přidělí volné, duplicitu stavový řádek ohlásí), vlastní
+  texty, vlastní PDF. V archivu, naposledy otevřených, plánu, katalogu vad,
+  hledání ani filtrech archivu se dokumenty **neobjeví** (nic z toho DOK nečte).
+- **Záloha:** `buildZalohaBlob()` nese samostatnou část
+  **`dokumentace`** (`_format: 'revize-el-dokumentace'`), `obnovZeZalohy()`
+  ji vrátí (a v potvrzení ukáže počet); starší záloha bez ní dokumenty
+  nechá být. Uložení dokumentu naplánuje automatickou zálohu.
+- **Víc oken:** kanál `revize-el-dok`; uložení je „načti – uprav – zapiš"
+  (`dokUlozitOtevreny`), jiné okno si seznam / neupravený formulář překreslí.
+- Akce tlačítek: `data-action="td…"` → `TD_AKCE` (vlastní posluchač; hlavní
+  přepínač akcí je nezná). Do `init()` vede jediný řádek `dokNacist()`.
+
+**Protokol** (`#screen-dok-form`, obsah kreslí `DOK_TYPY.pouvv.form`):
+hlavička (číslo, investor a zpracovatel s **ARES** přes `lookupIcoFromAres`,
+autorizovaný projektant, stavba), **komise** (předseda přepínačem, osoby si
+program pamatuje v `DOK.osoby` a nabízí je i s funkcí), vypracoval / místo /
+datum, **A. Podklady** (tři normy, ↺ výchozí), **B. Popis** (tři pole
+s nabídkou textů ze vzorů), **C. Rozhodnutí a zdůvodnění** (obecný text
++ **skupiny prostorů**: prostory — i vložení z Excelu / textu nebo Ctrl+V
+(`dokRozborProstoru`), vzor, kódy a) b) c) po jedné třídě, souhrn, poznámka).
+- **Ukládá se samo** 800 ms po změně, Ctrl+S a 💾 hned, při zavření okna
+  synchronně do localStorage (`dokUlozitHned`; `_zapsano` rozhodne, který
+  zápis je novější). **Nový prázdný dokument se do seznamu neuloží.**
+- **Vzor** (`dokVzorPouzit`) přepíše kódy skupiny, doplní PRÁZDNOU poznámku
+  a PRÁZDNÁ pole B — se ZPĚT. Kód jde pak ručně změnit.
+- **Vlastní vzory** (`DOK.vzory`): uložit ze skupiny (kódy, poznámka,
+  texty B), upravit, smazat se ZPĚT, „⧉ Jako vlastní" z vestavěného.
+  **Vestavěné nejdou smazat, jen skrýt** (`DOK.vzorySkryte`).
+
+**Katalog kódů je NÁVRH, který musí uživatel ověřit s normou** —
+`DOK_VV_KATALOG` (jeden datový blok, přesně podle podkladu 2026-10-16),
+`op` = krytí / opatření jen tam, kde ho uživatel uvedl. **Nic nedoplňovat
+z internetu ani z hlavy.** Dokud `DOK_VV_KATALOG_OVERENO = false`, ukazuje
+se „⚠ katalog čeká na kontrolu s normou". AM a BB v katalogu nejsou.
+**Vestavěné vzory (`DOK_VV_VZORY_VESTAVENE`) jsou jen ze skutečných
+protokolů** — administrativa, sprcha, technická místnost, nevytápěný sklad,
+kotelna (i s texty B). Další si uživatel dělá jako vlastní.
+
+**PDF** (`#screen-dok-pdf`, vlastní stránkování, NE přes `generujPDF`):
+záhlaví s číslem na každé straně, „Strana i / N", titul, identifikace,
+komise, A–C, u skupiny seznam prostorů + věta „Podle ČSN 33 2000-5-51 ed.3
+jsou stanoveny…" + řádky a) / b) / c) **jen s kódy — vysvětlivky do PDF
+nejdou**, podpisové řádky předsedy, členů komise a vypracovatele. Písmo
+DM Sans (`.a4.a4-dok`), žádné prvky revizní zprávy.
+
+Telefon: obrazovky a dialogy jsou v `test-mobil.js` (stavy „dokumentace – …",
+`modal-dok-*`); pro telefon jen blok „Mobil: tvorba dokumentace" (lišta
+formuláře se nelepí).
+
+Test: `testy/test-dokumentace.js` (63 kontrol — karta, dvě skupiny, vzory,
+ruční kód, restart, číslování, kopie, vlastní vzor, PDF bez vysvětlivek,
+záloha a obnova, dvě okna, rozbor seznamu prostorů a **oddělení**: protokol
+není v archivu, naposledy otevřených, plánu ani hledání a data revizí jsou
+po práci s protokoly **bajtově stejná**). Karta v Novinkách se nedělala.
+
 ## Plán revizí: lhůta se bere ze ZPRÁVY (v9.122)
 
 Hlášení uživatele 2026-10-13 (stroj od kolegy, kontrola 10/2026, příští

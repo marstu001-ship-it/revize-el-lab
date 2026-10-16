@@ -101,8 +101,21 @@ function pomocnik() {
     nastav('f_ev_cislo', 'RSP-26-0001'); nastav('f_misto', 'Vymyšlená kancelář – 2. patro');
     for (let i = 0; i < 3; i++) addSpotrebic();
     window.__formDirty = false; saveToArchiv();
+    // TVORBA DOKUMENTACE — protokol o určení vnějších vlivů se dvěma skupinami
+    await dokNovy('pouvv');
+    const f = dokForm(), dk = (s, v, r) => { const e = (r || f).querySelector(s); e.value = v; e.dispatchEvent(new Event('input', { bubbles: true })); };
+    dk('[data-dk="stavba"]', 'Vymyšlená administrativní budova s dlouhým názvem stavby'); dk('[data-dk="investor.nazev"]', 'Vymyšlená stavební s.r.o.');
+    dk('[data-dk="misto"]', 'Polní 12, 697 01 Kyjov'); dk('[data-k="jmeno"]', 'Ing. Petr Vymyšlený'); dk('[data-k="funkce"]', 'projektant');
+    let sk = f.querySelector('.dk-skupina');
+    dokProstoryVlozit(sk, dokRozborProstoru('101\tKancelář\n102\tChodba'));
+    let sel = sk.querySelector('.dk-vzor-vyber'); sel.value = 'vest-kotelna'; sel.dispatchEvent(new Event('change', { bubbles: true }));
+    TD_AKCE.tdSkupinaPridat(); sk = f.querySelectorAll('.dk-skupina')[1];
+    dokProstoryVlozit(sk, dokRozborProstoru('104 Sprcha'));
+    sel = sk.querySelector('.dk-vzor-vyber'); sel.value = 'vest-sprcha'; sel.dispatchEvent(new Event('change', { bubbles: true }));
+    await dokUlozitOtevreny();
     showScreen('home');
   };
+  M.dok = async () => { await dokOtevrit(DOK.dokumenty[0].uid); await w(150); };
   M.otevri = async (ev) => {
     const i = archiv.findIndex(z => (z.ev_cislo || (z.data && z.data.ev_cislo)) === ev);
     otevritZpravu(i); await w(400);
@@ -443,6 +456,13 @@ function vsechnyStavy(zalozky) {
     const cb = Array.from(document.querySelectorAll('#screen-plan input[type=checkbox]')).filter(c => c.offsetParent).slice(1, 3);
     cb.forEach(c => c.click()); await __M.w(120);
   }));
+  // tvorba dokumentace (samostatná část mimo revize)
+  add('dokumentace – seznam', 'Tvorba dokumentace', E(async () => { dokOtevritSeznam(); await __M.w(100); }));
+  add('dokumentace – protokol', 'Tvorba dokumentace', E(async () => { await __M.dok(); }));
+  add('dokumentace – protokol, skupiny prostorů', 'Tvorba dokumentace', E(async () => {
+    await __M.dok(); document.querySelector('.dk-skupina').scrollIntoView({ block: 'start' }); await __M.w(100);
+  }));
+  add('dokumentace – náhled PDF', 'Tvorba dokumentace', E(async () => { await __M.dok(); await dokNahled(); await __M.w(300); }));
   // dialogy
   const D = (id, krok) => add('dialog ' + id, 'Dialogy', krok, '#' + id);
   D('modal-revize', E(async () => { await __M.otevri('RE-26-0101'); showScreen('form'); openModalRevize(); await __M.w(100); }));
@@ -466,6 +486,9 @@ function vsechnyStavy(zalozky) {
   }));
   D('modal-sp-pristroje', E(async () => { await __M.otevri('RSP-26-0001'); showScreen('form'); spotrPristrojeOtevrit(); await __M.w(100); }));
   D('modal-vnorit', E(async () => { showScreen('home'); otevritVnoritModal(0); await __M.w(100); }));
+  D('modal-dok-vzor', E(async () => { await __M.dok(); TD_AKCE.tdVzorZeSkupiny(document.querySelector('.dk-skupina [data-action="tdVzorZeSkupiny"]')); await __M.w(100); }));
+  D('modal-dok-vlozit', E(async () => { await __M.dok(); dokVlozitDialog(document.querySelector('.dk-skupina')); await __M.w(100); }));
+  D('modal-dok-katalog', E(async () => { dokOtevritSeznam(); dokKatalogOtevrit(); await __M.w(100); }));
   D('modal-plan-objekt', E(async () => {
     otevritPlan(); await __M.w(300); document.querySelectorAll('.modal-overlay.open').forEach(o => o.classList.remove('open'));
     const el = document.querySelector('#screen-plan [data-action="planOtevritObjekt"], #screen-plan .plan-nazev');
