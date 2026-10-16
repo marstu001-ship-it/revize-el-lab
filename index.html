@@ -1585,6 +1585,37 @@ html.dark .dk-kod-vysv{color:#7fcfae}
 .dk-souhrn-t{font-family:var(--sans);font-size:.7rem;color:var(--muted)}
 .dk-nabidka-b{margin-top:.35rem}
 .dk-nabidka-b select{width:auto;max-width:100%;font-size:.8rem}
+/* PDF dokumentu — samostatný vzhled, žádné prvky revizní zprávy.
+   Dvě třídy schválně: `.a4` (psací stroj) stojí v souboru výš, ale shodná
+   specificita by nestačila u pravidel přidaných později. */
+#screen-dok-pdf{background:#888}
+.a4.a4-dok{font-family:'DM Sans',Arial,Helvetica,sans-serif;font-size:10pt;line-height:1.4;padding:11mm 16mm 9mm;color:#000}
+.dok-pdf-zahlavi{display:flex;justify-content:space-between;gap:4mm;font-size:8pt;color:#333;
+  border-bottom:.5pt solid #000;padding-bottom:1.5mm;margin-bottom:5mm}
+.dok-pdf-obsah{flex:1}
+.dok-pdf-paticka{margin-top:auto;display:flex;justify-content:space-between;gap:4mm;font-size:8pt;color:#333;
+  border-top:.5pt solid #000;padding-top:1.5mm}
+.dok-pdf-titul{text-align:center;margin:1mm 0 6mm}
+.dok-pdf-titul .t1{font-size:15pt;font-weight:700;letter-spacing:.06em;text-transform:uppercase}
+.dok-pdf-titul .t2{font-size:9.5pt;margin-top:1mm}
+.dok-pdf-titul .t3{font-size:11pt;font-weight:700;margin-top:2mm}
+.dok-pdf-h{font-size:11pt;font-weight:700;margin:5mm 0 2mm;padding-bottom:.8mm;border-bottom:.5pt solid #888}
+.dok-pdf-h2{font-size:10pt;font-weight:700;margin:3mm 0 1mm}
+.dok-pdf-tab{width:100%;border-collapse:collapse;font-size:9.5pt}
+.dok-pdf-tab td{border:.5pt solid #666;padding:1.2mm 2mm;vertical-align:top}
+.dok-pdf-tab td.l{width:46mm;background:#f2f2f2;font-weight:600}
+.dok-pdf-p{margin:0 0 2mm;white-space:pre-wrap}
+.dok-pdf-ul{margin:0 0 2mm 5mm;padding:0}
+.dok-pdf-ul li{margin-bottom:.8mm}
+.dok-pdf-prostory{margin:0 0 2mm 5mm;padding:0;list-style:none}
+.dok-pdf-prostory.sloupce{columns:2;column-gap:8mm}
+.dok-pdf-prostory li{break-inside:avoid}
+.dok-pdf-kody{margin:1mm 0 2mm 5mm}
+.dok-pdf-kody div{margin-bottom:.8mm}
+.dok-pdf-podpisy{width:100%;border-collapse:collapse;font-size:9.5pt;margin-top:2mm}
+.dok-pdf-podpisy th{text-align:left;font-weight:600;border-bottom:.5pt solid #000;padding:1mm 2mm}
+.dok-pdf-podpisy td{border-bottom:.5pt solid #999;padding:6mm 2mm 1mm;vertical-align:bottom}
+.dok-pdf-podpisy td.podpis{width:55mm}
 /* ═══ MOBIL ═══════════════════════════════════════════════════════════════
    Telefon na výšku (≤ 600 px) a telefon na šířku (dotyk + výška ≤ 500 px).
    Platí JEN tady — verze pro PC se tím nemění ani o pixel (hlídá
@@ -4233,6 +4264,18 @@ html.dark .dk-kod-vysv{color:#7fcfae}
       <button class="btn btn-gold" data-action="tdVlozitPotvrdit">✓ Vložit</button>
     </div>
   </div>
+</div>
+<!-- TVORBA DOKUMENTACE — náhled PDF dokumentu (vlastní, nejde přes generujPDF) -->
+<div class="screen" id="screen-dok-pdf">
+  <div class="pdf-toolbar">
+    <div class="pdf-toolbar-title">📐 <span id="dok-pdf-info"></span></div>
+    <div class="pdf-actions">
+      <button class="pbtn" data-action="tdPdfZpet" style="background:#555;border-color:#555">← Zpět</button>
+      <button class="pbtn" data-action="tdPdfTisk" style="background:#b5291c;border-color:#b5291c" title="Vytiskne rovnou ve vyšší kvalitě, nic se do počítače neukládá">🖨️ Tisk přímo</button>
+      <button class="pbtn" data-action="tdPdfUlozit" style="background:#0f7b5f;border-color:#0f7b5f">💾 Uložit PDF</button>
+    </div>
+  </div>
+  <div class="pdf-pages" id="dok-pdf-pages"></div>
 </div>
 <!-- MODAL MĚŘICÍ LIST DO TERÉNU — co dát na list -->
 <div class="modal-overlay" id="modal-teren">
@@ -28532,6 +28575,175 @@ TD_AKCE.tdVzorZeSkupiny = function (el) {
   DOK_VV_TEXTY_B.forEach(function (b) { var v = f.querySelector('[data-dk="' + b.k + '"]').value.trim(); if (v) texty[b.k] = v; });
   dokVzorDialog({ nazev: '', kody: dokKodyCist(sk), pozn: sk.querySelector('[data-k="pozn"]').value, texty: texty }, null,
     '🧩 Uložit skupinu jako vlastní vzor');
+};
+// ── PDF dokumentu ────────────────────────────────────────────────────────
+// Vlastní obrazovka a vlastní stránkování — přes generujPDF() to jít nesmí
+// (ta ukládá revizní zprávu do archivu a kreslí její kapitoly). Typ
+// dokumentu dodá bloky (`pdf(d)` → [{ html, drz }]), `drz` = nadpis, který
+// nesmí zůstat sám na konci stránky. Vysvětlivky kódů do PDF nejdou.
+function dokPdfOdstavce(text, trida) {
+  return String(text || '').replace(/\r/g, '').split(/\n\s*\n/).map(function (p) { return p.trim(); }).filter(Boolean)
+    .map(function (p) { return { html: '<p class="' + (trida || 'dok-pdf-p') + '">' + esc(p) + '</p>' }; });
+}
+
+function dokPdfFirma(f) {
+  f = f || {};
+  return [esc(f.nazev), esc(f.adresa).replace(/\n/g, '<br>'), f.ico ? 'IČO: ' + esc(f.ico) : ''].filter(Boolean).join('<br>');
+}
+
+DOK_TYPY.pouvv.pdf = function (d) {
+  var B = [], tr = function (l, v) { return '<tr><td class="l">' + l + '</td><td>' + (v || '—') + '</td></tr>'; };
+  B.push({ html: '<div class="dok-pdf-titul"><div class="t1">Protokol o určení vnějších vlivů</div>' +
+    '<div class="t2">podle ČSN 33 2000-5-51 ed.3</div>' + (d.cislo ? '<div class="t3">č. ' + esc(d.cislo) + '</div>' : '') + '</div>' });
+  var p = d.projektant || {}, proj = [[p.titul, p.jmeno].filter(Boolean).join(' '),
+    p.evidence ? 'č. evidence: ' + p.evidence : '', p.obor ? 'obor autorizace: ' + p.obor : ''].filter(Boolean).map(esc).join(', ');
+  var t = '<table class="dok-pdf-tab">' + tr('Investor', dokPdfFirma(d.investor)) +
+    ((d.zpracovatel && (d.zpracovatel.nazev || d.zpracovatel.ico)) ? tr('Zpracovatel', dokPdfFirma(d.zpracovatel)) : '') +
+    (proj ? tr('Autorizovaný projektant', proj) : '') +
+    tr('Název stavby', esc(d.stavba)) + tr('Místo stavby', esc(d.misto)) + tr('Předmět dokumentace', esc(d.predmet)) +
+    (d.druh ? tr('Druh stavby', esc(d.druh)) : '') + (d.stupen ? tr('Stupeň dokumentace', esc(d.stupen)) : '') + '</table>';
+  B.push({ html: t });
+  var kom = (d.komise || []).filter(function (x) { return x.jmeno || x.funkce; });
+  var pred = kom.filter(function (x) { return x.predseda; }), cl = kom.filter(function (x) { return !x.predseda; });
+  if (kom.length) {
+    B.push({ html: '<div class="dok-pdf-h">Komise</div>', drz: true });
+    var os = function (x) { return esc(x.jmeno) + (x.funkce ? ' – ' + esc(x.funkce) : ''); };
+    B.push({ html: '<table class="dok-pdf-tab">' + (pred.length ? tr('Předseda komise', pred.map(os).join('<br>')) : '') +
+      (cl.length ? tr('Členové komise', cl.map(os).join('<br>')) : '') + '</table>' });
+  }
+  B.push({ html: '<div class="dok-pdf-h">A. Podklady</div>', drz: true });
+  var pod = String(d.podklady || '').split('\n').map(function (s) { return s.trim(); }).filter(Boolean);
+  B.push({ html: pod.length ? '<ul class="dok-pdf-ul">' + pod.map(function (s) { return '<li>' + esc(s) + '</li>'; }).join('') + '</ul>'
+    : '<p class="dok-pdf-p">—</p>' });
+  B.push({ html: '<div class="dok-pdf-h">B. Popis</div>', drz: true });
+  DOK_VV_TEXTY_B.forEach(function (b) {
+    B.push({ html: '<div class="dok-pdf-h2">' + esc(b.nazev) + '</div>', drz: true });
+    var o = dokPdfOdstavce(d[b.k]);
+    B.push.apply(B, o.length ? o : [{ html: '<p class="dok-pdf-p">—</p>' }]);
+  });
+  B.push({ html: '<div class="dok-pdf-h">C. Rozhodnutí a zdůvodnění</div>', drz: true });
+  B.push.apply(B, dokPdfOdstavce(d.zduvodneni));
+  var sk = d.skupiny || [];
+  sk.forEach(function (g, i) {
+    var pr = (g.prostory || []).filter(function (x) { return x.c || x.n; });
+    B.push({ html: '<div class="dok-pdf-h2">' + (sk.length > 1 ? (i + 1) + '. ' : '') + 'Prostory:</div>', drz: true });
+    B.push({ html: pr.length ? '<ul class="dok-pdf-prostory' + (pr.length > 8 ? ' sloupce' : '') + '">' + pr.map(function (x) {
+      return '<li>' + esc(x.c ? x.c + (x.n ? ' – ' + x.n : '') : x.n) + '</li>';
+    }).join('') + '</ul>' : '<p class="dok-pdf-p">—</p>', drz: true });
+    var r = dokVvRadky(g.kody);
+    B.push({ html: '<p class="dok-pdf-p">' + esc(DOK_VV_VETA) + '</p><div class="dok-pdf-kody">' + (r.length ? r.map(function (x) {
+      return '<div>' + x.id + ') ' + esc(x.nazev) + ': ' + x.kody.join(', ') + '</div>';
+    }).join('') : '<div>—</div>') + '</div>' });
+    if (g.pozn) B.push({ html: '<p class="dok-pdf-p"><b>Poznámka:</b> ' + esc(g.pozn) + '</p>' });
+  });
+  B.push({ html: '<p class="dok-pdf-p" style="margin-top:5mm">Vypracoval: ' + esc(d.vypracoval || '—') +
+    ' &nbsp;·&nbsp; V ' + esc(d.vypracovalMisto || '……………') + ' dne ' + esc(dokDatumCz(d.datum) || '……………') + '</p>' });
+  var radky = pred.map(function (x) { return ['Předseda komise', x]; })
+    .concat(cl.map(function (x) { return ['Člen komise', x]; }))
+    .concat([['Vypracoval', { jmeno: d.vypracoval }]]);
+  B.push({ html: '<table class="dok-pdf-podpisy"><tr><th>Funkce</th><th>Jméno a příjmení</th><th>Podpis</th></tr>' +
+    radky.map(function (r) {
+      return '<tr><td>' + r[0] + '</td><td>' + esc(r[1].jmeno || '') + (r[1].funkce ? '<br><small>' + esc(r[1].funkce) + '</small>' : '') +
+        '</td><td class="podpis"></td></tr>';
+    }).join('') + '</table>' });
+  return B;
+};
+
+var __dokPdf = null;   // { x: záznam dokumentu, zpet: obrazovka }
+
+function dokPdfStranka(x) {
+  var t = DOK_TYPY[x.typ], d = x.data || {};
+  var p = document.createElement('div');
+  p.className = 'a4 a4-dok';
+  p.style.minHeight = '0';
+  p.innerHTML = '<div class="dok-pdf-zahlavi"><span>' + esc(t.nazev) + '</span><span>' + (d.cislo ? 'č. ' + esc(d.cislo) : '') + '</span></div>' +
+    '<div class="dok-pdf-obsah"></div>' +
+    '<div class="dok-pdf-paticka"><span>' + esc(d.stavba || '') + '</span><span class="dok-pdf-strana"></span></div>';
+  return p;
+}
+
+function dokPdfVykreslit(x) {
+  var box = document.getElementById('dok-pdf-pages');
+  showScreen('dok-pdf');   // ve skryté obrazovce mají prvky nulovou výšku
+  box.innerHTML = '';
+  var limit = 297 * 96 / 25.4 + 0.5;
+  var bloky = DOK_TYPY[x.typ].pdf(x.data || {});
+  var str = dokPdfStranka(x); box.appendChild(str);
+  var obsah = str.querySelector('.dok-pdf-obsah');
+  bloky.forEach(function (b) {
+    var el = document.createElement('div');
+    el.innerHTML = b.html;
+    if (b.drz) el.setAttribute('data-drz', '1');
+    obsah.appendChild(el);
+    if (str.getBoundingClientRect().height > limit && obsah.children.length > 1) {
+      var presun = [obsah.removeChild(el)];
+      while (obsah.children.length > 1 && obsah.lastElementChild.getAttribute('data-drz')) presun.unshift(obsah.removeChild(obsah.lastElementChild));
+      str = dokPdfStranka(x); box.appendChild(str);
+      obsah = str.querySelector('.dok-pdf-obsah');
+      presun.forEach(function (e) { obsah.appendChild(e); });
+    }
+  });
+  var str2 = box.querySelectorAll('.a4');
+  str2.forEach(function (s, i) {
+    s.style.minHeight = '';
+    s.querySelector('.dok-pdf-strana').textContent = 'Strana ' + (i + 1) + ' / ' + str2.length;
+  });
+  var info = document.getElementById('dok-pdf-info');
+  if (info) info.textContent = DOK_TYPY[x.typ].nazev + (x.data && x.data.cislo ? ' · ' + x.data.cislo : '') +
+    ' · ' + str2.length + (str2.length === 1 ? ' strana' : (str2.length < 5 ? ' strany' : ' stran'));
+  window.scrollTo(0, 0);
+}
+
+async function dokNahled() {
+  var o = window.__dokOtevreny; if (!o) return;
+  await dokUlozitOtevreny();
+  __dokPdf = { x: { uid: o.uid, typ: o.typ, data: o.data }, zpet: 'dok-form' };
+  dokPdfVykreslit(__dokPdf.x);
+}
+
+async function dokNahledZeSeznamu(uid) {
+  await dokNacist();
+  var x = dokNajit(uid); if (!x) return;
+  __dokPdf = { x: x, zpet: 'dokumentace' };
+  dokPdfVykreslit(x);
+}
+
+function dokPdfNazev() {
+  var x = __dokPdf.x, d = x.data || {};
+  return ((d.cislo || DOK_TYPY[x.typ].prefix) + '_' + DOK_TYPY[x.typ].kratce + (d.stavba ? '_' + d.stavba : ''))
+    .replace(/[\\\/:*?"<>|]+/g, '').replace(/\s+/g, '_').slice(0, 90) + '.pdf';
+}
+
+function dokPdfStranky() { return Array.prototype.slice.call(document.querySelectorAll('#dok-pdf-pages .a4')); }
+
+TD_AKCE.tdPdfZpet = function () {
+  var z = __dokPdf ? __dokPdf.zpet : 'dokumentace';
+  if (z === 'dokumentace') dokOtevritSeznam(); else showScreen(z);
+};
+TD_AKCE.tdPdfUlozit = function () {
+  var els = dokPdfStranky(); if (!els.length || !__dokPdf) return;
+  renderPagesToPDF(els, dokPdfNazev());
+};
+TD_AKCE.tdPdfTisk = function () {
+  var els = dokPdfStranky(); if (!els.length || !__dokPdf) return;
+  var w = window.open('', '_blank');
+  if (!w) { alert('Prosím povolte vyskakovací okna — bez nich se tiskové okno neotevře.'); return; }
+  w.document.write('<!DOCTYPE html><html><body style="margin:0;background:#f5f5f5;font-family:sans-serif;' +
+    'display:flex;align-items:center;justify-content:center;height:100vh;flex-direction:column;gap:12px">' +
+    '<p style="font-size:1.1rem;color:#333">⏳ Připravuji dokument k tisku…</p></body></html>');
+  w.document.close();
+  Promise.resolve(renderPagesToPDF(els, dokPdfNazev(), { vratitBlob: true, kvalita: 'tisk' })).then(function (blob) {
+    if (!blob) { try { w.close(); } catch (e) {} return; }
+    var url = URL.createObjectURL(blob);
+    w.location.href = url;
+    setTimeout(function () {
+      try { w.print(); } catch (e) {}
+      setTimeout(function () { URL.revokeObjectURL(url); }, 60000);
+    }, 2500);
+  }).catch(function (err) {
+    try { w.close(); } catch (e) {}
+    alert('Chyba při přípravě tisku: ' + ((err && err.message) || err));
+  });
 };
 // ═══ /TVORBA DOKUMENTACE ═══
 
