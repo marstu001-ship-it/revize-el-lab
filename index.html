@@ -1551,6 +1551,40 @@ html.dark .dk-kod-vysv{color:#7fcfae}
 .dok-kat-vliv ul{margin:.2rem 0 0 1.2rem;padding:0}
 .dok-kat-vliv li{line-height:1.45}
 .dok-kat-op{color:#0f7b5f}
+/* formulář dokumentu */
+.dok-lista{position:sticky;top:54px;z-index:150;display:flex;flex-wrap:wrap;align-items:center;gap:.5rem .8rem;
+  padding:.55rem 1.5rem;background:var(--surface);border-bottom:2px solid #0f7b5f;box-shadow:0 2px 6px rgba(0,0,0,.06)}
+.dok-lista-titul{flex:1 1 220px;min-width:0;font-family:var(--mono);font-size:.76rem;letter-spacing:.06em;color:var(--accent2);overflow-wrap:anywhere}
+.dok-stav{font-size:.76rem;color:var(--muted)}
+.dok-stav.neulozeno{color:#a06a00}
+.dok-stav.ulozeno{color:#0f7b5f}
+.dok-stav.varovani{color:var(--accent)}
+.dok-lista-akce{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center}
+.dok-wrap{max-width:1100px;margin:0 auto;padding:1.25rem 1.5rem 5rem}
+.dk-nepov{font-family:var(--sans);text-transform:none;letter-spacing:0;color:var(--muted);font-weight:400}
+.dk-pozn{font-size:.78rem;color:var(--muted);line-height:1.5;margin-bottom:.6rem}
+.dk-ares{display:flex;gap:.4rem;align-items:stretch}
+.dk-ares input{flex:1 1 auto;min-width:0}
+.dk-ares .magic-btn{margin:0;white-space:nowrap}
+.dk-osoba{display:flex;flex-wrap:wrap;gap:.4rem .5rem;align-items:center;margin-bottom:.4rem}
+.dk-osoba input[data-k="jmeno"],.dk-osoba input[data-k="funkce"]{flex:1 1 220px;width:auto}
+.dk-predseda{display:inline-flex;align-items:center;gap:.3rem;font-size:.8rem;color:var(--muted);cursor:pointer;white-space:nowrap}
+.dk-predseda input{margin:0}
+.dk-skupina{border:1px solid var(--border);border-left:4px solid #0f7b5f;background:var(--bg);padding:1rem 1.1rem;margin:1rem 0}
+.dk-skupina .dk-in,.dk-skupina .f textarea{background:var(--surface)}
+.dk-skupina-hlava{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem .8rem}
+.dk-sk-titul{font-weight:600;font-size:.95rem;flex:1 1 auto}
+.dk-prostor{display:flex;gap:.4rem;align-items:center;margin-bottom:.35rem}
+.dk-prostor .dk-c{flex:0 0 6.5rem;width:6.5rem}
+.dk-prostor input[data-k="n"]{flex:1 1 auto;width:auto}
+.dk-akce-radek{display:flex;flex-wrap:wrap;gap:0 .5rem}
+.dk-vzor-vyber-radek{display:flex;flex-wrap:wrap;gap:.5rem;align-items:center;margin-bottom:.6rem}
+.dk-vzor-vyber{flex:1 1 280px;width:auto}
+.dk-souhrn{font-family:var(--mono);font-size:.74rem;background:var(--surface);border:1px dashed var(--border-dark);
+  padding:.5rem .7rem;margin:.2rem 0 .8rem;line-height:1.6;overflow-wrap:anywhere}
+.dk-souhrn-t{font-family:var(--sans);font-size:.7rem;color:var(--muted)}
+.dk-nabidka-b{margin-top:.35rem}
+.dk-nabidka-b select{width:auto;max-width:100%;font-size:.8rem}
 /* ═══ MOBIL ═══════════════════════════════════════════════════════════════
    Telefon na výšku (≤ 600 px) a telefon na šířku (dotyk + výška ≤ 500 px).
    Platí JEN tady — verze pro PC se tím nemění ani o pixel (hlídá
@@ -4168,6 +4202,35 @@ html.dark .dk-kod-vysv{color:#7fcfae}
     <div class="modal-actions">
       <button class="btn btn-ghost" style="background:var(--bg);color:var(--text);border:1px solid var(--border)" data-action="tdVzorZavrit">Zrušit</button>
       <button class="btn btn-gold" data-action="tdVzorUlozit">✓ Uložit vzor</button>
+    </div>
+  </div>
+</div>
+<!-- TVORBA DOKUMENTACE — formulář dokumentu (obsah kreslí JS podle DOK_TYPY) -->
+<div class="screen" id="screen-dok-form">
+  <div class="dok-lista">
+    <button class="dok-mini" data-action="tdZpetNaSeznam" title="Zpět na seznam dokumentů (dokument se uloží)">← Seznam dokumentů</button>
+    <span class="dok-lista-titul" id="dok-form-titul"></span>
+    <span class="dok-stav" id="dok-stav"></span>
+    <span class="dok-lista-akce">
+      <button class="dok-mini" data-action="tdUlozit" title="Uložit (Ctrl+S) — ukládá se i samo při psaní">💾 Uložit</button>
+      <button class="btn btn-gold" data-action="tdNahled" title="Náhled PDF, tisk a uložení (Ctrl+P)">📄 Náhled PDF</button>
+    </span>
+  </div>
+  <div class="dok-wrap" id="dok-form-obsah"></div>
+  <datalist id="dk-osoby-list"></datalist>
+</div>
+
+<!-- MODAL: vložit seznam prostorů z Excelu nebo textu -->
+<div class="modal-overlay" id="modal-dok-vlozit">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-title">📋 Vložit seznam prostorů</div>
+    <div class="dk-pozn">Vložte dva sloupce z Excelu (číslo místnosti, název) nebo text — každý prostor na samostatný
+      řádek, např. „101 Kancelář" nebo „1.02 – Sprcha". Prázdné řádky ve skupině se využijí, další přibudou.</div>
+    <div class="f"><textarea id="dok-vlozit-text" rows="8" spellcheck="false" placeholder="101&#9;Kancelář&#10;102&#9;Chodba&#10;103&#9;WC"></textarea></div>
+    <div id="dok-vlozit-nahled" class="dk-pozn" style="margin-top:.5rem"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" style="background:var(--bg);color:var(--text);border:1px solid var(--border)" data-action="tdVlozitZavrit">Zrušit</button>
+      <button class="btn btn-gold" data-action="tdVlozitPotvrdit">✓ Vložit</button>
     </div>
   </div>
 </div>
@@ -27286,8 +27349,8 @@ function dokNormalizovat(d) {
   return o;
 }
 
-function dokIdbSnimek(d) {
-  var o = {};
+function dokIdbSnimek(d, zapsano) {
+  var o = { dok_zapsano: zapsano || '' };
   DOK_IDB.forEach(function (k) { o['dok_' + k] = d[k]; });
   return o;
 }
@@ -27296,19 +27359,23 @@ function dokUid() { return 'dok' + Date.now().toString(36) + Math.random().toStr
 
 // Načte dokumenty z úložiště do DOK. Přednost má IndexedDB (jako u revizí),
 // localStorage je záloha a jediná cesta na iOS (tam se IDB nepoužívá).
+// Oba zápisy nesou čas (`_zapsano`): když se okno zavřelo dřív, než
+// IndexedDB dopsala, vyhraje novější zápis z localStorage.
 async function dokNacist() {
-  var d = null;
+  var d = null, tIdb = '';
   if (idb) {
     var z = {}, nalez = false;
     for (var i = 0; i < DOK_IDB.length; i++) {
       var v = await idbGet('dok_' + DOK_IDB[i]);
       if (v !== undefined && v !== null) { z[DOK_IDB[i]] = v; nalez = true; }
     }
-    if (nalez) d = z;
+    if (nalez) { d = z; tIdb = String((await idbGet('dok_zapsano')) || ''); }
   }
-  if (!d) {
-    try { var s = localStorage.getItem(DOK_LS); if (s) d = JSON.parse(s); } catch (e) {}
-    if (d && idb) await idbSetMulti(dokIdbSnimek(dokNormalizovat(d)));
+  var ls = null;
+  try { var s = localStorage.getItem(DOK_LS); if (s) ls = JSON.parse(s); } catch (e) {}
+  if (ls && (!d || String(ls._zapsano || '') > tIdb)) {
+    d = ls;
+    if (idb) await idbSetMulti(dokIdbSnimek(dokNormalizovat(d), ls._zapsano || ''));
   }
   DOK = dokNormalizovat(d);
   return DOK;
@@ -27318,8 +27385,9 @@ var __dokKanal = null;
 try { if ('BroadcastChannel' in window) __dokKanal = new BroadcastChannel('revize-el-dok'); } catch (e) {}
 
 async function dokZapsat() {
-  try { localStorage.setItem(DOK_LS, JSON.stringify(DOK)); } catch (e) {}
-  if (idb) await idbSetMulti(dokIdbSnimek(DOK));
+  var t = new Date().toISOString();
+  try { localStorage.setItem(DOK_LS, JSON.stringify(Object.assign({ _zapsano: t }, DOK))); } catch (e) {}
+  if (idb) await idbSetMulti(dokIdbSnimek(DOK, t));
   try { if (__dokKanal) __dokKanal.postMessage({ okno: __oknoId, t: Date.now() }); } catch (e) {}
   // Dokumenty jdou i do automatické zálohy (samostatná část souboru)
   if (!window.__autoZalohaVlastni && typeof autoZalohaNaplanovat === 'function') autoZalohaNaplanovat();
@@ -27812,6 +27880,659 @@ TD_AKCE.tdVzorSmazat = function (el) { dokVzorSmazat(dokVzorIdZ(el)); };
 TD_AKCE.tdVzorSkryt = function (el) { dokVzorSkrytPrepnout(dokVzorIdZ(el)); };
 TD_AKCE.tdVzorZavrit = function () { closeModal('modal-dok-vzor'); };
 TD_AKCE.tdVzorUlozit = function () { dokVzorUlozit(); };
+// ── Protokol o určení vnějších vlivů — výchozí obsah ─────────────────────
+var DOK_VV_PODKLADY = [
+  'ČSN 33 2000-5-51 ed. 3 – Elektrotechnické instalace budov, část 5-51: Výběr a stavba elektrických zařízení – Všeobecné předpisy',
+  'ČSN 33 2130 ed. 3 – Elektrické instalace nízkého napětí – Vnitřní elektrické rozvody',
+  'ČSN 33 2000-4-41 ed. 3 – Elektrické instalace nízkého napětí – Část 4-41: Ochranná opatření pro zajištění bezpečnosti – Ochrana před úrazem elektrickým proudem'
+].join('\n');
+var DOK_VV_ZDUVODNENI = 'Určení vnějších vlivů je v souladu s navrženou technologií, technologickými postupy jednotlivých ' +
+  'objektů, stavebního řešení a atmosférickými vlivy v dané lokalitě s přihlédnutím na mikroklima, které je ovlivněno ' +
+  'použitými technologiemi a činnostmi.';
+var DOK_VV_VETA = 'Podle ČSN 33 2000-5-51 ed.3 jsou stanoveny vnější vlivy pro objekty, uvedené v bodu B, následovně:';
+
+function pouvvSkupinaNova() { return { uid: dokUid(), prostory: [], vzor: '', kody: {}, pozn: '' }; }
+
+DOK_TYPY.pouvv.novy = function () {
+  // Vypracoval a místo z posledního protokolu, jinak z profilu technika
+  var posl = DOK.dokumenty.filter(function (x) { return x.typ === 'pouvv'; })
+    .sort(function (a, b) { return String(b.upraveno || '').localeCompare(String(a.upraveno || '')); })[0];
+  var pd = (posl && posl.data) || {}, t = (typeof STORE !== 'undefined' && STORE.technik) || {};
+  return {
+    cislo: '',
+    investor: { ico: '', nazev: '', adresa: '' },
+    zpracovatel: { ico: '', nazev: '', adresa: '' },
+    projektant: { titul: '', jmeno: '', evidence: '', obor: '' },
+    stavba: '', misto: '', predmet: '', druh: '', stupen: '',
+    komise: [{ jmeno: '', funkce: '', predseda: true }],
+    vypracoval: pd.vypracoval || t.jmeno || '',
+    vypracovalMisto: pd.vypracovalMisto || t.mesto || '',
+    datum: new Date().toISOString().slice(0, 10),
+    podklady: DOK_VV_PODKLADY,
+    popis: '', technologie: '', chemikalie: '',
+    zduvodneni: DOK_VV_ZDUVODNENI,
+    skupiny: [pouvvSkupinaNova()]
+  };
+};
+
+// ── Formulář — stavebnice ────────────────────────────────────────────────
+function dkPole(cesta, label, hodnota, o) {
+  o = o || {};
+  var attr = ' data-dk="' + cesta + '"' + (o.ph ? ' placeholder="' + esc(o.ph) + '"' : '') +
+             (o.list ? ' list="' + o.list + '"' : '') + (o.attr || '');
+  var pole = o.radky
+    ? '<textarea' + attr + ' rows="' + o.radky + '" spellcheck="true" lang="cs">' + esc(hodnota) + '</textarea>'
+    : '<input type="' + (o.typ || 'text') + '"' + attr + ' value="' + esc(hodnota) + '" autocomplete="off">';
+  return '<div class="f' + (o.span ? ' ' + o.span : '') + '"><label>' + esc(label) +
+    (o.nepov ? ' <span class="dk-nepov">(nepovinné)</span>' : '') + '</label>' + pole + (o.za || '') + '</div>';
+}
+
+function dkFirma(klic, titul, f, nepov) {
+  f = f || {};
+  return '<div class="dk-blok-t">' + esc(titul) + (nepov ? ' <span class="dk-nepov">(nepovinné)</span>' : '') + '</div>' +
+    '<div class="g3">' +
+      '<div class="f"><label>IČO</label><div class="dk-ares">' +
+        '<input type="text" data-dk="' + klic + '.ico" value="' + esc(f.ico) + '" inputmode="numeric" placeholder="12345678" autocomplete="off">' +
+        '<button class="magic-btn" data-action="tdAres" data-cil="' + klic + '" title="Doplní název a adresu z registru ARES">🔍 ARES</button></div></div>' +
+      dkPole(klic + '.nazev', 'Název / jméno', f.nazev, { span: 'span2' }) +
+      dkPole(klic + '.adresa', 'Adresa', f.adresa, { span: 'span3', ph: 'Ulice 123, 697 01 Kyjov' }) +
+    '</div>';
+}
+
+function dkOsobaHtml(p) {
+  p = p || {};
+  return '<div class="dk-osoba">' +
+    '<input class="dk-in" data-k="jmeno" list="dk-osoby-list" placeholder="Jméno a příjmení (s titulem)" value="' + esc(p.jmeno) + '" autocomplete="off">' +
+    '<input class="dk-in" data-k="funkce" placeholder="Funkce / za koho" value="' + esc(p.funkce) + '" autocomplete="off">' +
+    '<label class="dk-predseda" title="Předseda komise"><input type="radio" name="dk-predseda"' + (p.predseda ? ' checked' : '') + '> předseda</label>' +
+    '<button class="dok-mini dok-mini-del" data-action="tdOsobaSmazat" title="Odebrat z komise">✕</button></div>';
+}
+
+function dkProstorHtml(p) {
+  p = p || {};
+  return '<div class="dk-prostor">' +
+    '<input class="dk-in dk-c" data-k="c" placeholder="č. m." value="' + esc(p.c) + '" autocomplete="off">' +
+    '<input class="dk-in" data-k="n" placeholder="Název prostoru" value="' + esc(p.n) + '" autocomplete="off">' +
+    '<button class="dok-mini dok-mini-del" data-action="tdProstorSmazat" title="Odebrat prostor">✕</button></div>';
+}
+
+function dokVzorMoznosti(akt) {
+  var vse = dokVzory(true).filter(function (v) { return !v.skryty || v.id === akt; });
+  var sk = function (seznam, titul) {
+    return seznam.length ? '<optgroup label="' + titul + '">' + seznam.map(function (v) {
+      return '<option value="' + esc(v.id) + '"' + (v.id === akt ? ' selected' : '') + '>' + esc(v.nazev) + '</option>';
+    }).join('') + '</optgroup>' : '';
+  };
+  return '<option value="">— vybrat vzor (předvyplní kódy) —</option>' +
+    sk(vse.filter(function (v) { return v.vestaveny; }), 'Vestavěné vzory') +
+    sk(vse.filter(function (v) { return !v.vestaveny; }), 'Vlastní vzory');
+}
+
+function dkSouhrnHtml(kody) {
+  var r = dokVvRadky(kody);
+  if (!r.length) return '<span class="dk-souhrn-t">Zatím žádné kódy — vyberte vzor nebo třídy ručně.</span>';
+  return '<div class="dk-souhrn-t">Do protokolu půjde:</div>' + r.map(function (x) {
+    return '<div>' + x.id + ') ' + esc(x.nazev) + ': <b>' + x.kody.join(', ') + '</b></div>';
+  }).join('');
+}
+
+function dkSkupinaHtml(g) {
+  var prostory = (g.prostory && g.prostory.length) ? g.prostory : [{}];
+  return '<div class="dk-skupina" data-sk="' + esc(g.uid || dokUid()) + '">' +
+    '<div class="dk-skupina-hlava"><span class="dk-sk-titul">Skupina prostorů <b class="dk-sk-cislo"></b></span>' +
+      '<span class="dok-p-akce"><button class="dok-mini" data-action="tdSkupinaKopie" title="Přidat další skupinu se stejnými kódy a poznámkou">⧉ Kopírovat</button>' +
+      '<button class="dok-mini dok-mini-del" data-action="tdSkupinaSmazat">✕ Smazat skupinu</button></span></div>' +
+    '<div class="dk-blok-t">Prostory</div>' +
+    '<div class="dk-prostory">' + prostory.map(dkProstorHtml).join('') + '</div>' +
+    '<div class="dk-akce-radek"><button class="add-row" data-action="tdProstorPridat">+ Přidat prostor</button>' +
+      '<button class="add-row" data-action="tdProstoryVlozit">📋 Vložit seznam z Excelu / textu</button></div>' +
+    '<div class="dk-blok-t">Vzor</div>' +
+    '<div class="dk-vzor-vyber-radek"><select class="dk-in dk-vzor-vyber" title="Vzor předvyplní kódy, poznámku a nabídne texty oddílu B">' +
+      dokVzorMoznosti(g.vzor) + '</select>' +
+      '<button class="dok-mini" data-action="tdVzorZeSkupiny" title="Uložit kódy, poznámku a texty oddílu B jako vlastní vzor">💾 Uložit jako vlastní vzor</button></div>' +
+    dokKodyHtml(g.kody) +
+    '<div class="dk-souhrn">' + dkSouhrnHtml(g.kody) + '</div>' +
+    '<div class="f"><label>Poznámka <span class="dk-nepov">(např. zóny dle ČSN 33 2000-7-701)</span></label>' +
+      '<textarea data-k="pozn" rows="2" spellcheck="true" lang="cs">' + esc(g.pozn) + '</textarea></div>' +
+  '</div>';
+}
+
+DOK_TYPY.pouvv.form = function (d) {
+  var komise = (d.komise && d.komise.length) ? d.komise : [{ predseda: true }];
+  return '' +
+    '<div class="scard"><div class="scard-title">🌦 Hlavička protokolu</div>' +
+      '<div class="g3">' +
+        '<div class="f"><label>Číslo protokolu</label><div class="dk-ares">' +
+          '<input type="text" data-dk="cislo" value="' + esc(d.cislo) + '" placeholder="POUVV-0001" autocomplete="off">' +
+          '<button class="dok-mini" data-action="tdCisloDalsi" title="Přidělit další volné číslo">⟳</button></div></div>' +
+      '</div>' +
+      dkFirma('investor', 'Investor', d.investor) +
+      dkFirma('zpracovatel', 'Zpracovatel', d.zpracovatel, true) +
+      '<div class="dk-blok-t">Autorizovaný projektant <span class="dk-nepov">(nepovinné)</span></div>' +
+      '<div class="g4">' +
+        dkPole('projektant.titul', 'Titul', (d.projektant || {}).titul, { ph: 'Ing.' }) +
+        dkPole('projektant.jmeno', 'Jméno a příjmení', (d.projektant || {}).jmeno) +
+        dkPole('projektant.evidence', 'Č. evidence', (d.projektant || {}).evidence) +
+        dkPole('projektant.obor', 'Obor autorizace', (d.projektant || {}).obor) +
+      '</div>' +
+      '<div class="dk-blok-t">Stavba</div>' +
+      '<div class="g2">' +
+        dkPole('stavba', 'Název stavby', d.stavba, { span: 'span2' }) +
+        dkPole('misto', 'Místo stavby', d.misto) +
+        dkPole('predmet', 'Předmět dokumentace', d.predmet) +
+        dkPole('druh', 'Druh stavby', d.druh, { nepov: true }) +
+        dkPole('stupen', 'Stupeň dokumentace', d.stupen, { nepov: true }) +
+      '</div>' +
+    '</div>' +
+    '<div class="scard"><div class="scard-title">👥 Komise a vypracování</div>' +
+      '<div class="dk-pozn">Předsedu komise označte přepínačem. Jména si program pamatuje a příště je nabídne i s funkcí.</div>' +
+      '<div id="dk-komise">' + komise.map(dkOsobaHtml).join('') + '</div>' +
+      '<button class="add-row" data-action="tdOsobaPridat">+ Přidat člena komise</button>' +
+      '<div class="g3" style="margin-top:1rem">' +
+        dkPole('vypracoval', 'Vypracoval', d.vypracoval, { list: 'dk-osoby-list' }) +
+        dkPole('vypracovalMisto', 'Místo', d.vypracovalMisto) +
+        dkPole('datum', 'Datum', d.datum, { typ: 'date' }) +
+      '</div>' +
+    '</div>' +
+    '<div class="scard"><div class="scard-title">A. Podklady</div>' +
+      dkPole('podklady', 'Seznam podkladů — každý na samostatném řádku', d.podklady, { radky: 4 }) +
+      '<button class="add-row" data-action="tdVychozi" data-pole="podklady">↺ Výchozí seznam norem</button>' +
+    '</div>' +
+    '<div class="scard"><div class="scard-title">B. Popis</div>' +
+      DOK_VV_TEXTY_B.map(function (b) {
+        return '<div class="dk-b" data-b="' + b.k + '" style="margin-bottom:.9rem">' +
+          dkPole(b.k, b.nazev, d[b.k], { radky: b.k === 'popis' ? 4 : 3 }) + '<div class="dk-nabidka-b"></div></div>';
+      }).join('') +
+    '</div>' +
+    '<div class="scard"><div class="scard-title">C. Rozhodnutí a zdůvodnění</div>' +
+      dkPole('zduvodneni', 'Obecné zdůvodnění', d.zduvodneni, { radky: 3 }) +
+      '<button class="add-row" data-action="tdVychozi" data-pole="zduvodneni">↺ Výchozí text</button>' +
+      '<div class="dk-pozn" style="margin-top:.9rem">Každá skupina prostorů má vlastní kódy — např. kanceláře zvlášť a sprchy zvlášť. ' +
+        'V PDF bude u skupiny seznam prostorů, věta „' + esc(DOK_VV_VETA) + '" a řádky a) / b) / c) jen s kódy.</div>' +
+      '<div id="dk-skupiny">' + (d.skupiny && d.skupiny.length ? d.skupiny : [pouvvSkupinaNova()]).map(dkSkupinaHtml).join('') + '</div>' +
+      '<button class="add-row" data-action="tdSkupinaPridat">+ Přidat skupinu prostorů</button>' +
+    '</div>';
+};
+
+function dkNastavCestu(o, cesta, v) {
+  var c = cesta.split('.');
+  for (var i = 0; i < c.length - 1; i++) { if (!o[c[i]] || typeof o[c[i]] !== 'object') o[c[i]] = {}; o = o[c[i]]; }
+  o[c[c.length - 1]] = v;
+}
+
+DOK_TYPY.pouvv.cist = function (koren) {
+  var d = { investor: {}, zpracovatel: {}, projektant: {} };
+  koren.querySelectorAll('[data-dk]').forEach(function (el) { dkNastavCestu(d, el.getAttribute('data-dk'), el.value); });
+  d.komise = Array.prototype.map.call(koren.querySelectorAll('#dk-komise .dk-osoba'), function (r) {
+    return { jmeno: r.querySelector('[data-k="jmeno"]').value.trim(), funkce: r.querySelector('[data-k="funkce"]').value.trim(),
+             predseda: r.querySelector('input[type=radio]').checked };
+  }).filter(function (p) { return p.jmeno || p.funkce; });
+  d.skupiny = Array.prototype.map.call(koren.querySelectorAll('.dk-skupina'), function (sk) {
+    return {
+      uid: sk.getAttribute('data-sk'),
+      prostory: Array.prototype.map.call(sk.querySelectorAll('.dk-prostor'), function (r) {
+        return { c: r.querySelector('[data-k="c"]').value.trim(), n: r.querySelector('[data-k="n"]').value.trim() };
+      }).filter(function (p) { return p.c || p.n; }),
+      vzor: sk.querySelector('.dk-vzor-vyber').value,
+      kody: dokKodyCist(sk),
+      pozn: sk.querySelector('[data-k="pozn"]').value.trim()
+    };
+  });
+  return d;
+};
+
+// ── Otevřený dokument, ukládání ─────────────────────────────────────────
+// Ukládá se samo (800 ms po poslední změně), Ctrl+S a 💾 hned. Nový
+// dokument se do seznamu dostane až po první změně — prázdný se neuloží.
+window.__dokOtevreny = null;
+var __dokCasovac = null, __dokGen = 0, __dokUlozenoGen = 0, __dokUklada = null;
+
+function dokForm() { return document.getElementById('dok-form-obsah'); }
+
+function dokFormVykreslit() {
+  var o = window.__dokOtevreny; if (!o) return;
+  var t = DOK_TYPY[o.typ];
+  dokForm().innerHTML = t.form(o.data);
+  dkSkupinyPrecislovat();
+  dokOsobyDatalist();
+  dokNabidkyB();
+  dokStav();
+}
+
+function dokStav() {
+  var o = window.__dokOtevreny, el = document.getElementById('dok-stav'), tit = document.getElementById('dok-form-titul');
+  if (!o || !el) return;
+  var cislo = ((dokForm().querySelector('[data-dk="cislo"]') || {}).value || '').trim();
+  if (tit) tit.textContent = DOK_TYPY[o.typ].nazev + (cislo ? ' · ' + cislo : '');
+  var dup = cislo && DOK.dokumenty.some(function (x) { return x.uid !== o.uid && String(x.cislo || '').trim() === cislo; });
+  if (dup) { el.className = 'dok-stav varovani'; el.textContent = '⚠ Číslo ' + cislo + ' už má jiný dokument'; return; }
+  if (__dokGen !== __dokUlozenoGen) { el.className = 'dok-stav neulozeno'; el.textContent = '● Ukládám…'; return; }
+  if (!o.ulozen) { el.className = 'dok-stav'; el.textContent = 'Nový dokument — uloží se, jakmile něco vyplníte'; return; }
+  var d = o.upraveno ? new Date(o.upraveno) : null;
+  el.className = 'dok-stav ulozeno';
+  el.textContent = '✓ Uloženo' + (d ? ' ' + d.toLocaleTimeString('cs-CZ', { hour: '2-digit', minute: '2-digit' }) : '');
+}
+
+function dokZmena() {
+  if (!window.__dokOtevreny) return;
+  __dokGen++;
+  dokStav();
+  clearTimeout(__dokCasovac);
+  __dokCasovac = setTimeout(function () { dokUlozitOtevreny(); }, 800);
+}
+
+// Přečte formulář a zapíše dokument. „Načti – uprav – zapiš", aby okno
+// nepřepsalo dokumenty uložené mezitím v jiném okně.
+async function dokUlozitOtevreny() {
+  var o = window.__dokOtevreny; if (!o) return false;
+  clearTimeout(__dokCasovac); __dokCasovac = null;
+  if (__dokUklada) await __dokUklada;
+  var gen = __dokGen;
+  var data = DOK_TYPY[o.typ].cist(dokForm());
+  var ted = new Date().toISOString();
+  __dokUklada = (async function () {
+    await dokNacist();
+    var z = { uid: o.uid, typ: o.typ, cislo: String(data.cislo || '').trim(), vytvoreno: o.vytvoreno || ted, upraveno: ted, data: data };
+    var i = -1;
+    DOK.dokumenty.forEach(function (x, j) { if (x.uid === o.uid) i = j; });
+    if (i >= 0) DOK.dokumenty[i] = z; else DOK.dokumenty.unshift(z);
+    dokZapamatovatOsoby((data.komise || []).concat(data.vypracoval ? [{ jmeno: data.vypracoval, funkce: '' }] : []));
+    await dokZapsat();
+  })();
+  await __dokUklada; __dokUklada = null;
+  if (window.__dokOtevreny !== o) return true;
+  o.upraveno = ted; o.ulozen = true; o.data = data;
+  if (__dokGen === gen) __dokUlozenoGen = gen;
+  dokStav();
+  dokOsobyDatalist();
+  return true;
+}
+
+// Okno se zavírá — dopsat hned, synchronně do localStorage (IndexedDB
+// to nemusí stihnout; dokNacist pak vezme novější zápis podle času).
+function dokUlozitHned() {
+  var o = window.__dokOtevreny;
+  if (!o || !__dokCasovac) return;
+  clearTimeout(__dokCasovac); __dokCasovac = null;
+  var data = DOK_TYPY[o.typ].cist(dokForm()), ted = new Date().toISOString();
+  var z = { uid: o.uid, typ: o.typ, cislo: String(data.cislo || '').trim(), vytvoreno: o.vytvoreno || ted, upraveno: ted, data: data };
+  var i = -1;
+  DOK.dokumenty.forEach(function (x, j) { if (x.uid === o.uid) i = j; });
+  if (i >= 0) DOK.dokumenty[i] = z; else DOK.dokumenty.unshift(z);
+  dokZapsat();
+}
+window.addEventListener('pagehide', dokUlozitHned);
+document.addEventListener('visibilitychange', function () {
+  if (document.visibilityState === 'hidden' && __dokCasovac) dokUlozitOtevreny();
+});
+
+async function dokDopsat() {
+  if (__dokCasovac) await dokUlozitOtevreny();
+  else if (__dokUklada) await __dokUklada;
+}
+
+async function dokOtevrit(uid) {
+  await dokDopsat();
+  await dokNacist();
+  var x = dokNajit(uid);
+  if (!x) { showToast('Dokument se nenašel — možná ho mezitím někdo smazal.'); dokOtevritSeznam(); return; }
+  window.__dokOtevreny = { uid: x.uid, typ: x.typ, vytvoreno: x.vytvoreno, upraveno: x.upraveno, ulozen: true, data: dokKopie(x.data || {}) };
+  __dokGen = __dokUlozenoGen = 0;
+  dokFormVykreslit();
+  showScreen('dok-form');
+}
+
+async function dokNovy(typ) {
+  if (!DOK_TYPY[typ]) return;
+  await dokDopsat();
+  await dokNacist();
+  var d = DOK_TYPY[typ].novy();
+  d.cislo = dokDalsiCislo(typ);
+  window.__dokOtevreny = { uid: dokUid(), typ: typ, vytvoreno: '', upraveno: '', ulozen: false, data: d };
+  __dokGen = __dokUlozenoGen = 0;
+  dokFormVykreslit();
+  showScreen('dok-form');
+}
+
+// Jiné okno uložilo — je-li otevřený dokument tady neupravený, ukáže novější verzi.
+function dokFormZJinehoOkna() {
+  var o = window.__dokOtevreny, s = document.getElementById('screen-dok-form');
+  if (!o || !o.ulozen || !s || !s.classList.contains('active')) return;
+  var x = dokNajit(o.uid);
+  if (!x) { showToast('⚠ Dokument ' + (o.data.cislo || '') + ' byl v jiném okně smazán. Další změnou ho zase uložíte.', { timeout: 10000 }); return; }
+  if (String(x.upraveno || '') <= String(o.upraveno || '')) return;
+  if (__dokGen !== __dokUlozenoGen) {
+    showToast('⚠ Dokument ' + (x.cislo || '') + ' jste mezitím uložil v jiném okně — tady máte rozepsané změny, uloží se přes něj.', { timeout: 10000 });
+    return;
+  }
+  var y = window.scrollY;
+  o.data = dokKopie(x.data || {}); o.upraveno = x.upraveno;
+  dokFormVykreslit();
+  window.scrollTo(0, y);
+  showToast('↻ Dokument ' + (x.cislo || '') + ' byl uložen v jiném okně — formulář ukazuje novější verzi.', { timeout: 8000 });
+}
+
+// ── Komise ──────────────────────────────────────────────────────────────
+function dokOsobyDatalist() {
+  var dl = document.getElementById('dk-osoby-list'); if (!dl) return;
+  dl.innerHTML = DOK.osoby.slice().sort(function (a, b) { return a.jmeno.localeCompare(b.jmeno, 'cs'); }).map(function (o) {
+    return '<option value="' + esc(o.jmeno) + '">' + esc(o.funkce || '') + '</option>';
+  }).join('');
+}
+
+function dokOsobaDoplnFunkci(inp) {
+  var r = inp.closest('.dk-osoba'); if (!r) return;
+  var f = r.querySelector('[data-k="funkce"]');
+  if (!f || f.value.trim()) return;
+  var j = inp.value.trim().toLowerCase();
+  DOK.osoby.forEach(function (o) { if (o.jmeno.toLowerCase() === j && o.funkce) f.value = o.funkce; });
+}
+
+// ── Skupiny prostorů ────────────────────────────────────────────────────
+function dkSkupinyPrecislovat() {
+  var sk = dokForm().querySelectorAll('.dk-skupina');
+  sk.forEach(function (s, i) {
+    s.querySelector('.dk-sk-cislo').textContent = String(i + 1);
+    var del = s.querySelector('[data-action="tdSkupinaSmazat"]');
+    if (del) del.style.display = sk.length > 1 ? '' : 'none';
+  });
+}
+
+function dkSouhrnObnovit(sk) {
+  var b = sk.querySelector('.dk-souhrn'); if (b) b.innerHTML = dkSouhrnHtml(dokKodyCist(sk));
+}
+
+function dkSkupinaZ(el) { return el.closest('.dk-skupina'); }
+
+function dokVzorPouzit(sk, id) {
+  var v = dokVzor(id); if (!v) return;
+  var f = dokForm();
+  var poznEl = sk.querySelector('[data-k="pozn"]');
+  var pred = { kody: dokKodyCist(sk), pozn: poznEl.value, vzor: sk.getAttribute('data-vzor') || '', b: {} };
+  DOK_VV_TEXTY_B.forEach(function (b) { pred.b[b.k] = f.querySelector('[data-dk="' + b.k + '"]').value; });
+  dokKodyNastavit(sk, v.kody);
+  if (!poznEl.value.trim() && v.pozn) poznEl.value = v.pozn;
+  var doplneno = [];
+  DOK_VV_TEXTY_B.forEach(function (b) {
+    var t = (v.texty || {})[b.k], el = f.querySelector('[data-dk="' + b.k + '"]');
+    if (t && !el.value.trim()) { el.value = t; doplneno.push(b.nazev.toLowerCase()); }
+  });
+  sk.setAttribute('data-vzor', id);
+  dkSouhrnObnovit(sk);
+  dokNabidkyB();
+  dokZmena();
+  showToast('🧩 Vzor „' + v.nazev + '" — kódy předvyplněny' +
+    (doplneno.length ? ', do oddílu B doplněno: ' + doplneno.join(', ') : '') + '. Kterýkoli kód jde změnit.', {
+    timeout: 9000, actionLabel: '↩ ZPĚT', action: function () {
+      if (!document.body.contains(sk)) return;
+      dokKodyNastavit(sk, pred.kody);
+      poznEl.value = pred.pozn;
+      DOK_VV_TEXTY_B.forEach(function (b) { f.querySelector('[data-dk="' + b.k + '"]').value = pred.b[b.k]; });
+      var sel = sk.querySelector('.dk-vzor-vyber'); sel.value = pred.vzor;
+      sk.setAttribute('data-vzor', pred.vzor);
+      dkSouhrnObnovit(sk); dokNabidkyB(); dokZmena();
+    } });
+}
+
+function dokFormVzoryObnovit() {
+  var f = dokForm(); if (!f || !window.__dokOtevreny) return;
+  f.querySelectorAll('.dk-vzor-vyber').forEach(function (s) { var v = s.value; s.innerHTML = dokVzorMoznosti(v); s.value = v; });
+  dokNabidkyB();
+}
+
+// Texty oddílu B ze vzorů — nabídka pod každým polem. Vzory použité ve
+// skupinách tohoto protokolu jdou první.
+function dokNabidkyB() {
+  var f = dokForm(); if (!f) return;
+  var pouzite = Array.prototype.map.call(f.querySelectorAll('.dk-vzor-vyber'), function (s) { return s.value; });
+  var vzory = dokVzory(true).filter(function (v) { return !v.skryty || pouzite.indexOf(v.id) !== -1; });
+  f.querySelectorAll('.dk-b').forEach(function (box) {
+    var k = box.getAttribute('data-b');
+    var s = vzory.filter(function (v) { return v.texty && v.texty[k]; });
+    s.sort(function (a, b) { return (pouzite.indexOf(b.id) !== -1) - (pouzite.indexOf(a.id) !== -1); });
+    var cil = box.querySelector('.dk-nabidka-b');
+    cil.innerHTML = s.length ? '<select class="dk-in dk-nabidka" title="Vloží text vzoru do pole (prázdné pole vyplní, jinak připojí na konec)">' +
+      '<option value="">📋 Vložit text ze vzoru…</option>' + s.map(function (v) {
+        return '<option value="' + esc(v.id) + '">' + (pouzite.indexOf(v.id) !== -1 ? '✓ ' : '') + esc(v.nazev) + '</option>';
+      }).join('') + '</select>' : '';
+  });
+}
+
+function dokVlozitTextB(sel) {
+  var box = sel.closest('.dk-b'), k = box.getAttribute('data-b'), v = dokVzor(sel.value);
+  sel.value = '';
+  if (!v || !v.texty || !v.texty[k]) return;
+  var el = box.querySelector('[data-dk="' + k + '"]'), t = v.texty[k], pred = el.value;
+  if (pred.indexOf(t) !== -1) { showToast('Text vzoru „' + v.nazev + '" už v poli je.'); return; }
+  el.value = pred.trim() ? pred.replace(/\s+$/, '') + '\n' + t : t;
+  dokZmena();
+  showToast('Vložen text ze vzoru „' + v.nazev + '" — můžete ho upravit.', { timeout: 7000, actionLabel: '↩ ZPĚT',
+    action: function () { el.value = pred; dokZmena(); } });
+}
+
+// ── Seznam prostorů z Excelu nebo textu ─────────────────────────────────
+// Dva sloupce z Excelu (tabulátor), nebo řádky „101 Kancelář" /
+// „1.02 – Sprcha". První slovo s číslicí (do 12 znaků) = číslo místnosti.
+// Hlavička tabulky („Číslo / Název místnosti") se přeskočí.
+function dokRozborProstoru(text) {
+  var out = [], prvni = true;
+  String(text || '').replace(/\r/g, '').split('\n').forEach(function (r) {
+    if (!r.trim()) return;
+    var c = '', n = '';
+    if (r.indexOf('\t') !== -1) {
+      var b = r.split('\t').map(function (s) { return s.trim(); }).filter(Boolean);
+      if (b.length >= 2 && /\d/.test(b[0]) && b[0].length <= 12) { c = b[0]; n = b.slice(1).join(' '); }
+      else n = b.join(' ');
+    } else {
+      var m = /^\s*(\S+)\s+(.*)$/.exec(r);
+      if (m && /\d/.test(m[1]) && m[1].length <= 12) { c = m[1].replace(/[-–—:]+$/, ''); n = m[2].replace(/^[-–—:]\s*/, '').trim(); }
+      else n = r.trim();
+    }
+    var hlavicka = prvni && !/\d/.test(c + n) && /(číslo|cislo|č\.|název|nazev|místnost|mistnost|prostor)/i.test(r);
+    prvni = false;
+    if (hlavicka) return;
+    out.push({ c: c, n: n });
+  });
+  return out;
+}
+
+// Vloží prostory do skupiny od řádku `od` (prvek .dk-prostor) — přepíše od
+// něj dál, zbytek přidá. Bez `od` se využijí prázdné řádky na konci.
+function dokProstoryVlozit(sk, seznam, od) {
+  var box = sk.querySelector('.dk-prostory');
+  var pred = Array.prototype.map.call(box.querySelectorAll('.dk-prostor'), function (r) {
+    return { c: r.querySelector('[data-k="c"]').value, n: r.querySelector('[data-k="n"]').value };
+  });
+  var radky = Array.prototype.slice.call(box.querySelectorAll('.dk-prostor'));
+  var i;
+  if (od) i = radky.indexOf(od);
+  else {
+    i = radky.length;
+    while (i > 0) {
+      var r = radky[i - 1];
+      if (r.querySelector('[data-k="c"]').value.trim() || r.querySelector('[data-k="n"]').value.trim()) break;
+      i--;
+    }
+  }
+  seznam.forEach(function (p) {
+    var r = radky[i];
+    if (!r) { box.insertAdjacentHTML('beforeend', dkProstorHtml({})); r = box.lastElementChild; radky.push(r); }
+    r.querySelector('[data-k="c"]').value = p.c;
+    r.querySelector('[data-k="n"]').value = p.n;
+    i++;
+  });
+  dokZmena();
+  showToast('Vloženo ' + seznam.length + ' ' + (seznam.length === 1 ? 'prostor' : (seznam.length < 5 ? 'prostory' : 'prostorů')) + '.', {
+    timeout: 8000, actionLabel: '↩ ZPĚT', action: function () {
+      if (!document.body.contains(box)) return;
+      box.innerHTML = (pred.length ? pred : [{}]).map(dkProstorHtml).join('');
+      dokZmena();
+    } });
+}
+
+var __dokVlozitSk = null;
+function dokVlozitDialog(sk) {
+  __dokVlozitSk = sk;
+  var t = document.getElementById('dok-vlozit-text'); t.value = '';
+  document.getElementById('dok-vlozit-nahled').textContent = '';
+  document.getElementById('modal-dok-vlozit').classList.add('open');
+  setTimeout(function () { t.focus(); }, 50);
+}
+
+function dokVlozitNahled() {
+  var s = dokRozborProstoru(document.getElementById('dok-vlozit-text').value);
+  document.getElementById('dok-vlozit-nahled').innerHTML = s.length
+    ? 'Rozpoznáno <b>' + s.length + '</b>: ' + s.slice(0, 6).map(function (p) { return esc((p.c ? p.c + ' – ' : '') + p.n); }).join(' · ') + (s.length > 6 ? ' …' : '')
+    : '';
+}
+
+// ── Posluchače formuláře ────────────────────────────────────────────────
+document.addEventListener('input', function (e) {
+  var t = e.target;
+  if (!t || !t.closest) return;
+  if (t.id === 'dok-vlozit-text') { dokVlozitNahled(); return; }
+  if (!t.closest('#dok-form-obsah')) return;
+  if (t.classList.contains('dk-vzor-vyber') || t.classList.contains('dk-nabidka')) return;   // řeší `change`
+  if (t.getAttribute('data-dk') === 'cislo') dokStav();
+  dokZmena();
+});
+
+document.addEventListener('change', function (e) {
+  var t = e.target;
+  if (!t || !t.closest || !t.closest('#dok-form-obsah')) return;
+  if (t.classList.contains('dk-vzor-vyber')) {
+    var sk = dkSkupinaZ(t);
+    if (t.value) dokVzorPouzit(sk, t.value);
+    else { sk.setAttribute('data-vzor', ''); dokNabidkyB(); dokZmena(); }
+    return;
+  }
+  if (t.classList.contains('dk-nabidka')) { dokVlozitTextB(t); return; }
+  if (t.matches('select[data-kod]')) dkSouhrnObnovit(dkSkupinaZ(t));
+  if (t.getAttribute('data-k') === 'jmeno') dokOsobaDoplnFunkci(t);
+  dokZmena();
+});
+
+// Ctrl+V do prostoru s víc řádky = vložit celý seznam od toho řádku
+document.addEventListener('paste', function (e) {
+  var t = e.target;
+  if (!t || !t.closest || !t.closest('#dok-form-obsah .dk-prostor')) return;
+  var text = (e.clipboardData || window.clipboardData).getData('text') || '';
+  if (!/[\n\t]/.test(text.replace(/\s+$/, ''))) return;
+  var s = dokRozborProstoru(text);
+  if (!s.length) return;
+  e.preventDefault();
+  dokProstoryVlozit(dkSkupinaZ(t), s, t.closest('.dk-prostor'));
+});
+
+document.addEventListener('keydown', function (e) {
+  var f = document.getElementById('screen-dok-form');
+  if (!f || !f.classList.contains('active') || !(e.ctrlKey || e.metaKey) || e.altKey) return;
+  var k = String(e.key || '').toLowerCase();
+  if (k === 's') {
+    e.preventDefault();
+    dokUlozitOtevreny().then(function () { showToast('💾 Dokument uložen ✓'); });
+  } else if (k === 'p') {
+    e.preventDefault();
+    if (typeof dokNahled === 'function') dokNahled();
+  }
+});
+
+// ── Akce ────────────────────────────────────────────────────────────────
+TD_AKCE.tdZpetNaSeznam = function () { dokDopsat().then(dokOtevritSeznam); };
+TD_AKCE.tdUlozit = function () { dokUlozitOtevreny().then(function () { showToast('💾 Dokument uložen ✓'); }); };
+TD_AKCE.tdNahled = function () { if (typeof dokNahled === 'function') dokNahled(); };
+TD_AKCE.tdCisloDalsi = function () {
+  var o = window.__dokOtevreny; if (!o) return;
+  var el = dokForm().querySelector('[data-dk="cislo"]');
+  var ost = DOK.dokumenty.filter(function (x) { return x.uid !== o.uid; });
+  var zal = DOK.dokumenty; DOK.dokumenty = ost;
+  try { el.value = dokDalsiCislo(o.typ); } finally { DOK.dokumenty = zal; }
+  dokZmena();
+};
+TD_AKCE.tdAres = function (el) {
+  var cil = el.getAttribute('data-cil'), f = dokForm();
+  var pole = function (k) { return f.querySelector('[data-dk="' + cil + '.' + k + '"]'); };
+  lookupIcoFromAres(pole('ico').value, '__odberatel_inline', el, { targetCallback: function (data, ico) {
+    var s = data.sidlo || {};
+    var adr = s.textovaAdresa || [[s.nazevUlice || s.nazevObce, s.cisloDomovni ? s.cisloDomovni + (s.cisloOrientacni ? '/' + s.cisloOrientacni : '') : '']
+      .filter(Boolean).join(' '), [s.psc ? String(s.psc).replace(/(\d{3})(\d{2})/, '$1 $2') : '', s.nazevObce].filter(Boolean).join(' ')]
+      .filter(Boolean).join(', ');
+    if (data.obchodniJmeno) pole('nazev').value = data.obchodniJmeno;
+    if (adr) pole('adresa').value = adr;
+    pole('ico').value = ico;
+    dokZmena();
+    showToast('Načteno z ARES: ' + (data.obchodniJmeno || ico));
+  } });
+};
+TD_AKCE.tdVychozi = function (el) {
+  var k = el.getAttribute('data-pole'), p = dokForm().querySelector('[data-dk="' + k + '"]');
+  var v = k === 'podklady' ? DOK_VV_PODKLADY : DOK_VV_ZDUVODNENI, pred = p.value;
+  if (pred === v) return;
+  p.value = v; dokZmena();
+  showToast('Vrácen výchozí text.', { timeout: 7000, actionLabel: '↩ ZPĚT', action: function () { p.value = pred; dokZmena(); } });
+};
+TD_AKCE.tdOsobaPridat = function () {
+  var box = document.getElementById('dk-komise');
+  box.insertAdjacentHTML('beforeend', dkOsobaHtml({ predseda: !box.querySelector('input[type=radio]:checked') }));
+  box.lastElementChild.querySelector('input').focus();
+  dokZmena();
+};
+TD_AKCE.tdOsobaSmazat = function (el) {
+  var r = el.closest('.dk-osoba'), box = r.parentNode;
+  r.remove();
+  if (!box.children.length) box.insertAdjacentHTML('beforeend', dkOsobaHtml({ predseda: true }));
+  dokZmena();
+};
+TD_AKCE.tdSkupinaPridat = function () {
+  var box = document.getElementById('dk-skupiny');
+  box.insertAdjacentHTML('beforeend', dkSkupinaHtml(pouvvSkupinaNova()));
+  dkSkupinyPrecislovat(); dokZmena();
+  box.lastElementChild.scrollIntoView({ block: 'start', behavior: 'smooth' });
+};
+TD_AKCE.tdSkupinaKopie = function (el) {
+  var sk = dkSkupinaZ(el);
+  var g = { uid: dokUid(), prostory: [], vzor: sk.querySelector('.dk-vzor-vyber').value, kody: dokKodyCist(sk),
+            pozn: sk.querySelector('[data-k="pozn"]').value };
+  sk.insertAdjacentHTML('afterend', dkSkupinaHtml(g));
+  dkSkupinyPrecislovat(); dokZmena();
+  sk.nextElementSibling.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  showToast('Přidána skupina se stejnými kódy — doplňte její prostory.');
+};
+TD_AKCE.tdSkupinaSmazat = function (el) {
+  var sk = dkSkupinaZ(el), box = sk.parentNode, za = sk.nextElementSibling;
+  if (box.querySelectorAll('.dk-skupina').length < 2) return;
+  sk.remove(); dkSkupinyPrecislovat(); dokNabidkyB(); dokZmena();
+  showToast('Skupina prostorů smazána', { timeout: 8000, actionLabel: '↩ ZPĚT', action: function () {
+    if (!document.body.contains(box)) return;
+    box.insertBefore(sk, za && za.parentNode === box ? za : null);
+    dkSkupinyPrecislovat(); dokNabidkyB(); dokZmena();
+  } });
+};
+TD_AKCE.tdProstorPridat = function (el) {
+  var box = dkSkupinaZ(el).querySelector('.dk-prostory');
+  box.insertAdjacentHTML('beforeend', dkProstorHtml({}));
+  box.lastElementChild.querySelector('[data-k="c"]').focus();
+};
+TD_AKCE.tdProstorSmazat = function (el) {
+  var r = el.closest('.dk-prostor'), box = r.parentNode;
+  r.remove();
+  if (!box.children.length) box.insertAdjacentHTML('beforeend', dkProstorHtml({}));
+  dokZmena();
+};
+TD_AKCE.tdProstoryVlozit = function (el) { dokVlozitDialog(dkSkupinaZ(el)); };
+TD_AKCE.tdVlozitZavrit = function () { closeModal('modal-dok-vlozit'); };
+TD_AKCE.tdVlozitPotvrdit = function () {
+  var s = dokRozborProstoru(document.getElementById('dok-vlozit-text').value);
+  if (!s.length) { alert('Nic k vložení — vložte seznam prostorů.'); return; }
+  closeModal('modal-dok-vlozit');
+  if (__dokVlozitSk && document.body.contains(__dokVlozitSk)) dokProstoryVlozit(__dokVlozitSk, s);
+};
+TD_AKCE.tdVzorZeSkupiny = function (el) {
+  var sk = dkSkupinaZ(el), f = dokForm(), texty = {};
+  DOK_VV_TEXTY_B.forEach(function (b) { var v = f.querySelector('[data-dk="' + b.k + '"]').value.trim(); if (v) texty[b.k] = v; });
+  dokVzorDialog({ nazev: '', kody: dokKodyCist(sk), pozn: sk.querySelector('[data-k="pozn"]').value, texty: texty }, null,
+    '🧩 Uložit skupinu jako vlastní vzor');
+};
 // ═══ /TVORBA DOKUMENTACE ═══
 
 // Init wrapnutý — kdyby v něm něco selhalo (např. IDB v Safari iOS PWA),
