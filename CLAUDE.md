@@ -148,7 +148,7 @@ Revize EL je single-page PWA (HTML + JS + service worker). Obsah se cachuje
 v prohlížeči přes `sw.js`, takže uživatel nevidí změny, dokud se neinvalidně
 cache.
 
-**Aktuální verze: v9.122 · 2026-10-13**
+**Aktuální verze: v9.124 · 2026-10-15**
 
 ## Povinné při každé změně kódu před commitem
 
@@ -233,7 +233,7 @@ v `.claude/settings.json`) a na začátku regrese.
 
 ## Mobil — telefon na výšku i na šířku (blok `MOBIL` na konci stylu)
 
-Zadání uživatele 2026-10-15 (vyvinuto v labu): program musí jít ovládat na
+Zadání uživatele 2026-10-15: program musí jít ovládat na
 telefonu a **„verze pro PC se nesmí změnit ani o pixel"**. Logika, uložená
 data (JSON) ani PDF se nemění.
 
@@ -284,7 +284,7 @@ displej, písmo < 16 px, prvky < 40 px a nalepené prvky. Navíc ukotvení
 a zaškrtávátka mají nativní vzhled. Obsah v rámečku s vlastním posunem
 (tabulka, A4) je povolený, jen se vypíše.
 
-- `REZIM=soupis` = snímky 375 px + JSON (z toho soupis `testy/mobil-soupis.md` — je jen v labu),
+- `REZIM=soupis` = snímky 375 px + JSON do `testy/_beh/mobil`,
   `REZIM=pc` = snímky celé stránky 1366 / 1920, **`REZIM=pcstyly`** = otisk
   spočítaných stylů a polohy každého prvku ve všech stavech na PC.
 - **PC se porovnává přes `REZIM=pcstyly`, snímky jsou jen doplněk.** Snímky
@@ -292,8 +292,7 @@ a zaškrtávátka mají nativní vzhled. Obsah v rámečku s vlastním posunem
   Chrome vykreslí text o 1 px jinak podle velikosti souboru (ověřeno —
   samotný komentář `/*kkk…*/` o 1 000 znacích dal v postranním archivu
   přesně tentýž rozdíl 643 px jako mobilní blok).
-- Výsledek (lab v1.4): **před 1846 problémů v 70 stavech, po 0**
-  (soupis se snímky v labu). PC: otisky stylů a polohy shodné ve všech
+- Výsledek: **před 1846 problémů v 70 stavech, po 0**. PC: otisky stylů a polohy shodné ve všech
   stavech (liší se jen prvky zachycené uprostřed animace — hláška, přechod). PDF všech čtyř typů vygenerované na telefonu (375 px, na šířku)
   i na PC je bajtově shodné s verzí před úpravou.
 - **Co emulace neověří** (zkusit na skutečném telefonu): přiblížení iOS při
@@ -303,7 +302,7 @@ a zaškrtávátka mají nativní vzhled. Obsah v rámečku s vlastním posunem
 
 ## Zs mez — vyhodnocení impedance poruchové smyčky (blok `zsLim…`)
 
-Zadání uživatele 2026-10-15 (vyvinuto v labu): program dosud mez Zs nikde
+Zadání uživatele 2026-10-15: program dosud mez Zs nikde
 nepočítal a vadu C1 „Impedance poruchové smyčky Zsm přesahuje (2/3) × U0/Ia"
 technik přidával ručně z katalogu.
 
