@@ -490,6 +490,10 @@ function vsechnyStavy(zalozky) {
   D('modal-dok-vzor', E(async () => { await __M.dok(); TD_AKCE.tdVzorZeSkupiny(document.querySelector('.dk-skupina [data-action="tdVzorZeSkupiny"]')); await __M.w(100); }));
   D('modal-dok-vlozit', E(async () => { await __M.dok(); dokVlozitDialog(document.querySelector('.dk-skupina')); await __M.w(100); }));
   D('modal-dok-katalog', E(async () => { dokOtevritSeznam(); dokKatalogOtevrit(); await __M.w(100); }));
+  D('modal-dok-vzor-jmeno', E(async () => {
+    await __M.dok(); dokVzorDialog({ nazev: 'Kotelna (plynová, bez trvalé obsluhy)', kody: {}, pozn: '', texty: {} }, null);
+    await dokVzorUlozit(); await __M.w(100);
+  }));
   D('modal-plan-objekt', E(async () => {
     otevritPlan(); await __M.w(300); document.querySelectorAll('.modal-overlay.open').forEach(o => o.classList.remove('open'));
     const el = document.querySelector('#screen-plan [data-action="planOtevritObjekt"], #screen-plan .plan-nazev');

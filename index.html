@@ -4234,6 +4234,19 @@ html.dark .dk-upozorneni.vyrazne{color:#ffc29a;background:#3d2210;border-color:#
 </div>
 </div>
 
+<!-- MODAL: vzor téhož jména už existuje -->
+<div class="modal-overlay" id="modal-dok-vzor-jmeno" style="z-index:600">
+  <div class="modal" style="max-width:520px">
+    <div class="modal-title">🧩 Vzor se stejným jménem</div>
+    <div id="dok-vzor-jmeno-text" style="font-size:.9rem;line-height:1.5"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" style="background:var(--bg);color:var(--text);border:1px solid var(--border)" data-action="tdVzorJmenoZpet">Zpět</button>
+      <button class="btn btn-ghost" style="background:var(--bg);color:var(--accent);border:1px solid var(--accent)" data-action="tdVzorJmenoPrepsat">Přepsat existující</button>
+      <button class="btn btn-gold" data-action="tdVzorJmenoNovy">Uložit jako nový</button>
+    </div>
+  </div>
+</div>
+
 <!-- MODAL: katalog kódů vnějších vlivů (jen ke čtení) -->
 <div class="modal-overlay" id="modal-dok-katalog">
   <div class="modal" style="max-width:760px">
@@ -28070,14 +28083,41 @@ function dokVzorDialog(vzor, id, titul) {
   setTimeout(function () { var n = document.getElementById('dok-vzor-nazev'); if (n && !n.value) n.focus(); }, 50);
 }
 
-async function dokVzorUlozit() {
+// Jméno vzoru už existuje → zeptat se: přepsat existující (jen vlastní),
+// nebo uložit jako nový s číslem („Kotelna (vlastní) 2").
+function dokVzorJmenoKlic(s) { return String(s || '').trim().replace(/\s+/g, ' ').toLowerCase(); }
+
+function dokVzorVolneJmeno(nazev, mimoId) {
+  var obsazena = dokVzory(true).filter(function (v) { return v.id !== mimoId; }).map(function (v) { return dokVzorJmenoKlic(v.nazev); });
+  for (var n = 2; ; n++) if (obsazena.indexOf(dokVzorJmenoKlic(nazev + ' ' + n)) === -1) return nazev + ' ' + n;
+}
+
+var __dokVzorJmeno = null;
+async function dokVzorUlozit(volba) {
   var nazev = document.getElementById('dok-vzor-nazev').value.trim();
   if (!nazev) { alert('Zadejte název vzoru.'); return; }
+  var editId = __dokVzorEdit && __dokVzorEdit.id;
+  var stejny = dokVzory(true).filter(function (x) { return x.id !== editId && dokVzorJmenoKlic(x.nazev) === dokVzorJmenoKlic(nazev); })[0];
+  if (stejny && !volba) {
+    __dokVzorJmeno = { stejny: stejny, nove: dokVzorVolneJmeno(nazev, editId) };
+    document.getElementById('dok-vzor-jmeno-text').innerHTML = 'Vzor „<b>' + esc(stejny.nazev) + '</b>" už ' +
+      (stejny.vestaveny ? 'existuje mezi vestavěnými — ten přepsat nejde.' : 'existuje.') +
+      ' Přepsat existující vzor, nebo uložit jako nový?';
+    var pr = document.querySelector('#modal-dok-vzor-jmeno [data-action="tdVzorJmenoPrepsat"]');
+    pr.style.display = stejny.vestaveny ? 'none' : '';
+    document.querySelector('#modal-dok-vzor-jmeno [data-action="tdVzorJmenoNovy"]').textContent = 'Uložit jako nový „' + __dokVzorJmeno.nove + '"';
+    document.getElementById('modal-dok-vzor-jmeno').classList.add('open');
+    return;
+  }
+  closeModal('modal-dok-vzor-jmeno');
+  var cilId = editId;
+  if (stejny && volba === 'prepsat' && !stejny.vestaveny) { cilId = stejny.id; nazev = stejny.nazev; }   // jméno zůstane, jak bylo
+  if (stejny && volba === 'novy') { nazev = __dokVzorJmeno ? __dokVzorJmeno.nove : dokVzorVolneJmeno(nazev, editId); document.getElementById('dok-vzor-nazev').value = nazev; }
   var texty = {};
   DOK_VV_TEXTY_B.forEach(function (b) {
     var v = document.getElementById('dok-vzor-t-' + b.k).value.trim(); if (v) texty[b.k] = v;
   });
-  var v = { id: (__dokVzorEdit && __dokVzorEdit.id) || ('vl-' + dokUid()), nazev: nazev,
+  var v = { id: cilId || ('vl-' + dokUid()), nazev: nazev,
             kody: dokKodyCist(document.getElementById('dok-vzor-kody')),
             pozn: document.getElementById('dok-vzor-pozn').value.trim(),
             upozorneni: document.getElementById('dok-vzor-upoz').value.trim(), texty: texty };
@@ -28085,6 +28125,9 @@ async function dokVzorUlozit() {
   var i = -1;
   DOK.vzory.forEach(function (x, j) { if (x.id === v.id) i = j; });
   if (i >= 0) DOK.vzory[i] = v; else DOK.vzory.push(v);
+  // přepsán jiný vzor, než který se upravoval → upravovaný zmizí (sloučily se)
+  if (editId && cilId !== editId) DOK.vzory = DOK.vzory.filter(function (x) { return x.id !== editId; });
+  __dokVzorJmeno = null;
   await dokZapsat();
   closeModal('modal-dok-vzor');
   dokVzorySpravaVykreslit();
@@ -28148,6 +28191,9 @@ TD_AKCE.tdVzorSmazat = function (el) { dokVzorSmazat(dokVzorIdZ(el)); };
 TD_AKCE.tdVzorSkryt = function (el) { dokVzorSkrytPrepnout(dokVzorIdZ(el)); };
 TD_AKCE.tdVzorZavrit = function () { closeModal('modal-dok-vzor'); };
 TD_AKCE.tdVzorUlozit = function () { dokVzorUlozit(); };
+TD_AKCE.tdVzorJmenoPrepsat = function () { dokVzorUlozit('prepsat'); };
+TD_AKCE.tdVzorJmenoNovy = function () { dokVzorUlozit('novy'); };
+TD_AKCE.tdVzorJmenoZpet = function () { __dokVzorJmeno = null; closeModal('modal-dok-vzor-jmeno'); };
 // ── Protokol o určení vnějších vlivů — výchozí obsah ─────────────────────
 var DOK_VV_PODKLADY = [
   'ČSN 33 2000-5-51 ed. 3 – Elektrotechnické instalace budov, část 5-51: Výběr a stavba elektrických zařízení – Všeobecné předpisy',

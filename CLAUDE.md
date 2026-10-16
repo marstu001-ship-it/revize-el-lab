@@ -416,6 +416,10 @@ s nabídkou textů ze vzorů), **C. Rozhodnutí a zdůvodnění** (obecný text
 - **Vlastní vzory** (`DOK.vzory`): uložit ze skupiny (kódy, poznámka,
   texty B), upravit, smazat se ZPĚT, „⧉ Jako vlastní" z vestavěného.
   **Vestavěné nejdou smazat, jen skrýt** (`DOK.vzorySkryte`).
+  **Stejné jméno** (bez ohledu na velikost písmen a mezery) = okno
+  `#modal-dok-vzor-jmeno` „Přepsat existující vzor, nebo uložit jako nový?"
+  — přepsat jde jen vlastní (jméno zůstane), nový dostane číslo
+  („Kotelna (vlastní) 2", `dokVzorVolneJmeno`); u vestavěného jen nový.
 
 **Katalog kódů je NÁVRH, který musí uživatel ověřit s normou** —
 `DOK_VV_KATALOG` (jeden datový blok, přesně podle podkladu 2026-10-16),
@@ -449,8 +453,9 @@ Telefon: obrazovky a dialogy jsou v `test-mobil.js` (stavy „dokumentace – �
 `modal-dok-*`); pro telefon jen blok „Mobil: tvorba dokumentace" (lišta
 formuláře se nelepí).
 
-Test: `testy/test-dokumentace.js` (98 kontrol — karta, dlaždice, dvě skupiny, vzory
-(každý vestavěný proti zadání, upozornění mimo PDF, starý protokol se Sprchou),
+Test: `testy/test-dokumentace.js` (105 kontrol — karta, dlaždice, dvě skupiny, vzory
+(každý vestavěný proti zadání, upozornění mimo PDF, starý protokol se Sprchou,
+dotaz při stejném jménu),
 ruční kód, restart, číslování, kopie, vlastní vzor, PDF bez vysvětlivek,
 záloha a obnova, dvě okna, rozbor seznamu prostorů a **oddělení**: protokol
 není v archivu, naposledy otevřených, plánu ani hledání a data revizí jsou

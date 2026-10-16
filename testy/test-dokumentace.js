@@ -453,6 +453,62 @@ function pomocnik() {
     stary.pozn === 'Stará poznámka ze Sprcha / umývárna' && stary.popis === '', JSON.stringify(stary.kody));
   check('starý protokol: pouhé otevření uložená data nepřepíše', stary.ulozene === stary.pred);
 
+  // ── 14. vlastní vzor se jménem, které už existuje ─────────────────────
+  const jm = await p.evaluate(async () => {
+    const w = ms => new Promise(r => setTimeout(r, ms));
+    const okno = () => document.getElementById('modal-dok-vzor-jmeno');
+    const ulozJako = async (nazev, pozn) => {
+      dokVzorDialog({ nazev, kody: { AA: 'AA5' }, pozn: pozn || '', texty: {} }, null);
+      document.getElementById('dok-vzor-nazev').value = nazev;
+      await dokVzorUlozit(); await w(50);
+    };
+    await dokNacist(); DOK.vzory = []; await dokZapsat();
+    const r = {};
+    await ulozJako('Vymyšlený vzor A', 'první');
+    r.prvni = DOK.vzory.map(v => v.nazev).join('|');
+    await ulozJako('  vymyšlený   VZOR a ', 'druhá');
+    r.dotaz = okno().classList.contains('open') ? document.getElementById('dok-vzor-jmeno-text').textContent : '';
+    r.prepsatVidet = document.querySelector('#modal-dok-vzor-jmeno [data-action="tdVzorJmenoPrepsat"]').offsetHeight > 0;
+    r.neulozenoPredVolbou = DOK.vzory.length === 1 && DOK.vzory[0].pozn === 'první';
+    document.querySelector('#modal-dok-vzor-jmeno [data-action="tdVzorJmenoPrepsat"]').click(); await w(150); await dokNacist();
+    r.poPrepsani = DOK.vzory.map(v => v.nazev + '/' + v.pozn).join('|');
+    await ulozJako('Vymyšlený vzor A', 'třetí');
+    document.querySelector('#modal-dok-vzor-jmeno [data-action="tdVzorJmenoNovy"]').click(); await w(150); await dokNacist();
+    r.poNovem = DOK.vzory.map(v => v.nazev + '/' + v.pozn).join('|');
+    await ulozJako('Vymyšlený vzor A', 'čtvrtá');
+    document.querySelector('#modal-dok-vzor-jmeno [data-action="tdVzorJmenoZpet"]').click(); await w(100); await dokNacist();
+    r.poZpet = DOK.vzory.length + ' ' + document.getElementById('modal-dok-vzor').classList.contains('open');
+    closeModal('modal-dok-vzor');
+    // vestavěný: přepsat nejde, jen nový
+    await ulozJako('Kotelna (plynová, bez trvalé obsluhy)');
+    r.vestPrepsat = document.querySelector('#modal-dok-vzor-jmeno [data-action="tdVzorJmenoPrepsat"]').offsetHeight > 0;
+    r.vestText = document.getElementById('dok-vzor-jmeno-text').textContent;
+    document.querySelector('#modal-dok-vzor-jmeno [data-action="tdVzorJmenoNovy"]').click(); await w(150); await dokNacist();
+    r.vestNovy = DOK.vzory.map(v => v.nazev).filter(n => /^Kotelna/.test(n)).join('|');
+    // „Jako vlastní" dvakrát → „Kotelna (vlastní) 2"
+    dokOtevritSeznam('pouvv'); await w(50);
+    for (let k = 0; k < 2; k++) {
+      document.querySelector('#dok-vzory [data-vzor="vest-kotelna"] [data-action="tdVzorJakoVlastni"]').click(); await w(50);
+      await dokVzorUlozit(); await w(50);
+      if (okno().classList.contains('open')) { document.querySelector('#modal-dok-vzor-jmeno [data-action="tdVzorJmenoNovy"]').click(); await w(150); }
+    }
+    await dokNacist();
+    r.jakoVlastni = DOK.vzory.map(v => v.nazev).filter(n => /\(vlastní\)/.test(n)).join('|');
+    // úprava vzoru se svým vlastním jménem se neptá
+    const vl = DOK.vzory.find(v => v.nazev === 'Vymyšlený vzor A'); if (!vl) { r.chyba = DOK.vzory.map(v => v.nazev).join('|'); return r; }
+    dokVzorDialog(dokVzor(vl.id), vl.id); await dokVzorUlozit(); await w(50);
+    r.vlastniJmenoBezDotazu = !okno().classList.contains('open') && !document.getElementById('modal-dok-vzor').classList.contains('open');
+    return r;
+  });
+  check('stejné jméno vzoru (bez ohledu na velikost a mezery) → dotaz „Přepsat… nebo uložit jako nový?"',
+    /Přepsat existující vzor, nebo uložit jako nový\?/.test(jm.dotaz) && jm.prepsatVidet && jm.neulozenoPredVolbou, jm.dotaz);
+  check('„Přepsat existující" přepíše a nepřidá druhý', jm.poPrepsani === 'Vymyšlený vzor A/druhá', jm.poPrepsani);
+  check('„Uložit jako nový" dostane číslo', jm.poNovem === 'Vymyšlený vzor A/druhá|Vymyšlený vzor A 2/třetí', jm.poNovem);
+  check('„Zpět" nic neuloží a nechá okno vzoru otevřené', jm.poZpet === '2 true', jm.poZpet);
+  check('jméno vestavěného vzoru: přepsat nejde, jen uložit jako nový s číslem', !jm.vestPrepsat && /vestavěnými/.test(jm.vestText) && jm.vestNovy === 'Kotelna (plynová, bez trvalé obsluhy) 2', jm.vestNovy);
+  check('„Jako vlastní" podruhé → „… (vlastní) 2"', jm.jakoVlastni === 'Kotelna (plynová, bez trvalé obsluhy) (vlastní)|Kotelna (plynová, bez trvalé obsluhy) (vlastní) 2', jm.jakoVlastni);
+  check('úprava vzoru pod jeho vlastním jménem se neptá', jm.vlastniJmenoBezDotazu);
+
   // ── 12. telefon: karta pod ostatními ──────────────────────────────────
   const m = await b.newContext({ viewport: { width: 375, height: 812 }, isMobile: true, hasTouch: true });
   const pm = await m.newPage();
