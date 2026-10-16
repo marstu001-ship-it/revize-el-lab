@@ -56,11 +56,9 @@ Pravidla, aby oddělení drželo:
 - Nové úložiště (nový název IndexedDB, nový kanál, nový typ souboru do
   složky…) = zkontrolovat, že ho blok pokrývá, a doplnit kontrolu do
   `test-lab-oddeleni.js`. **Úprava bloku je commit `LAB:`, nikdy `FUNKCE:`.**
-- **Známý zbytek, který z labu opravit nejde:** `sw.js` ostrého programu při
-  aktivaci nové verze maže **všechny** cizí cache, tedy i labovou. Data to
-  neohrožuje (lab si cache doplní při dalším načtení online), jen lab hned
-  po aktualizaci ostrého programu nejde otevřít offline. Opravit by to šlo
-  jen v revize-el (mazat jen `revize-el-v…`), a to jen na pokyn uživatele.
+- ~~Známý zbytek: `sw.js` ostrého programu mazal při aktivaci všechny cizí
+  cache, tedy i labovou.~~ **Opraveno v revize-el v9.123** — ostrý program
+  maže jen `revize-el-v…`, labová cache `revize-el-lab-…` mu nevadí.
 
 ## Verze labu
 
@@ -131,12 +129,35 @@ Vyřešit ručně, nikdy nepřebírat labové řádky.
 
 ## Aktualizace labu z revize-el
 
+**🛑 PRAVIDLO (pokyn uživatele 2026-10-16): na začátku KAŽDÉ práce v labu
+nejdřív `git fetch upstream`.** Má-li `upstream/main` (revize-el) commity,
+které lab nemá (`git log --oneline HEAD..upstream/main`), **nejdřív je slouč
+do labu** postupem níž, ověř testy z pravidel labu (test funkce,
+`test-mobil.js`, `test-zs-mez.js`, `test-lab-oddeleni.js`,
+`test-typy-krizem.js`, `porovnani2.js`), pushni do `main` labu — **a teprve
+pak začni s novým zadáním.** Totéž **hned po každém přenosu funkcí z labu
+do revize-el** (přenos v revize-el vytvoří nové commity, které lab musí
+dostat zpátky, jinak se při příštím přenosu rozjedou).
+
+Klon labu v nové session remote `upstream` nemá — založit ho jen pro čtení:
+
 ```bash
+git remote add upstream https://github.com/marstu001-ship-it/revize-el
+git remote set-url --push upstream NEPUSHOVAT-do-revize-el
 git fetch upstream && git merge upstream/main
 ```
 
-Čekané konflikty: **`sw.js` řádek `CACHE_NAME`** (ponechat labový a bumpnout
-labovou verzi) a případně `manifest.json` (ponechat labový). Blok oddělení
+**Konflikty:** ve prospěch labu **jen tam, kde jde o labové oddělení**
+(labový blok, labové řádky `sw.js`, `manifest.json`, tahle sekce) a o labové
+funkce, které revize-el ještě nemá; **jinak platí verze z revize-el**
+(např. formulace oddílů, které revize-el přepsala při přenosu). Merge je
+commit **`LAB: sloučení revize-el vX.Y`**. Po sloučení v
+`testy/test-lab-oddeleni.js` posunout `OSTRY` na sloučený commit revize-el
+(test bere ostrý program odtud) a bumpnout verzi labu.
+
+Čekané konflikty: **`sw.js` řádek `CACHE_NAME` a mazání cache v `activate`**
+(ponechat labové a bumpnout labovou verzi), případně `manifest.json`
+(ponechat labový) a bloky labových funkcí v `index.html` / `test-mobil.js`. Blok oddělení
 ani tuhle sekci revize-el nezná, takže se přes ně sloučí bez konfliktu.
 Po sloučení spustit `test-lab-oddeleni.js` a regresi.
 

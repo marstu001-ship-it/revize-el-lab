@@ -9,7 +9,7 @@
 const { chromium } = require('./pw');
 const fs = require('fs'), cp = require('child_process'), path = require('path');
 const DIR = __dirname, R = path.join(DIR, '..'), B = path.join(DIR, '_beh', 'spolecny');
-const OSTRY = '8114304';   // v9.122 — ostrý program v době založení labu
+const OSTRY = '948359d';   // v9.124 — ostrý program ze sloučení 2026-10-16 (při každém sloučení posunout)
 const PORT = 8930, URL = 'http://127.0.0.1:' + PORT;
 const res = []; const check = (n, ok, d) => res.push((ok ? '✅' : '❌') + ' ' + n + (d ? ' — ' + d : ''));
 
@@ -143,7 +143,8 @@ async function snimek(p) {
     check('štítek LAB je v liště vidět', v.stitekVidet && /^LAB v\d/.test(v.stitek), v.stitek);
     check('titulek stránky obsahuje LAB', /LAB/.test(v.titulek), v.titulek);
     check('lišta má labovou barvu (oranžová)', v.lista === 'rgb(194, 65, 12)', v.lista);
-    check('verze ostrého programu v liště zůstala nedotčená', /v9\.122/.test(v.ver), v.ver);
+    const ostraVer = (fs.readFileSync(B + '/revize-el/index.html', 'utf8').match(/<span class="ver">(v[\d.]+)/) || [])[1];
+    check('verze ostrého programu v liště zůstala nedotčená (' + ostraVer + ')', !!ostraVer && v.ver.indexOf(ostraVer) === 0, v.ver);
 
     // ── 3. lab ukládá — do vlastních klíčů ─────────────────────────────
     await lab.evaluate(() => {
