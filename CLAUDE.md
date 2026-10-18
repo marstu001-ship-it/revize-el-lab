@@ -27,7 +27,7 @@ a skládá se z těchto LAB-only míst:
 | `index.html` — **jediný `<script>` hned za `<title>`** (blok „LAB — ODDĚLENÍ OD OSTRÉHO PROGRAMU") | běží před vším ostatním a obaluje API prohlížeče, takže zbytek `index.html` je **bajt po bajtu stejný jako v revize-el** |
 | `sw.js` | `CACHE_NAME = 'revize-el-lab-v…'`, `activate` maže jen `revize-el-lab-…`, čte se jen z vlastní cache (`zCache`) |
 | `manifest.json` | „Revize EL – LAB" / „Revize LAB", `id`/`start_url`/`scope` = `/revize-el-lab/`, oranžová ikona s nápisem LAB |
-| `testy/test-lab-oddeleni.js` | důkaz oddělení (39 kontrol, port 8930) |
+| `testy/test-lab-oddeleni.js` | důkaz oddělení (40 kontrol, port 8930) |
 | tahle sekce `CLAUDE.md` | |
 
 Co blok přesměruje (program sám pořád píše `revize_el_…`, `revize-el-db`…):
@@ -38,7 +38,7 @@ Co blok přesměruje (program sám pořád píše `revize_el_…`, `revize-el-db
 | událost `storage` | zápisy ostrého programu se zahodí, labové dostane program pod `revize_el_…` |
 | IndexedDB `revize-el-db` (i s odkazem na složku zálohy `backup_dir_handle`) | `revize-lab-db` (jiný název `N` → `revize-lab--N`) |
 | `BroadcastChannel('revize-el-store')` (hlídání dvou oken) | `revize-lab-store` |
-| tvorba dokumentace: localStorage `revize_el_dok`, IndexedDB klíče `dok_…`, kanál `revize-el-dok` | `revize_lab_dok`, `revize-lab-db`, `revize-lab-dok` (blok se neměnil — pokrývá to obecně; ověřuje `test-lab-oddeleni.js`) |
+| tvorba dokumentace: localStorage `revize_el_dok`, IndexedDB klíče `dok_…` (i knihovna rozvaděčů `dok_rozvKnihovna`, `dok_rozvOblibene`), kanál `revize-el-dok` | `revize_lab_dok`, `revize-lab-db`, `revize-lab-dok` (blok se neměnil — pokrývá to obecně; ověřuje `test-lab-oddeleni.js`) |
 | cache `revize-el-v…` | `revize-el-lab-v…` (sw.js) |
 | automatická záloha `revize-el-zaloha-RRRR-MM-DD_HH-MM.json` | `revize-lab-zaloha-…`; soubory `revize-el-…` ve složce **lab nevidí**, takže je jeho rotace nesmaže |
 | výběr složky zálohy | **složku, ve které jsou zálohy ostrého programu, lab odmítne**; dialog má vlastní zapamatovanou složku (`id: 'revize-lab-zalohy'`) |

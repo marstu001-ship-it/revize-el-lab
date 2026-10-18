@@ -198,6 +198,26 @@ async function snimek(p) {
       /Labová stavba/.test(dokSur.idbLab.dok_dokumenty || '') && /Ostrá stavba/.test(dokSur.idbOstra.dok_dokumenty || '') &&
       !/Labová/.test(JSON.stringify(dokSur.idbOstra)), Object.keys(dokSur.idbLab).join(', '));
     check('dokumentace: kanál revize-el-dok přesměrován na revize-lab-dok', dokSur.kanaly.lab >= 1 && dokSur.kanaly.ostry === 0, JSON.stringify(dokSur.kanaly));
+    // knihovna rozvaděčů (dok_rozvKnihovna / dok_rozvOblibene) jde do téhož labového úložiště
+    await lab.evaluate(async () => {
+      await dokNacist();
+      DOK.rozvKnihovna.push(rozvPolozkaNorm({ kat: 'FA', typ: 'LAB-KNIHOVNA', sirka: 1 }, 'pristroj'));
+      DOK.rozvOblibene.push('v-fa-1-B16');
+      await dokZapsat();
+    });
+    await lab.waitForTimeout(400);
+    const kn = await surova.evaluate(async () => {
+      const cti = (name, key) => new Promise(res => {
+        const r = indexedDB.open(name);
+        r.onsuccess = () => { const db = r.result, g = db.transaction('kv').objectStore('kv').get(key);
+          g.onsuccess = () => { db.close(); res(JSON.stringify(g.result || null)); }; };
+      });
+      return { lab: await cti('revize-lab-db', 'dok_rozvKnihovna'), ostra: await cti('revize-el-db', 'dok_rozvKnihovna'),
+               lsLab: localStorage.getItem('revize_lab_dok'), lsOstry: localStorage.getItem('revize_el_dok') };
+    });
+    check('rozvaděče: knihovna přístrojů jen v revize-lab-db a revize_lab_dok, ostrý program beze změny',
+      /LAB-KNIHOVNA/.test(kn.lab) && /LAB-KNIHOVNA/.test(kn.lsLab || '') && !/LAB-KNIHOVNA/.test(kn.ostra) && !/LAB-KNIHOVNA/.test(kn.lsOstry || ''),
+      kn.lab.slice(0, 60) + ' | ' + kn.ostra);
 
     // ── 4. okna: lab ↔ ostrý program se neslyší, lab ↔ lab ano ──────────
     await lab.evaluate(() => {
