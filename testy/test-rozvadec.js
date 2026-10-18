@@ -174,6 +174,149 @@ function pomocnik() {
   const filtrNeuklada = await p.evaluate(() => !window.__dokOtevreny.ulozen && DOK.dokumenty.length === 0);
   check('psaní do filtrů ani hvězdička rozvaděč neuloží (není změna dokumentu)', filtrNeuklada);
 
+  // ── 3b. vlastní přístroj a skříň ──────────────────────────────────────
+  await p.evaluate(() => { window.ulozitSoubor = (blob, name) => { window.__ul = { blob, name }; return Promise.resolve(true); }; });
+  const vl = await p.evaluate(async () => {
+    TD_AKCE.tdRVlastni();
+    const o = document.getElementById('modal-rz-polozka'), q = k => o.querySelector('[data-rp="' + k + '"]');
+    const r = { otevren: o.classList.contains('open'), titul: document.getElementById('rz-pol-titul').textContent };
+    q('kat').value = 'FI'; q('kat').dispatchEvent(new Event('change', { bubbles: true }));
+    r.poleFI = Array.from(o.querySelectorAll('[data-rp]')).map(e => e.getAttribute('data-rp')).join();
+    q('kat').value = 'FA'; q('kat').dispatchEvent(new Event('change', { bubbles: true }));
+    r.poleFA = Array.from(o.querySelectorAll('[data-rp]')).map(e => e.getAttribute('data-rp')).join();
+    q('vyrobce').value = 'Vymyšlený výrobce'; q('typ').value = 'VV-B16-1'; q('poly').value = '1'; q('In').value = '16 A'; q('char').value = 'B'; q('icn').value = '6';
+    await TD_AKCE.tdRPolUlozit();
+    r.chyba = document.getElementById('rz-pol-chyby').textContent; r.porad = o.classList.contains('open');
+    q('sirka').value = '1,5'; q('overeno').checked = true; q('pv').value = '2,1';
+    await TD_AKCE.tdRPolUlozit(); await __T.w(100);
+    r.zavren = !o.classList.contains('open');
+    r.ulozeno = DOK.rozvKnihovna.map(x => [x.kat, x.vyrobce, x.typ, x.In, x.char, x.icn, x.sirka, x.pv, x.overeno, x.zdroj].join('|')).join();
+    __T.filtr('overene', true);
+    r.overene = Array.from(document.querySelectorAll('#rz-seznam .rz-polozka b')).map(x => x.textContent).join();
+    TD_AKCE.tdRFiltrZrusit();
+    TD_AKCE.tdRVlastniSkrin();
+    q('rady').value = '2'; q('modulu').value = '18'; q('vyrobce').value = 'Vymyšlený výrobce'; q('ip').value = 'IP41'; q('ina').value = '63';
+    await TD_AKCE.tdRPolUlozit(); await __T.w(100);
+    r.skrin = DOK.rozvKnihovna.filter(x => x.druh === 'skrin').map(x => rozvNazev(rozvPolozkaNorm(x)) + '|' + x.rady + 'x' + x.modulu + '|' + x.ina).join();
+    r.nedokument = !window.__dokOtevreny.ulozen || DOK.dokumenty.length === 0;
+    return r;
+  });
+  check('vlastní přístroj: dialog, u chrániče IΔn a typ, u jističe charakteristika a Icn', vl.otevren && /Vlastní přístroj/.test(vl.titul) &&
+    /idn,rcdTyp/.test(vl.poleFI) && !/char/.test(vl.poleFI) && /char,icn,icu,ics/.test(vl.poleFA), vl.poleFI + ' / ' + vl.poleFA);
+  check('vlastní přístroj: bez šířky se neuloží a řekne proč', /chybí šířka v modulech/.test(vl.chyba) && vl.porad, vl.chyba);
+  check('vlastní přístroj: uložen s desetinnou šířkou 1,5, „16 A" jako číslo, ověřený, zdroj vlastní',
+    vl.zavren && vl.ulozeno === 'FA|Vymyšlený výrobce|VV-B16-1|16|B|6|1.5|2.1|true|vlastni', vl.ulozeno);
+  check('„jen ověřené" ukáže vlastní ověřený přístroj', vl.overene === 'Jistič 1P B16 · VV-B16-1', vl.overene);
+  check('vlastní skříň: 2×18, InA, název se složí z údajů', vl.skrin === 'Skříň, 2×18 modulů|2x18|63', vl.skrin);
+
+  // ── 3c. import CSV (správný i chybný), šablona, export, JSON ──────────
+  const imp = await p.evaluate(async () => {
+    const r = {};
+    TD_AKCE.tdRSablona();
+    r.sablona = { name: __ul.name, type: __ul.blob.type, text: await __ul.blob.text(), bom: Array.from(new Uint8Array(await __ul.blob.arrayBuffer()).slice(0, 3)).join() };
+    const csv = '﻿druh;kategorie;vyrobce;rada;typ;poly;in;charakteristika;icn;idn;typ_chranice;sirka_moduly;pv;overeno;poznamka\r\n' +
+      'pristroj;FA;Vymyšlený výrobce;VV1;VV-C10-1;1P;10;C;6;;;1;1,8;ano;"text; se středníkem"\r\n' +
+      ';jistič;Vymyšlený výrobce;VV1;VV-C20-3;3;20 A;C;10;;;3;;ne;\r\n' +
+      'pristroj;-FI/FA;Vymyšlený výrobce;VV2;VV-RCBO-B16;1+N;16;B;6;30;A;2;;;\r\n' +
+      '\r\n';
+    await rozvImportSoubor(new File([csv], 'knihovna.csv', { type: 'text/csv' }));
+    const m = document.getElementById('modal-rz-import');
+    r.nahled = { open: m.classList.contains('open'), text: document.getElementById('rz-import-obsah').innerText, btn: document.getElementById('rz-import-ulozit').textContent };
+    r.predUlozenim = DOK.rozvKnihovna.length;
+    await TD_AKCE.tdRImportUlozit(); await __T.w(100);
+    r.po = DOK.rozvKnihovna.filter(x => x.zdroj === 'import').map(x => [x.kat, x.typ, x.poly, x.In, x.char, x.idn, x.rcdTyp, x.sirka, x.pv, x.overeno, x.pozn].join('|'));
+    // znovu tentýž soubor — aktualizace, žádné duplicity
+    await rozvImportSoubor(new File([csv.replace('VV-C10-1;1P;10;C;6;;;1;1,8', 'VV-C10-1;1P;10;C;10;;;1;1,8')], 'knihovna.csv'));
+    r.znovu = document.getElementById('rz-import-obsah').innerText;
+    await TD_AKCE.tdRImportUlozit(); await __T.w(100);
+    r.poZnovu = DOK.rozvKnihovna.length + '|' + DOK.rozvKnihovna.find(x => x.typ === 'VV-C10-1').icn;
+    // chybný soubor (cp1250 z českého Excelu)
+    const chybny = 'druh,kategorie,výrobce,typ,póly,in,charakteristika,šířka (moduly),rady,moduly v řadě,třída SPD,neznámý sloupec\n' +
+      'pristroj,XY,Vymyšlený,T1,1,16,B,1,,,,\n' +
+      'pristroj,FA,Vymyšlený,T2,5,16,B,1,,,,\n' +
+      'pristroj,FA,Vymyšlený,T3,1,šestnáct,X,,,,,\n' +
+      'skrin,,Vymyšlený,S1,,,,,3,,,\n' +
+      'pristroj,SPD,Vymyšlený,T4,3+N,,,4,,,T1+T5,\n' +
+      'pristroj,FA,Vymyšlený,OK1,1,16,B,1,,,,\n';
+    const enc = [];
+    for (const ch of chybny) { const m = { 'ý': 0xFD, 'ó': 0xF3, 'ř': 0xF8, 'ě': 0xEC, 'í': 0xED, 'š': 0x9A, 'á': 0xE1, 'ž': 0x9E, 'č': 0xE8, 'ů': 0xF9 }[ch]; enc.push(m || ch.charCodeAt(0)); }
+    const pred = JSON.stringify(DOK.rozvKnihovna);
+    await rozvImportSoubor(new File([new Uint8Array(enc)], 'chybny.csv'));
+    r.chybny = { text: document.getElementById('rz-import-obsah').innerText, btn: document.getElementById('rz-import-ulozit').textContent };
+    TD_AKCE.tdRImportZavrit(); await dokNacist();
+    r.nezmeneno = JSON.stringify(DOK.rozvKnihovna) === pred;
+    // export a zpět přes JSON
+    await TD_AKCE.tdRExport();
+    r.export = { name: __ul.name, type: __ul.blob.type };
+    const json = await __ul.blob.text(), d = JSON.parse(json);
+    r.export.format = d._format; r.export.pocty = d.pristroje.length + '/' + d.skrine.length;
+    await rozvImportSoubor(new File([json], 'Knihovna.json'));
+    r.json = document.getElementById('rz-import-obsah').innerText;
+    TD_AKCE.tdRImportZavrit();
+    await rozvImportSoubor(new File(['{"pristroje":[{"kat":"KM","sirka":1}]'], 'rozbity.json'));
+    r.rozbity = document.getElementById('rz-import-obsah').innerText;
+    TD_AKCE.tdRImportZavrit();
+    return r;
+  });
+  check('šablona CSV: jen hlavička, středníky, UTF-8 s BOM, typ text/csv', imp.sablona.type === 'text/csv' && /\.csv$/.test(imp.sablona.name) &&
+    imp.sablona.bom === '239,187,191' && /^druh;kategorie;nazev;vyrobce;rada;typ;poly;in;charakteristika;/.test(imp.sablona.text) &&
+    imp.sablona.text.trim().split('\n').length === 1, JSON.stringify(imp.sablona).slice(0, 120));
+  check('import CSV: náhled před uložením (3 položky, nové 3) a do té doby nic neuloží', imp.nahled.open && /Načte se 3/.test(imp.nahled.text) &&
+    /nových 3/.test(imp.nahled.text) && imp.nahled.btn === '✓ Uložit do knihovny (3)' && imp.predUlozenim === 2, imp.nahled.text.replace(/\n/g, ' | '));
+  check('import CSV: kód i české slovo kategorie, „1P", „20 A", desetinná čárka, středník v uvozovkách, ověřeno ano/ne',
+    imp.po.join(' / ') === 'FA|VV-C10-1|1|10|C|||1|1.8|true|text; se středníkem / FA|VV-C20-3|3|20|C|||3||false| / FIFA|VV-RCBO-B16|1+N|16|B|30|A|2||false|', imp.po.join(' / '));
+  check('import podruhé: aktualizuje podle výrobce a typu, nic nezdvojí', /nových 0, aktualizovaných 3/.test(imp.znovu) && imp.poZnovu === '5|10', imp.poZnovu);
+  check('chybný CSV (cp1250, čárky): chyby po řádcích, dobrý řádek projde', /Chybných řádků: 5/.test(imp.chybny.text) &&
+    /řádek 2: neznámá kategorie „XY"/.test(imp.chybny.text) && /řádek 3: póly „5"/.test(imp.chybny.text) &&
+    /řádek 4: .*In „šestnáct" není číslo.*charakteristika „X"|řádek 4: .*chybí šířka/.test(imp.chybny.text) && /řádek 5: chybí počet modulů v řadě/.test(imp.chybny.text) &&
+    /řádek 6: třída SPD „T1\+T5"/.test(imp.chybny.text) && /Neznámé sloupce.*neznámý sloupec/.test(imp.chybny.text) && imp.chybny.btn === '✓ Uložit do knihovny (1)',
+    imp.chybny.text.replace(/\n/g, ' | '));
+  check('chybný import zrušený — knihovna beze změny', imp.nezmeneno);
+  check('export JSON: formát revize-el-knihovna-rozvadecu, jen vaše položky', imp.export.type === 'application/json' && imp.export.format === 'revize-el-knihovna-rozvadecu' &&
+    imp.export.pocty === '4/1' && /\.json$/.test(imp.export.name), JSON.stringify(imp.export));
+  check('import JSON z exportu: pozná stejné položky (aktualizace)', /Načte se 5/.test(imp.json) && /nových 0, aktualizovaných 5/.test(imp.json), imp.json.split('\n').slice(0, 2).join(' | '));
+  check('rozbitý JSON: srozumitelná chyba, nic k uložení', /není platný JSON/.test(imp.rozbity), imp.rozbity.slice(0, 120));
+
+  // přetažení souboru na plochu v knihovně (na seznamu) — nesmí ho chytit obecný import
+  const drop = await p.evaluate(async () => {
+    await dokUlozitOtevreny(); dokOtevritSeznam('rozv');
+    document.getElementById('dok-knihovna-karta').open = true;
+    const z = document.getElementById('rz-drop');
+    const dt = new DataTransfer();
+    dt.items.add(new File(['kategorie;typ;sirka_moduly\nKM;VV-KM-1;1\n'], 'stykac.csv', { type: 'text/csv' }));
+    z.dispatchEvent(new DragEvent('dragover', { dataTransfer: dt, bubbles: true, cancelable: true }));
+    const nad = z.classList.contains('nad');
+    z.dispatchEvent(new DragEvent('drop', { dataTransfer: dt, bubbles: true, cancelable: true }));
+    await __T.w(300);
+    const r = { nad, open: document.getElementById('modal-rz-import').classList.contains('open'), text: document.getElementById('rz-import-obsah').innerText,
+                obecny: document.getElementById('drop-overlay') ? document.getElementById('drop-overlay').classList.contains('on') : false };
+    await TD_AKCE.tdRImportUlozit(); await __T.w(200);
+    r.sprava = document.getElementById('rz-sprava').innerText;
+    return r;
+  });
+  check('přetažení CSV na vyznačenou plochu: náhled importu, ne obecný import zálohy', drop.nad && drop.open && /Načte se 1/.test(drop.text) && !drop.obecny, drop.text.slice(0, 80));
+  check('správa knihovny: vaše položky se zdrojem vlastní / import', /Vaše položky: 6/.test(drop.sprava) && /VV-KM-1/.test(drop.sprava) && /import/i.test(drop.sprava) && /vlastní/i.test(drop.sprava),
+    drop.sprava.replace(/\n/g, ' | '));
+  const smaz = await p.evaluate(async () => {
+    const r = {};
+    TD_AKCE.tdRPolUpravit(document.querySelector('#rz-sprava [data-kid] [data-action="tdRPolUpravit"]'));
+    const o = document.getElementById('modal-rz-polozka');
+    r.upravit = document.getElementById('rz-pol-titul').textContent + '|' + !o.querySelector('.rz-druh');
+    o.querySelector('[data-rp="pozn"]').value = 'upraveno';
+    await TD_AKCE.tdRPolUlozit(); await __T.w(100);
+    r.pozn = DOK.rozvKnihovna[0].pozn + '|' + DOK.rozvKnihovna.length;
+    const id = DOK.rozvKnihovna[0].id;
+    await TD_AKCE.tdRPolSmazat(document.querySelector('#rz-sprava [data-kid="' + id + '"] [data-action="tdRPolSmazat"]'));
+    r.poSmazani = DOK.rozvKnihovna.length;
+    zpetPosledni(); await __T.w(400); await dokNacist();
+    r.zpet = DOK.rozvKnihovna.length + '|' + (DOK.rozvKnihovna[0].id === id);
+    return r;
+  });
+  check('úprava položky z knihovny (druh se už nemění)', /^✎ Upravit přístroj\|true$/.test(smaz.upravit) && smaz.pozn === 'upraveno|6', JSON.stringify(smaz));
+  check('smazání z knihovny jde vzít zpět (Ctrl+Z) na původní místo', smaz.poSmazani === 5 && smaz.zpet === '6|true', JSON.stringify(smaz));
+  await p.evaluate(async () => { await dokOtevrit(DOK.dokumenty.find(d => d.typ === 'rozv').uid); });
+  await w(300);
+
   // ── 4. skříň a hlavička, uložení, znovuotevření ───────────────────────
   await p.evaluate(async () => {
     TD_AKCE.tdRTab(document.querySelector('.rz-tab[data-tab="skrine"]'));

@@ -512,6 +512,11 @@ function vsechnyStavy(zalozky) {
     await __M.dok(); dokVzorDialog({ nazev: 'Kotelna (plynová, bez trvalé obsluhy)', kody: {}, pozn: '', texty: {} }, null);
     await dokVzorUlozit(); await __M.w(100);
   }));
+  D('modal-rz-polozka', E(async () => { await __M.rozv(); TD_AKCE.tdRVlastni(); await __M.w(100); }));
+  D('modal-rz-import', E(async () => {
+    dokOtevritSeznam('rozv');
+    await rozvImportSoubor(new File(['kategorie;typ;sirka_moduly;poly\nFA;VYM-1;1;1\nXY;VYM-2;;5\n'], 'vymysleny.csv')); await __M.w(100);
+  }));
   D('modal-plan-objekt', E(async () => {
     otevritPlan(); await __M.w(300); document.querySelectorAll('.modal-overlay.open').forEach(o => o.classList.remove('open'));
     const el = document.querySelector('#screen-plan [data-action="planOtevritObjekt"], #screen-plan .plan-nazev');

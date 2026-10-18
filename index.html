@@ -1651,6 +1651,21 @@ html.dark .rz-polozka.vybrana{background:#3d3410}
 .rz-polozka>button{flex:0 0 auto}
 .rz-vlastni-btn{margin-top:.5rem}
 .rz-pohled{min-width:0}
+.rz-sprava-akce{display:flex;flex-wrap:wrap;gap:0 .5rem}
+.rz-drop{border:2px dashed var(--border-dark);border-radius:4px;padding:1rem;margin:.6rem 0 .4rem;text-align:center;font-size:.86rem;color:var(--text);background:var(--bg)}
+.rz-drop.nad{border-color:#0f7b5f;background:#e6f2ec}
+html.dark .rz-drop.nad{background:#1e3328}
+.rz-drop-pod{display:block;margin-top:.4rem;font-size:.76rem;color:var(--muted)}
+.rz-druh{display:flex;gap:.4rem;margin-bottom:.8rem;max-width:360px}
+.rz-overeno-l{display:flex;align-items:center;gap:.45rem;font-size:.84rem;margin:.6rem 0 .2rem;cursor:pointer}
+.rz-pol-chyby{color:var(--accent);font-size:.82rem;line-height:1.5;margin-top:.4rem}
+.rz-imp-souhrn{font-size:.88rem;line-height:1.55;margin-bottom:.6rem}
+.rz-imp-chyby-t{color:var(--accent);font-weight:600}
+.rz-imp-chyby{max-height:220px;overflow-y:auto;font-family:var(--mono);font-size:.72rem;line-height:1.5;color:var(--accent);
+  border:1px solid #f0c4be;background:#fdf1ef;padding:.4rem .6rem;margin-bottom:.6rem}
+html.dark .rz-imp-chyby{background:#3a1f1c;border-color:#6b2c25}
+.rz-imp-ukazka{font-size:.8rem;line-height:1.5}
+
 .rz-bez-skrine{border:2px dashed var(--border-dark);padding:2rem 1rem;text-align:center;color:var(--muted)}
 /* PDF dokumentu — samostatný vzhled, žádné prvky revizní zprávy.
    Dvě třídy schválně: `.a4` (psací stroj) stojí v souboru výš, ale shodná
@@ -4384,6 +4399,28 @@ html.dark .rz-polozka.vybrana{background:#3d3410}
     <div class="modal-actions">
       <button class="btn btn-ghost" style="background:var(--bg);color:var(--text);border:1px solid var(--border)" data-action="tdVlozitZavrit">Zrušit</button>
       <button class="btn btn-gold" data-action="tdVlozitPotvrdit">✓ Vložit</button>
+    </div>
+  </div>
+</div>
+<!-- MODAL: rozvaděč — vlastní přístroj nebo skříň do knihovny -->
+<div class="modal-overlay" id="modal-rz-polozka">
+  <div class="modal" style="max-width:760px">
+    <div class="modal-title" id="rz-pol-titul">＋ Vlastní přístroj</div>
+    <div id="rz-pol-obsah"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" style="background:var(--bg);color:var(--text);border:1px solid var(--border)" data-action="tdRPolZavrit">Zrušit</button>
+      <button class="btn btn-gold" data-action="tdRPolUlozit">✓ Uložit do knihovny</button>
+    </div>
+  </div>
+</div>
+<!-- MODAL: rozvaděč — náhled importu knihovny -->
+<div class="modal-overlay" id="modal-rz-import">
+  <div class="modal" style="max-width:760px">
+    <div class="modal-title">📥 Import do knihovny přístrojů a skříní</div>
+    <div id="rz-import-obsah"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" style="background:var(--bg);color:var(--text);border:1px solid var(--border)" data-action="tdRImportZavrit">Zrušit</button>
+      <button class="btn btn-gold" id="rz-import-ulozit" data-action="tdRImportUlozit">✓ Uložit do knihovny</button>
     </div>
   </div>
 </div>
@@ -16824,6 +16861,7 @@ var TYPY_SOUBORU = {
   'application/zip':  { popis: 'ZIP archiv',  pripona: '.zip',  mime: 'application/zip' },
   'application/json': { popis: 'JSON soubor', pripona: '.json', mime: 'application/json' },
   'application/pdf':  { popis: 'PDF soubor',  pripona: '.pdf',  mime: 'application/pdf' },
+  'text/csv':         { popis: 'CSV (Excel)', pripona: '.csv',  mime: 'text/csv' },
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
     { popis: 'Excel (xlsx)', pripona: '.xlsx',
       mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }
@@ -29761,13 +29799,473 @@ function rozvSpravaVykreslit() {
   var n = function (s, d) { return s.filter(function (x) { return x.druh === d; }).length; };
   box.innerHTML = '<div class="dk-pozn">Vestavěno: ' + n(vest, 'pristroj') + ' obecných přístrojů a ' + n(vest, 'skrin') + ' skříní ' +
     '(bez dat výrobců, neověřené). Vaše položky: ' + moje.length + '. Knihovna je jen ve vašem prohlížeči a jde do zálohy.</div>' +
+    '<div class="rz-sprava-akce">' +
+      '<button class="add-row" data-action="tdRVlastniPristroj">＋ Vlastní přístroj</button>' +
+      '<button class="add-row" data-action="tdRVlastniSkrin">＋ Vlastní skříň</button>' +
+      '<button class="add-row" data-action="tdRSablona" title="Prázdná tabulka se správnými sloupci — vyplňte ji v Excelu a uložte jako CSV">⬇ Prázdná šablona CSV</button>' +
+      '<button class="add-row" data-action="tdRExport" title="Vaše vlastní a importované položky do souboru JSON (záloha, přenos na jiný počítač)">⬇ Export mé knihovny (JSON)</button>' +
+    '</div>' +
+    '<div class="rz-drop" id="rz-drop">📥 Sem přetáhněte soubor <b>CSV</b> nebo <b>JSON</b> s přístroji a skříněmi' +
+      '<span class="rz-drop-pod">Před uložením se ukáže, co se načte a které řádky mají chybu. ' +
+      '<button class="dok-mini" data-action="tdRImportVybrat">Vybrat soubor…</button></span>' +
+      '<input type="file" id="rz-import-soubor" accept=".csv,.json,.txt,text/csv,application/json" hidden></div>' +
+    '<div class="dk-blok-t">Vaše přístroje a skříně</div>' +
     '<div class="rz-sprava-seznam">' + (moje.length ? moje.map(function (it) {
       return '<div class="dok-vzor-radek" data-kid="' + esc(it.id) + '"><span class="dok-vzor-n"><b>' + esc(rozvNazev(it)) + '</b>' +
         '<span class="dok-stitek dok-stitek-vlastni">' + esc(rozvZdrojText(it)) + '</span>' + (it.overeno ? '<span class="dok-stitek">ověřeno</span>' : '') +
         '<span class="dok-vzor-kody">' + esc([it.druh === 'skrin' ? 'skříň' : (rozvKat(it.kat) || {}).nazev, it.vyrobce, it.typ,
-          it.druh === 'skrin' ? (it.rady + ' × ' + it.modulu + ' M') : rozvSirkaText(it.sirka)].filter(Boolean).join(' · ')) + '</span></span></div>';
+          it.druh === 'skrin' ? (it.rady + ' × ' + it.modulu + ' M') : rozvSirkaText(it.sirka)].filter(Boolean).join(' · ')) + '</span></span>' +
+        '<span class="dok-p-akce"><button class="dok-mini" data-action="tdRPolUpravit">✎ Upravit</button>' +
+        '<button class="dok-mini dok-mini-del" data-action="tdRPolSmazat" title="Smazat z knihovny (jde vzít zpět; navržené rozvaděče se nezmění)">🗑 Smazat</button></span></div>';
     }).join('') : '<div class="dok-prazdno">Zatím žádné vlastní ani importované položky.</div>') + '</div>';
 }
+
+// ── Kontrola položky (vlastní formulář i import) ────────────────────────
+// Vstup = objekt s vnitřními klíči (hodnoty jako text, jak přišly ze
+// souboru), výstup = { polozka, chyby }. Chyba = položka se neuloží.
+// Kategorie v souboru: kód (FA, -FA, FI/FA…) nebo české slovo.
+var ROZV_KAT_ALIAS = { 'fi/fa': 'FIFA', 'rcbo': 'FIFA', 'p': 'PJ', 'sa': 'SF', 'jistic': 'FA', 'chranic': 'FI', 'proudovy chranic': 'FI',
+  'chranic s jisticem': 'FIFA', 'svodic prepeti': 'SPD', 'prepetova ochrana': 'SPD', 'hlavni vypinac': 'QM', 'vypinac': 'QM', 'odpinac': 'QM',
+  'pojistkovy odpinac': 'FU', 'stykac': 'KM', 'casove rele': 'KT', 'spinaci hodiny': 'KT', 'instalacni rele': 'KA', 'rele': 'KA',
+  'elektromer': 'PJ', 'meric': 'PJ', 'signalka': 'HL', 'ovladac': 'SF', 'prepinac': 'SF', 'tlacitko': 'SF', 'svorka': 'X', 'svorky': 'X',
+  'rezerva': 'REZ', 'zaslepka': 'REZ' };
+
+function rozvKatZTextu(v) {
+  var s = String(v || '').trim(); if (!s) return '';
+  var u = s.toUpperCase().replace(/^-/, '').replace(/\s+/g, '');
+  if (rozvKat(u)) return u;
+  var n = rozvNorm(s).replace(/^-/, '').replace(/\s+/g, ' ').trim();
+  if (ROZV_KAT_ALIAS[n]) return ROZV_KAT_ALIAS[n];
+  for (var i = 0; i < ROZV_KAT.length; i++) if (rozvNorm(ROZV_KAT[i].nazev) === n) return ROZV_KAT[i].k;
+  return null;
+}
+function rozvPolyZTextu(v) {
+  var s = String(v || '').toUpperCase().replace(/\s+/g, '').replace(/P\+N$/, '+N').replace(/P$/, '');
+  if (!s) return '';
+  return ROZV_POLY.indexOf(s) !== -1 ? s : null;
+}
+function rozvSpdZTextu(v) {
+  var s = String(v || '').toUpperCase().replace(/\s+/g, '').replace(/TYP/g, '').replace(/[\/,]/g, '+');
+  if (!s) return '';
+  s = s.split('+').map(function (x) { return /^T?[123]$/.test(x) ? 'T' + x.replace('T', '') : '?'; }).join('+');
+  return ROZV_POLE.spdTrida.volby.indexOf(s) !== -1 ? s : null;
+}
+function rozvAno(v) { return /^(ano|a|1|true|x|✓|yes|y|ověřeno|overeno)$/i.test(String(v == null ? '' : v).trim()); }
+
+function rozvValidovat(raw) {
+  var chyby = [], o = {};
+  Object.keys(raw || {}).forEach(function (k) { o[k] = raw[k]; });
+  var druh = rozvNorm(o.druh || '').trim();
+  if (!druh) druh = (String(o.rady || '').trim() || String(o.modulu || '').trim()) && !String(o.kat || '').trim() ? 'skrin' : 'pristroj';
+  else if (/^pristroj/.test(druh)) druh = 'pristroj';
+  else if (/^skrin|^rozvodnice/.test(druh)) druh = 'skrin';
+  else { chyby.push('neznámý druh „' + o.druh + '" (pristroj / skrin)'); druh = 'pristroj'; }
+  var cislo = function (k, nazev, povinne) {
+    var t = String(o[k] == null ? '' : o[k]).trim();
+    if (!t) { if (povinne) chyby.push('chybí ' + nazev); return ''; }
+    var n = rozvCislo(t.replace(/\s*(ka|ma|kv|a|v|w)$/i, ''));   // „16 A", „30 mA", „1,5 kV" projdou
+    if (n === '' || n < 0) { chyby.push(nazev + ' „' + t + '" není číslo'); return ''; }
+    return n;
+  };
+  var r = { druh: druh };
+  if (druh === 'pristroj') {
+    var kat = rozvKatZTextu(o.kat);
+    if (kat === '') chyby.push('chybí kategorie');
+    else if (!kat) chyby.push('neznámá kategorie „' + o.kat + '"');
+    r.kat = kat || '';
+    var poly = rozvPolyZTextu(o.poly);
+    if (poly === null) { chyby.push('póly „' + o.poly + '" (1, 1+N, 2, 3, 3+N nebo 4)'); poly = ''; }
+    r.poly = poly;
+    r.sirka = cislo('sirka', 'šířka v modulech', true);
+    if (r.sirka === 0 || r.sirka > 72) { chyby.push('šířka v modulech musí být větší než 0 (a rozumná)'); r.sirka = ''; }
+    ['In', 'icn', 'icu', 'ics', 'idn', 'up', 'pv', 'ue'].forEach(function (k) {
+      r[k] = cislo(k, k === 'In' ? 'In' : (ROZV_POLE[k] ? ROZV_POLE[k].nazev : k) , false);
+    });
+    var ch = String(o.char || '').trim().toUpperCase();
+    if (ch && ROZV_POLE.char.volby.indexOf(ch) === -1) { chyby.push('charakteristika „' + o.char + '" (B, C, D, K nebo Z)'); ch = ''; }
+    r.char = ch;
+    var rt = String(o.rcdTyp || '').trim().toUpperCase().replace(/^TYP\s*/, '');
+    if (rt && ROZV_POLE.rcdTyp.volby.indexOf(rt) === -1) { chyby.push('typ chrániče „' + o.rcdTyp + '" (AC, A, F nebo B)'); rt = ''; }
+    r.rcdTyp = rt;
+    var spd = rozvSpdZTextu(o.spdTrida);
+    if (spd === null) { chyby.push('třída SPD „' + o.spdTrida + '" (T1, T2, T3 nebo kombinace T1+T2)'); spd = ''; }
+    r.spdTrida = spd;
+  } else {
+    r.rady = cislo('rady', 'počet řad', true);
+    if (r.rady !== '' && (r.rady < 1 || r.rady > 20 || Math.round(r.rady) !== r.rady)) { chyby.push('počet řad musí být celé číslo 1–20'); r.rady = ''; }
+    r.modulu = cislo('modulu', 'počet modulů v řadě', true);
+    if (r.modulu !== '' && (r.modulu < 1 || r.modulu > 72)) { chyby.push('počet modulů v řadě musí být 1–72'); r.modulu = ''; }
+    r.ina = cislo('ina', 'InA', false);
+    r.penc = cislo('penc', 'Penc', false);
+    var pr = rozvNorm(o.provedeni || '').trim();
+    r.provedeni = /^nast/.test(pr) ? 'nástěnná' : /^zapus/.test(pr) ? 'zapuštěná' : /^duta/.test(pr) ? 'dutá stěna' : String(o.provedeni || '').trim();
+    var ma = rozvNorm(o.material || '').trim();
+    r.material = /^plast/.test(ma) ? 'plast' : /^ocel/.test(ma) ? 'oceloplech' : String(o.material || '').trim();
+    var tr = String(o.trida || '').trim().toUpperCase();
+    r.trida = tr === '1' ? 'I' : tr === '2' ? 'II' : tr;
+    if (r.trida && ['I', 'II'].indexOf(r.trida) === -1) { chyby.push('třída ochrany „' + o.trida + '" (I nebo II)'); r.trida = ''; }
+    ['ip', 'ik', 'rozmery'].forEach(function (k) { r[k] = String(o[k] == null ? '' : o[k]).trim(); });
+  }
+  ['nazev', 'vyrobce', 'rada', 'typ', 'pozn'].forEach(function (k) { r[k] = String(o[k] == null ? '' : o[k]).trim(); });
+  r.overeno = o.overeno === true || rozvAno(o.overeno);
+  r.zdroj = o.zdroj || 'vlastni';
+  if (o.id) r.id = o.id;
+  return { polozka: rozvPolozkaNorm(r, druh), chyby: chyby };
+}
+
+// ── CSV ─────────────────────────────────────────────────────────────────
+// Sloupce šablony; při importu se hlavička porovnává bez háčků, mezer
+// a velikosti písmen, takže projde i „Šířka (moduly)" nebo „Typ chrániče".
+var ROZV_CSV = [
+  ['druh', 'druh', ['druh']],
+  ['kategorie', 'kat', ['kategorie', 'kat']],
+  ['nazev', 'nazev', ['nazev']],
+  ['vyrobce', 'vyrobce', ['vyrobce']],
+  ['rada', 'rada', ['rada', 'serie']],
+  ['typ', 'typ', ['typ', 'objednacicislo', 'objcislo', 'typobjcislo']],
+  ['poly', 'poly', ['poly', 'pocetpolu']],
+  ['in', 'In', ['in', 'jmenovityproud', 'proud']],
+  ['charakteristika', 'char', ['charakteristika', 'char']],
+  ['icn', 'icn', ['icn', 'icnka']],
+  ['icu', 'icu', ['icu', 'icuka']],
+  ['ics', 'ics', ['ics', 'icska']],
+  ['idn', 'idn', ['idn', 'idnma']],
+  ['typ_chranice', 'rcdTyp', ['typchranice', 'typrcd', 'rcdtyp']],
+  ['trida_spd', 'spdTrida', ['tridaspd', 'spdtrida']],
+  ['up', 'up', ['up', 'upkv']],
+  ['sirka_moduly', 'sirka', ['sirkamoduly', 'sirka', 'sirkavmodulech', 'sirkamod']],
+  ['pv', 'pv', ['pv', 'pvw', 'ztratovyvykon']],
+  ['ue', 'ue', ['ue', 'uev', 'napeti']],
+  ['provedeni', 'provedeni', ['provedeni']],
+  ['material', 'material', ['material']],
+  ['rady', 'rady', ['rady', 'pocetrad']],
+  ['moduly_v_rade', 'modulu', ['modulyvrade', 'modulu', 'modulvrade', 'pocetmodulu']],
+  ['ip', 'ip', ['ip', 'kryti']],
+  ['ik', 'ik', ['ik']],
+  ['ina', 'ina', ['ina', 'inaa']],
+  ['penc', 'penc', ['penc', 'pencw']],
+  ['rozmery', 'rozmery', ['rozmery', 'rozmerymm']],
+  ['trida_ochrany', 'trida', ['tridaochrany']],
+  ['overeno', 'overeno', ['overeno']],
+  ['poznamka', 'pozn', ['poznamka', 'pozn']]
+];
+function rozvCsvKlic(h) { return rozvNorm(h).replace(/δ/g, 'd').replace(/[^a-z0-9]/g, ''); }
+
+function rozvCsvRadky(text) {
+  text = String(text || '').replace(/^﻿/, '');
+  var prvni = (text.split(/\r?\n/)[0] || '');
+  var odd = [';', '\t', ','].map(function (d) { return [d, prvni.split(d).length]; })
+    .sort(function (a, b) { return b[1] - a[1]; })[0][0];
+  var radky = [], radek = [], pole = '', uvoz = false;
+  for (var i = 0; i < text.length; i++) {
+    var c = text[i];
+    if (uvoz) {
+      if (c === '"') { if (text[i + 1] === '"') { pole += '"'; i++; } else uvoz = false; }
+      else pole += c;
+    } else if (c === '"' && pole === '') uvoz = true;
+    else if (c === odd) { radek.push(pole); pole = ''; }
+    else if (c === '\n' || c === '\r') {
+      if (c === '\r' && text[i + 1] === '\n') i++;
+      radek.push(pole); radky.push(radek); radek = []; pole = '';
+    } else pole += c;
+  }
+  if (pole !== '' || radek.length) { radek.push(pole); radky.push(radek); }
+  return radky;
+}
+
+// Rozbor souboru (CSV i JSON) → { polozky: [{ radek, polozka }], chyby: [{ radek, text }] }
+function rozvImportRozebrat(text, nazevSouboru) {
+  var vysl = { polozky: [], chyby: [], format: '' };
+  var t = String(text || '').replace(/^﻿/, '').trim();
+  var pridat = function (raw, radek) {
+    var v = rozvValidovat(raw);
+    if (v.chyby.length) vysl.chyby.push({ radek: radek, text: v.chyby.join('; ') });
+    else vysl.polozky.push({ radek: radek, polozka: v.polozka });
+  };
+  if (/\.json$/i.test(nazevSouboru || '') || /^[\[{]/.test(t)) {
+    vysl.format = 'JSON';
+    var d;
+    try { d = JSON.parse(t); } catch (e) { vysl.chyby.push({ radek: 0, text: 'soubor není platný JSON (' + e.message + ')' }); return vysl; }
+    var seznam = Array.isArray(d) ? d : [].concat((d && d.pristroje) || [], (d && d.skrine) || []);
+    if (!Array.isArray(d) && d && d.skrine) d.skrine.forEach(function (x) { if (x && !x.druh) x.druh = 'skrin'; });
+    if (!seznam.length) vysl.chyby.push({ radek: 0, text: 'v souboru nejsou žádné položky (čeká se pole „pristroje" / „skrine", nebo seznam)' });
+    seznam.forEach(function (x, i) {
+      if (!x || typeof x !== 'object') { vysl.chyby.push({ radek: i + 1, text: 'položka není objekt' }); return; }
+      var raw = {};
+      Object.keys(x).forEach(function (k) { raw[k] = x[k]; });
+      delete raw.id; delete raw.zdroj;
+      pridat(raw, i + 1);
+    });
+    return vysl;
+  }
+  vysl.format = 'CSV';
+  var radky = rozvCsvRadky(t);
+  if (radky.length < 2) { vysl.chyby.push({ radek: 1, text: 'v souboru je jen hlavička nebo nic — pod hlavičku patří řádky s položkami' }); return vysl; }
+  var mapa = radky[0].map(function (h) {
+    var k = rozvCsvKlic(h);
+    for (var i = 0; i < ROZV_CSV.length; i++) if (ROZV_CSV[i][2].indexOf(k) !== -1) return ROZV_CSV[i][1];
+    return null;
+  });
+  var nezname = radky[0].filter(function (h, i) { return !mapa[i] && String(h).trim(); });
+  if (!mapa.some(Boolean)) { vysl.chyby.push({ radek: 1, text: 'hlavička nemá žádný známý sloupec — stáhněte si šablonu CSV' }); return vysl; }
+  if (nezname.length) vysl.neznameSloupce = nezname;
+  for (var i = 1; i < radky.length; i++) {
+    var rr = radky[i];
+    if (!rr.some(function (x) { return String(x).trim(); })) continue;
+    var raw = {};
+    mapa.forEach(function (k, j) { if (k) raw[k] = rr[j] == null ? '' : rr[j]; });
+    pridat(raw, i + 1);
+  }
+  return vysl;
+}
+
+// Totožnost položky při importu: stejný druh, kategorie, výrobce a typ
+// (obj. číslo) — bez typu podle názvu. Shoda = položka se aktualizuje.
+function rozvKlicPolozky(it) {
+  var t = rozvNorm(it.typ).trim();
+  return [it.druh, it.kat || '', rozvNorm(it.vyrobce).trim(), t || '#' + rozvNorm(rozvNazev(it)).trim()].join('|');
+}
+
+function rozvCtiSoubor(soubor) {
+  return soubor.arrayBuffer().then(function (buf) {
+    var b = new Uint8Array(buf);
+    try { return new TextDecoder('utf-8', { fatal: true }).decode(b); }
+    catch (e) { return new TextDecoder('windows-1250').decode(b); }   // CSV uložené z českého Excelu
+  });
+}
+
+var __rzImport = null;
+async function rozvImportSoubor(soubor) {
+  if (!soubor) return;
+  if (!/\.(csv|json|txt)$/i.test(soubor.name || '')) { alert('Knihovna umí načíst soubor .csv nebo .json.'); return; }
+  var text = await rozvCtiSoubor(soubor);
+  await dokNacist();
+  var v = rozvImportRozebrat(text, soubor.name);
+  var podleKlice = {};
+  DOK.rozvKnihovna.forEach(function (x) { podleKlice[rozvKlicPolozky(rozvPolozkaNorm(x))] = x.id; });
+  var nove = 0, akt = 0, vSouboru = {};
+  v.polozky.forEach(function (p) {
+    var k = rozvKlicPolozky(p.polozka);
+    if (podleKlice[k]) { p.polozka.id = podleKlice[k]; akt++; }
+    else if (vSouboru[k]) { p.polozka.id = vSouboru[k]; akt++; }
+    else { p.polozka.id = 'u' + dokUid(); vSouboru[k] = p.polozka.id; nove++; }
+    p.polozka.zdroj = 'import';
+  });
+  __rzImport = { soubor: soubor.name, v: v, nove: nove, akt: akt };
+  rozvImportNahled();
+  document.getElementById('modal-rz-import').classList.add('open');
+}
+
+function rozvImportNahled() {
+  var x = __rzImport, v = x.v, box = document.getElementById('rz-import-obsah');
+  var pr = v.polozky.filter(function (p) { return p.polozka.druh === 'pristroj'; }).length;
+  var h = '<div class="rz-imp-souhrn"><b>' + esc(x.soubor) + '</b> (' + esc(v.format) + ')<br>' +
+    'Načte se <b>' + v.polozky.length + '</b> ' + dokPocetTvar(v.polozky.length, ['položka', 'položky', 'položek']).replace(/^\d+ /, '') +
+    ' — přístrojů ' + pr + ', skříní ' + (v.polozky.length - pr) + ' · nových ' + x.nove + ', aktualizovaných ' + x.akt +
+    ' <span class="dk-nepov">(stejný druh, kategorie, výrobce a typ)</span>' +
+    (v.chyby.length ? '<br><span class="rz-imp-chyby-t">Chybných řádků: ' + v.chyby.length + ' — ty se nenačtou.</span>' : '') + '</div>';
+  if (v.neznameSloupce && v.neznameSloupce.length) h += '<div class="dk-pozn">Neznámé sloupce (přeskočí se): ' + v.neznameSloupce.map(esc).join(', ') + '</div>';
+  if (v.chyby.length) h += '<div class="rz-imp-chyby">' + v.chyby.slice(0, 60).map(function (c) {
+    return '<div>' + (c.radek ? (v.format === 'CSV' ? 'řádek ' : 'položka ') + c.radek + ': ' : '') + esc(c.text) + '</div>';
+  }).join('') + (v.chyby.length > 60 ? '<div>… a dalších ' + (v.chyby.length - 60) + '</div>' : '') + '</div>';
+  if (v.polozky.length) h += '<div class="rz-imp-ukazka"><div class="dk-blok-t">Ukázka</div>' + v.polozky.slice(0, 8).map(function (p) {
+    var it = p.polozka;
+    return '<div>' + esc(rozvNazev(it)) + ' <span class="dk-nepov">· ' + esc([it.vyrobce, it.druh === 'skrin' ? it.rady + '×' + it.modulu + ' M' : rozvSirkaText(it.sirka)].filter(Boolean).join(' · ')) + '</span></div>';
+  }).join('') + (v.polozky.length > 8 ? '<div class="dk-nepov">…</div>' : '') + '</div>';
+  box.innerHTML = h;
+  var b = document.getElementById('rz-import-ulozit');
+  b.disabled = !v.polozky.length;
+  b.textContent = v.polozky.length ? '✓ Uložit do knihovny (' + v.polozky.length + ')' : 'Není co uložit';
+}
+
+TD_AKCE.tdRImportZavrit = function () { __rzImport = null; closeModal('modal-rz-import'); };
+TD_AKCE.tdRImportUlozit = async function () {
+  var x = __rzImport; if (!x || !x.v.polozky.length) return;
+  closeModal('modal-rz-import'); __rzImport = null;
+  await dokNacist();
+  var pred = dokKopie(DOK.rozvKnihovna);
+  x.v.polozky.forEach(function (p) {
+    var i = DOK.rozvKnihovna.findIndex(function (y) { return y.id === p.polozka.id; });
+    if (i >= 0) DOK.rozvKnihovna[i] = p.polozka; else DOK.rozvKnihovna.push(p.polozka);
+  });
+  await dokZapsat();
+  rozvKnihovnaZmenena();
+  showToast('📥 Do knihovny uloženo ' + x.v.polozky.length + ' (nových ' + x.nove + ', aktualizovaných ' + x.akt + ')', { timeout: 9000,
+    actionLabel: '↩ ZPĚT', action: function () { dokNacist().then(function () { DOK.rozvKnihovna = pred; return dokZapsat(); }).then(rozvKnihovnaZmenena); } });
+};
+
+function rozvKnihovnaZmenena() {
+  rozvSpravaVykreslit();
+  if (document.getElementById('rz-seznam')) { rozvFiltryVykreslit(); rozvKnihovnaVykreslit(); }
+}
+
+// Šablona CSV — jen hlavička; UTF-8 s BOM a středníky, ať ji český Excel
+// otevře s háčky a ve sloupcích.
+TD_AKCE.tdRSablona = function () {
+  var blob = new Blob(['﻿' + ROZV_CSV.map(function (c) { return c[0]; }).join(';') + '\r\n'], { type: 'text/csv' });
+  ulozitSoubor(blob, 'Sablona_knihovny_rozvadecu.csv');
+};
+TD_AKCE.tdRExport = async function () {
+  await dokNacist();
+  var moje = DOK.rozvKnihovna.map(function (x) { return rozvPolozkaNorm(x); });
+  if (!moje.length) { showToast('Ve vaší knihovně zatím nic není — exportují se jen vaše a importované položky.'); return; }
+  var d = { _format: 'revize-el-knihovna-rozvadecu', _version: 1, vytvoreno: new Date().toISOString(),
+            pristroje: moje.filter(function (x) { return x.druh === 'pristroj'; }),
+            skrine: moje.filter(function (x) { return x.druh === 'skrin'; }) };
+  ulozitSoubor(new Blob([JSON.stringify(d, null, 1)], { type: 'application/json' }), 'Knihovna_rozvadecu_' + new Date().toISOString().slice(0, 10) + '.json');
+};
+TD_AKCE.tdRImportVybrat = function () { var i = document.getElementById('rz-import-soubor'); if (i) { i.value = ''; i.click(); } };
+document.addEventListener('change', function (e) {
+  if (e.target && e.target.id === 'rz-import-soubor' && e.target.files && e.target.files[0]) rozvImportSoubor(e.target.files[0]);
+});
+// Přetažení souboru na vyznačenou plochu — nesmí propadnout do obecného
+// importu (ten by soubor bral jako zálohu nebo zprávu).
+['dragenter', 'dragover'].forEach(function (typ) {
+  document.addEventListener(typ, function (e) {
+    var z = e.target && e.target.closest && e.target.closest('#rz-drop');
+    if (!z || !dragMaSoubor(e)) return;
+    e.preventDefault(); e.stopPropagation();
+    z.classList.add('nad'); showDropOverlay(false);
+  });
+});
+document.addEventListener('dragleave', function (e) {
+  var z = e.target && e.target.closest && e.target.closest('#rz-drop');
+  if (z && !z.contains(e.relatedTarget)) z.classList.remove('nad');
+});
+document.addEventListener('drop', function (e) {
+  var z = e.target && e.target.closest && e.target.closest('#rz-drop');
+  if (!z) return;
+  e.preventDefault(); e.stopPropagation();
+  z.classList.remove('nad'); __dropDepth = 0; showDropOverlay(false);
+  var f = e.dataTransfer && e.dataTransfer.files;
+  if (f && f.length) rozvImportSoubor(f[0]);
+});
+
+// ── Vlastní přístroj / skříň ────────────────────────────────────────────
+var __rzPol = null;   // { id, druh, zdroj } upravované položky
+
+function rozvPolozkaDialog(it, druh) {
+  it = it ? rozvPolozkaNorm(it) : rozvPolozkaNorm({ druh: druh || 'pristroj', kat: 'FA', vyrobce: '' }, druh || 'pristroj');
+  __rzPol = { id: it.id || '', druh: it.druh, zdroj: it.id ? it.zdroj : 'vlastni' };
+  document.getElementById('rz-pol-titul').textContent = (it.id ? '✎ Upravit ' : '＋ Vlastní ') + (it.druh === 'skrin' ? 'skříň' : 'přístroj');
+  rozvPolozkaFormular(it);
+  document.getElementById('modal-rz-polozka').classList.add('open');
+}
+
+function rozvPolozkaFormular(it) {
+  var box = document.getElementById('rz-pol-obsah');
+  var pole = function (k, label, o) {
+    o = o || {};
+    var v = it[k]; v = typeof v === 'number' ? rozvCisloText(v) : (v == null ? '' : v);
+    var el = o.volby
+      ? '<select data-rp="' + k + '">' + (o.prazdna !== false ? '<option value="">—</option>' : '') + o.volby.map(function (x) {
+          var h = Array.isArray(x) ? x : [x, x];
+          return '<option value="' + esc(h[0]) + '"' + (String(h[0]) === String(v) ? ' selected' : '') + '>' + esc(h[1]) + '</option>';
+        }).join('') + '</select>'
+      : '<input type="text" data-rp="' + k + '" value="' + esc(v) + '"' + (o.ph ? ' placeholder="' + esc(o.ph) + '"' : '') +
+        (o.cislo ? ' inputmode="decimal"' : '') + ' autocomplete="off">';
+    return '<div class="f' + (o.span ? ' ' + o.span : '') + '"><label>' + esc(label) + (o.req ? ' <span class="req">*</span>' : '') +
+      (o.nepov ? ' <span class="dk-nepov">(nepovinné)</span>' : '') + '</label>' + el + '</div>';
+  };
+  var h = '';
+  if (!__rzPol.id) {
+    h += '<div class="rz-druh">' + [['pristroj', '🔌 Přístroj'], ['skrin', '🗄 Skříň']].map(function (d) {
+      return '<button class="rz-tab' + (it.druh === d[0] ? ' akt' : '') + '" data-action="tdRPolDruh" data-druh="' + d[0] + '">' + d[1] + '</button>';
+    }).join('') + '</div>';
+  }
+  if (it.druh === 'skrin') {
+    h += '<div class="g3">' +
+      pole('nazev', 'Název', { span: 'span3', ph: 'Nechte prázdné — složí se z údajů' }) +
+      pole('vyrobce', 'Výrobce') + pole('rada', 'Řada') + pole('typ', 'Typ / obj. číslo') +
+      pole('provedeni', 'Provedení', { volby: ['nástěnná', 'zapuštěná', 'dutá stěna'] }) +
+      pole('material', 'Materiál', { volby: ['plast', 'oceloplech'] }) +
+      pole('trida', 'Třída ochrany', { volby: [['I', 'I'], ['II', 'II']] }) +
+      pole('rady', 'Počet řad', { req: true, cislo: true, ph: '3' }) +
+      pole('modulu', 'Modulů v řadě', { req: true, cislo: true, ph: '12' }) +
+      pole('ip', 'Krytí IP', { ph: 'IP40' }) +
+      pole('ik', 'Odolnost IK', { ph: 'IK07' }) +
+      pole('ina', 'InA max (A)', { cislo: true, nepov: true }) +
+      pole('penc', 'Max. ztrátový výkon Penc (W)', { cislo: true, nepov: true }) +
+      pole('rozmery', 'Rozměry v × š × h (mm)', { span: 'span3', ph: '550 × 310 × 100' }) +
+    '</div>';
+  } else {
+    var k = rozvKat(it.kat) || ROZV_KAT[1];
+    h += '<div class="g3">' +
+      pole('kat', 'Kategorie', { req: true, prazdna: false, volby: ROZV_KAT.map(function (x) { return [x.k, x.nazev + (x.ozn ? ' (' + x.ozn + ')' : '')]; }) }) +
+      pole('nazev', 'Název', { span: 'span2', ph: 'Nechte prázdné — složí se z údajů' }) +
+      pole('vyrobce', 'Výrobce') + pole('rada', 'Řada') + pole('typ', 'Typ / obj. číslo') +
+      pole('poly', 'Póly', { volby: ROZV_POLY }) +
+      pole('sirka', 'Šířka v modulech', { req: true, cislo: true, ph: '1 nebo 1,5' }) +
+      k.pole.map(function (pk) {
+        var d = ROZV_POLE[pk];
+        return pole(pk, d.nazev + (d.jedn ? ' (' + d.jedn + ')' : ''), d.volby ? { volby: d.volby } : { cislo: true });
+      }).join('') +
+      pole('pv', 'Ztrátový výkon Pv (W/pól při In)', { cislo: true, nepov: true }) +
+    '</div>';
+  }
+  h += '<div class="f"><label>Poznámka</label><input type="text" data-rp="pozn" value="' + esc(it.pozn) + '" autocomplete="off"></div>' +
+    '<label class="rz-overeno-l"><input type="checkbox" data-rp="overeno"' + (it.overeno ? ' checked' : '') + '> Údaje jsou ověřené podle katalogu nebo štítku výrobce</label>' +
+    '<div class="rz-pol-chyby" id="rz-pol-chyby"></div>';
+  box.innerHTML = h;
+}
+
+function rozvPolozkaCist() {
+  var o = { druh: __rzPol.druh };
+  document.querySelectorAll('#rz-pol-obsah [data-rp]').forEach(function (el) { o[el.getAttribute('data-rp')] = el.type === 'checkbox' ? el.checked : el.value; });
+  return o;
+}
+
+document.addEventListener('change', function (e) {
+  if (!e.target || e.target.getAttribute('data-rp') !== 'kat' || !e.target.closest('#rz-pol-obsah')) return;
+  var o = rozvPolozkaCist();   // přepnutá kategorie — jiné parametry, vyplněné se nechají
+  rozvPolozkaFormular(rozvPolozkaNorm(o, 'pristroj'));
+});
+
+TD_AKCE.tdRPolDruh = function (el) {
+  __rzPol.druh = el.getAttribute('data-druh');
+  rozvPolozkaFormular(rozvPolozkaNorm(Object.assign(rozvPolozkaCist(), { druh: __rzPol.druh, kat: 'FA' }), __rzPol.druh));
+};
+TD_AKCE.tdRPolZavrit = function () { __rzPol = null; closeModal('modal-rz-polozka'); };
+TD_AKCE.tdRPolUlozit = async function () {
+  var raw = rozvPolozkaCist();
+  var v = rozvValidovat(raw);
+  if (v.chyby.length) { document.getElementById('rz-pol-chyby').innerHTML = '⚠ ' + v.chyby.map(esc).join('<br>⚠ '); return; }
+  var it = v.polozka;
+  it.id = __rzPol.id || 'u' + dokUid();
+  it.zdroj = __rzPol.zdroj || 'vlastni';
+  closeModal('modal-rz-polozka'); __rzPol = null;
+  await dokNacist();
+  var i = DOK.rozvKnihovna.findIndex(function (y) { return y.id === it.id; });
+  if (i >= 0) DOK.rozvKnihovna[i] = it; else DOK.rozvKnihovna.push(it);
+  await dokZapsat();
+  rozvKnihovnaZmenena();
+  showToast('✓ ' + rozvNazev(it) + ' — uloženo do knihovny', { timeout: 4000 });
+};
+TD_AKCE.tdRVlastni = function () { rozvPolozkaDialog(null, __rzF.tab === 'skrine' ? 'skrin' : 'pristroj'); };
+TD_AKCE.tdRVlastniPristroj = function () { rozvPolozkaDialog(null, 'pristroj'); };
+TD_AKCE.tdRVlastniSkrin = function () { rozvPolozkaDialog(null, 'skrin'); };
+TD_AKCE.tdRPolUpravit = function (el) {
+  var id = el.closest('[data-kid]').getAttribute('data-kid');
+  var it = (DOK.rozvKnihovna || []).find(function (x) { return x.id === id; });
+  if (it) rozvPolozkaDialog(it);
+};
+TD_AKCE.tdRPolSmazat = async function (el) {
+  var id = el.closest('[data-kid]').getAttribute('data-kid');
+  await dokNacist();
+  var i = DOK.rozvKnihovna.findIndex(function (x) { return x.id === id; });
+  if (i < 0) return;
+  var it = DOK.rozvKnihovna.splice(i, 1)[0], obl = DOK.rozvOblibene.indexOf(id);
+  if (obl !== -1) DOK.rozvOblibene.splice(obl, 1);
+  await dokZapsat();
+  rozvKnihovnaZmenena();
+  showToast('Z knihovny smazáno: ' + rozvNazev(rozvPolozkaNorm(it)) + ' (navržené rozvaděče ho mají dál)', { timeout: 8000, actionLabel: '↩ ZPĚT', action: function () {
+    dokNacist().then(function () {
+      if (!DOK.rozvKnihovna.some(function (x) { return x.id === id; })) DOK.rozvKnihovna.splice(Math.min(i, DOK.rozvKnihovna.length), 0, it);
+      if (obl !== -1 && DOK.rozvOblibene.indexOf(id) === -1) DOK.rozvOblibene.push(id);
+      return dokZapsat();
+    }).then(rozvKnihovnaZmenena);
+  } });
+};
 // ═══ /TVORBA DOKUMENTACE ═══
 
 // Init wrapnutý — kdyby v něm něco selhalo (např. IDB v Safari iOS PWA),

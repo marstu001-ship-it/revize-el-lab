@@ -623,6 +623,46 @@ a prohlášení (hlavička + `skrin` + `p`). `data.model = 1`.
   funguje **Ctrl+Z**), přepočet nadřazených chráničů, překreslení, uložení.
   Otevření rozvaděče zásobník vyprázdní.
 
+### Vlastní položky a import (část 2)
+
+- **„＋ Vlastní přístroj / skříň"** (v editoru pod knihovnou, na seznamu ve
+  sbalené knihovně) → okno `#modal-rz-polozka`; parametry podle kategorie
+  (`ROZV_KAT[].pole`), šířka a u skříně řady + moduly povinné, zaškrtávátko
+  „Údaje jsou ověřené…". Kontrola je **jedna funkce pro formulář i import:
+  `rozvValidovat(raw)`** → `{ polozka, chyby }`. Úprava a smazání (se ZPĚT)
+  ve správě knihovny; **navržené rozvaděče se nezmění** (mají kopii).
+- **Import:** soubor přetažený na vyznačenou plochu `#rz-drop` (posluchače
+  zastaví obecný import zálohy/zprávy) nebo „Vybrat soubor…". **Vždy se
+  nejdřív ukáže náhled** (`#modal-rz-import`: kolik položek, nových /
+  aktualizovaných, chyby PO ŘÁDCÍCH, neznámé sloupce, ukázka) a uloží se až
+  po „✓ Uložit do knihovny (N)" — chybné řádky se přeskočí, uložení jde
+  vzít ZPĚT. **Totožnost** = druh + kategorie + výrobce + typ (bez typu
+  název) → shoda položku aktualizuje, nic se nezdvojí. Importované mají
+  zdroj `import`. Data jen v prohlížeči, **nikdy v repozitáři**.
+- **Formát CSV** (šablona „⬇ Prázdná šablona CSV" = jen hlavička, UTF-8
+  s BOM, středníky): sloupce `druh;kategorie;nazev;vyrobce;rada;typ;poly;in;
+  charakteristika;icn;icu;ics;idn;typ_chranice;trida_spd;up;sirka_moduly;pv;
+  ue;provedeni;material;rady;moduly_v_rade;ip;ik;ina;penc;rozmery;
+  trida_ochrany;overeno;poznamka`. Pořadí ani všechny sloupce nejsou
+  povinné, hlavička se porovnává bez háčků a velikosti písmen (`ROZV_CSV`).
+  Oddělovač `;`, `,` nebo tabulátor se pozná sám, uvozovky podle CSV,
+  kódování UTF-8, jinak windows-1250 (CSV z českého Excelu).
+  - `druh` = `pristroj` / `skrin` (prázdné: skříň, když má řady a nemá
+    kategorii), `kategorie` = kód (QM, FA, FI, FI/FA nebo RCBO, AFDD, SPD,
+    FU, KM, KT, KA, PJ, HL, SF, X, REZ; i s pomlčkou) nebo české slovo
+    (jistič, chránič, svodič přepětí, stykač…), `poly` = 1, 1+N, 2, 3, 3+N,
+    4 (projde i „1P", „3P+N"), `in` A, `icn/icu/ics` kA, `idn` mA, `up` kV,
+    `pv` W/pól při In, `ue` V — **čísla s čárkou i tečkou, jednotka za
+    číslem se toleruje** („16 A"), `charakteristika` B/C/D/K/Z,
+    `typ_chranice` AC/A/F/B, `trida_spd` T1, T2, T3 nebo kombinace (T1+T2),
+    `sirka_moduly` povinná u přístroje (desetinná), u skříně povinné `rady`
+    a `moduly_v_rade`, `provedeni` nástěnná/zapuštěná/dutá stěna,
+    `material` plast/oceloplech, `trida_ochrany` I/II, `overeno` ano/ne.
+- **Formát JSON** = export „⬇ Export mé knihovny (JSON)":
+  `{ "_format": "revize-el-knihovna-rozvadecu", "_version": 1,
+  "pristroje": [ … ], "skrine": [ … ] }`, položky s vnitřními klíči (výš).
+  Import bere i holý seznam položek. `TYPY_SOUBORU` zná `text/csv`.
+
 Test: `testy/test-rozvadec.js` (vymyšlená data). V `test-mobil.js` stavy
 „rozvaděč – …" a v přípravě rozvaděč RH1 (byt 3+1, skříň 3×12).
 **`test-dokumentace.js` upraven ve stejném commitu:** dlaždic je víc
