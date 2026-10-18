@@ -68,7 +68,7 @@ function pomocnik() {
     vzhled: !!document.querySelector('#dok-dlazdice.home-grid .home-card.dok-dlazdice')
   }));
   check('karta otevře nejdřív dlaždice typů dokumentů (ne seznam)', dl.akt === 'screen-dokumentace', dl.akt);
-  check('dlaždice se skládají z DOK_TYPY, vzhled jako karty na úvodu', dl.typy === 'pouvv' && dl.vzhled, dl.typy);
+  check('dlaždice se skládají z DOK_TYPY, vzhled jako karty na úvodu', dl.typy.split(',')[0] === 'pouvv' && dl.vzhled, dl.typy);
   check('dlaždice: název, popis normy a počet uložených', /Protokol o určení vnějších vlivů/i.test(dl.text) && /Dle ČSN 33 2000-5-51 ed\.3/.test(dl.text) && /Zatím žádný uložený/.test(dl.text), dl.text.replace(/\n/g, ' | '));
   check('dlaždice „připravuje se" nejsou', !/připravuje/i.test(dl.text));
   const uvod = await p.evaluate(() => {
@@ -104,7 +104,7 @@ function pomocnik() {
       prazdno: document.getElementById('dok-seznam').textContent.trim(),
       hledatSchovane: document.getElementById('dok-hledat').offsetHeight === 0,
       sprava: sp.tagName + '|' + sp.open + '|' + sp.querySelector('summary').textContent,
-      spravaPosledni: wrap.lastElementChild === sp, vzoryVSprave: sp.contains(document.getElementById('dok-vzory')),
+      spravaPosledni: Array.from(wrap.children).filter(e => e.getClientRects().length).pop() === sp, vzoryVSprave: sp.contains(document.getElementById('dok-vzory')),
       vzoryVidet: sp.offsetHeight - sp.querySelector('summary').offsetHeight > 8,   // sbalená = jen řádek s nadpisem
       katalogRadek: ki.offsetHeight <= lh * 1.6, katalogBg: getComputedStyle(ki).backgroundColor, katalogH: ki.offsetHeight
     };

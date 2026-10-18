@@ -113,9 +113,16 @@ function pomocnik() {
     dokProstoryVlozit(sk, dokRozborProstoru('104 Sprcha'));
     sel = sk.querySelector('.dk-vzor-vyber'); sel.value = 'vest-sprcha'; sel.dispatchEvent(new Event('change', { bubbles: true }));
     await dokUlozitOtevreny();
+    // ROZVADĚČ DBO — byt 3+1 ve skříni 3×12
+    await dokNovy('rozv');
+    dk('[data-dk="oznaceni"]', 'RH1'); dk('[data-dk="stavba"]', 'Byt 3+1, Vymyšlená 12'); dk('[data-dk="investor.nazev"]', 'Petr Smyšlený');
+    rozvSkrinNastavit(rozvKnihPolozka('v-sk-3x12-n'));
+    if (typeof M.rozvByt === 'function') M.rozvByt();
+    await dokUlozitOtevreny();
     showScreen('home');
   };
-  M.dok = async () => { await dokOtevrit(DOK.dokumenty[0].uid); await w(150); };
+  M.dok = async () => { await dokOtevrit(DOK.dokumenty.find(x => x.typ === 'pouvv').uid); await w(150); };
+  M.rozv = async () => { await dokOtevrit(DOK.dokumenty.find(x => x.typ === 'rozv').uid); await w(200); };
   M.otevri = async (ev) => {
     const i = archiv.findIndex(z => (z.ev_cislo || (z.data && z.data.ev_cislo)) === ev);
     otevritZpravu(i); await w(400);
@@ -458,15 +465,23 @@ function vsechnyStavy(zalozky) {
   }));
   // tvorba dokumentace (samostatná část mimo revize)
   add('dokumentace – typy dokumentů', 'Tvorba dokumentace', E(async () => { dokOtevritTypy(); await __M.w(100); }));
-  add('dokumentace – seznam', 'Tvorba dokumentace', E(async () => { dokOtevritSeznam(); await __M.w(100); }));
+  add('dokumentace – seznam', 'Tvorba dokumentace', E(async () => { dokOtevritSeznam('pouvv'); await __M.w(100); }));
   add('dokumentace – seznam, správa vzorů rozbalená', 'Tvorba dokumentace', E(async () => {
-    dokOtevritSeznam(); await __M.w(100); document.getElementById('dok-vzory-karta').open = true; await __M.w(100);
+    dokOtevritSeznam('pouvv'); await __M.w(100); document.getElementById('dok-vzory-karta').open = true; await __M.w(100);
   }));
   add('dokumentace – protokol', 'Tvorba dokumentace', E(async () => { await __M.dok(); }));
   add('dokumentace – protokol, skupiny prostorů', 'Tvorba dokumentace', E(async () => {
     await __M.dok(); document.querySelector('.dk-skupina').scrollIntoView({ block: 'start' }); await __M.w(100);
   }));
   add('dokumentace – náhled PDF', 'Tvorba dokumentace', E(async () => { await __M.dok(); await dokNahled(); await __M.w(300); }));
+  // rozvaděč DBO (konfigurátor)
+  add('rozvaděč – seznam, knihovna rozbalená', 'Tvorba dokumentace', E(async () => {
+    dokOtevritSeznam('rozv'); await __M.w(100); document.getElementById('dok-knihovna-karta').open = true; await __M.w(100);
+  }));
+  add('rozvaděč – editor', 'Tvorba dokumentace', E(async () => { await __M.rozv(); }));
+  add('rozvaděč – editor, hlavička a filtry rozbalené', 'Tvorba dokumentace', E(async () => {
+    await __M.rozv(); document.querySelector('.rz-hlavicka').open = true; document.getElementById('rz-filtry').open = true; await __M.w(100);
+  }));
   // dialogy
   const D = (id, krok) => add('dialog ' + id, 'Dialogy', krok, '#' + id);
   D('modal-revize', E(async () => { await __M.otevri('RE-26-0101'); showScreen('form'); openModalRevize(); await __M.w(100); }));
@@ -492,7 +507,7 @@ function vsechnyStavy(zalozky) {
   D('modal-vnorit', E(async () => { showScreen('home'); otevritVnoritModal(0); await __M.w(100); }));
   D('modal-dok-vzor', E(async () => { await __M.dok(); TD_AKCE.tdVzorZeSkupiny(document.querySelector('.dk-skupina [data-action="tdVzorZeSkupiny"]')); await __M.w(100); }));
   D('modal-dok-vlozit', E(async () => { await __M.dok(); dokVlozitDialog(document.querySelector('.dk-skupina')); await __M.w(100); }));
-  D('modal-dok-katalog', E(async () => { dokOtevritSeznam(); dokKatalogOtevrit(); await __M.w(100); }));
+  D('modal-dok-katalog', E(async () => { dokOtevritSeznam('pouvv'); dokKatalogOtevrit(); await __M.w(100); }));
   D('modal-dok-vzor-jmeno', E(async () => {
     await __M.dok(); dokVzorDialog({ nazev: 'Kotelna (plynová, bez trvalé obsluhy)', kody: {}, pozn: '', texty: {} }, null);
     await dokVzorUlozit(); await __M.w(100);

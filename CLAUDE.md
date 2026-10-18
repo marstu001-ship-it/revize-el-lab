@@ -460,7 +460,8 @@ dlaždice se nedělají.
 
 **ZÁSADA Č. 1: ÚPLNĚ ODDĚLENO OD REVIZÍ.**
 - **Vlastní úložiště** `DOK` — localStorage `revize_el_dok`, v IndexedDB klíče
-  `dok_dokumenty`, `dok_vzory`, `dok_vzorySkryte`, `dok_osoby`, `dok_zapsano`.
+  `dok_dokumenty`, `dok_vzory`, `dok_vzorySkryte`, `dok_osoby`, `dok_zapsano`
+  (a pro rozvaděče `dok_rozvKnihovna`, `dok_rozvOblibene`).
   **NENÍ ve STORE ani ve STORE_KEYS** — saveStore/loadStore na něj nesahají,
   takže revize se s dokumenty nemůžou smíchat. Pravidlo „čtyři místa"
   pro klíče STORE se tu neuplatní; místo něj platí: nový klíč = `DOK_IDB`.
@@ -538,6 +539,94 @@ ruční kód, restart, číslování, kopie, vlastní vzor, PDF bez vysvětlivek
 záloha a obnova, dvě okna, rozbor seznamu prostorů a **oddělení**: protokol
 není v archivu, naposledy otevřených, plánu ani hledání a data revizí jsou
 po práci s protokoly **bajtově stejná**). Karta v Novinkách se nedělala.
+
+## Rozvaděč DBO — návrh a dokumentace (konfigurátor, `DOK_TYPY.rozv`, blok `ROZVADĚČ DBO`)
+
+Zadání uživatele 2026-10-18 (vyvíjeno v labu): technik poskládá rozvaděč
+z knihovny skříní a přístrojů v čelním pohledu (jako elektro-konstrukt.cz)
+a program z toho později udělá štítek, EU prohlášení o shodě, protokol
+o kusovém ověření a schéma. **Etapy:** 1) knihovna a skládání (tohle),
+2) dokumenty z návrhu, 3) schéma zapojení, 4) symetrie fází a oteplení,
+5) výkonové rozvaděče PSC / 3D. Druhý typ v Tvorbě dokumentace — dlaždice
+„Rozvaděč DBO – návrh a dokumentace" (ČSN EN 61439-3), číslování
+**`ROZ-0001`**, platí všechny zásady oddílu výš (vlastní úložiště, oddělení
+od revizí, záloha jako část `dokumentace`).
+
+- **Seznam:** hlavní akce „＋ Navrhnout nový rozvaděč", pod seznamem sbalená
+  **„⚙ Knihovna přístrojů a skříní"** (`#dok-knihovna-karta`, ukazuje se
+  podle `DOK_TYPY[typ].knihovna`). Řádek seznamu skládá `DOK_TYPY.rozv.polozka`
+  (označení – zakázka; odběratel, místo, skříň), hledání `DOK_TYPY.rozv.hledat`
+  („3x12" najde „3×12").
+- **Editor** (`#screen-dok-form[data-typ="rozv"]`, širší `.dok-wrap`):
+  nahoře **sbalená hlavička** (souhrn v záhlaví), pod ní tři sloupce:
+  **knihovna** (karty Přístroje / Skříně, rychlé přidání, hledání, sbalené
+  filtry) · **čelní pohled** · **vlastnosti**. Na užším okně vlastnosti pod
+  ostatním, na telefonu všechno pod sebou. Bez skříně je knihovna na kartě
+  Skříně a pohled vyzve „Nejdřív vyberte skříň".
+- **Filtry knihovny jsou jen v paměti** (`__rzF`) a psaní do nich NENÍ
+  změna dokumentu — panel má `data-dk-mimo`, obecné posluchače formuláře ho
+  přeskočí (nový prázdný rozvaděč se tak neuloží jen kvůli hledání).
+- Hlavička: `cislo`, `oznaceni`, `stavba` (zakázka/název), `investor`
+  (odběratel, ARES přes `dkFirma`), `misto`, `soustava` (`ROZV_SOUSTAVY`),
+  `privodIn`, `privodSmer` (shora/zespodu), `privodKabel`, `privodPrurez`,
+  `krytiZavreno`, `krytiOtevreno`, `icc` (nepovinné), `vyrobce` (předvyplněný
+  z profilu technika: firma, adresa, IČO), `datum`.
+
+### Datový model — navržený tak, aby etapy 2–4 nic nepřestavovaly
+
+`data.skrin` = **KOPIE** skříně z knihovny (`knih` = id v knihovně),
+`data.rady = [{ prvky: [...] }]`, přístroj
+`{ uid, knih, p, ozn, vyvod, faze, kabel, prurez, nadr, nadrRucne, ib, pozn }`,
+kde **`p` je KOPIE parametrů z knihovny** — pozdější úprava knihovny hotový
+rozvaděč nezmění. Řada je **zleva doprava bez mezer** (volné místo =
+přístroj kategorie Rezerva), pořadí = poloha. Z toho jde: strom pro schéma
+(přívod → QM → SPD → chrániče přes `nadr` → vývody), In / Ib po fázích
+(`faze` L1/L2/L3/3f), oteplení Σ `p.pv` × (`ib` / `p.In`)², štítek
+a prohlášení (hlavička + `skrin` + `p`). `data.model = 1`.
+
+### Knihovna
+
+- **Kategorie `ROZV_KAT`** (`k`, `nazev`, `ozn` = předpona označení, `barva`,
+  `etim`, `pole` = parametry, které u ní dávají smysl): QM -QM, FA -FA,
+  FI -FI, FIFA -FI/FA (RCBO), AFDD (-FA, sdílí řadu s jističi), SPD (bez
+  pomlčky „SPD1"), FU -FU, KM -KM, KT -KT, KA -KA, PJ -PJ, HL -HL, SF -SF,
+  X -X, REZ (bez označení).
+- **ETIM 10:** u kategorií jen známé třídy — MCB EC000042, RCD EC000003,
+  RCBO EC000905, SPD EC000941, skříň EC000214 (`ROZV_SKRIN_ETIM`). U polí
+  (`ROZV_POLE`) je v komentáři název vlastnosti ETIM; **kódy vlastností (EF…)
+  se nevymýšlejí**, doplní se z ověřené tabulky při importu dat výrobců.
+- Parametry přístroje: `kat, nazev, vyrobce, rada, typ, poly (1, 1+N, 2, 3,
+  3+N, 4), In, char (B/C/D/K/Z), icn (kA, ČSN EN 60898), icu, ics (kA,
+  ČSN EN 60947-2), idn (mA), rcdTyp (AC/A/F/B), spdTrida, up (kV), sirka
+  (moduly, DESETINNÉ), pv (W/pól při In), ue, pozn, zdroj, overeno`.
+  Skříň: `vyrobce, rada, typ, provedeni, material, rady, modulu, ip, ik,
+  ina, penc, rozmery, trida, pozn, zdroj, overeno`. Prázdné = neuvedeno;
+  `rozvPolozkaNorm()` srovná tvar a čísla (desetinná čárka).
+- **Vestavěné jen OBECNÉ položky** (`rozvVestavene()`, id `v-…`, výrobce
+  „obecný", `overeno = false`): jističe 1P/1+N/3P/3+N × B/C × 6–63 A,
+  chrániče 2P/4P 25/40/63 A 30 mA A/AC (+ 4P 40/63 A 300 mA), RCBO 1+N,
+  AFDD, SPD T1+T2 / T2, hlavní vypínače, pojistkové odpínače 10×38, stykače,
+  relé, hodiny, elektroměry, signálky, ovladače, svorka ½ modulu, rezervy
+  ½–3 moduly; skříně plast 1–4×12 a 2–4×18 nástěnné i zapuštěné, oceloplech
+  3–4×24. **Pv, Icn, Icu, Ics, InA a Penc jsou prázdné — nic se nevymýšlí;
+  šířky jsou běžné modulové a neověřené.** Žádná data výrobců (repozitář je
+  veřejný).
+- **Položky uživatele** v `DOK.rozvKnihovna`, oblíbené (hvězdička) v
+  `DOK.rozvOblibene` — obojí v úložišti tvorby dokumentace (`DOK_IDB`)
+  a v záloze (`dokZalohaData`). Oblíbené jdou v seznamu nahoru a do
+  rychlého přidání; **rychlé přidání** = `ROZV_NEJCASTEJSI` (B10 1P, B16 1P,
+  C16 1P, B25 3P, chránič 40 A/30 mA 4P, hlavní vypínač 3P, rezerva 1 M).
+- **Skříň** se vybírá „Použít" na kartě Skříně (`rozvSkrinNastavit`);
+  výměna se ptá a přístroje z řad navíc přesune na konec poslední řady.
+- **Každá změna skříně a přístrojů jde přes `rozvZmena(popis, fn)`** —
+  snímek pro ZPĚT (zapíše se do společného zásobníku `zpetZapsat`, takže
+  funguje **Ctrl+Z**), přepočet nadřazených chráničů, překreslení, uložení.
+  Otevření rozvaděče zásobník vyprázdní.
+
+Test: `testy/test-rozvadec.js` (vymyšlená data). V `test-mobil.js` stavy
+„rozvaděč – …" a v přípravě rozvaděč RH1 (byt 3+1, skříň 3×12).
+**`test-dokumentace.js` upraven ve stejném commitu:** dlaždic je víc
+a „správa vzorů úplně dole" se počítá z viditelných prvků.
 
 ## Plán revizí: lhůta se bere ze ZPRÁVY (v9.122)
 
