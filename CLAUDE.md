@@ -710,6 +710,29 @@ a prohlášení (hlavička + `skrin` + `p`). `data.model = 1`.
 - Vymyšlený **byt 3+1** pro testy: `testy/rozvadec-byt.js` (skříň 3×12:
   QM, SPD, sporák B25 3P; dva chrániče 4P 40/30 s jističi; RCBO balkon).
 
+### PDF (část 4)
+
+- `DOK_TYPY.rozv.pdf(d)` → bloky pro společné stránkování tvorby
+  dokumentace; **`naSirku: true`** = stránky `a4 a4-landscape a4-dok`
+  (`dokPdfStranka`, limit výšky 210 mm — obecné, platí pro každý typ
+  s `naSirku`). Obsah: titul (Rozvaděč RH1, DBO dle ČSN EN 61439-3,
+  číslo), hlavička ve 4 sloupcích, **„Čelní pohled"** (`rozvSvg` s
+  `o.tisk`, rozměry v mm, zmenšený nejvýš na 265 × 140 mm, popisek
+  „Zmenšeno na N %" / „Skutečná velikost 1 : 1", varování u přeplněné
+  řady) a **„Seznam přístrojů"** bez rezerv po 18 řádcích (záhlaví se
+  opakuje): označení, popis vývodu, typ, In, charakteristika, póly, IΔn,
+  fáze, kabel. **Neověřené přístroje mají `*`** a pod seznamem vysvětlivku.
+  Štítek, prohlášení, kusové ověření a schéma zatím NE (etapa 2–3).
+- **Vektorově přes svg2pdf.js se NEDĚLÁ** (ověřeno 2026-10-18): svg2pdf 2.x
+  by s jsPDF 2.5.1 technicky šel, ale (1) text kreslí písmy jsPDF, které
+  nemají české háčky — popisky vývodů by se rozbily, šlo by to jen
+  s vloženým TTF písmem (stovky kB navíc a offline cache), a (2) celý
+  program skládá PDF z obrázků stránek (html2canvas → `renderPagesToPDF`),
+  vektorový obrázek by potřeboval vlastní cestu skládání. Čelní pohled jde
+  proto **jako obrázek se stránkou** (html2canvas umí vložené SVG);
+  „🖨️ Tisk přímo" ho kreslí ve vyšší kvalitě. Žádná knihovna třetí strany
+  se nepřidala (ani pro tažení — vlastní pointer events).
+
 Test: `testy/test-rozvadec.js` (vymyšlená data). V `test-mobil.js` stavy
 „rozvaděč – …" a v přípravě rozvaděč RH1 (byt 3+1, skříň 3×12).
 **`test-dokumentace.js` upraven ve stejném commitu:** dlaždic je víc

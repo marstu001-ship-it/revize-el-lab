@@ -1680,6 +1680,17 @@ body.rz-tahne,body.rz-tahne *{cursor:grabbing!important;user-select:none!importa
 .rp-dalsi{font-size:.8rem;margin:.2rem 0 .6rem}
 .rp-dalsi>summary{cursor:pointer;color:var(--accent2);margin-bottom:.4rem}
 .rp-akce{display:flex;flex-wrap:wrap;gap:.4rem}
+.dok-pdf-tab.rz-pdf-hl td.l{width:38mm}
+.rz-pdf-pohled{text-align:center;margin:1mm 0 1mm}
+.rz-pdf-pohled svg{display:inline-block}
+.rz-pdf-meritko{text-align:center;font-size:7.5pt;color:#555;margin-bottom:2mm}
+.rz-pdf-chyba{color:#c0392b}
+.rz-pdf-tab{width:100%;border-collapse:collapse;table-layout:fixed;font-size:8.5pt;margin-bottom:2mm}
+.rz-pdf-tab th{background:#e8e8e8;border:.5pt solid #666;padding:1mm 1.5mm;font-weight:700;text-align:left;font-size:8pt}
+.rz-pdf-tab td{border:.5pt solid #888;padding:.9mm 1.5mm;vertical-align:top;overflow-wrap:anywhere}
+.rz-pdf-tab td.c{text-align:center}
+.rz-pdf-tab small{color:#555}
+.rz-pdf-pozn{font-size:8pt;color:#444;margin-top:1mm}
 .rz-sprava-akce{display:flex;flex-wrap:wrap;gap:0 .5rem}
 .rz-drop{border:2px dashed var(--border-dark);border-radius:4px;padding:1rem;margin:.6rem 0 .4rem;text-align:center;font-size:.86rem;color:var(--text);background:var(--bg)}
 .rz-drop.nad{border-color:#0f7b5f;background:#e6f2ec}
@@ -29106,7 +29117,7 @@ var __dokPdf = null;   // { x: záznam dokumentu, zpet: obrazovka }
 function dokPdfStranka(x) {
   var t = DOK_TYPY[x.typ], d = x.data || {};
   var p = document.createElement('div');
-  p.className = 'a4 a4-dok';
+  p.className = 'a4 a4-dok' + (t.naSirku ? ' a4-landscape' : '');
   p.style.minHeight = '0';
   p.innerHTML = '<div class="dok-pdf-zahlavi"><span>' + esc(t.nazev) + '</span><span>' + (d.cislo ? 'č. ' + esc(d.cislo) : '') + '</span></div>' +
     '<div class="dok-pdf-obsah"></div>' +
@@ -29118,7 +29129,7 @@ function dokPdfVykreslit(x) {
   var box = document.getElementById('dok-pdf-pages');
   showScreen('dok-pdf');   // ve skryté obrazovce mají prvky nulovou výšku
   box.innerHTML = '';
-  var limit = 297 * 96 / 25.4 + 0.5;
+  var limit = (DOK_TYPY[x.typ].naSirku ? 210 : 297) * 96 / 25.4 + 0.5;
   var bloky = DOK_TYPY[x.typ].pdf(x.data || {});
   var str = dokPdfStranka(x); box.appendChild(str);
   var obsah = str.querySelector('.dok-pdf-obsah');
@@ -29859,12 +29870,16 @@ function rozvCelo(p) {
   }
 }
 
+function rozvSvgRozmery(rz) {
+  var g = RZG, mod = +(rz.skrin && rz.skrin.modulu) || 12, n = Math.max(rz.rady.length, 1);
+  var maxObs = rz.rady.reduce(function (m, r) { return Math.max(m, rozvObsazeno(r)); }, mod);
+  var W = g.okraj * 2 + mod * g.M;
+  return { W: W, Wsvg: Math.max(W, g.okraj + maxObs * g.M + 6), Hsvg: rozvRadaY(n) - g.mezera + 12 + g.dole, mod: mod };
+}
+
 function rozvSvg(rz, o) {
   o = o || {};
-  var g = RZG, M = g.M, sk = rz.skrin, mod = +(sk && sk.modulu) || 12, n = Math.max(rz.rady.length, 1);
-  var maxObs = rz.rady.reduce(function (m, r) { return Math.max(m, rozvObsazeno(r)); }, mod);
-  var W = g.okraj * 2 + mod * M, Wsvg = Math.max(W, g.okraj + maxObs * M + 6);
-  var Hsvg = rozvRadaY(n) - g.mezera + 12 + g.dole;
+  var g = RZG, M = g.M, rr = rozvSvgRozmery(rz), mod = rr.mod, W = rr.W, Wsvg = rr.Wsvg, Hsvg = rr.Hsvg;
   var k = o.k || 1, jedn = o.tisk ? 'mm' : '';
   var rozmer = o.tisk ? ' width="' + rozvZaokr(Wsvg * k) + 'mm" height="' + rozvZaokr(Hsvg * k) + 'mm"'
                       : ' width="' + Math.round(Wsvg * k) + '" height="' + Math.round(Hsvg * k) + '"';
@@ -29895,7 +29910,7 @@ function rozvSvg(rz, o) {
         h += '<rect x="' + rozvZaokr(x + 0.3) + '" y="' + y + '" width="' + rozvZaokr(w - 0.6) + '" height="' + g.H + '" rx="1.2" fill="' + (kat.barva || '#fff') + '" stroke="#555" stroke-width="0.35"/>';
         if (['QM', 'FA', 'FI', 'FIFA', 'AFDD', 'SF', 'FU'].indexOf(p.kat) !== -1 && w >= 8) {
           var lw = Math.min(5, w * 0.35);
-          h += '<rect x="' + rozvZaokr(x + w / 2 - lw / 2) + '" y="' + (y + 13) + '" width="' + rozvZaokr(lw) + '" height="9" rx="0.8" fill="' + (p.kat === 'QM' ? '#b5291c' : '#444') + '"/>';
+          h += '<rect x="' + rozvZaokr(x + w / 2 - lw / 2) + '" y="' + (y + (rozvCelo(p).filter(Boolean).length > 1 ? 15.5 : 13)) + '" width="' + rozvZaokr(lw) + '" height="9" rx="0.8" fill="' + (p.kat === 'QM' ? '#b5291c' : '#444') + '"/>';
         }
       }
       if (mimo) h += '<rect x="' + rozvZaokr(x + 0.3) + '" y="' + y + '" width="' + rozvZaokr(w - 0.6) + '" height="' + g.H + '" fill="url(#rz-srafa' + (o.tisk ? 't' : '') + ')" stroke="#c0392b" stroke-width="0.9"/>';
@@ -29996,10 +30011,7 @@ function rozvPohledVykreslit() {
 function rozvMeritko() {
   var ram = document.getElementById('rz-svg-ram') || document.getElementById('rz-pohled');
   var sirka = ram ? ram.clientWidth - 4 : 700;
-  var mod = +(__rz.skrin && __rz.skrin.modulu) || 12;
-  var maxObs = __rz.rady.reduce(function (m, r) { return Math.max(m, rozvObsazeno(r)); }, mod);
-  var wmm = Math.max(RZG.okraj * 2 + mod * RZG.M, RZG.okraj + maxObs * RZG.M + 6);
-  var k = Math.max(2.3, Math.min(4, sirka / wmm));
+  var k = Math.max(2.3, Math.min(4, sirka / rozvSvgRozmery(__rz).Wsvg));
   return k * (__rz.zoom || 1);
 }
 
@@ -30366,6 +30378,73 @@ document.addEventListener('keydown', function (e) {
   var smer = { ArrowLeft: 'l', ArrowRight: 'p', ArrowUp: 'n', ArrowDown: 'd' }[k];
   if (smer && !e.ctrlKey && !e.metaKey && !e.altKey) { e.preventDefault(); rozvPosun(__rz.vyber, smer); }
 });
+
+
+// ── PDF: hlavička, čelní pohled, seznam přístrojů (na šířku) ────────────
+// Kreslí se do vlastních stránek tvorby dokumentace (dokPdfVykreslit) —
+// čelní pohled je TÝŽ obrázek jako v editoru (rozvSvg s o.tisk, rozměry
+// v mm). Do PDF jde přes html2canvas jako obrázek, stejně jako zbytek
+// stránky (svg2pdf.js by s jsPDF 2.5.1 šel, ale jeho písma nemají české
+// háčky a celý program skládá PDF z obrázků stránek — viz CLAUDE.md).
+var ROZV_PDF_MAX = { w: 265, h: 140 };   // mm pro čelní pohled na listu A4 na šířku
+var ROZV_PDF_RADKU = 18;                 // řádků seznamu na jednu tabulku (záhlaví se opakuje)
+
+function rozvPdfCislo(v, jedn) { return v === '' || v == null ? '' : rozvCisloText(v) + (jedn ? ' ' + jedn : ''); }
+
+DOK_TYPY.rozv.pdf = function (d) {
+  var B = [], sk = d.skrin, rady = d.rady || [];
+  var tr = function (l1, v1, l2, v2) {
+    return '<tr><td class="l">' + l1 + '</td><td>' + (v1 || '—') + '</td>' + (l2 ? '<td class="l">' + l2 + '</td><td>' + (v2 || '—') + '</td>' : '<td colspan="2"></td>') + '</tr>';
+  };
+  B.push({ html: '<div class="dok-pdf-titul"><div class="t1">Rozvaděč' + (d.oznaceni ? ' ' + esc(d.oznaceni) : '') + '</div>' +
+    '<div class="t2">návrh a dokumentace · rozvaděč pro obsluhu laiky (DBO) podle ČSN EN 61439-3</div>' +
+    (d.cislo ? '<div class="t3">č. ' + esc(d.cislo) + '</div>' : '') + '</div>' });
+  var privod = [d.privodIn !== '' && d.privodIn != null && String(d.privodIn).trim() ? esc(rozvCisloText(rozvCislo(d.privodIn)) || d.privodIn) + ' A' : '',
+                d.privodSmer ? 'přívod ' + esc(d.privodSmer) : ''].filter(Boolean).join(', ');
+  var kabel = [d.privodKabel, d.privodPrurez].filter(Boolean).map(esc).join(' ');
+  var kryti = [d.krytiZavreno ? esc(d.krytiZavreno) + ' (dveře zavřené)' : '', d.krytiOtevreno ? esc(d.krytiOtevreno) + ' (dveře otevřené)' : ''].filter(Boolean).join(', ');
+  var skrin = sk ? [esc(rozvNazev(sk)), sk.rady && sk.modulu ? sk.rady + ' × ' + sk.modulu + ' modulů' : '',
+    [sk.ip, sk.ik].filter(Boolean).map(esc).join(', '), sk.ina !== '' && sk.ina != null ? 'InA ' + rozvPdfCislo(sk.ina, 'A') : '',
+    sk.penc !== '' && sk.penc != null ? 'Penc ' + rozvPdfCislo(sk.penc, 'W') : '', sk.trida ? 'třída ochrany ' + esc(sk.trida) : ''].filter(Boolean).join(' · ') : '';
+  B.push({ html: '<table class="dok-pdf-tab rz-pdf-hl">' +
+    tr('Zakázka', esc(d.stavba), 'Soustava', esc(d.soustava)) +
+    tr('Odběratel', dokPdfFirma(d.investor), 'Přívod', privod) +
+    tr('Místo instalace', esc(d.misto), 'Přívodní kabel', kabel) +
+    tr('Označení rozvaděče', esc(d.oznaceni), 'Krytí', kryti) +
+    tr('Datum', esc(dokDatumCz(d.datum)), 'Zkratová odolnost Icc', d.icc ? esc(d.icc) + (/[a-z]/i.test(d.icc) ? '' : ' kA') : '') +
+    tr('Výrobce rozvaděče', dokPdfFirma(d.vyrobce), 'Skříň', skrin) + '</table>' });
+  B.push({ html: '<div class="dok-pdf-h">Čelní pohled</div>', drz: true });
+  if (sk && rady.length) {
+    var rz = { skrin: sk, rady: rady }, rr = rozvSvgRozmery(rz);
+    var k = Math.min(1, ROZV_PDF_MAX.w / rr.Wsvg, ROZV_PDF_MAX.h / rr.Hsvg);
+    B.push({ html: '<div class="rz-pdf-pohled">' + rozvSvg(rz, { tisk: true, k: k }) + '</div>' +
+      '<div class="rz-pdf-meritko">' + (k < 0.999 ? 'Zmenšeno na ' + Math.round(k * 100) + ' %' : 'Skutečná velikost 1 : 1') +
+      ' · modul 17,5 mm · ' + rady.length + ' × ' + sk.modulu + ' modulů' +
+      (rozvPreplnene(rz).length ? ' · <b class="rz-pdf-chyba">⚠ přeplněná řada: ' + rozvPreplnene(rz).map(function (x) { return x.i + 1; }).join(', ') + '</b>' : '') + '</div>' });
+  } else B.push({ html: '<p class="dok-pdf-p">Skříň zatím není vybraná.</p>' });
+  // Seznam přístrojů (rezervy ne) — tabulky po ROZV_PDF_RADKU, záhlaví se opakuje
+  var seznam = [], neover = false;
+  rady.forEach(function (r) { (r.prvky || []).forEach(function (x) { if (x.p && x.p.kat !== 'REZ') seznam.push(x); }); });
+  var hlava = '<tr><th>Označení</th><th>Popis vývodu</th><th>Typ</th><th>In</th><th>Char.</th><th>Póly</th><th>IΔn</th><th>Fáze</th><th>Kabel</th></tr>';
+  var radek = function (x) {
+    var p = x.p, dalsi = [p.vyrobce !== 'obecný' ? p.vyrobce : '', p.rada, p.typ && rozvNazev(p).indexOf(p.typ) === -1 ? p.typ : ''].filter(Boolean).join(' ');
+    var typ = esc(rozvNazev(p)) + (dalsi ? '<br><small>' + esc(dalsi) + '</small>' : '');
+    if (!p.overeno) neover = true;
+    return '<tr><td class="c">' + esc(x.ozn) + '</td><td>' + esc(x.vyvod) + '</td><td>' + typ + (p.overeno ? '' : ' *') + '</td>' +
+      '<td class="c">' + rozvPdfCislo(p.In, 'A') + '</td><td class="c">' + esc(p.char) + '</td><td class="c">' + esc(p.poly ? (/N/.test(p.poly) ? p.poly : p.poly + 'P') : '') + '</td>' +
+      '<td class="c">' + (p.idn !== '' && p.idn != null ? rozvPdfCislo(p.idn, 'mA') + (p.rcdTyp ? ' ' + esc(p.rcdTyp) : '') : '') + '</td>' +
+      '<td class="c">' + esc(x.faze) + '</td><td>' + esc([x.kabel, x.prurez].filter(Boolean).join(' ')) + '</td></tr>';
+  };
+  B.push({ html: '<div class="dok-pdf-h">Seznam přístrojů</div>', drz: true });
+  if (!seznam.length) B.push({ html: '<p class="dok-pdf-p">V rozvaděči zatím nejsou žádné přístroje.</p>' });
+  for (var i = 0; i < seznam.length; i += ROZV_PDF_RADKU) {
+    B.push({ html: '<table class="rz-pdf-tab"><colgroup><col style="width:20mm"><col style="width:58mm"><col><col style="width:14mm"><col style="width:12mm">' +
+      '<col style="width:12mm"><col style="width:20mm"><col style="width:12mm"><col style="width:32mm"></colgroup>' + hlava +
+      seznam.slice(i, i + ROZV_PDF_RADKU).map(radek).join('') + '</table>' });
+  }
+  if (neover) B.push({ html: '<p class="rz-pdf-pozn">* Údaje přístroje nejsou ověřené (obecná položka knihovny nebo neověřený záznam) — před výrobou je ověřte podle katalogu výrobce.</p>' });
+  return B;
+};
 
 // ── Knihovna na seznamu rozvaděčů (sbalená) ─────────────────────────────
 function rozvSpravaVykreslit() {

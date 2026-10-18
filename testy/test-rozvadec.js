@@ -35,6 +35,10 @@ function pomocnik() {
 (async () => {
   const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
   const ctx = await b.newContext({ viewport: { width: 1366, height: 900 } });
+  // knihovny PDF z cdnjs (sandbox na CDN nesmí) — tytéž soubory z testy/knihovny (otisky SRI sedí)
+  await ctx.route(/cdnjs\.cloudflare\.com\/.*\/(jspdf\.umd\.min\.js|html2canvas\.min\.js)$/, r => r.fulfill({
+    path: require('path').join(__dirname, 'knihovny', r.request().url().split('/').pop()),
+    contentType: 'application/javascript', headers: { 'Access-Control-Allow-Origin': '*' } }));
   const err = [];
   const p = await ctx.newPage();
   p.on('pageerror', e => err.push(e.message));
@@ -511,6 +515,77 @@ function pomocnik() {
   check('znovuotevření: všechny řady, označení, vývody a fáze zpátky', zo.svg && zo.r === PREC &&
     zo.vyvod === 'Zásuvky – obývací pokoj, TV|-FA4' && zo.faze === 'L2', zo.r + ' | ' + zo.vyvod);
   check('pozdější změna knihovny hotový rozvaděč nezmění (kopie parametrů)', zo.vl === '1.5|16', zo.vl);
+
+  // ── 5b. PDF ───────────────────────────────────────────────────────────
+  await p.evaluate(async () => {
+    const f = dokForm(), dk = (s, v) => { const e = f.querySelector(s); e.value = v; e.dispatchEvent(new Event('input', { bubbles: true })); };
+    dk('[data-dk="icc"]', '6'); dk('[data-dk="investor.adresa"]', 'Vymyšlená 12, 697 01 Kyjov');
+    // víc přístrojů, ať se seznam rozdělí do dvou tabulek
+    __rz.aktRada = 2; for (let i = 0; i < 4; i++) rozvVlozit('v-fa-1-B6', 2, __rz.rady[2].prvky.length);
+    await dokUlozitOtevreny();
+    await dokNahled(); await __T.w(600);
+  });
+  const pdf = await p.evaluate(() => {
+    const st = Array.from(document.querySelectorAll('#dok-pdf-pages .a4'));
+    const vse = st.map(s => s.innerText).join('\n');
+    const nonRez = __rz.rady.reduce((n, r) => n + r.prvky.filter(x => x.p.kat !== 'REZ').length, 0);
+    const radky = Array.from(document.querySelectorAll('#dok-pdf-pages .rz-pdf-tab tr')).filter(tr => tr.querySelector('td'));
+    const svg = document.querySelector('#dok-pdf-pages .rz-pdf-pohled svg');
+    const stranaSvg = svg && svg.closest('.a4').getBoundingClientRect(), r = svg && svg.getBoundingClientRect();
+    return {
+      akt: document.querySelector('.screen.active').id, pocet: st.length, nasirku: st.every(s => s.classList.contains('a4-landscape') && Math.abs(s.getBoundingClientRect().width - 297 * 96 / 25.4) < 3),
+      strana: /Strana 1 \/ \d/.test(vse), vse,
+      tabulek: document.querySelectorAll('#dok-pdf-pages .rz-pdf-tab').length, hlavicek: document.querySelectorAll('#dok-pdf-pages .rz-pdf-tab th').length,
+      radku: radky.length, nonRez, rez: radky.some(tr => /Rezerva/.test(tr.innerText)),
+      prvni: radky[0] && Array.from(radky[0].children).map(td => td.innerText.trim()).join(' | '),
+      fa4: (radky.find(tr => /obývací pokoj, TV/.test(tr.innerText)) || { innerText: '' }).innerText.replace(/\s+/g, ' '),
+      overenyBezHvezdy: !!radky.find(tr => /VV-B16-1/.test(tr.innerText) && !/\*/.test(tr.innerText)),
+      svg: !!svg, svgVStrance: !!r && r.right <= stranaSvg.right + 1 && r.bottom <= stranaSvg.bottom + 1 && r.width > 300,
+      svgMm: svg && svg.getAttribute('width'), vyber: svg && !/#2B579A/.test(svg.innerHTML), znacka: svg && !svg.querySelector('#rz-znacka'),
+      info: document.getElementById('dok-pdf-info').textContent
+    };
+  });
+  check('PDF: náhled na šířku (A4 297 mm), číslování stran', pdf.akt === 'screen-dok-pdf' && pdf.nasirku && pdf.strana && pdf.pocet >= 3, pdf.pocet + ' · ' + pdf.info);
+  check('PDF: titul a hlavička (zakázka, odběratel, místo, označení, soustava, přívod, kabel, krytí, Icc, výrobce, skříň)',
+    /ROZVADĚČ RH1/i.test(pdf.vse) && /ČSN EN 61439-3/.test(pdf.vse) && /č\. ROZ-0001/.test(pdf.vse) && /Byt 3\+1, Vymyšlená 12/.test(pdf.vse) &&
+    /Petr Smyšlený/.test(pdf.vse) && /Předsíň/.test(pdf.vse) && /3NPE ~400\/230 V TN-S/.test(pdf.vse) && /25 A, přívod zespodu/.test(pdf.vse) &&
+    /CYKY-J 5×10/.test(pdf.vse) && /IP40 \(dveře zavřené\), IP20 \(dveře otevřené\)/.test(pdf.vse) && /6 kA/.test(pdf.vse) &&
+    /Vymyšlená elektro s\.r\.o\./.test(pdf.vse) && /IČO: 12345678/.test(pdf.vse) && /Rozvodnice 3×12 modulů, plast, zapuštěná/.test(pdf.vse), '');
+  check('PDF: čelní pohled jako obrázek ve stránce (v mm, zmenšený, bez výběru a značky)', pdf.svg && pdf.svgVStrance && /mm$/.test(pdf.svgMm) && pdf.vyber && pdf.znacka &&
+    /Zmenšeno na \d+ %/.test(pdf.vse), pdf.svgMm);
+  check('PDF: seznam přístrojů bez rezerv — každý přístroj jeden řádek, dlouhý seznam ve dvou tabulkách se záhlavím', pdf.radku === pdf.nonRez && !pdf.rez &&
+    pdf.tabulek === 2 && pdf.hlavicek === 18, pdf.radku + '/' + pdf.nonRez + ' · tabulek ' + pdf.tabulek);
+  check('PDF: sloupce označení, popis vývodu, typ, In, charakteristika, póly, IΔn, fáze, kabel', pdf.prvni === '-QM1 |  | Hlavní vypínač 3P 40 A * | 40 A |  | 3P |  | 3f | ' &&
+    /^-FA4 Zásuvky – obývací pokoj, TV Jistič 1P B16 \* 16 A B 1P L2 CYKY-O 3×2,5$/.test(pdf.fa4.trim()), pdf.prvni + ' || ' + pdf.fa4);
+  check('PDF: neověřené přístroje s hvězdičkou a vysvětlivkou, ověřený vlastní bez ní', /\* Údaje přístroje nejsou ověřené/.test(pdf.vse) && pdf.overenyBezHvezdy);
+  const obr = await p.evaluate(async () => {
+    const el = document.querySelector('#dok-pdf-pages .rz-pdf-pohled');
+    const c = await html2canvas(el, { scale: 1, backgroundColor: '#ffffff', logging: false });
+    const d = c.getContext('2d').getImageData(0, 0, c.width, c.height).data;
+    let barvy = new Set(), cervena = 0, modra = 0;
+    for (let i = 0; i < d.length; i += 16) {
+      barvy.add((d[i] >> 4) + ',' + (d[i + 1] >> 4) + ',' + (d[i + 2] >> 4));
+      if (d[i] > 150 && d[i + 1] < 80 && d[i + 2] < 80) cervena++;
+      if (d[i + 2] > 200 && d[i] > 200 && d[i] < 230 && d[i + 1] > 220) modra++;
+    }
+    const blob = await renderPagesToPDF(Array.from(document.querySelectorAll('#dok-pdf-pages .a4')), dokPdfNazev(), { vratitBlob: true });
+    const txt = new TextDecoder('latin1').decode(new Uint8Array(await blob.arrayBuffer()));
+    return { w: c.width, barvy: barvy.size, cervena, modra, typ: blob.type, vel: blob.size, stran: (txt.match(/\/Type \/Page\b/g) || []).length, nazev: dokPdfNazev() };
+  });
+  check('PDF: html2canvas čelní pohled opravdu nakreslí (barvy přístrojů, páčka hlavního vypínače)', obr.w > 300 && obr.barvy > 8 && obr.cervena > 10 && obr.modra > 50, JSON.stringify(obr));
+  check('PDF: soubor vznikne (jsPDF), strany sedí, název z čísla a zakázky', obr.typ === 'application/pdf' && obr.vel > 20000 && obr.stran === pdf.pocet &&
+    /^ROZ-0001_Rozvaděč_Byt_3\+1,_Vymyšlená_12\.pdf$/.test(obr.nazev), obr.stran + ' str. · ' + obr.vel + ' B · ' + obr.nazev);
+  const zpet = await p.evaluate(async () => {
+    TD_AKCE.tdPdfZpet(); await __T.w(200);
+    const r = { akt: document.querySelector('.screen.active').id };
+    await dokDopsat(); dokOtevritSeznam('rozv'); await __T.w(100);
+    TD_AKCE.tdDokPdf(document.querySelector('#dok-seznam [data-action="tdDokPdf"]')); await __T.w(500);
+    r.zeSeznamu = document.querySelector('.screen.active').id + '|' + document.querySelectorAll('#dok-pdf-pages .rz-pdf-pohled svg').length;
+    TD_AKCE.tdPdfZpet(); await __T.w(100); r.zpetNaSeznam = document.querySelector('.screen.active').id;
+    await dokOtevrit(DOK.dokumenty.find(d => d.typ === 'rozv').uid);
+    return r;
+  });
+  check('PDF: zpět do editoru, „📄 PDF" i ze seznamu', zpet.akt === 'screen-dok-form' && zpet.zeSeznamu === 'screen-dok-pdf|1' && zpet.zpetNaSeznam === 'screen-dok-seznam', JSON.stringify(zpet));
 
   // ── 6. telefon: klepnutí místo tažení ────────────────────────────────
   {
