@@ -30002,9 +30002,16 @@ function rozvPohledVykreslit() {
       ' — přesuňte nebo smažte přístroj, nebo zvolte větší skříň.</div>';
   }
   h += '<div class="rz-svg-ram" id="rz-svg-ram">' + rozvSvg(__rz, { k: rozvMeritko() }) + '</div>' +
-    '<div class="rz-napoveda">Přístroj táhněte myší z knihovny do řady (nebo klepněte na něj a pak na místo v řadě; ＋ Vložit dá na konec vybrané řady). ' +
-      'Klepnutím na přístroj ho vyberete — vpravo vyplníte vývod, fázi a kabel. Delete smaže, Ctrl+Z vrátí, šipky posouvají.</div>';
+    '<div class="rz-napoveda">' + (rozvDotyk()
+      ? 'Klepněte na přístroj v knihovně a pak na místo v řadě (＋ Vložit ho dá na konec vybrané řady). Klepnutím na přístroj v pohledu ho vyberete — pod pohledem pak vyplníte vývod, fázi a kabel.'
+      : 'Přístroj táhněte myší z knihovny do řady (nebo klepněte na něj a pak na místo v řadě; ＋ Vložit dá na konec vybrané řady). ' +
+        'Klepnutím na přístroj ho vyberete — vpravo vyplníte vývod, fázi a kabel. Delete smaže, Ctrl+Z vrátí, šipky posouvají.') + '</div>';
   box.innerHTML = h;
+}
+
+// Dotyk nebo úzké okno — nápovědy mluví o klepání a o vlastnostech pod pohledem.
+function rozvDotyk() {
+  return window.innerWidth < 900 || (window.matchMedia && window.matchMedia('(pointer: coarse)').matches);
 }
 
 // Px na mm: aby se skříň vešla do rámečku, ale písmo zůstalo čitelné.
