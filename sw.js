@@ -45,8 +45,8 @@ self.addEventListener('install', function(e) {
 
 // Aktivace — smazat staré cache verze + převzít kontrolu nad otevřenými
 // záložkami (clients.claim) a poslat jim zprávu, ať se reloadnou.
-// Maže se JEN vlastní řada revize-el-v… — na témže původu běží i zkušební
-// verze /revize-el-lab/ (cache revize-el-lab-…) a tu nesmí smazat (v9.123).
+// Maže se JEN vlastní řada revize-el-v… — na témže původu můžou běžet i jiné
+// programy s vlastní cache a ty se smazat nesmí (v9.123).
 self.addEventListener('activate', function(e) {
   e.waitUntil(
     caches.keys().then(function(names) {

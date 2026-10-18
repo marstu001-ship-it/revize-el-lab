@@ -194,7 +194,7 @@ Revize EL je single-page PWA (HTML + JS + service worker). Obsah se cachuje
 v prohlížeči přes `sw.js`, takže uživatel nevidí změny, dokud se neinvalidně
 cache.
 
-**Aktuální verze: v9.124 · 2026-10-15**
+**Aktuální verze: v9.125 · 2026-10-16**
 
 ## Povinné při každé změně kódu před commitem
 
@@ -257,6 +257,24 @@ jste nic neudělali.
    záložka nebo dialog = přidat stav do `vsechnyStavy()` v testu. Úprava
    pro telefon patří **jen do bloku MOBIL** (oddíl „Mobil" níž), verze
    pro PC se jí nesmí změnit.
+
+## 🧭 Přívětivost obrazovek — platí pro KAŽDOU novou obrazovku (pokyn uživatele 2026-10-16)
+
+Skutečný uživatel na seznamu protokolů nenašel, kde se protokol zakládá —
+klikal na vzory a na „Jako vlastní". Proto u každé nové obrazovky (a při
+úpravě stávající):
+
+- **Na obrazovce je JEDNA hlavní akce, vidět na první pohled** — plné
+  barevné tlačítko se slovesem („Vytvořit…", „Uložit…", „Vygenerovat PDF"),
+  nahoře, na telefonu přes celou šířku. Nesmí vypadat jako položka seznamu.
+- **Nastavení a málo používané věci jsou schované** — sbalené (`<details>`)
+  nebo na samostatné obrazovce přes malý odkaz. Upozornění, která nic
+  nevyžadují, jsou jeden nenápadný řádek, ne barevný rámeček.
+- **Tlačítka mají popisky, které říkají, co se stane**, ne zkratky ani
+  samotné symboly („🗑 Smazat", ne „✕").
+- **Před vydáním projít obrazovku očima staršího revizního technika**, který
+  ji vidí poprvé a nečte návody. V odpovědi napsat, **jestli ví, kam
+  kliknout** — a když ne, opravit to ještě před vydáním.
 
 ## 🧪 Testy jsou v repozitáři — `testy/` (2026-10-07)
 
@@ -414,7 +432,7 @@ před funkcí a po ní **bajtově shodný** (archiv i `getData()`, sha256).
 
 ## Tvorba dokumentace — Protokol o určení vnějších vlivů (blok `TVORBA DOKUMENTACE`)
 
-Zadání uživatele 2026-10-16 (vyvinuto v labu): čtvrtá karta na úvodu
+Zadání uživatele 2026-10-16: čtvrtá karta na úvodu
 **„Tvorba dokumentace"** (na PC v řádku s Elektro, LPS a Plánem revizí,
 na telefonu pod nimi) → **dlaždice typů dokumentů** `#screen-dokumentace`
 (vzhled karet z úvodu: název, krátký popis `dlazdice`, počet uložených;
