@@ -117,7 +117,7 @@ function pomocnik() {
     await dokNovy('rozv');
     dk('[data-dk="oznaceni"]', 'RH1'); dk('[data-dk="stavba"]', 'Byt 3+1, Vymyšlená 12'); dk('[data-dk="investor.nazev"]', 'Petr Smyšlený');
     rozvSkrinNastavit(rozvKnihPolozka('v-sk-3x12-n'));
-    if (typeof M.rozvByt === 'function') M.rozvByt();
+    if (window.__rozvByt) window.__rozvByt();   // testy/rozvadec-byt.js
     await dokUlozitOtevreny();
     showScreen('home');
   };
@@ -482,6 +482,20 @@ function vsechnyStavy(zalozky) {
   add('rozvaděč – editor, hlavička a filtry rozbalené', 'Tvorba dokumentace', E(async () => {
     await __M.rozv(); document.querySelector('.rz-hlavicka').open = true; document.getElementById('rz-filtry').open = true; await __M.w(100);
   }));
+  add('rozvaděč – čelní pohled', 'Tvorba dokumentace', E(async () => {
+    await __M.rozv(); document.getElementById('rz-pohled').scrollIntoView({ block: 'start' }); await __M.w(100);
+  }));
+  add('rozvaděč – vybraný přístroj a vlastnosti', 'Tvorba dokumentace', E(async () => {
+    await __M.rozv(); __rz.vyber = __rz.rady[1].prvky[3].uid; rozvPohledVykreslit(); rozvVlastnostiVykreslit();
+    document.getElementById('rz-vlastnosti').scrollIntoView({ block: 'start' }); await __M.w(100);
+  }));
+  add('rozvaděč – přístroj vybraný k vložení klepnutím', 'Tvorba dokumentace', E(async () => {
+    await __M.rozv(); __rz.knihVyber = 'v-fa-1-B16'; rozvKnihovnaVykreslit(); rozvPohledVykreslit();
+    document.getElementById('rz-pohled').scrollIntoView({ block: 'start' }); await __M.w(100);
+  }));
+  add('rozvaděč – přeplněná řada', 'Tvorba dokumentace', E(async () => {
+    await __M.rozv(); rozvVlozit('v-fa-3-C32', 0, 0); document.getElementById('rz-pohled').scrollIntoView({ block: 'start' }); await __M.w(100);
+  }));
   // dialogy
   const D = (id, krok) => add('dialog ' + id, 'Dialogy', krok, '#' + id);
   D('modal-revize', E(async () => { await __M.otevri('RE-26-0101'); showScreen('form'); openModalRevize(); await __M.w(100); }));
@@ -604,6 +618,7 @@ async function zvlastni(p, vp) {
     await p.goto('http://127.0.0.1:' + PORT + '/index.html', { waitUntil: 'load' });
     await p.waitForTimeout(900);
     await p.evaluate(pomocnik);
+    await p.evaluate('window.__rozvByt = ' + require('./rozvadec-byt.js').toString());
     await p.evaluate(() => __M.fixture());
     const zalozky = await rozbalitZalozky(p);
     const S = vsechnyStavy(zalozky).filter(s => !JEN || JEN.test(s.id));
@@ -658,6 +673,8 @@ async function zvlastni(p, vp) {
       await p.goto('http://127.0.0.1:' + PORT + '/index.html', { waitUntil: 'load' });
       await p.waitForTimeout(900);
       await p.evaluate(pomocnik);
+      await p.evaluate('window.__rozvByt = ' + require('./rozvadec-byt.js').toString());
+    await p.evaluate('window.__rozvByt = ' + require('./rozvadec-byt.js').toString());
       await p.evaluate(() => __M.fixture());
       const v = await p.evaluate(async () => {
         const out = { mq: matchMedia('(max-width:600px), (pointer:coarse) and (max-height:500px)').matches, spatne: [], n: 0 };

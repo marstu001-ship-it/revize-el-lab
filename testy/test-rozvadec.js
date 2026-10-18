@@ -334,7 +334,8 @@ function pomocnik() {
     return { x: x && { cislo: x.cislo, d: x.data }, tab: document.querySelector('.rz-tab.akt').getAttribute('data-tab'),
              souhrn: document.getElementById('rz-hl-souhrn').textContent, pohled: document.getElementById('rz-pohled').innerText };
   });
-  check('skříň: použití přepne knihovnu na přístroje a ukáže skříň', ul.tab === 'pristroje' && /3 × 12 modulů/.test(ul.pohled), ul.tab + ' | ' + ul.pohled);
+  check('skříň: použití přepne knihovnu na přístroje a ukáže skříň a volné místo', ul.tab === 'pristroje' && /Rozvodnice 3×12 modulů/.test(ul.pohled) &&
+    /Volné místo: 36 \/ 36 modulů/.test(ul.pohled), ul.tab + ' | ' + ul.pohled.replace(/\n/g, ' | '));
   check('uloženo: hlavička i skříň jako KOPIE s odkazem do knihovny, 3 prázdné řady', ul.x && ul.x.cislo === 'ROZ-0001' &&
     ul.x.d.oznaceni === 'RH1' && ul.x.d.soustava === '3NPE ~400/230 V TN-S' && ul.x.d.privodSmer === 'zespodu' && ul.x.d.investor.nazev === 'Petr Smyšlený' &&
     ul.x.d.skrin && ul.x.d.skrin.knih === 'v-sk-3x12-z' && ul.x.d.skrin.modulu === 12 && ul.x.d.skrin.provedeni === 'zapuštěná' &&
@@ -356,6 +357,208 @@ function pomocnik() {
     sk: __rz.skrin && __rz.skrin.knih, rady: __rz.rady.length, tab: document.querySelector('.rz-tab.akt').getAttribute('data-tab') }));
   check('znovuotevření: hlavička, skříň i řady zpátky, knihovna na přístrojích', zn.o === 'RH1' && zn.s === '3NPE ~400/230 V TN-S' && zn.sk === 'v-sk-3x12-z' &&
     zn.rady === 3 && zn.tab === 'pristroje', JSON.stringify(zn));
+
+  // ── 5. skládání v čelním pohledu ──────────────────────────────────────
+  // souřadnice na obrazovce pro řadu r a modul m (střed výšky řady)
+  await p.evaluate(() => {
+    __T.bod = (r, m) => {
+      const svg = document.querySelector('#rz-pohled .rz-svg'), M = svg.getScreenCTM();
+      const q = new DOMPoint(RZG.okraj + m * RZG.M, rozvRadaY(r) + RZG.H / 2).matrixTransform(M);
+      return { x: Math.round(q.x), y: Math.round(q.y) };
+    };
+    __T.rada = r => __rz.rady[r].prvky.map(x => x.ozn || x.p.kat).join(',');
+    __T.knihBod = kid => {
+      const el = document.querySelector('#rz-seznam [data-kid="' + kid + '"] .rz-p-text');
+      el.scrollIntoView({ block: 'center' }); const b = el.getBoundingClientRect();
+      return { x: Math.round(b.left + 20), y: Math.round(b.top + b.height / 2) };
+    };
+  });
+  const tahni = async (od, kam) => {
+    await p.mouse.move(od.x, od.y); await p.mouse.down();
+    await p.mouse.move(od.x + 15, od.y + 5, { steps: 3 });
+    await p.mouse.move(kam.x, kam.y, { steps: 8 }); await w(60);
+    await p.mouse.up(); await w(250);
+  };
+  // přetažení z knihovny do řady 1 (ve spodní části obrazovky je knihovna i pohled)
+  await p.evaluate(() => __T.filtr('q', 'Hlavní vypínač 3P 40'));
+  let od = await p.evaluate(() => __T.knihBod('v-qm-3-40'));
+  let kam = await p.evaluate(() => { document.getElementById('rz-pohled').scrollIntoView({ block: 'start' }); return __T.bod(0, 0.3); });
+  od = await p.evaluate(() => __T.knihBod('v-qm-3-40'));
+  kam = await p.evaluate(() => __T.bod(0, 0.3));
+  await tahni(od, kam);
+  const t1 = await p.evaluate(() => ({ r0: __T.rada(0), vyber: __rz.vyber === (__rz.rady[0].prvky[0] || {}).uid,
+    kopie: JSON.stringify(__rz.rady[0].prvky[0] && __rz.rady[0].prvky[0].p), knih: (__rz.rady[0].prvky[0] || {}).knih,
+    vlastnosti: document.getElementById('rz-vlastnosti').innerText, duch: !!document.querySelector('.rz-duch') }));
+  check('tažení myší z knihovny do řady: přístroj je v řadě 1, vybraný, s označením -QM1', t1.r0 === '-QM1' && t1.vyber && !t1.duch &&
+    /Vlastnosti přístroje/i.test(t1.vlastnosti) && /-QM1/.test(t1.vlastnosti), t1.r0);
+  check('přístroj nese KOPII parametrů z knihovny (i odkaz knih)', t1.knih === 'v-qm-3-40' && /"In":40/.test(t1.kopie) && /"sirka":3/.test(t1.kopie) && !/"id"/.test(t1.kopie), t1.kopie);
+
+  // celý byt 3+1 (zbytek přes vkládání), pak kontroly
+  await p.evaluate(() => { __rz.rady.forEach(r => r.prvky = []); });
+  await p.evaluate(require('./rozvadec-byt.js'));
+  await w(200);
+  const byt = await p.evaluate(() => ({
+    r: [0, 1, 2].map(__T.rada),
+    volno: document.querySelector('.rz-volno').textContent, chyba: !!document.querySelector('.rz-chyba'),
+    nadr: __rz.rady[1].prvky.slice(1).every(x => x.nadr === __rz.rady[1].prvky[0].uid) && __rz.rady[2].prvky[1].nadr === __rz.rady[2].prvky[0].uid,
+    nadrNe: __rz.rady[0].prvky[2].nadr === '' && __rz.rady[2].prvky[5].nadr === '' && __rz.rady[2].prvky[0].nadr === '',
+    svgText: document.querySelector('#rz-pohled .rz-svg').textContent
+  }));
+  check('byt 3+1: označení podle kategorie a pořadí (-QM1, SPD1, -FA1…, -FI1, -FI/FA1)',
+    byt.r[0] === '-QM1,SPD1,-FA1,REZ' && byt.r[1] === '-FI1,-FA2,-FA3,-FA4,-FA5,-FA6,-FA7,-FA8,-FA9' && byt.r[2] === '-FI2,-FA10,-FA11,-FA12,-FA13,-FI/FA1,REZ', byt.r.join(' / '));
+  check('byt 3+1: volné místo 0 / 36 modulů, nic přeplněné', /Volné místo: 0 \/ 36 modulů/.test(byt.volno) && !byt.chyba, byt.volno);
+  check('nadřazený chránič: jističe automaticky pod chráničem vlevo ve stejné řadě', byt.nadr && byt.nadrNe);
+  check('na čele přístroje: označení, In/charakteristika a vývod', /-FA4/.test(byt.svgText) && /B16/.test(byt.svgText) && /Zásuvky – obý/.test(byt.svgText) && /40A/.test(byt.svgText), '');
+
+  // přeplnění
+  await p.evaluate(() => { __rz.aktRada = 1; rozvVlozit('v-fa-1-C16', 1, __rz.rady[1].prvky.length); });
+  await w(150);
+  const pp = await p.evaluate(() => ({ chyba: (document.querySelector('.rz-chyba') || {}).textContent || '', svg: document.querySelector('#rz-pohled .rz-svg').innerHTML,
+                                       toast: Array.from(document.querySelectorAll('.toast')).map(t => t.textContent).join(' | ') }));
+  check('přeplněná řada: červené upozornění, šrafovaný přístroj, hláška', /Řada 2 je přeplněná o 1 modul/.test(pp.chyba) && /rz-srafa/.test(pp.svg) && /přeplněno o 1 modul/.test(pp.svg) &&
+    /Řada 2 je přeplněná/.test(pp.toast), pp.chyba);
+  // přesun mezi řadami myší: přebývající C16 z řady 2 do řady 3 místo rezervy (za -FI/FA1)
+  await p.evaluate(() => rozvSmazat(__rz.rady[2].prvky.find(x => x.p.kat === 'REZ').uid));
+  od = await p.evaluate(() => __T.bod(1, 12.5)); kam = await p.evaluate(() => __T.bod(2, 10.4));
+  await tahni(od, kam);
+  const mv = await p.evaluate(() => ({ r1: __T.rada(1), r2: __T.rada(2), chyba: !!document.querySelector('.rz-chyba'), volno: document.querySelector('.rz-volno').textContent }));
+  check('přesun myší mezi řadami: z přeplněné řady 2 do řady 3, chyba zmizí', mv.r1 === '-FI1,-FA2,-FA3,-FA4,-FA5,-FA6,-FA7,-FA8,-FA9' &&
+    mv.r2 === '-FI2,-FA10,-FA11,-FA12,-FA13,-FI/FA1,-FA14' && !mv.chyba && /Volné místo: 1 \/ 36 modulů/.test(mv.volno), mv.r2 + ' | ' + mv.volno);
+  // desetinná šířka: vlastní přístroj 1,5 M místo rezervy 2 M v řadě 1
+  const dec = await p.evaluate(() => {
+    const vl = DOK.rozvKnihovna.find(x => x.typ === 'VV-B16-1');
+    rozvSmazat(__rz.rady[0].prvky.find(x => x.p.kat === 'REZ').uid);
+    __rz.aktRada = 0; rozvVlozit(vl.id);
+    const r = __rz.rady[0].prvky;
+    return { sirka: r[r.length - 1].p.sirka, ozn: r[r.length - 1].ozn, obs: rozvObsazeno(__rz.rady[0]), volno: document.querySelector('.rz-volno').textContent,
+             svg: document.querySelector('#rz-pohled .rz-svg').textContent };
+  });
+  check('desetinná šířka 1,5 modulu: řada 11,5 M, volno ½ modulu, celkem 1,5', dec.sirka === 1.5 && dec.ozn === '-FA15' && dec.obs === 11.5 &&
+    /Volné místo: 1,5 \/ 36 modulů/.test(dec.volno) && /volno 0,5 \/ 12 M/.test(dec.svg), dec.volno + ' ' + dec.ozn);
+  // výběr klepnutím, vlastnosti, ruční nadřazený chránič
+  const sel = await p.evaluate(async () => {
+    const x = __rz.rady[1].prvky[3]; const b = __T.bod(1, 4 + 2.5);
+    document.elementFromPoint(b.x, b.y).dispatchEvent(new MouseEvent('click', { bubbles: true, clientX: b.x, clientY: b.y }));
+    await __T.w(50);
+    const r = { vybrany: __rz.vyber === x.uid };
+    const pole = k => document.querySelector('#rz-vlastnosti [data-rp2="' + k + '"]');
+    pole('vyvod').value = 'Zásuvky – obývací pokoj, TV'; pole('vyvod').dispatchEvent(new Event('input', { bubbles: true }));
+    pole('faze').value = 'L2'; pole('faze').dispatchEvent(new Event('change', { bubbles: true }));
+    pole('kabel').value = 'CYKY-O'; pole('kabel').dispatchEvent(new Event('input', { bubbles: true }));
+    r.volby = Array.from(pole('nadr').options).map(o => o.textContent).join(' | ');
+    pole('nadr').value = __rz.rady[2].prvky[0].uid; pole('nadr').dispatchEvent(new Event('change', { bubbles: true }));
+    r.data = [x.vyvod, x.faze, x.kabel, x.nadr === __rz.rady[2].prvky[0].uid, x.nadrRucne].join('|');
+    r.svg = document.querySelector('#rz-pohled .rz-svg').textContent;
+    // přesun chrániče jinam ruční volbu nezruší, smazání chrániče ano
+    rozvSmazat(__rz.rady[2].prvky[0].uid);
+    r.poSmazani = [x.nadrRucne, x.nadr === __rz.rady[1].prvky[0].uid].join('|');
+    zpetPosledni(); await __T.w(50);
+    return r;
+  });
+  check('klepnutí na přístroj ho vybere, vlastnosti se zapíšou a hned ukážou v pohledu', sel.vybrany && /^Zásuvky – obývací pokoj, TV\|L2\|CYKY-O\|true\|true$/.test(sel.data) &&
+    /Zásuvky – obý/.test(sel.svg), sel.data);
+  check('nadřazený chránič jde změnit ručně (nabídka: automaticky, žádný, chrániče)', /^automaticky — -FI1 \| žádný \(přímo z přívodu\) \| -FI1 \(řada 2\) \| -FI2 \(řada 3\)$/.test(sel.volby), sel.volby);
+  check('smazaný ručně zvolený chránič → zpátky automaticky', sel.poSmazani === 'false|true', sel.poSmazani);
+  // klávesy: Delete, Ctrl+Z, šipky, Ctrl+D, přečíslovat
+  await p.evaluate(() => { document.activeElement && document.activeElement.blur(); __rz.vyber = __rz.rady[1].prvky[2].uid; rozvPohledVykreslit(); rozvVlastnostiVykreslit(); });
+  await p.keyboard.press('Delete'); await w(100);
+  const k1 = await p.evaluate(() => __T.rada(1));
+  await p.keyboard.press('Control+z'); await w(150);
+  const k2 = await p.evaluate(() => __T.rada(1));
+  await p.evaluate(() => { __rz.vyber = __rz.rady[1].prvky[2].uid; rozvPohledVykreslit(); });
+  await p.keyboard.press('ArrowRight'); await w(80);
+  const k3 = await p.evaluate(() => __T.rada(1));
+  await p.keyboard.press('Control+d'); await w(80);
+  const k4 = await p.evaluate(() => __T.rada(1));
+  await p.keyboard.press('Control+z'); await w(80);
+  await p.evaluate(() => rozvPrecislovat()); await w(80);
+  const k5 = await p.evaluate(() => [0, 1, 2].map(__T.rada).join(' / '));
+  check('Delete smaže vybraný přístroj, Ctrl+Z ho vrátí na místo', k1 === '-FI1,-FA2,-FA4,-FA5,-FA6,-FA7,-FA8,-FA9' && k2 === '-FI1,-FA2,-FA3,-FA4,-FA5,-FA6,-FA7,-FA8,-FA9', k1 + ' → ' + k2);
+  check('šipka → posune v řadě, Ctrl+D duplikuje s dalším volným označením', k3 === '-FI1,-FA2,-FA4,-FA3,-FA5,-FA6,-FA7,-FA8,-FA9' && k4 === '-FI1,-FA2,-FA4,-FA3,-FA16,-FA5,-FA6,-FA7,-FA8,-FA9', k3 + ' | ' + k4);
+  const PREC = '-QM1,SPD1,-FA1,-FA2 / -FI1,-FA3,-FA4,-FA5,-FA6,-FA7,-FA8,-FA9,-FA10 / -FI2,-FA11,-FA12,-FA13,-FA14,-FI/FA1,-FA15';
+  check('Přečíslovat: podle pořadí v řadách zleva doprava', k5 === PREC, k5);
+  // tlačítka posunu a rychlé přidání
+  const tl = await p.evaluate(() => {
+    __rz.vyber = __rz.rady[0].prvky[2].uid; rozvVlastnostiVykreslit();
+    TD_AKCE.tdRPosun(document.querySelector('#rz-vlastnosti [data-smer="d"]'));
+    const r = { posun: __T.rada(0) + ' / ' + __T.rada(1) };
+    TD_AKCE.tdRPosun(document.querySelector('#rz-vlastnosti [data-smer="n"]'));
+    r.zpet = __T.rada(0);
+    r.rychle = __T.rada(0);
+    return r;
+  });
+  check('▼ / ▲ přesune do sousední řady na podobné místo a zpět', /^-QM1,SPD1,-FA2 \/ -FI1,-FA3,-FA4,-FA5,-FA1,-FA6,/.test(tl.posun) && tl.zpet === '-QM1,SPD1,-FA1,-FA2', tl.posun + ' | ' + tl.zpet);
+  const tl2 = await p.evaluate(() => { __rz.aktRada = 1; TD_AKCE.tdRRychle(document.querySelector('#rz-rychle [data-kid="v-rez-1"]')); return __T.rada(2); });
+  check('rychlé přidání: plná vybraná řada → na konec první řady, kde je místo', tl.rychle === '-QM1,SPD1,-FA1,-FA2' && tl2 === '-FI2,-FA11,-FA12,-FA13,-FA14,-FI/FA1,-FA15,REZ' &&
+    await p.evaluate(() => __rz.aktRada === 2), tl.rychle + ' | ' + tl2);
+  await p.evaluate(() => rozvSmazat(__rz.rady[2].prvky[7].uid));
+
+  // uložení a znovuotevření; změna knihovny hotový rozvaděč nezmění
+  await p.evaluate(async () => {
+    await dokUlozitOtevreny();
+    await dokNacist();
+    const vl = DOK.rozvKnihovna.find(x => x.typ === 'VV-B16-1'); vl.sirka = 2; vl.In = 20; await dokZapsat();
+  });
+  await p.reload(); await w(1200); await p.evaluate(pomocnik);
+  await p.evaluate(async () => { await dokNacist(); await dokOtevrit(DOK.dokumenty.find(d => d.typ === 'rozv').uid); });
+  await w(300);
+  const zo = await p.evaluate(() => {
+    const vl = __rz.rady[0].prvky.find(x => x.p.typ === 'VV-B16-1'), tv = __rz.rady[1].prvky.find(x => /TV/.test(x.vyvod)) || {};
+    return { r: [0, 1, 2].map(r => __rz.rady[r].prvky.map(x => x.ozn || x.p.kat).join(',')).join(' / '),
+             vyvod: tv.vyvod + '|' + tv.ozn, faze: tv.faze, vl: vl && [vl.p.sirka, vl.p.In].join('|'),
+             svg: !!document.querySelector('#rz-pohled .rz-svg [data-puid]'), volno: document.querySelector('.rz-volno').textContent };
+  });
+  check('znovuotevření: všechny řady, označení, vývody a fáze zpátky', zo.svg && zo.r === PREC &&
+    zo.vyvod === 'Zásuvky – obývací pokoj, TV|-FA4' && zo.faze === 'L2', zo.r + ' | ' + zo.vyvod);
+  check('pozdější změna knihovny hotový rozvaděč nezmění (kopie parametrů)', zo.vl === '1.5|16', zo.vl);
+
+  // ── 6. telefon: klepnutí místo tažení ────────────────────────────────
+  {
+    const c2 = await b.newContext({ viewport: { width: 375, height: 760 }, hasTouch: true, isMobile: true, deviceScaleFactor: 2 });
+    await c2.addInitScript(() => { try { navigator.serviceWorker.register = () => new Promise(() => {}); } catch (e) {} });
+    const t = await c2.newPage(); const err2 = [];
+    t.on('pageerror', e => err2.push(e.message)); t.on('dialog', d => d.accept());
+    await t.goto(URL); await w(1200); await t.evaluate(pomocnik);
+    await t.evaluate(async () => {
+      await dokNacist(); await dokNovy('rozv'); rozvSkrinNastavit(rozvKnihPolozka('v-sk-2x12-n'));
+      __T.bod = (r, m) => { const svg = document.querySelector('#rz-pohled .rz-svg'), M = svg.getScreenCTM();
+        const q = new DOMPoint(RZG.okraj + m * RZG.M, rozvRadaY(r) + RZG.H / 2).matrixTransform(M); return { x: Math.round(q.x), y: Math.round(q.y) }; };
+    });
+    await w(200);
+    const tap = async (fn, arg) => { const q = await t.evaluate(fn, arg); await t.touchscreen.tap(q.x, q.y); await w(350); };
+    const vid = async sel => t.evaluate(s => { const e = document.querySelector(s); e.scrollIntoView({ block: 'center' }); const b = e.getBoundingClientRect(); return { x: b.left + 12, y: b.top + b.height / 2 }; }, sel);
+    const lay = await t.evaluate(() => {
+      const k = document.querySelector('.rz-knihovna').getBoundingClientRect(), p2 = document.getElementById('rz-pohled').getBoundingClientRect(),
+            v = document.getElementById('rz-vlastnosti').getBoundingClientRect();
+      return { podSebou: k.bottom <= p2.top + 1 && p2.bottom <= v.top + 1, sirka: document.documentElement.scrollWidth };
+    });
+    check('telefon 375 px: knihovna, čelní pohled a vlastnosti pod sebou, stránka bez vodorovného posunu', lay.podSebou && lay.sirka <= 375, JSON.stringify(lay));
+    await t.evaluate(() => __T.filtr('q', 'Jistič 1P B16'));
+    let q = await vid('#rz-seznam [data-kid="v-fa-1-B16"] .rz-p-text'); await t.touchscreen.tap(q.x, q.y); await w(500);
+    const ban = await t.evaluate(() => ({ vyber: __rz.knihVyber, banner: (document.querySelector('.rz-banner') || {}).textContent || '' }));
+    await t.evaluate(() => document.getElementById('rz-svg-ram').scrollIntoView({ block: 'center' })); await w(200);
+    await tap(() => __T.bod(1, 0.5));
+    const vl1 = await t.evaluate(() => ({ r: __rz.rady.map(r => r.prvky.map(x => x.ozn).join(',')).join(' / '), banner: !!document.querySelector('.rz-banner') }));
+    check('telefon: klepnutí na přístroj v knihovně ho vybere (banner „klepněte do řady")', ban.vyber === 'v-fa-1-B16' && /klepněte do řady/.test(ban.banner), ban.banner);
+    check('telefon: klepnutí do řady ho tam vloží', vl1.r === ' / -FA1' && !vl1.banner, vl1.r);
+    q = await vid('#rz-rychle [data-kid="v-fi-4-40-30-A"]'); await t.touchscreen.tap(q.x, q.y); await w(300);
+    q = await vid('#rz-rychle [data-kid="v-fa-1-B10"]'); await t.touchscreen.tap(q.x, q.y); await w(300);
+    const vl2 = await t.evaluate(() => __rz.rady.map(r => r.prvky.map(x => x.ozn).join(',')).join(' / '));
+    check('telefon: rychlé přidání klepnutím na konec vybrané řady', vl2 === ' / -FA1,-FI1,-FA2', vl2);
+    // přesun klepnutím: vybrat -FI1, „✥ Přesunout jinam", klepnout na začátek řady 2
+    await t.evaluate(() => document.getElementById('rz-svg-ram').scrollIntoView({ block: 'center' })); await w(200);
+    await tap(() => __T.bod(1, 3));
+    const vyb = await t.evaluate(() => (rozvNajit(__rz.vyber) || { x: {} }).x.ozn);
+    q = await vid('#rz-vlastnosti [data-action="tdRPresunKlep"]'); await t.touchscreen.tap(q.x, q.y); await w(400);
+    await t.evaluate(() => document.getElementById('rz-svg-ram').scrollIntoView({ block: 'center' })); await w(200);
+    await tap(() => __T.bod(1, 0.2));
+    const vl3 = await t.evaluate(() => ({ r: __rz.rady.map(r => r.prvky.map(x => x.ozn).join(',')).join(' / '), nadr: __rz.rady[1].prvky.slice(1).every(x => x.nadr === __rz.rady[1].prvky[0].uid) }));
+    check('telefon: klepnutím vybraný přístroj jde „✥ Přesunout jinam" klepnutím do řady', vyb === '-FI1' && vl3.r === ' / -FI1,-FA1,-FA2' && vl3.nadr, vyb + ' → ' + vl3.r);
+    const ozn = await t.evaluate(() => { const svg = document.querySelector('#rz-pohled .rz-svg'), r = svg.getBoundingClientRect(), vb = svg.viewBox.baseVal; return r.width / vb.width; });
+    check('telefon: čelní pohled čitelný (aspoň 2,3 px na mm, posouvá se ve svém rámečku)', ozn >= 2.29, ozn.toFixed(2));
+    check('telefon: žádná chyba na stránce', err2.length === 0, err2.join(' | '));
+    await c2.close();
+  }
 
   // ── oddělení od revizí ────────────────────────────────────────────────
   const odd = await p.evaluate(async () => {

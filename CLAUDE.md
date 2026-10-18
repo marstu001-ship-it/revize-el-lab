@@ -663,6 +663,53 @@ a prohlášení (hlavička + `skrin` + `p`). `data.model = 1`.
   "pristroje": [ … ], "skrine": [ … ] }`, položky s vnitřními klíči (výš).
   Import bere i holý seznam položek. `TYPY_SOUBORU` zná `text/csv`.
 
+### Čelní pohled a skládání (část 3)
+
+- **SVG v milimetrech, modul 17,5 mm** (`RZG`: okraj 14, výška přístroje 50,
+  mezera mezi řadami 20). Kreslí **jedna funkce `rozvSvg(rz, o)` pro
+  obrazovku i PDF** (`o.tisk` = rozměry v mm, bez výběru a značky).
+  Skříň, DIN lišty, číslo řady vlevo, pod řadou „volno X / Y M" nebo
+  červeně „přeplněno o …"; přístroj = obdélník barvy kategorie
+  (`ROZV_KAT[].barva`), nahoře označení, pod ním hodnota (`rozvCelo`:
+  B16, 40A/30mA A, T1+T2…), páčka, dole vývod (svisle, u širokých
+  vodorovně), vpravo fáze; co přetéká skříň, je šrafované červeně.
+  `<title>` u přístroje = celý popis.
+- **Měřítko na obrazovce** `rozvMeritko()`: vejít se do rámečku, ale
+  2,3–4 px/mm (čitelnost); širší skříň se posouvá **ve svém rámečku**
+  (`.rz-svg-ram`), tlačítka − / ＋ zoom (jen v paměti).
+- **Myš:** tažení z knihovny (řádek i rychlá tlačítka) a přesun přístroje
+  v pohledu — vlastní pointer events (žádná knihovna), duch u kurzoru,
+  žlutá svislá značka místa (`rozvCilZBodu` → řada + pořadí podle středu
+  přístrojů, `rozvZnacka`), u okraje okna se stránka posouvá. Po tažení se
+  potlačí následný `click` (zachytávací posluchač), aby rychlé tlačítko
+  nevložilo přístroj podruhé.
+- **Dotyk (pravidlo 375 px):** žádné tažení — **klepnout na přístroj
+  v knihovně → banner „klepněte do řady" → klepnout na místo v řadě**;
+  „＋ Vložit" a rychlá tlačítka dají přístroj na konec vybrané řady (je-li
+  plná, do první řady s místem — `rozvRadaProVlozeni`); přesun přes
+  vlastnosti „✥ Přesunout jinam" a klepnutí do řady, nebo ◀ ▶ ▲ ▼.
+  Na úzkém okně se po výběru posune na pohled / vlastnosti.
+- **Klávesy** (když se nepíše do pole): Delete smaže (hláška se ZPĚT),
+  Ctrl+Z vrací (společný zásobník), ← → posun v řadě, ↑ ↓ do sousední
+  řady na podobné místo, Ctrl+D duplikát vedle, Esc zruší výběr / vkládání.
+- **Označení** automaticky `předpona + (max + 1)` podle kategorie
+  (`rozvDalsiOzn`; -FI/FA má vlastní řadu, AFDD sdílí -FA); jde přepsat
+  ve vlastnostech; **„🔢 Přečíslovat označení"** = podle pořadí v řadách
+  zleva doprava, každá předpona od 1 (se ZPĚT).
+- **Nadřazený chránič** (`rozvNadrazeneAuto`, běží v každé `rozvZmena`):
+  jistič a AFDD (`ROZV_NADR_AUTO`) automaticky pod nejbližším **FI vlevo ve
+  stejné řadě**; ve vlastnostech jde zvolit ručně (`nadrRucne`) i „žádný
+  (přímo z přívodu)"; smazaný ručně zvolený chránič → zpátky automaticky.
+  U QM, SPD, FI, RCBO, rezervy a svorek se nevolí (`ROZV_NADR_BEZ`).
+- **Vlastnosti** (`#rz-vlastnosti`): označení, název vývodu (nabídka názvů
+  obvodů), fáze (— / L1 / L2 / L3 / 3f; 3pólové dostanou 3f), vývodový
+  kabel typ + průřez, nadřazený chránič, sbalené „Další údaje" (Ib pro
+  oteplení, poznámka), souhrn parametrů z kopie, ◀ ▶ ▲ ▼, ⧉ Duplikovat,
+  🗑 Smazat, Hotovo. Psaní překreslí jen pohled (kurzor zůstane v poli).
+  Bez výběru: souhrn rozvaděče, Přečíslovat, Vyměnit skříň.
+- Vymyšlený **byt 3+1** pro testy: `testy/rozvadec-byt.js` (skříň 3×12:
+  QM, SPD, sporák B25 3P; dva chrániče 4P 40/30 s jističi; RCBO balkon).
+
 Test: `testy/test-rozvadec.js` (vymyšlená data). V `test-mobil.js` stavy
 „rozvaděč – …" a v přípravě rozvaděč RH1 (byt 3+1, skříň 3×12).
 **`test-dokumentace.js` upraven ve stejném commitu:** dlaždic je víc
