@@ -1426,6 +1426,8 @@ body.fa-open #stavovy-radek{left:var(--fa-sirka,280px)}
   padding:.4rem .6rem;cursor:pointer;font-family:inherit;font-size:.82rem;color:inherit;
   white-space:nowrap;overflow:hidden;text-overflow:ellipsis}
 .kt-pol:hover,.kt-pol:focus{background:var(--accent2);color:#fff;outline:none}
+.kt-pol:disabled{opacity:.45;cursor:default;background:none;color:inherit}
+.kt-kl{float:right;margin-left:1.5rem;font-size:.85em;opacity:.65}
 .kt-sep{height:1px;background:var(--border);margin:.25rem .3rem}
 .kt-pata{font-size:.6rem;color:var(--muted);padding:.3rem .6rem .15rem;border-top:1px solid var(--border);
   margin-top:.25rem}
@@ -1923,6 +1925,8 @@ html.dark .rz-imp-chyby{background:#3a1f1c;border-color:#6b2c25}
   .modal{width:100%!important;max-width:100%!important;min-width:0!important;padding:1rem!important;
     max-height:calc(100vh - 16px)!important;max-height:calc(100dvh - 16px)!important;overflow-y:auto!important;overflow-x:hidden}
   .modal-actions{flex-wrap:wrap}
+  /* kontextové menu delší než nízký displej (telefon na šířku) — posouvá se uvnitř */
+  .kt-menu{max-height:calc(100vh - 12px);max-height:calc(100dvh - 12px);overflow-y:auto}
   /* náhled typického textu celý (na PC se uřízne po 4,5 řádku) */
   #typy-textu-list div[style*="max-height:4.5rem"]{max-height:none!important}
   #typy-textu-list .btn{margin:4px 4px 0 0!important}
@@ -7351,7 +7355,8 @@ function ktOtevrit(x, y, pol) {
   box.tabIndex = -1;
   box.innerHTML = pol.map(function (p, i) {
     return (p.oddel ? '<div class="kt-sep"></div>' : '') +
-      '<button type="button" class="kt-pol" data-i="' + i + '">' + esc(p.popis) + '</button>';
+      '<button type="button" class="kt-pol" data-i="' + i + '"' + (p.vypnuto ? ' disabled' : '') + '>' + esc(p.popis) +
+        (p.klavesa ? '<span class="kt-kl">' + esc(p.klavesa) + '</span>' : '') + '</button>';
   }).join('') +
     '<div class="kt-pata">Shift + pravý klik = nabídka prohlížeče</div>';
   document.body.appendChild(box);
@@ -7373,7 +7378,7 @@ function ktOtevrit(x, y, pol) {
     else if (p.el) p.el.click();
   });
   box.addEventListener('keydown', function (e) {
-    var tl = Array.prototype.slice.call(box.querySelectorAll('.kt-pol'));
+    var tl = Array.prototype.slice.call(box.querySelectorAll('.kt-pol:not([disabled])'));
     var i = tl.indexOf(document.activeElement);
     if (e.key === 'Escape') { e.preventDefault(); ktZavrit(); return; }
     if (e.key === 'ArrowDown' || e.key === 'ArrowUp') {
@@ -7392,6 +7397,8 @@ var KT_NECHAT_PROHLIZECI = 'textarea, select, .rich-edit, [contenteditable="true
 
 function ktZkusit(x, y, cil) {
   if (cil.closest(KT_NECHAT_PROHLIZECI)) return false;
+  // přístroj v čelním pohledu rozvaděče (tvorba dokumentace)
+  if (typeof rozvKontextZkusit === 'function' && rozvKontextZkusit(x, y, cil)) return true;
   var radek = ktRadekZ(cil);
   if (!radek) return false;
   var pol = ktPolozky(radek, cil);
@@ -30019,9 +30026,9 @@ function rozvPohledVykreslit() {
   }
   h += '<div class="rz-svg-ram" id="rz-svg-ram">' + rozvSvg(__rz, { k: rozvMeritko() }) + '</div>' +
     '<div class="rz-napoveda">' + (rozvDotyk()
-      ? 'Klepněte na přístroj v knihovně a pak na místo v řadě (＋ Vložit ho dá na konec vybrané řady). Klepnutím na přístroj v pohledu ho vyberete — pod pohledem pak vyplníte vývod, fázi a kabel.'
+      ? 'Klepněte na přístroj v knihovně a pak na místo v řadě (＋ Vložit ho dá na konec vybrané řady). Klepnutím na přístroj v pohledu ho vyberete — pod pohledem pak vyplníte vývod, fázi a kabel. Delší podržení prstu nabídne další akce.'
       : 'Přístroj táhněte myší z knihovny do řady (nebo klepněte na něj a pak na místo v řadě; ＋ Vložit dá na konec vybrané řady). ' +
-        'Klepnutím na přístroj ho vyberete — vpravo vyplníte vývod, fázi a kabel. Delete smaže, Ctrl+Z vrátí, šipky posouvají.') + '</div>';
+        'Klepnutím na přístroj ho vyberete — vpravo vyplníte vývod, fázi a kabel. Pravý klik nabídne další akce; Delete smaže, Ctrl+C / Ctrl+V kopíruje, Ctrl+Z vrátí, šipky posouvají.') + '</div>';
   box.innerHTML = h;
 }
 
@@ -30352,6 +30359,7 @@ document.addEventListener('click', function (e) {
   if (!rozvEditorAktivni()) return;
   if (__rzBezKliku) { __rzBezKliku = false; e.preventDefault(); e.stopPropagation(); return; }
   var t = e.target; if (!t.closest) return;
+  if (__ktMenu && !t.closest('.kt-menu')) return;   // klepnutí po dlouhém stisku nechá menu být
   var knih = t.closest('#dok-form-obsah .rz-polozka[data-kid]');
   if (knih && !t.closest('button')) {
     var it = rozvKnihPolozka(knih.getAttribute('data-kid')); if (!it) return;
@@ -30383,7 +30391,79 @@ document.addEventListener('click', function (e) {
   if (pr && window.innerWidth < 900) { var v = document.getElementById('rz-vlastnosti'); if (v) v.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); }
 }, true);
 
-// Klávesy (jen když se nepíše do pole): Delete, Esc, šipky, Ctrl+D.
+// ── Kontextové menu přístroje: pravý klik / dlouhý stisk prstem ─────────
+// Stejné menu programu jako v tabulce měření (ktOtevrit); nabízí totéž co
+// panel vlastností + schránku a rezervu. Schránka je v paměti (kopie
+// přístroje), takže jde vložit i do jiného rozvaděče.
+var __rzSchranka = null;
+
+function rozvVybrat(uid, kVlastnostem) {
+  var z = rozvNajit(uid); if (!z) return;
+  __rz.vyber = uid; __rz.aktRada = z.r; __rz.knihVyber = null; __rz.presun = null;
+  rozvPohledVykreslit(); rozvVlastnostiVykreslit();
+  if (kVlastnostem) {
+    var v = document.getElementById('rz-vlastnosti');
+    if (v) v.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
+    var pole = v && v.querySelector('[data-rp2="vyvod"]');
+    if (pole) pole.focus();
+  }
+}
+
+function rozvKopirovat(uid) {
+  var z = rozvNajit(uid); if (!z) return;
+  __rzSchranka = dokKopie(z.x);
+  ktDoSchranky([z.x.ozn, rozvNazev(z.x.p), z.x.vyvod].filter(Boolean).join(' · '));
+  showToast('Zkopírováno: ' + (z.x.ozn || rozvNazev(z.x.p)) + ' — vložíte Ctrl+V nebo pravým klikem', { timeout: 3500 });
+}
+
+function rozvVlozitSchranku(r, idx) {
+  if (!__rz) return;
+  if (!__rzSchranka) { showToast('Schránka je prázdná — nejdřív přístroj zkopírujte (Ctrl+C).'); return; }
+  if (!__rz.skrin) { showToast('Nejdřív vyberte skříň — v knihovně na kartě 🗄 Skříně.'); return; }
+  if (r == null) {
+    var z = __rz.vyber ? rozvNajit(__rz.vyber) : null;
+    if (z) { r = z.r; idx = z.i + 1; }
+    else { r = rozvRadaProVlozeni(+__rzSchranka.p.sirka || 1); idx = __rz.rady[r].prvky.length; }
+  }
+  var x = dokKopie(__rzSchranka);
+  x.uid = rozvUid(); x.ozn = rozvDalsiOzn(x.p.kat); x.nadrRucne = false;
+  rozvZmena('Vložení ' + (x.ozn || rozvNazev(x.p)), function () {
+    __rz.rady[r].prvky.splice(idx, 0, x);
+    __rz.vyber = x.uid; __rz.aktRada = r;
+  });
+  rozvHlasitPreplneni(r);
+}
+
+function rozvKontextPolozky(uid) {
+  var z = rozvNajit(uid); if (!z) return [];
+  var pol = [
+    { popis: 'Vlastnosti', fn: function () { rozvVybrat(uid, true); } },
+    { popis: 'Duplikovat', klavesa: 'Ctrl+D', fn: function () { rozvDuplikovat(uid); } },
+    { popis: 'Kopírovat', klavesa: 'Ctrl+C', fn: function () { rozvKopirovat(uid); } },
+    { popis: 'Vložit za něj', klavesa: 'Ctrl+V', vypnuto: !__rzSchranka, fn: function () { var q = rozvNajit(uid); if (q) rozvVlozitSchranku(q.r, q.i + 1); } },
+    { popis: 'Vložit rezervu vedle', fn: function () { var q = rozvNajit(uid); if (q) rozvVlozit('v-rez-1', q.r, q.i + 1); } }
+  ];
+  var prvni = true;
+  __rz.rady.forEach(function (r, i) {
+    if (i === z.r) return;
+    pol.push({ popis: 'Přesunout do řady ' + (i + 1), oddel: prvni, fn: function () { rozvPresunout(uid, i, __rz.rady[i].prvky.length); } });
+    prvni = false;
+  });
+  pol.push({ popis: 'Smazat', klavesa: 'Delete', oddel: true, fn: function () { rozvSmazat(uid); } });
+  return pol;
+}
+
+function rozvKontextZkusit(x, y, cil) {
+  if (!rozvEditorAktivni() || !cil.closest) return false;
+  var pr = cil.closest('#rz-pohled [data-puid]');
+  if (!pr) return false;
+  var uid = pr.getAttribute('data-puid');
+  rozvVybrat(uid, false);   // jako v Průzkumníku: pravý klik přístroj i vybere
+  ktOtevrit(x, y, rozvKontextPolozky(uid));
+  return true;
+}
+
+// Klávesy (jen když se nepíše do pole): Delete, Esc, šipky, Ctrl+D, Ctrl+C, Ctrl+V.
 document.addEventListener('keydown', function (e) {
   if (!rozvEditorAktivni()) return;
   var a = document.activeElement;
@@ -30395,7 +30475,10 @@ document.addEventListener('keydown', function (e) {
     else if (__rz.vyber) TD_AKCE.tdRVyberZrusit();
     return;
   }
+  var ctrl = (e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey, pism = String(k).toLowerCase();
+  if (ctrl && pism === 'v' && __rzSchranka) { e.preventDefault(); rozvVlozitSchranku(); return; }
   if (!__rz.vyber) return;
+  if (ctrl && pism === 'c') { e.preventDefault(); rozvKopirovat(__rz.vyber); return; }
   if ((k === 'Delete' || k === 'Backspace') && !e.ctrlKey && !e.metaKey) { e.preventDefault(); rozvSmazat(__rz.vyber); return; }
   if ((e.ctrlKey || e.metaKey) && !e.shiftKey && !e.altKey && String(k).toLowerCase() === 'd') { e.preventDefault(); rozvDuplikovat(__rz.vyber); return; }
   var smer = { ArrowLeft: 'l', ArrowRight: 'p', ArrowUp: 'n', ArrowDown: 'd' }[k];

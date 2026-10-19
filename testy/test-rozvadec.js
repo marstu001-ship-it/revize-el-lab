@@ -516,6 +516,86 @@ function pomocnik() {
     zo.vyvod === 'Zásuvky – obývací pokoj, TV|-FA4' && zo.faze === 'L2', zo.r + ' | ' + zo.vyvod);
   check('pozdější změna knihovny hotový rozvaděč nezmění (kopie parametrů)', zo.vl === '1.5|16', zo.vl);
 
+  // ── 5a. kontextové menu přístroje (pravý klik) a schránka ─────────────
+  {
+  await p.evaluate(async () => {
+    __T.rada = r => __rz.rady[r].prvky.map(x => x.ozn || x.p.kat).join(',');
+    __T.bod = (r, m) => { const svg = document.querySelector('#rz-pohled .rz-svg'), M = svg.getScreenCTM();
+      const q = new DOMPoint(RZG.okraj + m * RZG.M, rozvRadaY(r) + RZG.H / 2).matrixTransform(M); return { x: Math.round(q.x), y: Math.round(q.y) }; };
+    window.__rh1 = window.__dokOtevreny.uid;
+    await dokNovy('rozv'); rozvSkrinNastavit(rozvKnihPolozka('v-sk-3x12-n'));
+    __T.filtr('q', '');
+    ['v-fi-4-40-30-A', 'v-fa-1-B10', 'v-fa-1-B16'].forEach(k => rozvVlozit(k, 0, __rz.rady[0].prvky.length));
+    rozvVlozit('v-fa-1-C16', 1, 0);
+    __rz.vyber = null; rozvPohledVykreslit(); rozvVlastnostiVykreslit();
+    document.getElementById('rz-pohled').scrollIntoView({ block: 'start' });
+  });
+  await w(200);
+  const pk = async (r, m) => { const q = await p.evaluate(([r, m]) => __T.bod(r, m), [r, m]); await p.mouse.click(q.x, q.y, { button: 'right' }); await w(150); };
+  const menu = () => p.evaluate(() => { const m = document.querySelector('.kt-menu');
+    return m ? Array.from(m.querySelectorAll('.kt-pol')).map(b => (b.disabled ? '(' : '') + b.childNodes[0].textContent.trim() + (b.disabled ? ')' : '')) : null; });
+  const klikMenu = async text => { await p.evaluate(t => { const b = Array.from(document.querySelectorAll('.kt-menu .kt-pol')).find(x => x.childNodes[0].textContent.trim() === t); b.click(); }, text); await w(150); };
+  await pk(0, 4.5);
+  const m1 = await menu();
+  const vyb1 = await p.evaluate(() => (rozvNajit(__rz.vyber) || { x: {} }).x.ozn);
+  check('pravý klik na přístroj: menu programu se stejnými akcemi jako panel + schránka a rezerva, přístroj se vybere',
+    vyb1 === '-FA1' && m1 && m1.join('|') === 'Vlastnosti|Duplikovat|Kopírovat|(Vložit za něj)|Vložit rezervu vedle|Přesunout do řady 2|Přesunout do řady 3|Smazat', vyb1 + ' · ' + (m1 || []).join('|'));
+  const kl = await p.evaluate(() => Array.from(document.querySelectorAll('.kt-menu .kt-kl')).map(x => x.textContent).join(','));
+  check('menu ukazuje klávesy (Ctrl+D, Ctrl+C, Ctrl+V, Delete) a má vzhled menu tabulky měření', kl === 'Ctrl+D,Ctrl+C,Ctrl+V,Delete' &&
+    await p.evaluate(() => document.querySelector('.kt-menu').className === 'kt-menu' && !!document.querySelector('.kt-menu .kt-pata')), kl);
+  await klikMenu('Vlastnosti');
+  const vlk = await p.evaluate(() => ({ fokus: document.activeElement && document.activeElement.getAttribute('data-rp2'), menu: !!document.querySelector('.kt-menu') }));
+  check('„Vlastnosti" zavře menu a skočí do pole Název vývodu', vlk.fokus === 'vyvod' && !vlk.menu, JSON.stringify(vlk));
+  await p.evaluate(() => document.activeElement.blur());
+  const rada = r => p.evaluate(r => __T.rada(r), r);
+  await pk(0, 4.5); await klikMenu('Duplikovat');
+  const d1 = await rada(0);
+  await pk(0, 4.5); await klikMenu('Kopírovat');
+  await pk(1, 0.5); const m2 = await menu(); await klikMenu('Vložit za něj');
+  const d2 = await rada(1);
+  await pk(1, 0.5); await klikMenu('Vložit rezervu vedle');
+  const d3 = await rada(1);
+  await pk(0, 6.5); await klikMenu('Přesunout do řady 3');
+  const d4 = [await rada(0), await rada(2)].join(' / ');
+  await pk(1, 0.5); await klikMenu('Smazat');
+  const d5 = await rada(1);
+  await p.keyboard.press('Control+z'); await w(150);
+  const d6 = await rada(1);
+  check('Duplikovat z menu: kopie hned vedle s dalším označením', d1 === '-FI1,-FA1,-FA4,-FA2', d1);
+  check('Kopírovat → v menu jiného přístroje „Vložit za něj" (Ctrl+V) vloží kopii za něj', m2 && m2.includes('Vložit za něj') && d2 === '-FA3,-FA5', (m2 || []).join('|') + ' · ' + d2);
+  check('„Vložit rezervu vedle" dá rezervu 1 M hned za přístroj', d3 === '-FA3,REZ,-FA5', d3);
+  check('„Přesunout do řady 3" dá přístroj na konec řady 3', d4 === '-FI1,-FA1,-FA4 / -FA2', d4);
+  check('„Smazat" z menu a Ctrl+Z ho vrátí', d5 === 'REZ,-FA5' && d6 === '-FA3,REZ,-FA5', d5 + ' → ' + d6);
+  // klávesy: Ctrl+C / Ctrl+V nad vybraným přístrojem (kurzor mimo pole)
+  await p.evaluate(() => { document.activeElement && document.activeElement.blur(); __rz.vyber = __rz.rady[0].prvky[0].uid; rozvPohledVykreslit(); rozvVlastnostiVykreslit(); });
+  await p.keyboard.press('Control+c'); await w(80);
+  await p.evaluate(() => { __rz.vyber = __rz.rady[2].prvky[0].uid; rozvPohledVykreslit(); });
+  await p.keyboard.press('Control+v'); await w(120);
+  const k1 = await rada(2);
+  await p.evaluate(() => { __rz.vyber = null; __rz.aktRada = 1; rozvPohledVykreslit(); });
+  await p.keyboard.press('Control+v'); await w(120);
+  const k2 = await rada(1);
+  check('Ctrl+C / Ctrl+V: kopie chrániče za vybraný přístroj; bez výběru na konec vybrané řady', k1 === '-FA2,-FI2' && k2 === '-FA3,REZ,-FA5,-FI3', k1 + ' | ' + k2);
+  await p.click('#rz-vlastnosti, .dok-lista-titul').catch(() => {});
+  // Ctrl+V v textovém poli zůstává prohlížeči
+  await p.evaluate(() => { __rz.vyber = __rz.rady[0].prvky[1].uid; rozvVlastnostiVykreslit(); document.querySelector('#rz-vlastnosti [data-rp2="vyvod"]').focus(); });
+  await p.keyboard.press('Control+v'); await w(120);
+  check('Ctrl+V při psaní do pole nevkládá přístroj', (await rada(0)) === '-FI1,-FA1,-FA4');
+  // Shift + pravý klik = nabídka prohlížeče, pravý klik mimo přístroj nic
+  await p.evaluate(() => document.activeElement.blur());
+  const sh = await p.evaluate(() => { const q = __T.bod(0, 4.5), el = document.elementFromPoint(q.x, q.y);
+    const ev = new MouseEvent('contextmenu', { bubbles: true, cancelable: true, clientX: q.x, clientY: q.y, shiftKey: true });
+    el.dispatchEvent(ev); return { zrus: ev.defaultPrevented, menu: !!document.querySelector('.kt-menu') }; });
+  check('Shift + pravý klik nechá nabídku prohlížeče', !sh.zrus && !sh.menu, JSON.stringify(sh));
+  // znovu otevřít RH1 pro PDF
+  await p.evaluate(async () => { await dokUlozitOtevreny(); await dokOtevrit(window.__rh1); });
+  await w(300);
+  await p.evaluate(() => {
+    __T.bod = (r, m) => { const svg = document.querySelector('#rz-pohled .rz-svg'), M = svg.getScreenCTM();
+      const q = new DOMPoint(RZG.okraj + m * RZG.M, rozvRadaY(r) + RZG.H / 2).matrixTransform(M); return { x: Math.round(q.x), y: Math.round(q.y) }; };
+  });
+
+  }
   // ── 5b. PDF ───────────────────────────────────────────────────────────
   await p.evaluate(async () => {
     const f = dokForm(), dk = (s, v) => { const e = f.querySelector(s); e.value = v; e.dispatchEvent(new Event('input', { bubbles: true })); };
@@ -629,6 +709,18 @@ function pomocnik() {
     await tap(() => __T.bod(1, 0.2));
     const vl3 = await t.evaluate(() => ({ r: __rz.rady.map(r => r.prvky.map(x => x.ozn).join(',')).join(' / '), nadr: __rz.rady[1].prvky.slice(1).every(x => x.nadr === __rz.rady[1].prvky[0].uid) }));
     check('telefon: klepnutím vybraný přístroj jde „✥ Přesunout jinam" klepnutím do řady', vyb === '-FI1' && vl3.r === ' / -FI1,-FA1,-FA2' && vl3.nadr, vyb + ' → ' + vl3.r);
+    const dl = await t.evaluate(async () => {
+      document.getElementById('rz-svg-ram').scrollIntoView({ block: 'center' }); await new Promise(r => setTimeout(r, 150));
+      const q = __T.bod(1, 0.5), el = document.elementFromPoint(q.x, q.y), o = { bubbles: true, cancelable: true, pointerType: 'touch', isPrimary: true, clientX: q.x, clientY: q.y };
+      el.dispatchEvent(new PointerEvent('pointerdown', o)); await new Promise(r => setTimeout(r, 750));
+      const m = document.querySelector('.kt-menu');
+      const r = { menu: m ? Array.from(m.querySelectorAll('.kt-pol')).map(b => b.childNodes[0].textContent.trim()).join('|') : '', vyber: (rozvNajit(__rz.vyber) || { x: {} }).x.ozn };
+      el.dispatchEvent(new PointerEvent('pointerup', o));
+      r.vyska = m ? Math.min.apply(null, Array.from(m.querySelectorAll('.kt-pol')).map(b => b.getBoundingClientRect().height)) : 0;
+      ktZavrit(); return r;
+    });
+    check('telefon: dlouhý stisk prstem na přístroji otevře totéž menu (položky ≥ 40 px)', /^Vlastnosti\|Duplikovat\|Kopírovat\|Vložit za něj\|Vložit rezervu vedle\|Přesunout do řady 1\|Smazat$/.test(dl.menu) &&
+      dl.vyber === '-FI1' && dl.vyska >= 40, JSON.stringify(dl));
     const ozn = await t.evaluate(() => { const svg = document.querySelector('#rz-pohled .rz-svg'), r = svg.getBoundingClientRect(), vb = svg.viewBox.baseVal; return r.width / vb.width; });
     check('telefon: čelní pohled čitelný (aspoň 2,3 px na mm, posouvá se ve svém rámečku)', ozn >= 2.29, ozn.toFixed(2));
     check('telefon: žádná chyba na stránce', err2.length === 0, err2.join(' | '));

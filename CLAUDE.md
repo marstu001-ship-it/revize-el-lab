@@ -755,6 +755,19 @@ a prohlášení (hlavička + `skrin` + `p`). `data.model = 1`.
   oteplení, poznámka), souhrn parametrů z kopie, ◀ ▶ ▲ ▼, ⧉ Duplikovat,
   🗑 Smazat, Hotovo. Psaní překreslí jen pohled (kurzor zůstane v poli).
   Bez výběru: souhrn rozvaděče, Přečíslovat, Vyměnit skříň.
+- **Pravý klik na přístroj = kontextové menu** (2026-10-19) — **totéž menu
+  programu jako v tabulce měření** (`ktOtevrit`, stejný vzhled, Esc, šipky,
+  Shift + pravý klik = nabídka prohlížeče, na dotyku dlouhý stisk 550 ms).
+  `ktZkusit` se nejdřív zeptá `rozvKontextZkusit()`; pravý klik přístroj
+  i vybere. Položky (`rozvKontextPolozky`): Vlastnosti (skočí do pole
+  Název vývodu), Duplikovat · Ctrl+D, Kopírovat · Ctrl+C, Vložit za něj ·
+  Ctrl+V (bez schránky šedá — `ktOtevrit` nově umí `vypnuto` a `klavesa`),
+  Vložit rezervu vedle (1 M), Přesunout do řady N (každá jiná řada, na
+  konec), Smazat · Delete. **Schránka `__rzSchranka` je v paměti** (kopie
+  přístroje), takže jde vložit i do jiného rozvaděče; Ctrl+V s vybraným
+  přístrojem vkládá za něj, bez výběru na konec vybrané řady; vložená kopie
+  dostane nové `uid` a další volné označení. Klávesy platí, jen když se
+  nepíše do pole (tam Ctrl+C/V patří prohlížeči).
 - Vymyšlený **byt 3+1** pro testy: `testy/rozvadec-byt.js` (skříň 3×12:
   QM, SPD, sporák B25 3P; dva chrániče 4P 40/30 s jističi; RCBO balkon).
 

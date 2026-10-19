@@ -493,6 +493,11 @@ function vsechnyStavy(zalozky) {
     await __M.rozv(); __rz.knihVyber = 'v-fa-1-B16'; rozvKnihovnaVykreslit(); rozvPohledVykreslit();
     document.getElementById('rz-pohled').scrollIntoView({ block: 'start' }); await __M.w(100);
   }));
+  add('rozvaděč – kontextové menu přístroje', 'Tvorba dokumentace', E(async () => {
+    await __M.rozv(); document.getElementById('rz-pohled').scrollIntoView({ block: 'start' }); await __M.w(100);
+    const g = document.querySelector('#rz-pohled [data-puid]'), r = g.getBoundingClientRect();
+    rozvKontextZkusit(r.left + r.width / 2, r.top + 10, g); await __M.w(100);
+  }), '.kt-menu');
   add('rozvaděč – náhled PDF', 'Tvorba dokumentace', E(async () => { await __M.rozv(); await dokNahled(); await __M.w(400); }));
   add('rozvaděč – přeplněná řada', 'Tvorba dokumentace', E(async () => {
     await __M.rozv(); rozvVlozit('v-fa-3-C32', 0, 0); document.getElementById('rz-pohled').scrollIntoView({ block: 'start' }); await __M.w(100);
