@@ -601,7 +601,7 @@ dlaždice se nedělají.
 **ZÁSADA Č. 1: ÚPLNĚ ODDĚLENO OD REVIZÍ.**
 - **Vlastní úložiště** `DOK` — localStorage `revize_el_dok`, v IndexedDB klíče
   `dok_dokumenty`, `dok_vzory`, `dok_vzorySkryte`, `dok_osoby`, `dok_zapsano`
-  (a pro rozvaděče `dok_rozvKnihovna`, `dok_rozvOblibene`).
+  (a pro rozvaděče `dok_rozvKnihovna`, `dok_rozvOblibene`, `dok_rozvObjekty`).
   **NENÍ ve STORE ani ve STORE_KEYS** — saveStore/loadStore na něj nesahají,
   takže revize se s dokumenty nemůžou smíchat. Pravidlo „čtyři místa"
   pro klíče STORE se tu neuplatní; místo něj platí: nový klíč = `DOK_IDB`.
@@ -795,6 +795,50 @@ a prohlášení (hlavička + `skrin` + `p`). `data.model = 1`.
   snímek pro ZPĚT (zapíše se do společného zásobníku `zpetZapsat`, takže
   funguje **Ctrl+Z**), přepočet nadřazených chráničů, překreslení, uložení.
   Otevření rozvaděče zásobník vyprázdní.
+
+### Objekty (složky) v seznamu rozvaděčů (2026-10-19)
+
+Pokyn uživatele: rozvaděče jedné stavby pohromadě — jako složky v Plánu
+revizí a v Průzkumníku. `DOK_TYPY.rozv.objekty = true` zapne v obecném
+`dokSeznamPolozky()` vykreslení po skupinách (`dokObjSeznamHtml`); protokol
+o vnějších vlivech má seznam dál plochý.
+
+- **Data:** `DOK.rozvObjekty = [{ id, nazev, vytvoreno }]` (IDB `dok_rozvObjekty`,
+  v `DOK_IDB`, v záloze v části `dokumentace` — `dokZalohaData`; řádek
+  potvrzení obnovy je vypíše), rozvaděč má `data.objekt` = id (`''` / neexistující
+  id = „Bez objektu"). Číslování ROZ se nemění.
+- **Seznam:** 🏠 objekty podle jména, pod nimi rozvaděče **podle stromu napájení**
+  (`dokObjStrom` přes `data.napajenZ.uid` — hlavní nahoře, podružné odsazené
+  `dok-p-podN` se „└" a „napájen z RH1 (-FA3)", `dokNapajenText`), sourozenci
+  podle označení (`cisloPorovnat`). Na konci 📦 „Bez objektu" — prázdná se
+  neukazuje. Prázdný objekt má jednořádkovou nápovědu.
+- **Pořadí se pod rukama nemění** (pravidlo v9.116): `__dokObjZamek` = pořadí
+  z posledního vykreslení, `dokZamekSerad` vrací už viděné položky na jejich
+  místo, nové jdou na přirozené. Znovu se seřadí otevřením seznamu
+  (`dokOtevritSeznam` zámek zruší).
+- **Hlavní akce zůstává „＋ Navrhnout nový rozvaděč"**; objekt zakládá malý
+  odkaz „＋ Nový objekt" — vznikne „Nový objekt" a jméno se hned píše přímo
+  v řádku (jako nová složka v Průzkumníku, `dokObjPrejmenovatStart`).
+- **Do objektu:** tažením řádku myší na objekt (HTML5 drag, vlastní typ
+  `text/x-revize-dok` — obecný import souborů reaguje jen na `Files`), pravým
+  klikem na řádek („Přesunout do objektu: …", „do „Bez objektu"", „do nového
+  objektu…") a polem **„Objekt"** v hlavičce rozvaděče (`rozvObjektVolby`,
+  volba „＋ Nový objekt…" se zeptá na jméno). Přesun má ZPĚT i Ctrl+Z.
+- **Objekt:** klik / Enter sbalí a rozbalí (bez překreslení — dvojklik na
+  název by jinak netrefil), **F2 nebo dvojklik = přejmenovat** (Enter uloží,
+  Esc zruší), **Delete nebo 🗑 Smazat objekt** = objekt zmizí, **rozvaděče se
+  nikdy nemažou** — přejdou do „Bez objektu"; obojí se ZPĚT i Ctrl+Z. Pravý klik
+  na objekt: Sbalit, Přejmenovat, Smazat, Nový objekt. Delete na řádku
+  rozvaděče = smazat rozvaděč (s dotazem a ZPĚT). Sbalení jen v paměti.
+- **Hledání** najde i název objektu (`DOK_TYPY.rozv.hledat`); při hledání je
+  všechno rozbalené a skupiny bez nálezu se schovají.
+- `DOK_TYPY.rozv.cist` **začíná kopií otevřených dat** — co formulář nemá
+  (`napajenZ`, `zdrojRevize`), se uložením neztratí.
+
+Test: `testy/test-rozvadec-objekty.js` (28 kontrol — tažení, menu, pole
+v hlavičce i nový objekt z něj, strom napájení, zámek pořadí, sbalení, hledání,
+F2 / dvojklik / Esc, Delete se ZPĚT a Ctrl+Z, záloha a obnova, data revizí
+bajtově stejná, telefon). V `test-mobil.js` stav „rozvaděč – seznam s objekty".
 
 ### Vlastní položky a import (část 2)
 

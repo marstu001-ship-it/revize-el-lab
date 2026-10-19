@@ -478,6 +478,15 @@ function vsechnyStavy(zalozky) {
   add('rozvaděč – seznam, knihovna rozbalená', 'Tvorba dokumentace', E(async () => {
     dokOtevritSeznam('rozv'); await __M.w(100); document.getElementById('dok-knihovna-karta').open = true; await __M.w(100);
   }));
+  add('rozvaděč – seznam s objekty', 'Tvorba dokumentace', E(async () => {
+    // vymyšlené objekty a rozvaděče, jen v paměti (nic se neukládá)
+    DOK.rozvObjekty = [{ id: 'm-o1', nazev: 'Byt Polní 12, Kyjov' }, { id: 'm-o2', nazev: 'Dům Lipová 5' }];
+    const r = (uid, c, ozn, obj, nz) => ({ uid, typ: 'rozv', cislo: c, data: Object.assign(DOK_TYPY.rozv.novy(), { cislo: c, oznaceni: ozn, objekt: obj, napajenZ: nz, stavba: 'Byt Polní 12' }) });
+    DOK.dokumenty = DOK.dokumenty.filter(x => x.typ !== 'rozv').concat([r('m-a', 'ROZ-0001', 'RH1', 'm-o1'),
+      r('m-b', 'ROZ-0002', 'RS1', 'm-o1', { uid: 'm-a', ozn: '-FA12' }), r('m-c', 'ROZ-0003', 'RS2 kuchyň', 'm-o1', { uid: 'm-a', ozn: '-FA13' }),
+      r('m-d', 'ROZ-0004', 'RX', '')]);
+    dokOtevritSeznam('rozv'); await __M.w(100);
+  }));
   add('rozvaděč – správa knihovny s importem výrobce', 'Tvorba dokumentace', E(async () => {
     // vymyšlený výrobce, jen v paměti (nic se neukládá)
     DOK.rozvKnihovna = [];
