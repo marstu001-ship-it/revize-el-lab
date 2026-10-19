@@ -218,6 +218,10 @@ async function snimek(p) {
     check('rozvaděče: knihovna přístrojů jen v revize-lab-db a revize_lab_dok, ostrý program beze změny',
       /LAB-KNIHOVNA/.test(kn.lab) && /LAB-KNIHOVNA/.test(kn.lsLab || '') && !/LAB-KNIHOVNA/.test(kn.ostra) && !/LAB-KNIHOVNA/.test(kn.lsOstry || ''),
       kn.lab.slice(0, 60) + ' | ' + kn.ostra);
+    // návrat na obrazovku po načtení stránky (sessionStorage revize_el_obnova)
+    const ob = await lab.evaluate(() => { obnovaZapsat(); return { klice: Object.keys(sessionStorage).join(','), cte: !!sessionStorage.getItem('revize_el_obnova') }; });
+    check('poloha pro návrat po načtení stránky: sessionStorage revize_lab_obnova, ne revize_el_obnova',
+      /(^|,)revize_lab_obnova(,|$)/.test(ob.klice) && !/revize_el_obnova/.test(ob.klice) && ob.cte, ob.klice);
 
     // ── 4. okna: lab ↔ ostrý program se neslyší, lab ↔ lab ano ──────────
     await lab.evaluate(() => {

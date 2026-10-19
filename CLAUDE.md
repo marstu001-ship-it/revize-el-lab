@@ -8,6 +8,12 @@ uživatelé a jejich data. Hotová funkce se z labu přenese do revize-el přes
 `…github.io/revize-el/`.
 
 - Remote **`origin`** = `revize-el-lab` (sem se pushuje).
+- **🛑 Do `main` NIKDY force push** (`--force`, `--force-with-lease`, přepsání
+  historie) — pokyn uživatele 2026-10-19, platí pro lab i revize-el. Co už je
+  v `main` pushnuté, se jen doplňuje dalšími commity; chybný commit se opraví
+  novým commitem (např. `git revert`), ne přepsáním. Commit `FUNKCE:`, do
+  kterého omylem padlo něco labového, se opraví commitem `LAB:`, který to
+  vrátí, a při přenosu se to vynechá.
 - Remote **`upstream`** = `revize-el` **jen pro čtení** (push URL je
   schválně nesmyslná `NEPUSHOVAT-do-revize-el`). **Z labu se do revize-el
   NIKDY nic nepushuje** — přenos dělá session nad revize-el (postup níž).
@@ -27,14 +33,14 @@ a skládá se z těchto LAB-only míst:
 | `index.html` — **jediný `<script>` hned za `<title>`** (blok „LAB — ODDĚLENÍ OD OSTRÉHO PROGRAMU") | běží před vším ostatním a obaluje API prohlížeče, takže zbytek `index.html` je **bajt po bajtu stejný jako v revize-el** |
 | `sw.js` | `CACHE_NAME = 'revize-el-lab-v…'`, `activate` maže jen `revize-el-lab-…`, čte se jen z vlastní cache (`zCache`) |
 | `manifest.json` | „Revize EL – LAB" / „Revize LAB", `id`/`start_url`/`scope` = `/revize-el-lab/`, oranžová ikona s nápisem LAB |
-| `testy/test-lab-oddeleni.js` | důkaz oddělení (40 kontrol, port 8930) |
+| `testy/test-lab-oddeleni.js` | důkaz oddělení (41 kontrol, port 8930) |
 | tahle sekce `CLAUDE.md` | |
 
 Co blok přesměruje (program sám pořád píše `revize_el_…`, `revize-el-db`…):
 
 | ostrý program | lab |
 |---|---|
-| localStorage / sessionStorage `revize_el_X` (store, autosave, novinky_seen, email_rezim, email_migrace, banner_dismissed, theme, view, form_archiv, form_archiv_sirka, archiv_razeni) | `revize_lab_X`; jiný klíč `K` → `revize_lab__K`; `key()`/`length`/`clear()` vidí a mažou jen labové |
+| localStorage / sessionStorage `revize_el_X` (store, autosave, novinky_seen, email_rezim, email_migrace, banner_dismissed, theme, view, form_archiv, form_archiv_sirka, archiv_razeni; v sessionStorage `obnova` — návrat na obrazovku po načtení stránky) | `revize_lab_X`; jiný klíč `K` → `revize_lab__K`; `key()`/`length`/`clear()` vidí a mažou jen labové |
 | událost `storage` | zápisy ostrého programu se zahodí, labové dostane program pod `revize_el_…` |
 | IndexedDB `revize-el-db` (i s odkazem na složku zálohy `backup_dir_handle`) | `revize-lab-db` (jiný název `N` → `revize-lab--N`) |
 | `BroadcastChannel('revize-el-store')` (hlídání dvou oken) | `revize-lab-store` |
