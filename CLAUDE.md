@@ -387,9 +387,30 @@ Hlášení uživatele: „program sám skočí na úvod, když jsem chvíli neak
 
 Po každém načtení program začínal na úvodu (`init()` nikam jinam nevedl).
 
+**Kompromis (pokyn uživatele 2026-10-19, po vyzkoušení pruhu):** nová verze
+se **načte sama, jen když technik nic nedělá** (`novaVerzeMuzeSama()`):
+obrazovka je v `NOVA_VERZE_KLIDNE` (úvod s archivem, nastavení, novinky,
+výběr podtypu, dlaždice a seznam dokumentů, plán) — tedy **není otevřená
+zpráva, dokument ani rozvaděč v editoru** — není otevřený dialog
+(`.modal-overlay.open`) ani kontextové menu, neběží hromadný tisk, **a navíc**
+je okno schované, nebo technik nepíše do pole a 1,5 s se ničeho nedotkl
+(`pointerdown`/`keydown`/`wheel`/`touchstart`). Jinak jen pruh „Načíst".
+Čekající verze (`__novaVerzeCeka`) se zkouší při `controllerchange`, při
+schování okna a každé 2 s — takže **po zavření zprávy a návratu na úvod se
+načte sama**. Před načtením se do `sessionStorage` zapíše
+`revize_el_aktualizovano` a po startu ukáže **jedna hláška „Program se
+aktualizoval na novou verzi."** (`novaVerzeHlaska()` na konci `init()`).
+Otevřený dialog se nezahodí ani při schovaném okně (mohl by v něm být
+rozepsaný odběratel).
+
+**Při té příležitosti opraveno:** `saveToArchiv()` mazal koncept, ale
+nerušil **čekající zápis konceptu** (`autoSaveTimer`, 1,5 s po psaní) —
+psaní těsně před uložením tak koncept za chvíli zapsalo znovu a příští start
+nabízel „Našla se neuložená rozepsaná zpráva", i když byla uložená.
+
 **Oprava (blok „NOVÁ VERZE A NÁVRAT NA OBRAZOVKU" před registrací workeru):**
 
-- **Na `controllerchange` se stránka NEOBNOVUJE** — ukáže se nenápadný pruh
+- **Na `controllerchange` se stránka sama neobnoví, pokud technik pracuje** (viz kompromis výš) — ukáže se nenápadný pruh
   dole **„Je k dispozici nová verze programu. [Načíst]"** (`#nova-verze`,
   `novaVerzePruh()`), obnoví se až po kliknutí (`novaVerzeNacist()`: dopíše
   koncept zprávy i dokument, zapíše polohu, pak `reload`). **První návštěva
@@ -413,10 +434,13 @@ Po každém načtení program začínal na úvodu (`init()` nikam jinam nevedl).
   Dokument tvorby dokumentace dopisuje `dokUlozitHned` (pagehide, už dřív).
 - **Přenést i do revize-el** (je to commit `FUNKCE:`).
 
-Test: `testy/test-obnova.js` (zpráva i záložka, psaní těsně před obnovením,
-pruh místo obnovení a „Načíst", dokončená zpráva, plán, nastavení s posunem,
-protokol, seznam dokumentů, rozvaděč s čerstvě vloženými přístroji, náhled
-PDF dokumentu, nové okno, první návštěva).
+Test: `testy/test-obnova.js` (21 kontrol — zpráva i záložka, psaní těsně
+před obnovením, pruh místo obnovení a „Načíst", dokončená zpráva, plán,
+nastavení s posunem, protokol, seznam dokumentů, rozvaděč s čerstvě
+vloženými přístroji, náhled PDF dokumentu; samočinné načtení: na úvodu ano,
+s otevřeným rozvaděčem / zprávou jen pruh i po schování okna, po zavření
+ano s hláškou, dialog a kurzor v poli ho odloží, rozepsaný text zůstane;
+nové okno, první návštěva).
 
 ## Zs mez — vyhodnocení impedance poruchové smyčky (blok `zsLim…`)
 
@@ -4804,8 +4828,9 @@ trafo, osvětlení…), sáhněte na tahle místa:
   nativního tažení běží normálně. Konec tažení hlásí prohlížeč jako (0,0),
   což se musí ignorovat, jinak seznam vystřelí nahoru.
 - ✅ **PWA auto-reload po update** — network-first pro HTML,
-  listener `controllerchange` → `location.reload()`. Uživatel
-  nemusí hard-reloadovat; cache bump v sw.js stačí.
+  listener `controllerchange` → načte se sama jen v klidu, jinak pruh
+  „Načíst" (od 2026-10-19, viz oddíl „Nová verze se jen nabídne…").
+  Uživatel nemusí hard-reloadovat; cache bump v sw.js stačí.
 
 - ✅ **Knihovna textů — ukládání části a vkládání na kurzor** (2026-08-20):
   `ulozitDoKnihovny` uloží **jen označený úsek** textarey, když v ní nějaký

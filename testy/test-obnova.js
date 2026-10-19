@@ -1,6 +1,9 @@
 // Nová verze a návrat na obrazovku po načtení stránky (hlášení 2026-10-19:
 // „program sám skočí na úvod, když jsem chvíli neaktivní").
-//  - nová verze (controllerchange) stránku NEOBNOVÍ, jen ukáže pruh „Načíst",
+//  - nová verze (controllerchange) se načte SAMA jen v klidu (úvod, seznam,
+//    nastavení, bez dialogu a psaní, nebo schované okno) — s otevřenou
+//    zprávou, dokumentem či rozvaděčem jen pruh „Načíst", i po schování okna;
+//    po zavření se načte sama a ukáže hlášku,
 //  - po načtení stránky v témže okně se vrátí obrazovka, otevřená zpráva
 //    i záložka, dokument tvorby dokumentace, rozvaděč, plán, posun,
 //  - rozepsané se neztratí (koncept zprávy i dokument se dopíšou hned),
@@ -120,6 +123,67 @@ const w = ms => new Promise(r => setTimeout(r, ms));
   await p.evaluate(async () => { await dokNahled(); }); await w(500); await nacti();
   s = await stav();
   check('náhled PDF dokumentu → po obnovení editor dokumentu', s.s === 'screen-dok-form', s.s);
+
+  // ── nová verze se načte sama jen v klidu (pokyn uživatele 2026-10-19) ──
+  const skryt = (ano) => p.evaluate((a) => {
+    window.__vis = a ? 'hidden' : 'visible';
+    if (!window.__visOver) { window.__visOver = 1; Object.defineProperty(document, 'visibilityState', { get: () => window.__vis || 'visible', configurable: true }); }
+    document.dispatchEvent(new Event('visibilitychange'));
+  }, ano);
+  const novaVerze = () => p.evaluate(() => { window.__porad = 'stejná stránka'; navigator.serviceWorker.dispatchEvent(new Event('controllerchange')); });
+  const cekejNacteni = (ms) => p.waitForNavigation({ timeout: ms }).then(() => true).catch(() => false);
+  const porad = () => p.evaluate(() => window.__porad === 'stejná stránka');
+
+  // rozvaděč v editoru (tam jsme po předchozí kontrole): jen pruh, ani schované okno nic
+  let nav = cekejNacteni(4500);
+  await novaVerze(); await w(500); await skryt(true);
+  let bylo = await nav; await skryt(false);
+  const rz = await p.evaluate(() => ({ s: document.querySelector('.screen.active').id, pruh: !!document.getElementById('nova-verze') }));
+  check('nová verze s otevřeným rozvaděčem: jen pruh, nic se neobnoví ani po schování okna', !bylo && await porad() && rz.s === 'screen-dok-form' && rz.pruh, JSON.stringify(rz));
+  // zavření (zpět na seznam) → načte se sama, hláška, návrat na seznam
+  nav = cekejNacteni(9000);
+  await p.evaluate(() => dokOtevritSeznam('rozv'));
+  bylo = await nav; await w(1400);
+  const po1 = await p.evaluate(() => ({ s: document.querySelector('.screen.active').id, porad: window.__porad,
+    hl: Array.from(document.querySelectorAll('.toast, #toast, [class*="toast"]')).map(e => e.textContent).join(' | '), n: DOK.dokumenty.length }));
+  check('po zavření rozvaděče se nová verze načte sama, vrátí se na seznam a ukáže hlášku', bylo && po1.porad === undefined && po1.s === 'screen-dok-seznam' &&
+    /aktualizoval na novou verzi/.test(po1.hl), JSON.stringify(po1));
+
+  // úvod: načte se sama
+  await p.evaluate(() => showScreen('home')); await w(1700);
+  nav = cekejNacteni(6000); await novaVerze(); bylo = await nav; await w(1400);
+  s = await stav();
+  check('nová verze na úvodu se načte sama (a zůstane se na úvodu)', bylo && s.s === 'screen-home', s.s);
+
+  // úvod s otevřeným dialogem / s kurzorem v poli: počká, pak se načte
+  await w(1700);
+  await p.evaluate(() => document.querySelector('.modal-overlay').classList.add('open'));
+  nav = cekejNacteni(3500); await novaVerze(); bylo = await nav;
+  const dlg = await porad();
+  nav = cekejNacteni(6000); await p.evaluate(() => document.querySelectorAll('.modal-overlay.open').forEach(o => o.classList.remove('open')));
+  const bylo2 = await nav; await w(1400);
+  check('otevřený dialog nové verzi zabrání, po zavření se načte', !bylo && dlg && bylo2);
+  await w(1700);
+  await p.focus('#archiv-search');
+  nav = cekejNacteni(3500); await novaVerze(); bylo = await nav;
+  const psani = await porad();
+  nav = cekejNacteni(6000); await p.evaluate(() => document.activeElement.blur());
+  const bylo3 = await nav; await w(1400);
+  check('kurzor v poli nové verzi zabrání, po odchodu z pole se načte', !bylo && psani && bylo3);
+
+  // rozepsaná zpráva: jen pruh, ani schované okno; text zůstane; po uložení a zavření se načte
+  await p.evaluate(async () => { novaZprava('elektro'); await new Promise(r => setTimeout(r, 200));
+    document.getElementById('f_ev_cislo').value = 'RE-26-0177'; });
+  await p.click('#f_misto'); await p.keyboard.type('Rozepsaný dům');
+  nav = cekejNacteni(4500); await novaVerze(); await w(500); await skryt(true);
+  bylo = await nav; await skryt(false);
+  const zp = await p.evaluate(() => ({ s: document.querySelector('.screen.active').id, misto: document.getElementById('f_misto').value, pruh: !!document.getElementById('nova-verze') }));
+  check('nová verze s otevřenou zprávou: jen pruh, nic se neobnoví ani po schování okna, text zůstane', !bylo && await porad() && zp.s === 'screen-form' && zp.misto === 'Rozepsaný dům' && zp.pruh, JSON.stringify(zp));
+  nav = cekejNacteni(9000);
+  await p.evaluate(() => { document.activeElement.blur(); saveToArchiv(); showScreen('home'); });
+  bylo = await nav; await w(1400);
+  const zp2 = await p.evaluate(() => ({ s: document.querySelector('.screen.active').id, z: (archiv.find(z => z.data && z.data.ev_cislo === 'RE-26-0177') || {}).data }));
+  check('po zavření zprávy se načte sama a rozepsaný text je uložený', bylo && zp2.s === 'screen-home' && zp2.z && zp2.z.misto === 'Rozepsaný dům', JSON.stringify({ bylo, s: zp2.s, misto: zp2.z && zp2.z.misto, dotazy }));
 
   // ── nové okno: nic se neobnovuje, koncept se nabízí dotazem jako dřív ──
   await p.evaluate(() => { localStorage.setItem('revize_el_autosave', JSON.stringify({ _t: new Date().toISOString(), uid: '', data: Object.assign(getData ? {} : {}, { typ: 'elektro', ev_cislo: 'RE-26-0199', misto: 'Koncept' }) })); });

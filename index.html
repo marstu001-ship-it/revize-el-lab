@@ -18880,7 +18880,10 @@ function saveToArchiv() {
   window.__formDirty = false; // právě uložené data
   window.__poslednUlozeno = new Date().toTimeString().slice(0, 5);   // do stavového řádku
   try { stavovyRadek(); } catch (e) {}
-  // Práce je v archivu — koncept pro obnovu po pádu už není potřeba
+  // Práce je v archivu — koncept pro obnovu po pádu už není potřeba.
+  // Čekající zápis konceptu (psaní těsně před uložením) se musí zrušit,
+  // jinak by ho za 1,5 s zapsal znovu a příští start by nabízel obnovu.
+  if (autoSaveTimer) { clearTimeout(autoSaveTimer); autoSaveTimer = null; }
   try { localStorage.removeItem('revize_el_autosave'); } catch(e) {}
   updateBreadcrumb();
   return true;
@@ -23693,6 +23696,7 @@ async function init() {
   });
   // Návrat tam, kde uživatel byl před načtením stránky (nová verze, uspaná karta)
   await obnovaObrazovky(obnova, draftObnoven);
+  novaVerzeHlaska();
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -31150,7 +31154,48 @@ async function obnovaObrazovky(st, draftObnoven) {
   if (st.y) setTimeout(function () { window.scrollTo(0, st.y); }, 60);
 }
 
-// Pruh „nová verze" — nenápadný, dole; nic se neobnoví samo.
+// Nová verze se načte SAMA, jen když technik nic nedělá (pokyn uživatele
+// 2026-10-19): není otevřená zpráva, dokument ani rozvaděč (obrazovka je
+// v NOVA_VERZE_KLIDNE), není otevřený dialog ani nabídka, neběží hromadný
+// tisk — a navíc je okno schované, nebo technik nepíše do pole a chvíli
+// se ničeho nedotkl. Jinak jen pruh „Načíst"; jakmile podmínky začnou platit
+// (zavře zprávu, schová okno), načte se sama. Po načtení jedna hláška.
+var NOVA_VERZE_KLIDNE = ['home', 'nastaveni', 'novinky', 'podtyp', 'dokumentace', 'dok-seznam', 'plan'];
+var NOVA_VERZE_HOTOVO = 'revize_el_aktualizovano';
+window.__novaVerzeCeka = false;
+var __novaVerzeAktivita = 0;
+['pointerdown', 'keydown', 'wheel', 'touchstart'].forEach(function (t) {
+  document.addEventListener(t, function () { __novaVerzeAktivita = Date.now(); }, { capture: true, passive: true });
+});
+function novaVerzeMuzeSama() {
+  var akt = document.querySelector('.screen.active');
+  var s = akt ? akt.id.replace(/^screen-/, '') : 'home';
+  if (NOVA_VERZE_KLIDNE.indexOf(s) < 0) return false;
+  if (window.__hromadnyTisk) return false;
+  if (document.querySelector('.modal-overlay.open, .kt-menu')) return false;
+  if (document.visibilityState === 'hidden') return true;
+  var f = document.activeElement;
+  if (f && f !== document.body && (f.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(f.tagName))) return false;
+  return Date.now() - __novaVerzeAktivita > 1500;
+}
+function novaVerzeZkusit() {
+  if (!window.__novaVerzeCeka || window.__novaVerzeNacita) return;
+  if (!novaVerzeMuzeSama()) { novaVerzePruh(); return; }
+  window.__novaVerzeNacita = true;
+  try { sessionStorage.setItem(NOVA_VERZE_HOTOVO, '1'); } catch (e) {}
+  novaVerzeNacist();
+}
+function novaVerzeHlaska() {
+  var v = null;
+  try { v = sessionStorage.getItem(NOVA_VERZE_HOTOVO); sessionStorage.removeItem(NOVA_VERZE_HOTOVO); } catch (e) {}
+  if (v) showToast('Program se aktualizoval na novou verzi.');
+}
+document.addEventListener('visibilitychange', function () {
+  if (document.visibilityState === 'hidden') novaVerzeZkusit();
+});
+setInterval(novaVerzeZkusit, 2000);
+
+// Pruh „nová verze" — nenápadný, dole (když se nová verze nemůže načíst sama).
 function novaVerzePruh() {
   if (document.getElementById('nova-verze')) return;
   var p = document.createElement('div');
@@ -31168,8 +31213,8 @@ async function novaVerzeNacist() {
   window.location.reload();
 }
 
-// Service Worker — offline podpora (PWA). Nová verze se jen NABÍDNE
-// (pruh „Načíst"), stránka se sama neobnovuje — viz oddíl výš.
+// Service Worker — offline podpora (PWA). Nová verze se načte sama jen
+// v klidu, jinak se NABÍDNE pruhem „Načíst" — viz oddíl výš.
 if ('serviceWorker' in navigator) {
   // Bez řídicího workeru = první návštěva: worker se teprve instaluje
   // a stránka je už nejnovější, takže jeho převzetí není nová verze.
@@ -31177,7 +31222,8 @@ if ('serviceWorker' in navigator) {
   navigator.serviceWorker.register('./sw.js').catch(function() {});
   navigator.serviceWorker.addEventListener('controllerchange', function() {
     if (!swMelKontrolu) { swMelKontrolu = true; return; }
-    novaVerzePruh();
+    window.__novaVerzeCeka = true;
+    novaVerzeZkusit();
   });
 }
 
