@@ -1663,7 +1663,7 @@ html.dark .rz-polozka.vybrana{background:#3d3410}
 .rz-lista{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem .9rem;margin-bottom:.5rem;font-size:.82rem}
 .rz-skrin-n{flex:1 1 220px;min-width:0;color:var(--muted);overflow-wrap:anywhere}
 .rz-volno b{color:#0f7b5f}
-.rz-zoom{display:flex;gap:.3rem}
+.rz-zoom{display:flex;flex-wrap:wrap;gap:.3rem}
 .rz-banner{background:#fff3c4;border:1px solid #e0a800;color:#5f4a12;padding:.45rem .7rem;margin-bottom:.5rem;font-size:.84rem;border-radius:3px}
 html.dark .rz-banner{background:#3d3410;color:#f0d78a}
 .rz-chyba{background:#fdecea;border:1px solid #e6a59d;color:#9b2c1f;padding:.45rem .7rem;margin-bottom:.5rem;font-size:.84rem;border-radius:3px;font-weight:600}
@@ -30036,7 +30036,10 @@ function rozvPohledVykreslit() {
       '<span class="rz-skrin-n" title="' + esc(rozvNazev(sk)) + '">🗄 ' + esc(rozvNazev(sk)) + '</span>' +
       '<span class="rz-volno">Volné místo: <b>' + esc(rozvCisloText(Math.max(0, v.volno))) + ' / ' + v.celkem + ' modulů</b></span>' +
       '<span class="rz-zoom"><button class="dok-mini" data-action="tdRZoom" data-z="-" title="Zmenšit">－</button>' +
-        '<button class="dok-mini" data-action="tdRZoom" data-z="+" title="Zvětšit">＋</button></span>' +
+        '<button class="dok-mini" data-action="tdRZoom" data-z="+" title="Zvětšit">＋</button>' +
+        // Přečíslování natrvalo vedle zoomu (pokyn uživatele 2026-10-19 — ve
+        // vlastnostech bez výběru ho starší technik nenašel)
+        '<button class="dok-mini rz-precislovat" data-action="tdRPrecislovat" title="Označení podle pořadí v řadách zleva doprava: -QM1, -FA1, -FA2… (jde vzít zpět)">🔢 Přečíslovat označení</button></span>' +
     '</div>';
   if (vybrany || presun) {
     h += '<div class="rz-banner">' + (vybrany
@@ -30227,7 +30230,6 @@ function rozvVlastnostiVykreslit() {
       (__rz.skrin ? '<div class="rp-souhrn">🗄 <b>' + esc(rozvNazev(__rz.skrin)) + '</b><br>' + __rz.rady.length + ' × ' + __rz.skrin.modulu + ' modulů · přístrojů ' + pocet +
         ' · volno ' + esc(rozvCisloText(Math.max(0, v.volno))) + ' M</div>' : '') +
       '<div class="dk-pozn">Klepněte na přístroj v čelním pohledu — tady pak vyplníte název vývodu, fázi a kabel.</div>' +
-      (pocet ? '<button class="add-row" data-action="tdRPrecislovat" title="Označení podle pořadí v řadách zleva doprava: -QM1, -FA1, -FA2…">🔢 Přečíslovat označení</button>' : '') +
       (__rz.skrin ? '<button class="add-row" data-action="tdRSkrinVymenit">🗄 Vyměnit skříň</button>' : '');
     return;
   }
@@ -30473,7 +30475,8 @@ function rozvKontextPolozky(uid) {
     pol.push({ popis: 'Přesunout do řady ' + (i + 1), oddel: prvni, fn: function () { rozvPresunout(uid, i, __rz.rady[i].prvky.length); } });
     prvni = false;
   });
-  pol.push({ popis: 'Smazat', klavesa: 'Delete', oddel: true, fn: function () { rozvSmazat(uid); } });
+  pol.push({ popis: '🔢 Přečíslovat označení', oddel: true, fn: function () { rozvPrecislovat(); } });
+  pol.push({ popis: 'Smazat', klavesa: 'Delete', fn: function () { rozvSmazat(uid); } });
   return pol;
 }
 

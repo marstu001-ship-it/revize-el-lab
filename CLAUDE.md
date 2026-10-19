@@ -783,7 +783,10 @@ a prohlášení (hlavička + `skrin` + `p`). `data.model = 1`.
 - **Označení** automaticky `předpona + (max + 1)` podle kategorie
   (`rozvDalsiOzn`; -FI/FA má vlastní řadu, AFDD sdílí -FA); jde přepsat
   ve vlastnostech; **„🔢 Přečíslovat označení"** = podle pořadí v řadách
-  zleva doprava, každá předpona od 1 (se ZPĚT).
+  zleva doprava, každá předpona od 1 (se ZPĚT). Tlačítko je **natrvalo
+  v liště nad čelním pohledem vedle − / ＋** (i s vybraným přístrojem)
+  a v kontextovém menu přístroje pod čarou před Smazat — ve vlastnostech
+  bez výběru ho starší technik nenašel (pokyn uživatele 2026-10-19).
 - **Nadřazený chránič** (`rozvNadrazeneAuto`, běží v každé `rozvZmena`):
   jistič a AFDD (`ROZV_NADR_AUTO`) automaticky pod nejbližším **FI vlevo ve
   stejné řadě**; ve vlastnostech jde zvolit ručně (`nadrRucne`) i „žádný
@@ -803,7 +806,7 @@ a prohlášení (hlavička + `skrin` + `p`). `data.model = 1`.
   Název vývodu), Duplikovat · Ctrl+D, Kopírovat · Ctrl+C, Vložit za něj ·
   Ctrl+V (bez schránky šedá — `ktOtevrit` nově umí `vypnuto` a `klavesa`),
   Vložit rezervu vedle (1 M), Přesunout do řady N (každá jiná řada, na
-  konec), Smazat · Delete. **Schránka `__rzSchranka` je v paměti** (kopie
+  konec), 🔢 Přečíslovat označení, Smazat · Delete. **Schránka `__rzSchranka` je v paměti** (kopie
   přístroje), takže jde vložit i do jiného rozvaděče; Ctrl+V s vybraným
   přístrojem vkládá za něj, bez výběru na konec vybrané řady; vložená kopie
   dostane nové `uid` a další volné označení. Klávesy platí, jen když se

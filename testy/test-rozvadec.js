@@ -565,7 +565,7 @@ function pomocnik() {
   const m1 = await menu();
   const vyb1 = await p.evaluate(() => (rozvNajit(__rz.vyber) || { x: {} }).x.ozn);
   check('pravý klik na přístroj: menu programu se stejnými akcemi jako panel + schránka a rezerva, přístroj se vybere',
-    vyb1 === '-FA1' && m1 && m1.join('|') === 'Vlastnosti|Duplikovat|Kopírovat|(Vložit za něj)|Vložit rezervu vedle|Přesunout do řady 2|Přesunout do řady 3|Smazat', vyb1 + ' · ' + (m1 || []).join('|'));
+    vyb1 === '-FA1' && m1 && m1.join('|') === 'Vlastnosti|Duplikovat|Kopírovat|(Vložit za něj)|Vložit rezervu vedle|Přesunout do řady 2|Přesunout do řady 3|🔢 Přečíslovat označení|Smazat', vyb1 + ' · ' + (m1 || []).join('|'));
   const kl = await p.evaluate(() => Array.from(document.querySelectorAll('.kt-menu .kt-kl')).map(x => x.textContent).join(','));
   check('menu ukazuje klávesy (Ctrl+D, Ctrl+C, Ctrl+V, Delete) a má vzhled menu tabulky měření', kl === 'Ctrl+D,Ctrl+C,Ctrl+V,Delete' &&
     await p.evaluate(() => document.querySelector('.kt-menu').className === 'kt-menu' && !!document.querySelector('.kt-menu .kt-pata')), kl);
@@ -607,6 +607,22 @@ function pomocnik() {
   await p.evaluate(() => { __rz.vyber = __rz.rady[0].prvky[1].uid; rozvVlastnostiVykreslit(); document.querySelector('#rz-vlastnosti [data-rp2="vyvod"]').focus(); });
   await p.keyboard.press('Control+v'); await w(120);
   check('Ctrl+V při psaní do pole nevkládá přístroj', (await rada(0)) === '-FI1,-FA1,-FA4');
+  // Přečíslovat: tlačítko natrvalo v liště nad pohledem (i s vybraným přístrojem) a v menu
+  const pl = await p.evaluate(() => { __rz.vyber = __rz.rady[0].prvky[1].uid; rozvPohledVykreslit(); rozvVlastnostiVykreslit();
+    const b = document.querySelector('#rz-pohled .rz-lista [data-action="tdRPrecislovat"]'), z = document.querySelector('#rz-pohled .rz-lista .rz-zoom');
+    return { vidi: !!b && b.offsetHeight > 0, uZoomu: !!b && z.contains(b), text: b && b.textContent, vlast: !!document.querySelector('#rz-vlastnosti [data-action="tdRPrecislovat"]') }; });
+  check('🔢 Přečíslovat označení je natrvalo v liště vedle − / ＋, i s vybraným přístrojem', pl.vidi && pl.uZoomu && pl.text === '🔢 Přečíslovat označení', JSON.stringify(pl));
+  const pr0 = await p.evaluate(() => [0, 1, 2].map(__T.rada).join(' / '));
+  await p.click('#rz-pohled .rz-lista [data-action="tdRPrecislovat"]'); await w(120);
+  const pr1 = await p.evaluate(() => [0, 1, 2].map(__T.rada).join(' / '));
+  await p.evaluate(() => document.activeElement && document.activeElement.blur());
+  await p.keyboard.press('Control+z'); await w(120);
+  const pr2 = await p.evaluate(() => [0, 1, 2].map(__T.rada).join(' / '));
+  await pk(0, 4.5); await klikMenu('🔢 Přečíslovat označení');
+  const pr3 = await p.evaluate(() => [0, 1, 2].map(__T.rada).join(' / '));
+  await p.keyboard.press('Control+z'); await w(120);
+  check('Přečíslovat z lišty i z menu přečísluje, Ctrl+Z vrátí', pr1 !== pr0 && /^-FI1,-FA1,-FA2 \/ -FA3,REZ,-FA4,-FI2 \/ -FA5,-FI3$/.test(pr1) && pr2 === pr0 && pr3 === pr1,
+    pr0 + ' → ' + pr1 + ' → ' + pr2 + ' | menu ' + pr3);
   // Shift + pravý klik = nabídka prohlížeče, pravý klik mimo přístroj nic
   await p.evaluate(() => document.activeElement.blur());
   const sh = await p.evaluate(() => { const q = __T.bod(0, 4.5), el = document.elementFromPoint(q.x, q.y);
@@ -745,7 +761,7 @@ function pomocnik() {
       r.vyska = m ? Math.min.apply(null, Array.from(m.querySelectorAll('.kt-pol')).map(b => b.getBoundingClientRect().height)) : 0;
       ktZavrit(); return r;
     });
-    check('telefon: dlouhý stisk prstem na přístroji otevře totéž menu (položky ≥ 40 px)', /^Vlastnosti\|Duplikovat\|Kopírovat\|Vložit za něj\|Vložit rezervu vedle\|Přesunout do řady 1\|Smazat$/.test(dl.menu) &&
+    check('telefon: dlouhý stisk prstem na přístroji otevře totéž menu (položky ≥ 40 px)', /^Vlastnosti\|Duplikovat\|Kopírovat\|Vložit za něj\|Vložit rezervu vedle\|Přesunout do řady 1\|🔢 Přečíslovat označení\|Smazat$/.test(dl.menu) &&
       dl.vyber === '-FI1' && dl.vyska >= 40, JSON.stringify(dl));
     const infoT = await t.evaluate(() => { const e = document.querySelector('.rz-knihovna .rz-info-knihovna'); e.scrollIntoView({ block: 'center' });
       const r = e.getBoundingClientRect(), cs = getComputedStyle(e);
