@@ -664,6 +664,16 @@ a prohlášení (hlavička + `skrin` + `p`). `data.model = 1`.
   a v záloze (`dokZalohaData`). Oblíbené jdou v seznamu nahoru a do
   rychlého přidání; **rychlé přidání** = `ROZV_NEJCASTEJSI` (B10 1P, B16 1P,
   C16 1P, B25 3P, chránič 40 A/30 mA 4P, hlavní vypínač 3P, rezerva 1 M).
+- **Informační pruh nahoře v knihovně** (pokyn uživatele 2026-10-19,
+  `ROZV_INFO_KNIHOVNA`, `rozvInfoKnihovnaHtml`) — v editoru nad kartami
+  Přístroje/Skříně i ve správě knihovny na seznamu, text doslova:
+  „Knihovna obsahuje jen obecné přístroje. Skříně a přístroje konkrétních
+  výrobců (OEZ, ABB, Eaton, Hager…) vám pošle Martin – stačí mu napsat.
+  Z licenčních důvodů nejsou součástí programu. Soubor pak stačí přetáhnout
+  sem." **Zavřít nejde** (záměr). Pruh je zároveň plocha pro přetažení
+  souboru (`.rz-drop-cil`, tytéž posluchače jako `#rz-drop`) a v editoru má
+  „📂 Vybrat soubor…" (na telefonu přetáhnout nejde). Klidná modrá
+  (`#e8f1fb`, levý pruh `--accent2`), písmo jako text, na telefonu celý.
 - **Skříň** se vybírá „Použít" na kartě Skříně (`rozvSkrinNastavit`);
   výměna se ptá a přístroje z řad navíc přesune na konec poslední řady.
 - **Každá změna skříně a přístrojů jde přes `rozvZmena(popis, fn)`** —

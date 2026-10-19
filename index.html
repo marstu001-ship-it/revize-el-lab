@@ -1700,6 +1700,13 @@ body.rz-tahne,body.rz-tahne *{cursor:grabbing!important;user-select:none!importa
 .rz-pdf-tab td.c{text-align:center}
 .rz-pdf-tab small{color:#555}
 .rz-pdf-pozn{font-size:8pt;color:#444;margin-top:1mm}
+.rz-info-knihovna{display:flex;gap:.6rem;align-items:flex-start;background:#e8f1fb;border:1px solid #b9d0ec;border-left:4px solid #2B579A;
+  color:#1f3a5f;font-size:.84rem;line-height:1.5;padding:.6rem .8rem;margin:0 0 .8rem;border-radius:3px}
+.rz-info-vybrat{display:inline-block;margin-top:.35rem}
+.rz-info-knihovna.nad{background:#d6e7fa;border-color:#2B579A}
+.rz-info-ikona{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:1.35rem;height:1.35rem;border-radius:50%;
+  background:#2B579A;color:#fff;font-weight:700;font-size:.8rem;margin-top:.05rem}
+html.dark .rz-info-knihovna{background:#1e2b3f;border-color:#34507a;color:#c8daf3}
 .rz-sprava-akce{display:flex;flex-wrap:wrap;gap:0 .5rem}
 .rz-drop{border:2px dashed var(--border-dark);border-radius:4px;padding:1rem;margin:.6rem 0 .4rem;text-align:center;font-size:.86rem;color:var(--text);background:var(--bg)}
 .rz-drop.nad{border-color:#0f7b5f;background:#e6f2ec}
@@ -29549,8 +29556,21 @@ function rozvUnikatni(seznam, k) {
 
 // ── Panel knihovny (vlevo v editoru) ─────────────────────────────────────
 // `data-dk-mimo` = psaní do filtrů není změna dokumentu (neukládá se).
+// Informační pruh nahoře v knihovně (pokyn uživatele 2026-10-19). Je to
+// zároveň plocha pro přetažení souboru — „soubor pak stačí přetáhnout sem"
+// musí platit, ať pruh stojí kdekoli. Zavřít nejde (záměr).
+var ROZV_INFO_KNIHOVNA = 'Knihovna obsahuje jen obecné přístroje. Skříně a přístroje konkrétních výrobců (OEZ, ABB, Eaton, Hager…) ' +
+  'vám pošle Martin – stačí mu napsat. Z licenčních důvodů nejsou součástí programu. Soubor pak stačí přetáhnout sem.';
+function rozvInfoKnihovnaHtml(sVyberem) {
+  // V editoru má pruh i „Vybrat soubor…" — na telefonu soubor přetáhnout nejde.
+  return '<div class="rz-info-knihovna rz-drop-cil" role="note"><span class="rz-info-ikona" aria-hidden="true">ℹ</span>' +
+    '<span>' + esc(ROZV_INFO_KNIHOVNA) +
+    (sVyberem ? ' <button class="dok-mini rz-info-vybrat" data-action="tdRImportVybratEd" title="Načíst soubor s přístroji a skříněmi (CSV nebo JSON)">📂 Vybrat soubor…</button>' +
+      '<input type="file" id="rz-import-soubor-ed" accept=".csv,.json,.txt,text/csv,application/json" hidden>' : '') + '</span></div>';
+}
+
 function rozvKnihovnaPanelHtml() {
-  return '<div class="rz-tabs" role="tablist">' +
+  return rozvInfoKnihovnaHtml(true) + '<div class="rz-tabs" role="tablist">' +
       '<button class="rz-tab" data-action="tdRTab" data-tab="pristroje">🔌 Přístroje</button>' +
       '<button class="rz-tab" data-action="tdRTab" data-tab="skrine">🗄 Skříně</button></div>' +
     '<div class="rz-rychle" id="rz-rychle"></div>' +
@@ -30557,7 +30577,7 @@ function rozvSpravaVykreslit() {
   var box = document.getElementById('rz-sprava'); if (!box) return;
   var vest = rozvVestavene(), moje = (DOK.rozvKnihovna || []).map(function (x) { return rozvPolozkaNorm(x); });
   var n = function (s, d) { return s.filter(function (x) { return x.druh === d; }).length; };
-  box.innerHTML = '<div class="dk-pozn">Vestavěno: ' + n(vest, 'pristroj') + ' obecných přístrojů a ' + n(vest, 'skrin') + ' skříní ' +
+  box.innerHTML = rozvInfoKnihovnaHtml() + '<div class="dk-pozn">Vestavěno: ' + n(vest, 'pristroj') + ' obecných přístrojů a ' + n(vest, 'skrin') + ' skříní ' +
     '(bez dat výrobců, neověřené). Vaše položky: ' + moje.length + '. Knihovna je jen ve vašem prohlížeči a jde do zálohy.</div>' +
     '<div class="rz-sprava-akce">' +
       '<button class="add-row" data-action="tdRVlastniPristroj">＋ Vlastní přístroj</button>' +
@@ -30875,25 +30895,26 @@ TD_AKCE.tdRExport = async function () {
   ulozitSoubor(new Blob([JSON.stringify(d, null, 1)], { type: 'application/json' }), 'Knihovna_rozvadecu_' + new Date().toISOString().slice(0, 10) + '.json');
 };
 TD_AKCE.tdRImportVybrat = function () { var i = document.getElementById('rz-import-soubor'); if (i) { i.value = ''; i.click(); } };
+TD_AKCE.tdRImportVybratEd = function () { var i = document.getElementById('rz-import-soubor-ed'); if (i) { i.value = ''; i.click(); } };
 document.addEventListener('change', function (e) {
-  if (e.target && e.target.id === 'rz-import-soubor' && e.target.files && e.target.files[0]) rozvImportSoubor(e.target.files[0]);
+  if (e.target && /^rz-import-soubor(-ed)?$/.test(e.target.id) && e.target.files && e.target.files[0]) rozvImportSoubor(e.target.files[0]);
 });
 // Přetažení souboru na vyznačenou plochu — nesmí propadnout do obecného
 // importu (ten by soubor bral jako zálohu nebo zprávu).
 ['dragenter', 'dragover'].forEach(function (typ) {
   document.addEventListener(typ, function (e) {
-    var z = e.target && e.target.closest && e.target.closest('#rz-drop');
+    var z = e.target && e.target.closest && e.target.closest('#rz-drop, .rz-drop-cil');
     if (!z || !dragMaSoubor(e)) return;
     e.preventDefault(); e.stopPropagation();
     z.classList.add('nad'); showDropOverlay(false);
   });
 });
 document.addEventListener('dragleave', function (e) {
-  var z = e.target && e.target.closest && e.target.closest('#rz-drop');
+  var z = e.target && e.target.closest && e.target.closest('#rz-drop, .rz-drop-cil');
   if (z && !z.contains(e.relatedTarget)) z.classList.remove('nad');
 });
 document.addEventListener('drop', function (e) {
-  var z = e.target && e.target.closest && e.target.closest('#rz-drop');
+  var z = e.target && e.target.closest && e.target.closest('#rz-drop, .rz-drop-cil');
   if (!z) return;
   e.preventDefault(); e.stopPropagation();
   z.classList.remove('nad'); __dropDepth = 0; showDropOverlay(false);

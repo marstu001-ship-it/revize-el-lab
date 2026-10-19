@@ -178,6 +178,29 @@ function pomocnik() {
   const filtrNeuklada = await p.evaluate(() => !window.__dokOtevreny.ulozen && DOK.dokumenty.length === 0);
   check('psaní do filtrů ani hvězdička rozvaděč neuloží (není změna dokumentu)', filtrNeuklada);
 
+  // ── 3a. informační pruh v knihovně ────────────────────────────────────
+  const INFO = 'Knihovna obsahuje jen obecné přístroje. Skříně a přístroje konkrétních výrobců (OEZ, ABB, Eaton, Hager…) vám pošle Martin – stačí mu napsat. Z licenčních důvodů nejsou součástí programu. Soubor pak stačí přetáhnout sem.';
+  const info = await p.evaluate(() => {
+    const ed = document.querySelector('.rz-knihovna .rz-info-knihovna');
+    const r = { text: ed ? ed.innerText.replace(/\s+/g, ' ').replace(/^ℹ ?/, '').replace(/ 📂 Vybrat soubor…$/, '').trim() : '',
+                vybrat: !!(ed && ed.querySelector('[data-action="tdRImportVybratEd"]')), nahore: !!ed && ed === document.querySelector('.rz-knihovna').firstElementChild,
+                tlacitka: ed ? ed.querySelectorAll('button:not([data-action="tdRImportVybratEd"])').length : -1, vidno: !!ed && ed.offsetHeight > 30 };
+    return r;
+  });
+  check('knihovna v editoru: nahoře informační pruh s textem o přístrojích výrobců od Martina, bez zavírání', info.text === INFO && info.nahore && info.tlacitka === 0 && info.vidno && info.vybrat, info.text);
+  const infoDrop = await p.evaluate(async () => {
+    const z = document.querySelector('.rz-knihovna .rz-info-knihovna');
+    const dt = new DataTransfer(); dt.items.add(new File(['kategorie;typ;sirka_moduly\nKA;VV-KA-1;1\n'], 'rele.csv', { type: 'text/csv' }));
+    z.dispatchEvent(new DragEvent('dragover', { dataTransfer: dt, bubbles: true, cancelable: true }));
+    const nad = z.classList.contains('nad');
+    z.dispatchEvent(new DragEvent('drop', { dataTransfer: dt, bubbles: true, cancelable: true }));
+    await __T.w(300);
+    const r = { nad, open: document.getElementById('modal-rz-import').classList.contains('open'), text: document.getElementById('rz-import-obsah').innerText };
+    TD_AKCE.tdRImportZavrit();
+    return r;
+  });
+  check('soubor přetažený na pruh v editoru otevře náhled importu („přetáhnout sem" platí)', infoDrop.nad && infoDrop.open && /Načte se 1/.test(infoDrop.text), infoDrop.text.slice(0, 60));
+
   // ── 3b. vlastní přístroj a skříň ──────────────────────────────────────
   await p.evaluate(() => { window.ulozitSoubor = (blob, name) => { window.__ul = { blob, name }; return Promise.resolve(true); }; });
   const vl = await p.evaluate(async () => {
@@ -299,6 +322,9 @@ function pomocnik() {
     return r;
   });
   check('přetažení CSV na vyznačenou plochu: náhled importu, ne obecný import zálohy', drop.nad && drop.open && /Načte se 1/.test(drop.text) && !drop.obecny, drop.text.slice(0, 80));
+  const infoSpr = await p.evaluate(() => { const e = document.querySelector('#rz-sprava .rz-info-knihovna');
+    return e && e === document.getElementById('rz-sprava').firstElementChild ? e.innerText.replace(/\s+/g, ' ').replace(/^ℹ ?/, '').trim() : ''; });
+  check('správa knihovny na seznamu: tentýž pruh úplně nahoře', infoSpr === INFO, infoSpr);
   check('správa knihovny: vaše položky se zdrojem vlastní / import', /Vaše položky: 6/.test(drop.sprava) && /VV-KM-1/.test(drop.sprava) && /import/i.test(drop.sprava) && /vlastní/i.test(drop.sprava),
     drop.sprava.replace(/\n/g, ' | '));
   const smaz = await p.evaluate(async () => {
@@ -721,6 +747,10 @@ function pomocnik() {
     });
     check('telefon: dlouhý stisk prstem na přístroji otevře totéž menu (položky ≥ 40 px)', /^Vlastnosti\|Duplikovat\|Kopírovat\|Vložit za něj\|Vložit rezervu vedle\|Přesunout do řady 1\|Smazat$/.test(dl.menu) &&
       dl.vyber === '-FI1' && dl.vyska >= 40, JSON.stringify(dl));
+    const infoT = await t.evaluate(() => { const e = document.querySelector('.rz-knihovna .rz-info-knihovna'); e.scrollIntoView({ block: 'center' });
+      const r = e.getBoundingClientRect(), cs = getComputedStyle(e);
+      return { l: Math.round(r.left), r: Math.round(r.right), h: Math.round(r.height), fs: parseFloat(cs.fontSize), cely: e.scrollWidth <= e.clientWidth + 1 && e.scrollHeight <= e.clientHeight + 1 }; });
+    check('telefon: informační pruh je celý vidět (v šířce displeje, nic neuříznuté)', infoT.l >= 0 && infoT.r <= 375 && infoT.h > 60 && infoT.fs >= 13 && infoT.cely, JSON.stringify(infoT));
     const ozn = await t.evaluate(() => { const svg = document.querySelector('#rz-pohled .rz-svg'), r = svg.getBoundingClientRect(), vb = svg.viewBox.baseVal; return r.width / vb.width; });
     check('telefon: čelní pohled čitelný (aspoň 2,3 px na mm, posouvá se ve svém rámečku)', ozn >= 2.29, ozn.toFixed(2));
     check('telefon: žádná chyba na stránce', err2.length === 0, err2.join(' | '));
