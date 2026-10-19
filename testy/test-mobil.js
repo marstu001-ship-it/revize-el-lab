@@ -478,7 +478,20 @@ function vsechnyStavy(zalozky) {
   add('rozvaděč – seznam, knihovna rozbalená', 'Tvorba dokumentace', E(async () => {
     dokOtevritSeznam('rozv'); await __M.w(100); document.getElementById('dok-knihovna-karta').open = true; await __M.w(100);
   }));
+  add('rozvaděč – správa knihovny s importem výrobce', 'Tvorba dokumentace', E(async () => {
+    // vymyšlený výrobce, jen v paměti (nic se neukládá)
+    DOK.rozvKnihovna = [];
+    for (let i = 0; i < 70; i++) DOK.rozvKnihovna.push({ id: 'u-m' + i, druh: 'pristroj', kat: i % 5 ? 'FA' : 'FI', nazev: '', vyrobce: 'Výrobce A',
+      typ: 'A-' + i, poly: '1', In: 16, char: 'B', sirka: 1, zdroj: 'import' });
+    dokOtevritSeznam('rozv'); await __M.w(100); document.getElementById('dok-knihovna-karta').open = true;
+    const e = document.querySelector('#rz-sprava .rz-sf[data-sf="vyrobce"]'); e.value = 'Výrobce A'; e.dispatchEvent(new Event('change', { bubbles: true }));
+    document.querySelector('#rz-sprava .rz-sf-radek').scrollIntoView({ block: 'start' }); await __M.w(100);
+  }));
   add('rozvaděč – editor', 'Tvorba dokumentace', E(async () => { await __M.rozv(); }));
+  add('rozvaděč – filtry knihovny, Jističe', 'Tvorba dokumentace', E(async () => {
+    await __M.rozv(); document.querySelector('#rz-filtry-hlavni .rz-skup[data-k="FA"]').click();
+    document.getElementById('rz-filtry-hlavni').scrollIntoView({ block: 'start' }); await __M.w(100);
+  }));
   add('rozvaděč – editor, hlavička a filtry rozbalené', 'Tvorba dokumentace', E(async () => {
     await __M.rozv(); document.querySelector('.rz-hlavicka').open = true; document.getElementById('rz-filtry').open = true; await __M.w(100);
   }));

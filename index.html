@@ -1640,6 +1640,21 @@ html.dark .rz-chip{background:#1e3328;color:#9fd8b8}
 .rz-f-l>span{flex:0 0 6.5rem}
 .rz-f-l select{flex:1 1 auto;width:auto;font-size:.8rem;padding:.25rem .4rem}
 .rz-f-check{gap:.35rem;color:var(--text)}
+.rz-filtry-hlavni{margin-bottom:.3rem}
+.rz-skupiny{display:flex;flex-wrap:wrap;gap:.25rem;margin-bottom:.35rem}
+.rz-skup{font-family:var(--sans);font-size:.74rem;padding:.22rem .5rem;border:1px solid var(--border-dark);background:var(--surface);
+  color:var(--text);border-radius:12px;cursor:pointer}
+.rz-skup:hover{border-color:var(--accent2)}
+.rz-skup.akt{background:var(--accent2);border-color:var(--accent2);color:#fff;font-weight:600}
+.rz-f-mrizka{display:grid;grid-template-columns:repeat(auto-fill,minmax(7.2rem,1fr));gap:.1rem .45rem}
+.rz-f-mrizka .rz-f-l{flex-direction:column;align-items:stretch;gap:.1rem;margin:.15rem 0}
+.rz-f-mrizka .rz-f-l>span{flex:0 0 auto}
+.rz-f-mrizka .rz-f-l select{width:100%}
+.rz-odkaz{background:none;border:none;padding:0;font:inherit;color:var(--accent2);text-decoration:underline;cursor:pointer}
+.rz-vice{display:block;width:100%;margin:.3rem 0}
+.rz-sf-radek{display:flex;flex-wrap:wrap;gap:.2rem 1rem;margin:.3rem 0}
+.rz-sf-radek .rz-f-l>span{flex:0 0 auto}
+.rz-sf-radek .rz-f-l select{min-width:10rem}
 .rz-kn-pocet{font-size:.72rem;color:var(--muted);margin:.2rem 0}
 .rz-seznam{max-height:520px;overflow-y:auto;border-top:1px solid var(--border)}
 .rz-polozka{display:flex;align-items:center;gap:.45rem;padding:.35rem .2rem;border-bottom:1px solid var(--border);cursor:grab;
@@ -29516,7 +29531,24 @@ function rozvZdrojText(it) {
 function rozvSirkaText(s) { return s === '' ? '?' : rozvCisloText(s) + ' M'; }
 
 // ── Filtry knihovny (jen v paměti — je to pohled, ne data) ───────────────
-var __rzF = { tab: 'pristroje', q: '', kat: '', vyrobce: '', poly: '', In: '', char: '', idn: '', moduly: '', provedeni: '', overene: false };
+// Pokyn uživatele 2026-10-19: sbalené filtry technik nenašel, a s importem
+// výrobců (stovky položek) je knihovna bez nich nepoužitelná. Kategorie jako
+// řada tlačítek a výrobce, póly, In, charakteristika jsou VŽDY vidět; sbalené
+// („Další filtry") jen IΔn, typ chrániče, jen ověřené, jen oblíbené. Seznam
+// se kreslí po ROZV_STRANKA řádcích („Zobrazit další").
+var ROZV_STRANKA = 50;
+var ROZV_KAT_SKUPINY = [
+  { k: '', nazev: 'Vše' }, { k: 'FA', nazev: 'Jističe', kat: ['FA'] }, { k: 'FI', nazev: 'Chrániče', kat: ['FI'] },
+  { k: 'FIFA', nazev: 'RCBO', kat: ['FIFA'] }, { k: 'AFDD', nazev: 'AFDD', kat: ['AFDD'] }, { k: 'SPD', nazev: 'SPD', kat: ['SPD'] },
+  { k: 'QM', nazev: 'Hl. vypínače', kat: ['QM'] }, { k: 'FU', nazev: 'Pojistky', kat: ['FU'] },
+  { k: 'jine', nazev: 'Ostatní', kat: ['KM', 'KT', 'KA', 'PJ', 'HL', 'SF', 'X', 'REZ'] }
+];
+function rozvSkupina(k) { for (var i = 0; i < ROZV_KAT_SKUPINY.length; i++) if (ROZV_KAT_SKUPINY[i].k === k) return ROZV_KAT_SKUPINY[i]; return null; }
+function rozvFiltrVychozi(tab) {
+  return { tab: tab || 'pristroje', q: '', skup: '', kat: '', vyrobce: '', poly: '', In: '', char: '', idn: '', rcdTyp: '',
+    overene: false, oblibene: false, rady: '', modulu: '', provedeni: '', material: '', limit: ROZV_STRANKA };
+}
+var __rzF = rozvFiltrVychozi('pristroje');
 
 function rozvNorm(s) { return String(s == null ? '' : s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/×/g, 'x'); }
 
@@ -29526,16 +29558,24 @@ function rozvFiltrovat(vse, f) {
   return vse.filter(function (it) {
     if (it.druh !== druh) return false;
     if (f.overene && !it.overeno) return false;
+    if (f.oblibene && !rozvOblibena(it.id)) return false;
     if (f.vyrobce && it.vyrobce !== f.vyrobce) return false;
+    var je = function (k) { return f[k] !== '' && f[k] != null; };
     if (druh === 'pristroj') {
+      var sk = f.skup ? rozvSkupina(f.skup) : null;
+      if (sk && sk.kat && sk.kat.indexOf(it.kat) === -1) return false;
       if (f.kat && it.kat !== f.kat) return false;
       if (f.poly && it.poly !== f.poly) return false;
-      if (f.In !== '' && f.In != null && String(it.In) !== String(f.In)) return false;
+      if (je('In') && String(it.In) !== String(f.In)) return false;
       if (f.char && it.char !== f.char) return false;
-      if (f.idn !== '' && f.idn != null && String(it.idn) !== String(f.idn)) return false;
+      if (je('idn') && String(it.idn) !== String(f.idn)) return false;
+      if (f.rcdTyp && it.rcdTyp !== f.rcdTyp) return false;
     } else {
-      if (f.moduly !== '' && f.moduly != null && String((+it.rady || 0) * (+it.modulu || 0)) !== String(f.moduly)) return false;
+      if (je('moduly') && String((+it.rady || 0) * (+it.modulu || 0)) !== String(f.moduly)) return false;
+      if (je('rady') && String(it.rady) !== String(f.rady)) return false;
+      if (je('modulu') && String(it.modulu) !== String(f.modulu)) return false;
       if (f.provedeni && it.provedeni !== f.provedeni) return false;
+      if (f.material && it.material !== f.material) return false;
     }
     if (!slova.length) return true;
     var h = rozvNorm([rozvNazev(it), it.vyrobce, it.rada, it.typ, it.pozn, (rozvKat(it.kat) || {}).nazev, it.kat].join(' '));
@@ -29579,39 +29619,72 @@ function rozvKnihovnaPanelHtml() {
       '<button class="rz-tab" data-action="tdRTab" data-tab="skrine">🗄 Skříně</button></div>' +
     '<div class="rz-rychle" id="rz-rychle"></div>' +
     '<input type="search" class="dk-in rz-f" data-f="q" id="rz-hledat" placeholder="🔍 Hledat v knihovně" autocomplete="off">' +
-    '<details class="rz-filtry" id="rz-filtry"><summary>Filtry <span id="rz-filtry-pocet"></span></summary><div id="rz-filtry-obsah"></div></details>' +
+    '<div class="rz-filtry-hlavni" id="rz-filtry-hlavni"></div>' +
+    '<details class="rz-filtry" id="rz-filtry"><summary>Další filtry <span id="rz-filtry-pocet"></span></summary><div id="rz-filtry-obsah"></div></details>' +
     '<div class="rz-kn-pocet" id="rz-kn-pocet"></div>' +
     '<div class="rz-seznam" id="rz-seznam"></div>' +
     '<button class="add-row rz-vlastni-btn" data-action="tdRVlastni">＋ Vlastní přístroj / skříň</button>';
 }
 
+// Volby rozbalovátek z dat, která v knihovně jsou (i importovaná), seřazené;
+// zvolená hodnota zůstane v nabídce, i když ji jiný filtr vyřadil.
+function rozvVolbyZDat(mnozina, k, akt, poradi) {
+  var u = rozvUnikatni(mnozina, k);
+  if (akt !== '' && akt != null && u.map(String).indexOf(String(akt)) === -1) u.push(isNaN(+akt) ? akt : +akt);
+  return u.sort(function (a, b) {
+    if (poradi) { var ia = poradi.indexOf(a), ib = poradi.indexOf(b); if (ia !== ib) return (ia < 0 ? 99 : ia) - (ib < 0 ? 99 : ib); }
+    if (typeof a === 'number' && typeof b === 'number') return a - b;
+    return String(a).localeCompare(String(b), 'cs');
+  });
+}
+function rozvFiltryAktivni(f) {
+  return ['skup', 'kat', 'vyrobce', 'poly', 'In', 'char', 'idn', 'rcdTyp', 'moduly', 'rady', 'modulu', 'provedeni', 'material']
+    .filter(function (k) { return f[k] !== '' && f[k] != null; }).length + (f.overene ? 1 : 0) + (f.oblibene ? 1 : 0);
+}
 function rozvFiltryVykreslit() {
-  var box = document.getElementById('rz-filtry-obsah'); if (!box) return;
+  var box = document.getElementById('rz-filtry-obsah'), hl = document.getElementById('rz-filtry-hlavni');
+  if (!box) return;
   var vse = rozvKnihovnaVse(), f = __rzF, pr = f.tab !== 'skrine';
   var mnozina = vse.filter(function (it) { return it.druh === (pr ? 'pristroj' : 'skrin'); });
   var sel = function (k, nazev, html) {
     return '<label class="rz-f-l"><span>' + nazev + '</span><select class="dk-in rz-f" data-f="' + k + '">' + html + '</select></label>';
   };
-  var h = '';
+  var chk = function (k, text) {
+    return '<label class="rz-f-l rz-f-check"><input type="checkbox" class="rz-f" data-f="' + k + '"' + (f[k] ? ' checked' : '') + '> ' + text + '</label>';
+  };
+  var h = '', d = '';
   if (pr) {
-    h += sel('kat', 'Kategorie', rozvVolby(ROZV_KAT.map(function (k) { return k.k; }), f.kat, 'všechny', function (k) { return rozvKat(k).nazev; }));
-    h += sel('vyrobce', 'Výrobce', rozvVolby(rozvUnikatni(mnozina, 'vyrobce').sort(), f.vyrobce, 'všichni'));
-    h += sel('poly', 'Póly', rozvVolby(ROZV_POLY, f.poly, 'všechny'));
-    h += sel('In', 'In', rozvVolby(rozvUnikatni(mnozina, 'In').sort(function (a, b) { return a - b; }), f.In, 'všechny', function (v) { return rozvCisloText(v) + ' A'; }));
-    h += sel('char', 'Charakteristika', rozvVolby(ROZV_POLE.char.volby, f.char, 'všechny'));
-    h += sel('idn', 'IΔn', rozvVolby(rozvUnikatni(mnozina, 'idn').sort(function (a, b) { return a - b; }), f.idn, 'všechny', function (v) { return rozvCisloText(v) + ' mA'; }));
+    var sk = f.skup ? rozvSkupina(f.skup) : null;
+    var vSkup = mnozina.filter(function (it) { return !sk || !sk.kat || sk.kat.indexOf(it.kat) !== -1; });
+    var vVyr = vSkup.filter(function (it) { return !f.vyrobce || it.vyrobce === f.vyrobce; });
+    h += '<div class="rz-skupiny" role="group" aria-label="Kategorie">' + ROZV_KAT_SKUPINY.map(function (g) {
+      return '<button type="button" class="rz-skup' + (f.skup === g.k ? ' akt' : '') + '" data-action="tdRSkup" data-k="' + g.k + '"' +
+        (f.skup === g.k ? ' aria-pressed="true"' : '') + '>' + esc(g.nazev) + '</button>';
+    }).join('') + '</div>';
+    h += '<div class="rz-f-mrizka">' +
+      sel('vyrobce', 'Výrobce', rozvVolby(rozvVolbyZDat(vSkup, 'vyrobce', f.vyrobce), f.vyrobce, 'všichni')) +
+      sel('poly', 'Póly', rozvVolby(rozvVolbyZDat(vVyr, 'poly', f.poly, ROZV_POLY), f.poly, 'všechny', function (v) { return /N/.test(v) ? v : v + 'P'; })) +
+      sel('In', 'In', rozvVolby(rozvVolbyZDat(vVyr, 'In', f.In), f.In, 'všechny', function (v) { return rozvCisloText(v) + ' A'; })) +
+      sel('char', 'Charakteristika', rozvVolby(rozvVolbyZDat(vVyr, 'char', f.char, ROZV_POLE.char.volby), f.char, 'všechny')) +
+      '</div>';
+    d += sel('idn', 'IΔn', rozvVolby(rozvVolbyZDat(vVyr, 'idn', f.idn), f.idn, 'všechny', function (v) { return rozvCisloText(v) + ' mA'; })) +
+      sel('rcdTyp', 'Typ chrániče', rozvVolby(rozvVolbyZDat(vVyr, 'rcdTyp', f.rcdTyp, ROZV_POLE.rcdTyp.volby), f.rcdTyp, 'všechny')) +
+      chk('overene', 'jen ověřené') + chk('oblibene', 'jen oblíbené ★');
   } else {
-    var mod = [];
-    mnozina.forEach(function (s) { var m = (+s.rady || 0) * (+s.modulu || 0); if (m && mod.indexOf(m) === -1) mod.push(m); });
-    h += sel('moduly', 'Počet modulů', rozvVolby(mod.sort(function (a, b) { return a - b; }), f.moduly, 'všechny', function (v) { return v + ' modulů'; }));
-    h += sel('provedeni', 'Provedení', rozvVolby(rozvUnikatni(mnozina, 'provedeni'), f.provedeni, 'všechna'));
-    h += sel('vyrobce', 'Výrobce', rozvVolby(rozvUnikatni(mnozina, 'vyrobce').sort(), f.vyrobce, 'všichni'));
+    var vVyrS = mnozina.filter(function (it) { return !f.vyrobce || it.vyrobce === f.vyrobce; });
+    h += '<div class="rz-f-mrizka">' +
+      sel('vyrobce', 'Výrobce', rozvVolby(rozvVolbyZDat(mnozina, 'vyrobce', f.vyrobce), f.vyrobce, 'všichni')) +
+      sel('rady', 'Počet řad', rozvVolby(rozvVolbyZDat(vVyrS, 'rady', f.rady), f.rady, 'všechny')) +
+      sel('modulu', 'Modulů v řadě', rozvVolby(rozvVolbyZDat(vVyrS, 'modulu', f.modulu), f.modulu, 'všechny')) +
+      sel('provedeni', 'Provedení', rozvVolby(rozvVolbyZDat(vVyrS, 'provedeni', f.provedeni), f.provedeni, 'všechna')) +
+      sel('material', 'Materiál', rozvVolby(rozvVolbyZDat(vVyrS, 'material', f.material), f.material, 'všechny')) +
+      '</div>';
+    d += chk('overene', 'jen ověřené');
   }
-  h += '<label class="rz-f-l rz-f-check"><input type="checkbox" class="rz-f" data-f="overene"' + (f.overene ? ' checked' : '') + '> jen ověřené</label>' +
-    '<button class="dok-mini" data-action="tdRFiltrZrusit">Zrušit filtry</button>';
-  box.innerHTML = h;
-  var n = ['kat', 'vyrobce', 'poly', 'In', 'char', 'idn', 'moduly', 'provedeni'].filter(function (k) { return f[k] !== '' && f[k] != null; }).length + (f.overene ? 1 : 0);
-  var pc = document.getElementById('rz-filtry-pocet'); if (pc) pc.textContent = n ? '(' + n + ' zapnuto)' : '';
+  if (hl) hl.innerHTML = h;
+  box.innerHTML = d;
+  var dalsi = ['idn', 'rcdTyp'].filter(function (k) { return pr && f[k] !== '' && f[k] != null; }).length + (f.overene ? 1 : 0) + (pr && f.oblibene ? 1 : 0);
+  var pc = document.getElementById('rz-filtry-pocet'); if (pc) pc.textContent = dalsi ? '(' + dalsi + ' zapnuto)' : '';
 }
 
 function rozvPolozkaHtml(it) {
@@ -29631,16 +29704,26 @@ function rozvPolozkaHtml(it) {
   '</div>';
 }
 
-var ROZV_SEZNAM_MAX = 150;
+// Počítadlo „Zobrazeno 50 z 340" + tlačítko „Zobrazit další" — stovky řádků
+// naráz by stránku zpomalily.
+function rozvPocetText(zobr, nalez, celkem) {
+  return (zobr < nalez ? 'Zobrazeno ' + zobr + ' z ' + nalez : nalez === celkem ? 'Zobrazeno všech ' + celkem : 'Nalezeno ' + nalez) +
+    (nalez !== celkem ? ' (v knihovně ' + celkem + ')' : '');
+}
+function rozvViceHtml(akce, zbyva) {
+  return zbyva > 0 ? '<button type="button" class="add-row rz-vice" data-action="' + akce + '">▼ Zobrazit dalších ' + Math.min(ROZV_STRANKA, zbyva) +
+    ' (zbývá ' + zbyva + ')</button>' : '';
+}
 function rozvKnihovnaVykreslit() {
   var box = document.getElementById('rz-seznam'); if (!box) return;
   document.querySelectorAll('.rz-tab').forEach(function (b) { b.classList.toggle('akt', b.getAttribute('data-tab') === __rzF.tab); });
   var vse = rozvKnihovnaVse(), s = rozvFiltrovat(vse, __rzF);
   var celkem = vse.filter(function (it) { return it.druh === (__rzF.tab === 'skrine' ? 'skrin' : 'pristroj'); }).length;
+  var lim = __rzF.limit || ROZV_STRANKA, zobr = Math.min(lim, s.length);
   var pc = document.getElementById('rz-kn-pocet');
-  if (pc) pc.textContent = s.length === celkem ? celkem + ' v knihovně' : 'Nalezeno ' + s.length + ' z ' + celkem;
-  box.innerHTML = s.length ? s.slice(0, ROZV_SEZNAM_MAX).map(rozvPolozkaHtml).join('') +
-      (s.length > ROZV_SEZNAM_MAX ? '<div class="dk-pozn">… a dalších ' + (s.length - ROZV_SEZNAM_MAX) + ' — zužte hledání nebo filtry.</div>' : '')
+  if (pc) pc.innerHTML = esc(rozvPocetText(zobr, s.length, celkem)) +
+    (rozvFiltryAktivni(__rzF) || __rzF.q ? ' · <button type="button" class="rz-odkaz" data-action="tdRFiltrZrusit">Zrušit filtry</button>' : '');
+  box.innerHTML = s.length ? s.slice(0, zobr).map(rozvPolozkaHtml).join('') + rozvViceHtml('tdRVice', s.length - zobr)
     : '<div class="dok-prazdno">Nic neodpovídá hledání a filtrům.</div>';
   var hl = document.getElementById('rz-hledat');
   if (hl && hl.value !== __rzF.q) hl.value = __rzF.q;
@@ -29665,6 +29748,7 @@ document.addEventListener('input', function (e) {
   if (!t || !t.classList || !t.classList.contains('rz-f')) return;
   var k = t.getAttribute('data-f');
   __rzF[k] = t.type === 'checkbox' ? t.checked : t.value;
+  __rzF.limit = ROZV_STRANKA;
   if (k !== 'q') rozvFiltryVykreslit();
   rozvKnihovnaVykreslit();
 });
@@ -29672,16 +29756,32 @@ document.addEventListener('change', function (e) {
   var t = e.target;
   if (!t || !t.classList || !t.classList.contains('rz-f') || t.type !== 'checkbox') return;
   __rzF[t.getAttribute('data-f')] = t.checked;
+  __rzF.limit = ROZV_STRANKA;
   rozvFiltryVykreslit(); rozvKnihovnaVykreslit();
 });
 
 TD_AKCE.tdRTab = function (el) {
-  __rzF.tab = el.getAttribute('data-tab');
+  // přístroje a skříně mají jiné filtry — výrobce bez skříní by seznam
+  // skříní tiše vyprázdnil; hledaný text zůstává
+  var q = __rzF.q;
+  __rzF = rozvFiltrVychozi(el.getAttribute('data-tab'));
+  __rzF.q = q;
   rozvFiltryVykreslit(); rozvKnihovnaVykreslit();
 };
+TD_AKCE.tdRSkup = function (el) {
+  var k = el.getAttribute('data-k');
+  __rzF.skup = __rzF.skup === k ? '' : k;
+  // hodnoty, které v nové kategorii nedávají smysl, by seznam tiše vyprázdnily
+  ['poly', 'In', 'char', 'idn', 'rcdTyp', 'kat'].forEach(function (x) { __rzF[x] = ''; });
+  __rzF.limit = ROZV_STRANKA;
+  rozvFiltryVykreslit(); rozvKnihovnaVykreslit();
+};
+TD_AKCE.tdRVice = function () {
+  __rzF.limit = (__rzF.limit || ROZV_STRANKA) + ROZV_STRANKA;
+  rozvKnihovnaVykreslit();
+};
 TD_AKCE.tdRFiltrZrusit = function () {
-  var tab = __rzF.tab;
-  __rzF = { tab: tab, q: '', kat: '', vyrobce: '', poly: '', In: '', char: '', idn: '', moduly: '', provedeni: '', overene: false };
+  __rzF = rozvFiltrVychozi(__rzF.tab);
   rozvFiltryVykreslit(); rozvKnihovnaVykreslit();
 };
 TD_AKCE.tdRHvezda = async function (el) {
@@ -30583,6 +30683,7 @@ DOK_TYPY.rozv.pdf = function (d) {
 function rozvSpravaVykreslit() {
   var box = document.getElementById('rz-sprava'); if (!box) return;
   var vest = rozvVestavene(), moje = (DOK.rozvKnihovna || []).map(function (x) { return rozvPolozkaNorm(x); });
+  var vidim = rozvSpravaFiltrovat(moje), zobr = Math.min(__rzSF.limit || ROZV_STRANKA, vidim.length);
   var n = function (s, d) { return s.filter(function (x) { return x.druh === d; }).length; };
   box.innerHTML = rozvInfoKnihovnaHtml() + '<div class="dk-pozn">Vestavěno: ' + n(vest, 'pristroj') + ' obecných přístrojů a ' + n(vest, 'skrin') + ' skříní ' +
     '(bez dat výrobců, neověřené). Vaše položky: ' + moje.length + '. Knihovna je jen ve vašem prohlížeči a jde do zálohy.</div>' +
@@ -30596,16 +30697,79 @@ function rozvSpravaVykreslit() {
       '<span class="rz-drop-pod">Před uložením se ukáže, co se načte a které řádky mají chybu. ' +
       '<button class="dok-mini" data-action="tdRImportVybrat">Vybrat soubor…</button></span>' +
       '<input type="file" id="rz-import-soubor" accept=".csv,.json,.txt,text/csv,application/json" hidden></div>' +
-    '<div class="dk-blok-t">Vaše přístroje a skříně</div>' +
-    '<div class="rz-sprava-seznam">' + (moje.length ? moje.map(function (it) {
+    '<div class="dk-blok-t">Vaše přístroje a skříně</div>' + rozvSpravaFiltryHtml(moje) +
+    '<div class="rz-sprava-seznam">' + (vidim.length ? vidim.slice(0, zobr).map(function (it) {
       return '<div class="dok-vzor-radek" data-kid="' + esc(it.id) + '"><span class="dok-vzor-n"><b>' + esc(rozvNazev(it)) + '</b>' +
         '<span class="dok-stitek dok-stitek-vlastni">' + esc(rozvZdrojText(it)) + '</span>' + (it.overeno ? '<span class="dok-stitek">ověřeno</span>' : '') +
         '<span class="dok-vzor-kody">' + esc([it.druh === 'skrin' ? 'skříň' : (rozvKat(it.kat) || {}).nazev, it.vyrobce, it.typ,
           it.druh === 'skrin' ? (it.rady + ' × ' + it.modulu + ' M') : rozvSirkaText(it.sirka)].filter(Boolean).join(' · ')) + '</span></span>' +
         '<span class="dok-p-akce"><button class="dok-mini" data-action="tdRPolUpravit">✎ Upravit</button>' +
         '<button class="dok-mini dok-mini-del" data-action="tdRPolSmazat" title="Smazat z knihovny (jde vzít zpět; navržené rozvaděče se nezmění)">🗑 Smazat</button></span></div>';
-    }).join('') : '<div class="dok-prazdno">Zatím žádné vlastní ani importované položky.</div>') + '</div>';
+    }).join('') + rozvViceHtml('tdRSpravaVice', vidim.length - zobr)
+      : '<div class="dok-prazdno">' + (moje.length ? 'Nic neodpovídá filtru.' : 'Zatím žádné vlastní ani importované položky.') + '</div>') + '</div>';
 }
+
+// Filtr ve správě knihovny (na seznamu rozvaděčů) — hlavně výrobce
+// a kategorie, aby šlo zkontrolovat a smazat import jednoho výrobce.
+// Jen v paměti, jako filtry v editoru.
+var __rzSF = { vyrobce: '', skup: '', limit: ROZV_STRANKA };
+function rozvSpravaFiltrovat(moje) {
+  var sk = __rzSF.skup && __rzSF.skup !== 'skrin' ? rozvSkupina(__rzSF.skup) : null;
+  return moje.filter(function (it) {
+    if (__rzSF.vyrobce && it.vyrobce !== __rzSF.vyrobce) return false;
+    if (__rzSF.skup === 'skrin') return it.druh === 'skrin';
+    if (__rzSF.skup && (it.druh !== 'pristroj' || (sk && sk.kat && sk.kat.indexOf(it.kat) === -1))) return false;
+    return true;
+  });
+}
+function rozvSpravaFiltryHtml(moje) {
+  if (!moje.length) return '';
+  var vidim = rozvSpravaFiltrovat(moje), zobr = Math.min(__rzSF.limit || ROZV_STRANKA, vidim.length);
+  var vyr = rozvVolbyZDat(moje, 'vyrobce', __rzSF.vyrobce);
+  var skup = ROZV_KAT_SKUPINY.filter(function (g) { return g.k; }).map(function (g) { return [g.k, g.nazev]; }).concat([['skrin', 'Skříně']]);
+  var aktivni = __rzSF.vyrobce || __rzSF.skup;
+  return '<div class="rz-sf-radek">' +
+      '<label class="rz-f-l"><span>Výrobce</span><select class="dk-in rz-sf" data-sf="vyrobce">' + rozvVolby(vyr, __rzSF.vyrobce, 'všichni') + '</select></label>' +
+      '<label class="rz-f-l"><span>Kategorie</span><select class="dk-in rz-sf" data-sf="skup"><option value="">všechny</option>' +
+        skup.map(function (g) { return '<option value="' + g[0] + '"' + (__rzSF.skup === g[0] ? ' selected' : '') + '>' + esc(g[1]) + '</option>'; }).join('') +
+      '</select></label></div>' +
+    '<div class="rz-kn-pocet">' + esc(rozvPocetText(zobr, vidim.length, moje.length)) +
+      (aktivni && vidim.length ? ' · <button type="button" class="dok-mini dok-mini-del" data-action="tdRPolSmazatNalezene" ' +
+        'title="Smaže z knihovny všechny položky, které odpovídají filtru (jde vzít zpět; navržené rozvaděče se nezmění)">🗑 Smazat všech ' + vidim.length + ' nalezených</button>' : '') +
+    '</div>';
+}
+document.addEventListener('change', function (e) {
+  var t = e.target;
+  if (!t || !t.classList || !t.classList.contains('rz-sf')) return;
+  __rzSF[t.getAttribute('data-sf')] = t.value;
+  __rzSF.limit = ROZV_STRANKA;
+  rozvSpravaVykreslit();
+});
+TD_AKCE.tdRSpravaVice = function () { __rzSF.limit = (__rzSF.limit || ROZV_STRANKA) + ROZV_STRANKA; rozvSpravaVykreslit(); };
+TD_AKCE.tdRPolSmazatNalezene = async function () {
+  await dokNacist();
+  var moje = DOK.rozvKnihovna.map(function (x) { return rozvPolozkaNorm(x); });
+  var ids = rozvSpravaFiltrovat(moje).map(function (it) { return it.id; });
+  if (!ids.length) return;
+  var popis = [__rzSF.vyrobce ? 'výrobce „' + __rzSF.vyrobce + '"' : '',
+    __rzSF.skup ? 'kategorie ' + (__rzSF.skup === 'skrin' ? 'Skříně' : rozvSkupina(__rzSF.skup).nazev) : ''].filter(Boolean).join(', ');
+  if (!confirm('Smazat z knihovny ' + ids.length + ' ' + (ids.length === 1 ? 'položku' : ids.length < 5 ? 'položky' : 'položek') +
+      (popis ? ' (' + popis + ')' : '') + '?\n\nNavržené rozvaděče se nezmění — mají vlastní kopii. Smazání jde vzít zpět.')) return;
+  var predKnih = DOK.rozvKnihovna.slice(), predObl = DOK.rozvOblibene.slice();
+  DOK.rozvKnihovna = DOK.rozvKnihovna.filter(function (x) { return ids.indexOf(x.id) === -1; });
+  DOK.rozvOblibene = DOK.rozvOblibene.filter(function (id) { return ids.indexOf(id) === -1; });
+  await dokZapsat();
+  __rzSF.limit = ROZV_STRANKA;
+  rozvKnihovnaZmenena();
+  showToast('Z knihovny smazáno ' + ids.length + ' položek' + (popis ? ' (' + popis + ')' : ''), { timeout: 9000, actionLabel: '↩ ZPĚT', action: function () {
+    dokNacist().then(function () {
+      var maji = {}; DOK.rozvKnihovna.forEach(function (x) { maji[x.id] = 1; });
+      DOK.rozvKnihovna = DOK.rozvKnihovna.concat(predKnih.filter(function (x) { return ids.indexOf(x.id) !== -1 && !maji[x.id]; }));
+      predObl.forEach(function (id) { if (DOK.rozvOblibene.indexOf(id) === -1) DOK.rozvOblibene.push(id); });
+      return dokZapsat();
+    }).then(rozvKnihovnaZmenena);
+  } });
+};
 
 // ── Kontrola položky (vlastní formulář i import) ────────────────────────
 // Vstup = objekt s vnitřními klíči (hodnoty jako text, jak přišly ze

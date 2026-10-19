@@ -134,27 +134,45 @@ function pomocnik() {
 
   const f = {};
   f.skrineVse = await p.evaluate(() => __T.nalezeno());
-  await p.evaluate(() => __T.filtr('moduly', '36')); f.sk36 = await p.evaluate(() => __T.nalezeno());
+  f.skrineViditelne = await p.evaluate(() => ['vyrobce', 'rady', 'modulu', 'provedeni', 'material'].map(k => { const e = document.querySelector('#rz-filtry-hlavni .rz-f[data-f="' + k + '"]'); return e && e.offsetHeight > 0 ? k : '-'; }).join());
+  await p.evaluate(() => __T.filtr('rady', '3')); await p.evaluate(() => __T.filtr('modulu', '12')); f.sk36 = await p.evaluate(() => __T.nalezeno());
   await p.evaluate(() => __T.filtr('provedeni', 'zapuštěná')); f.sk36z = await p.evaluate(() => __T.nalezeno());
+  await p.evaluate(() => { TD_AKCE.tdRFiltrZrusit(); __T.filtr('material', 'oceloplech'); }); f.ocel = await p.evaluate(() => __T.nalezeno());
   await p.evaluate(() => TD_AKCE.tdRFiltrZrusit());
   await p.evaluate(() => TD_AKCE.tdRTab(document.querySelector('.rz-tab[data-tab="pristroje"]')));
-  f.vse = await p.evaluate(() => __T.nalezeno());
-  await p.evaluate(() => __T.filtr('kat', 'FA')); f.fa = await p.evaluate(() => __T.nalezeno());
+  f.vse = await p.evaluate(() => document.getElementById('rz-kn-pocet').textContent);
+  f.viditelne = await p.evaluate(() => ({
+    skupiny: Array.from(document.querySelectorAll('#rz-filtry-hlavni .rz-skup')).filter(b => b.offsetHeight > 0).map(b => b.textContent).join('·'),
+    sel: ['vyrobce', 'poly', 'In', 'char'].map(k => { const e = document.querySelector('#rz-filtry-hlavni .rz-f[data-f="' + k + '"]'); return e && e.offsetHeight > 0 ? k : '-'; }).join(),
+    sbalene: !document.getElementById('rz-filtry').open && ['idn', 'rcdTyp', 'overene', 'oblibene'].every(k => !!document.querySelector('#rz-filtry-obsah .rz-f[data-f="' + k + '"]')),
+    souhrn: document.querySelector('#rz-filtry > summary').textContent }));
+  await p.click('#rz-filtry-hlavni .rz-skup[data-k="FA"]'); f.fa = await p.evaluate(() => document.getElementById('rz-kn-pocet').textContent);
+  f.faAkt = await p.evaluate(() => document.querySelector('#rz-filtry-hlavni .rz-skup.akt').textContent);
   await p.evaluate(() => __T.filtr('poly', '1')); await p.evaluate(() => __T.filtr('char', 'B')); await p.evaluate(() => __T.filtr('In', '16'));
   f.b16 = await p.evaluate(() => Array.from(document.querySelectorAll('#rz-seznam .rz-polozka b')).map(x => x.textContent).join());
-  f.pocetFiltru = await p.evaluate(() => document.getElementById('rz-filtry-pocet').textContent);
-  await p.evaluate(() => TD_AKCE.tdRFiltrZrusit());
-  await p.evaluate(() => __T.filtr('kat', 'FI')); await p.evaluate(() => __T.filtr('idn', '300'));
+  f.pocetB16 = await p.evaluate(() => document.getElementById('rz-kn-pocet').innerText);
+  await p.click('#rz-kn-pocet [data-action="tdRFiltrZrusit"]');
+  f.poZruseni = await p.evaluate(() => ({ pocet: document.getElementById('rz-kn-pocet').textContent, akt: document.querySelector('#rz-filtry-hlavni .rz-skup.akt').textContent }));
+  await p.click('#rz-filtry-hlavni .rz-skup[data-k="FI"]'); await p.evaluate(() => { document.getElementById('rz-filtry').open = true; __T.filtr('idn', '300'); });
   f.fi300 = await p.evaluate(() => __T.nalezeno());
+  f.pocetFiltru = await p.evaluate(() => document.getElementById('rz-filtry-pocet').textContent);
+  await p.evaluate(() => { TD_AKCE.tdRFiltrZrusit(); document.getElementById('rz-filtry').open = false; });
+  await p.click('#rz-filtry-hlavni .rz-skup[data-k="jine"]'); f.jine = await p.evaluate(() => Array.from(new Set(Array.from(document.querySelectorAll('#rz-seznam .rz-ikona')).map(x => x.textContent))).sort().join());
   await p.evaluate(() => TD_AKCE.tdRFiltrZrusit());
   await p.evaluate(() => __T.filtr('q', 'rcbo c16')); f.q = await p.evaluate(() => Array.from(document.querySelectorAll('#rz-seznam .rz-polozka b')).map(x => x.textContent).join());
   await p.evaluate(() => __T.filtr('q', 'svodič')); f.qNic = await p.evaluate(() => document.getElementById('rz-seznam').innerText);
   await p.evaluate(() => { TD_AKCE.tdRFiltrZrusit(); __T.filtr('overene', true); }); f.over = await p.evaluate(() => __T.nalezeno());
   await p.evaluate(() => TD_AKCE.tdRFiltrZrusit());
-  check('filtr skříní: počet modulů 36 (3×12, 2×18) a provedení', f.skrineVse === 16 && f.sk36 === 4 && f.sk36z === 2, JSON.stringify([f.skrineVse, f.sk36, f.sk36z]));
-  check('filtr přístrojů: kategorie Jistič', f.fa === 80 && f.vse > 80, f.fa + ' z ' + f.vse);
-  check('filtr: póly + charakteristika + In → právě Jistič 1P B16', f.b16 === 'Jistič 1P B16' && /4 zapnuto/.test(f.pocetFiltru), f.b16 + ' ' + f.pocetFiltru);
-  check('filtr IΔn 300 mA u chráničů', f.fi300 === 2, String(f.fi300));
+  check('skříně: výrobce, počet řad, modulů v řadě, provedení a materiál jsou vidět vždy', f.skrineViditelne === 'vyrobce,rady,modulu,provedeni,material', f.skrineViditelne);
+  check('filtr skříní: 3 řady × 12 modulů, provedení, materiál', f.skrineVse === 16 && f.sk36 === 2 && f.sk36z === 1 && f.ocel === 2, JSON.stringify([f.skrineVse, f.sk36, f.sk36z, f.ocel]));
+  check('přístroje: kategorie jako řada tlačítek a výrobce, póly, In, charakteristika vždy vidět', f.viditelne.skupiny === 'Vše·Jističe·Chrániče·RCBO·AFDD·SPD·Hl. vypínače·Pojistky·Ostatní' &&
+    f.viditelne.sel === 'vyrobce,poly,In,char', JSON.stringify(f.viditelne));
+  check('sbalené „Další filtry" jen IΔn, typ chrániče, jen ověřené, jen oblíbené', f.viditelne.sbalene && /^Další filtry/.test(f.viditelne.souhrn), f.viditelne.souhrn);
+  check('kategorie Jističe (tlačítko se zvýrazní), počítadlo „Zobrazeno 50 z 80"', /^Zobrazeno 50 z 80 \(v knihovně \d+\)/.test(f.fa) && f.faAkt === 'Jističe', f.fa + ' · ' + f.vse);
+  check('filtr: póly + charakteristika + In → právě Jistič 1P B16; „Zrušit filtry" vše vrátí', f.b16 === 'Jistič 1P B16' && /Zrušit filtry/.test(f.pocetB16) &&
+    /^Zobrazeno 50 z \d+$/.test(f.poZruseni.pocet) && f.poZruseni.akt === 'Vše', f.b16 + ' · ' + f.pocetB16 + ' · ' + JSON.stringify(f.poZruseni));
+  check('filtr IΔn 300 mA u chráničů (v Dalších filtrech, souhrn řekne kolik zapnuto)', f.fi300 === 2 && /1 zapnuto/.test(f.pocetFiltru), f.fi300 + ' ' + f.pocetFiltru);
+  check('„Ostatní" = stykače, relé, hodiny, elektroměry, signálky, ovladače, svorky, rezervy', f.jine === 'HL,KA,KM,KT,PJ,REZ,SF,X', f.jine);
   check('fulltext bez háčků a velikosti písmen, víc slov', f.q === 'RCBO 1+N C16 / 30 mA typ A', f.q);
   check('fulltext bez výsledku řekne „Nic neodpovídá"', /Nic neodpovídá/.test(f.qNic));
   check('„jen ověřené" — vestavěné ověřené nejsou', f.over === 0, String(f.over));
@@ -344,6 +362,94 @@ function pomocnik() {
   });
   check('úprava položky z knihovny (druh se už nemění)', /^✎ Upravit přístroj\|true$/.test(smaz.upravit) && smaz.pozn === 'upraveno|6', JSON.stringify(smaz));
   check('smazání z knihovny jde vzít zpět (Ctrl+Z) na původní místo', smaz.poSmazani === 5 && smaz.zpet === '6|true', JSON.stringify(smaz));
+  // ── 3d. velká knihovna: ~600 vymyšlených položek dvou vymyšlených výrobců ──
+  // (žádná skutečná data výrobců — „Výrobce A" a „Výrobce B" jsou smyšlení)
+  const vk = await p.evaluate(async () => {
+    const r = {}, rad = ['druh;kategorie;vyrobce;rada;typ;poly;in;charakteristika;icn;idn;typ_chranice;trida_spd;sirka_moduly;rady;moduly_v_rade;provedeni;material;overeno'];
+    const IN = [2, 4, 6, 10, 13, 16, 20, 25, 32, 40, 50, 63];
+    let n = 0;
+    const pr = (v, kat, poly, In, ch, idn, rcd, spd, sir) => { n++; rad.push(['pristroj', kat, v, 'Řada ' + v.slice(-1), v.slice(-1) + '-' + kat + '-' + n, poly, In, ch, ch ? 6 : '', idn, rcd, spd, sir, '', '', '', '', n % 3 ? 'ano' : 'ne'].join(';')); };
+    for (const v of ['Výrobce A', 'Výrobce B']) {
+      for (const poly of ['1', '1+N', '3', '3+N']) for (const ch of ['B', 'C', 'D']) for (const In of IN) for (const k of [0, 1]) pr(v, 'FA', poly, In, ch, '', '', '', poly === '1' ? 1 : poly === '3' ? 3 : poly === '1+N' ? 2 : 4);
+      for (const In of [25, 40, 63]) for (const idn of [30, 100, 300]) for (const rcd of ['AC', 'A', 'F', 'B']) pr(v, 'FI', '4', In, '', idn, rcd, '', 4);
+      for (const t of ['T1+T2', 'T2', 'T3']) pr(v, 'SPD', '3+N', '', '', '', '', t, 4);
+    }
+    for (const rr of [1, 2, 3, 4]) for (const m of [12, 18, 24]) { n++; rad.push(['skrin', '', 'Výrobce B', 'Skříně B', 'B-SK-' + rr + 'x' + m, '', '', '', '', '', '', '', '', rr, m, m === 24 ? 'nástěnná' : 'zapuštěná', m === 24 ? 'oceloplech' : 'plast', 'ano'].join(';')); }
+    r.radku = rad.length - 1;
+    let t0 = performance.now();
+    await rozvImportSoubor(new File([rad.join('\r\n')], 'vymysleni-vyrobci.csv', { type: 'text/csv' }));
+    r.nahled = document.getElementById('rz-import-ulozit').textContent;
+    await TD_AKCE.tdRImportUlozit(); await __T.w(200);
+    r.importMs = Math.round(performance.now() - t0);
+    r.vKnihovne = DOK.rozvKnihovna.length;
+    const sp = () => ({ pocet: document.querySelector('#rz-sprava .rz-kn-pocet').innerText, radky: document.querySelectorAll('#rz-sprava .rz-sprava-seznam [data-kid]').length,
+      vice: (document.querySelector('#rz-sprava [data-action="tdRSpravaVice"]') || {}).textContent || '', smaz: (document.querySelector('#rz-sprava [data-action="tdRPolSmazatNalezene"]') || {}).textContent || '' });
+    r.sprava = sp();
+    const sf = (k, v) => { const e = document.querySelector('#rz-sprava .rz-sf[data-sf="' + k + '"]'); e.value = v; e.dispatchEvent(new Event('change', { bubbles: true })); };
+    r.vyrobciSpravy = Array.from(document.querySelectorAll('#rz-sprava .rz-sf[data-sf="vyrobce"] option')).map(o => o.textContent).join('|');
+    sf('vyrobce', 'Výrobce A'); r.spravaA = sp();
+    TD_AKCE.tdRSpravaVice(); r.spravaA2 = sp();
+    sf('skup', 'SPD'); r.spravaASpd = sp();
+    sf('skup', ''); sf('vyrobce', 'Výrobce B'); sf('skup', 'skrin'); r.spravaBSk = sp();
+    sf('skup', '');
+    const predSm = DOK.rozvKnihovna.length;
+    await TD_AKCE.tdRPolSmazatNalezene(); await __T.w(100);
+    r.smazanoB = predSm + '→' + DOK.rozvKnihovna.length + '|' + DOK.rozvKnihovna.filter(x => x.vyrobce === 'Výrobce B').length + '|' + DOK.rozvKnihovna.filter(x => x.vyrobce === 'Výrobce A').length;
+    zpetPosledni(); await __T.w(400); await dokNacist();
+    r.zpetB = DOK.rozvKnihovna.length + '|' + DOK.rozvKnihovna.filter(x => x.vyrobce === 'Výrobce B').length;
+    sf('vyrobce', '');
+    // editor: filtry, počítadlo, „Zobrazit další", rychlost
+    await dokOtevrit(DOK.dokumenty.find(d => d.typ === 'rozv').uid); await __T.w(200);
+    TD_AKCE.tdRTab(document.querySelector('.rz-tab[data-tab="pristroje"]'));
+    const dokPred = JSON.stringify(DOK.dokumenty), genPred = __dokGen;
+    t0 = performance.now(); rozvKnihovnaVykreslit(); r.vykresleniMs = Math.round(performance.now() - t0);
+    r.ed = { pocet: document.getElementById('rz-kn-pocet').innerText, radky: __T.nalezeno(),
+      vyrobci: Array.from(document.querySelectorAll('#rz-filtry-hlavni .rz-f[data-f="vyrobce"] option')).map(o => o.textContent).join('|') };
+    t0 = performance.now(); __T.filtr('vyrobce', 'Výrobce B'); r.filtrMs = Math.round(performance.now() - t0);
+    document.querySelector('#rz-filtry-hlavni .rz-skup[data-k="FA"]').click();
+    r.edB = { pocet: document.getElementById('rz-kn-pocet').innerText, vyrobce: document.querySelector('#rz-filtry-hlavni .rz-f[data-f="vyrobce"]').value,
+      vice: (document.querySelector('#rz-seznam [data-action="tdRVice"]') || {}).textContent };
+    document.querySelector('#rz-seznam [data-action="tdRVice"]').click();
+    r.edB2 = __T.nalezeno();
+    __T.filtr('poly', '3+N'); __T.filtr('char', 'D'); __T.filtr('In', '63');
+    r.edB3 = Array.from(document.querySelectorAll('#rz-seznam .rz-polozka small')).map(x => x.textContent.split(' · ')[1]).join(',') + '|' + document.getElementById('rz-kn-pocet').innerText;
+    TD_AKCE.tdRFiltrZrusit(); __T.filtr('vyrobce', 'Výrobce A'); document.querySelector('#rz-filtry-hlavni .rz-skup[data-k="FI"]').click();
+    __T.filtr('rcdTyp', 'F'); __T.filtr('idn', '30');
+    r.edA = document.getElementById('rz-kn-pocet').innerText;
+    TD_AKCE.tdRTab(document.querySelector('.rz-tab[data-tab="skrine"]'));
+    r.skrVyr = Array.from(document.querySelectorAll('#rz-filtry-hlavni .rz-f[data-f="vyrobce"] option')).map(o => o.textContent).join('|');
+    __T.filtr('vyrobce', 'Výrobce B'); __T.filtr('rady', '2');
+    r.skrB2 = __T.nalezeno();
+    TD_AKCE.tdRFiltrZrusit(); TD_AKCE.tdRTab(document.querySelector('.rz-tab[data-tab="pristroje"]')); TD_AKCE.tdRFiltrZrusit();
+    await __T.w(1200);
+    r.neulozeno = JSON.stringify(DOK.dokumenty) === dokPred && __dokGen === genPred;
+    // úklid: oba vymyšlení výrobci pryč (zpátky na seznam)
+    await dokUlozitOtevreny(); dokOtevritSeznam('rozv'); document.getElementById('dok-knihovna-karta').open = true;
+    for (const v of ['Výrobce A', 'Výrobce B']) { sf('vyrobce', v); await TD_AKCE.tdRPolSmazatNalezene(); await __T.w(100); }
+    sf('vyrobce', '');
+    r.poUklidu = DOK.rozvKnihovna.length;
+    return r;
+  });
+  check('velká knihovna: import ' + vk.radku + ' vymyšlených položek dvou vymyšlených výrobců', vk.radku >= 590 && vk.vKnihovne === vk.radku + 6 && vk.importMs < 8000,
+    JSON.stringify({ radku: vk.radku, nahled: vk.nahled, v: vk.vKnihovne, ms: vk.importMs }));
+  check('správa knihovny: počítadlo „Zobrazeno 50 z …", vykreslí jen 50 řádků, „Zobrazit další"', /^Zobrazeno 50 z \d+/.test(vk.sprava.pocet) && vk.sprava.radky === 50 &&
+    /Zobrazit dalších 50/.test(vk.sprava.vice) && !vk.sprava.smaz, JSON.stringify(vk.sprava));
+  check('správa: výrobce z dat (i importovaní), filtr výrobce, další stránka', vk.vyrobciSpravy === 'všichni|Vymyšlený výrobce|Výrobce A|Výrobce B' &&
+    /^Zobrazeno 50 z 3\d\d \(v knihovně/.test(vk.spravaA.pocet) && vk.spravaA2.radky === 100 && /Smazat všech 3\d\d nalezených/.test(vk.spravaA.smaz),
+    vk.vyrobciSpravy + ' · ' + JSON.stringify([vk.spravaA, vk.spravaA2.radky]));
+  check('správa: výrobce + kategorie (SPD, Skříně)', /^Nalezeno 3 \(v knihovně/.test(vk.spravaASpd.pocet) && vk.spravaASpd.radky === 3 && /^Nalezeno 12/.test(vk.spravaBSk.pocet),
+    JSON.stringify([vk.spravaASpd, vk.spravaBSk]));
+  check('správa: smazat import jednoho výrobce (ptá se) a ZPĚT ho vrátí', /^\d+→\d+\|0\|3\d\d$/.test(vk.smazanoB) && vk.zpetB.split('|')[1] > 280, vk.smazanoB + ' · ' + vk.zpetB);
+  check('editor: výrobce v nabídce podle dat, „obecný" = vestavěné', vk.ed.vyrobci === 'všichni|obecný|Vymyšlený výrobce|Výrobce A|Výrobce B' && vk.ed.radky === 50 &&
+    /^Zobrazeno 50 z \d{3}$/.test(vk.ed.pocet), JSON.stringify(vk.ed));
+  check('editor: výrobce + Jističe, „Zobrazit další" přidá dalších 50', /^Zobrazeno 50 z 288 \(v knihovně \d+\)/.test(vk.edB.pocet) && vk.edB.vyrobce === 'Výrobce B' &&
+    /Zobrazit dalších 50 \(zbývá 238\)/.test(vk.edB.vice) && vk.edB2 === 100, JSON.stringify([vk.edB, vk.edB2]));
+  check('editor: póly + charakteristika + In zúží na 2 položky výrobce B', /^Výrobce B,Výrobce B\|Nalezeno 2 /.test(vk.edB3), vk.edB3);
+  check('editor: typ chrániče a IΔn v Dalších filtrech', /^Nalezeno 3 /.test(vk.edA), vk.edA);
+  check('editor: skříně — výrobce z dat, počet řad', vk.skrVyr === 'všichni|obecný|Vymyšlený výrobce|Výrobce B' && vk.skrB2 === 3, vk.skrVyr + ' · ' + vk.skrB2);
+  check('600 položek nezpomalí: vykreslení seznamu i filtr pod 300 ms', vk.vykresleniMs < 300 && vk.filtrMs < 300, vk.vykresleniMs + ' ms / ' + vk.filtrMs + ' ms');
+  check('filtry knihovny (i s velkou knihovnou) rozvaděč neuloží ani neoznačí jako změněný', vk.neulozeno);
+  check('úklid: smazání importu obou výrobců z knihovny', vk.poUklidu === 6, String(vk.poUklidu));
   await p.evaluate(async () => { await dokOtevrit(DOK.dokumenty.find(d => d.typ === 'rozv').uid); });
   await w(300);
 

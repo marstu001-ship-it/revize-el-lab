@@ -644,6 +644,29 @@ od revizí, záloha jako část `dokumentace`).
 - **Filtry knihovny jsou jen v paměti** (`__rzF`) a psaní do nich NENÍ
   změna dokumentu — panel má `data-dk-mimo`, obecné posluchače formuláře ho
   přeskočí (nový prázdný rozvaděč se tak neuloží jen kvůli hledání).
+- **Filtry jsou VIDĚT, ne sbalené** (pokyn uživatele 2026-10-19 — sbalené
+  filtry technik nenašel a s importem výrobců jsou stovky položek). Karta
+  Přístroje: pod hledáním **kategorie jako řada tlačítek**
+  (`ROZV_KAT_SKUPINY`: Vše · Jističe · Chrániče · RCBO · AFDD · SPD ·
+  Hl. vypínače · Pojistky · Ostatní = KM, KT, KA, PJ, HL, SF, X, REZ)
+  a vždy **výrobce, póly, In, charakteristika**; sbalené „Další filtry" jen
+  IΔn, typ chrániče, jen ověřené, jen oblíbené. Karta Skříně vždy: výrobce,
+  počet řad, modulů v řadě, provedení, materiál (jen ověřené sbalené).
+  **Volby rozbalovátek se berou z dat** (`rozvVolbyZDat` — i importovaní
+  výrobci; „obecný" = vestavěné), zvolená hodnota v nabídce zůstane.
+  Přepnutí karty filtry vynuluje (hledaný text zůstane) — výrobce bez skříní
+  by jinak seznam skříní tiše vyprázdnil; změna kategorie vynuluje póly, In,
+  charakteristiku a IΔn.
+- **Seznam se kreslí po `ROZV_STRANKA` = 50 řádcích** — počítadlo
+  „Zobrazeno 50 z 340 (v knihovně 600)" + „Zrušit filtry" a dole
+  „▼ Zobrazit dalších 50 (zbývá …)" (`rozvPocetText`, `rozvViceHtml`).
+  Stovky řádků naráz by stránku zpomalily; s ~670 položkami trvá vykreslení
+  i filtr pod 30 ms.
+- **Správa knihovny na seznamu** (sbalená „⚙ Knihovna…") má filtr
+  **výrobce + kategorie (i Skříně)** (`__rzSF`, jen v paměti), stránkování
+  a při zapnutém filtru **„🗑 Smazat všech N nalezených"**
+  (`tdRPolSmazatNalezene` — ptá se, jmenuje výrobce; ZPĚT vrátí smazané)
+  — tak jde zkontrolovat a smazat import jednoho výrobce.
 - Hlavička: `cislo`, `oznaceni`, `stavba` (zakázka/název), `investor`
   (odběratel, ARES přes `dkFirma`), `misto`, `soustava` (`ROZV_SOUSTAVY`),
   `privodIn`, `privodSmer` (shora/zespodu), `privodKabel`, `privodPrurez`,
@@ -837,7 +860,9 @@ a prohlášení (hlavička + `skrin` + `p`). `data.model = 1`.
   „🖨️ Tisk přímo" ho kreslí ve vyšší kvalitě. Žádná knihovna třetí strany
   se nepřidala (ani pro tažení — vlastní pointer events).
 
-Test: `testy/test-rozvadec.js` (vymyšlená data). V `test-mobil.js` stavy
+Test: `testy/test-rozvadec.js` (vymyšlená data; velká knihovna = ~670
+vymyšlených položek „Výrobce A" / „Výrobce B" generovaných v testu, do
+repozitáře nejdou žádná data výrobců). V `test-mobil.js` stavy
 „rozvaděč – …" a v přípravě rozvaděč RH1 (byt 3+1, skříň 3×12).
 **`test-dokumentace.js` upraven ve stejném commitu:** dlaždic je víc
 a „správa vzorů úplně dole" se počítá z viditelných prvků.
