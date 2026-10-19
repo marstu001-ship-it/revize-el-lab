@@ -558,6 +558,8 @@ tr.row-nested>td:first-child{box-shadow:inset 3px 0 0 #d5d0c4}
     linear-gradient(45deg,transparent 75%,#e2e2e2 75%),linear-gradient(-45deg,transparent 75%,#e2e2e2 75%);
   background-size:10px 10px;background-position:0 0,0 5px,5px -5px,-5px 0}
 .rt-badge{background:#f0f6ff;border:1px solid #b8d0f0;padding:.6rem 1rem;border-radius:2px;margin-bottom:.75rem}
+.rt-badge .rt-z-profilu{margin-left:.5rem}
+.rt-cizi{font-size:.78rem;color:var(--muted);margin:-.45rem 0 .75rem}
 html.dark .rt-badge{background:#1e2733;border-color:#39506e;color:var(--text)}
 
 /* ═══ FORMULÁŘ ═══ */
@@ -3809,6 +3811,7 @@ html.dark .rz-imp-chyby{background:#3a1f1c;border-color:#6b2c25}
     </table>
     <button class="add-row" data-action="addPristroj">+ Přidat přístroj</button>
     <button class="add-row" data-action="ulozitPristrojeJakoVychozi" style="margin-left:.5rem;border-color:var(--accent2);color:var(--accent2)" title="Zkopíruje přístroje z této zprávy do Nastavení — předvyplní se v každé další nové zprávě">💾 Uložit jako výchozí pro příští zprávy</button>
+    <button class="add-row" data-action="pristrojeZProfilu" style="margin-left:.5rem" title="Nahradí přístroje v této zprávě přístroji z vašeho Nastavení (nová kalibrace, nový přístroj)">↻ Vyplnit z mého profilu</button>
   </div>
   <div class="scard" id="scard-d1-prohlidka">
     <div class="scard-title">D.1 – Prohlídka el. zařízení <span style="font-size:.52rem;color:var(--muted);font-family:var(--mono)">dle ČSN 33 2000-6 ed.2 čl. 6.4.2</span></div>
@@ -9075,13 +9078,78 @@ function propsatTechnika() {
   // město v 1. pádě; revizak si případně upraví.
   var predMisto = document.getElementById('f_predano_misto');
   if (predMisto && !predMisto.value && mesto) predMisto.value = mesto;
+  rtBadgeVykreslit();
+}
+
+// ═══ TECHNIK ZPRÁVY × MŮJ PROFIL (pokyn uživatele 2026-10-19) ═══════════
+// Otevřená zpráva ukazuje technika a přístroje, které jsou v ní ULOŽENÉ —
+// zpráva od kolegy tak zůstane jeho. Z profilu se vyplňuje jen nová zpráva,
+// „Navázat" a „⧉ Kopírovat" (moje nové zprávy), stará zpráva bez jména
+// i osvědčení technika (jako dřív) a tlačítkem „Vyplnit z mého profilu".
+function rtNorm(x) { return String(x == null ? '' : x).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/[\s.,]+/g, ''); }
+// Technik zprávy = já? Shoda ev. čísla osvědčení, případně jména (nové
+// osvědčení po obnově má jiné číslo). Zpráva bez technika se bere jako moje.
+function technikZpravyJeMuj(D) {
+  var t = STORE.technik || {}, o = rtNorm(D && D.rt_osvedceni), j = rtNorm(D && D.rt_jmeno);
+  if (!o && !j) return true;
+  return !!((o && o === rtNorm(t.osvedceni)) || (j && j === rtNorm(t.jmeno)));
+}
+function technikFormular() {
+  var g = function (id) { var e = document.getElementById(id); return e ? e.value : ''; };
+  return { rt_jmeno: g('f_rt_jmeno'), rt_osvedceni: g('f_rt_osvedceni'), rt_ico: g('f_rt_ico') };
+}
+// Údaje technika pro tisk existující zprávy: jméno, osvědčení, IČO, adresa
+// ze ZPRÁVY; telefon, e-mail, DIČ, firma, město, razítko a podpis z profilu
+// jen u vlastní zprávy (cizí zpráva je nemá a vymýšlet se nesmí).
+function technikProTisk(D) {
+  var t = STORE.technik || {}, muj = technikZpravyJeMuj(D || {});
+  var T = muj ? Object.assign({}, t) : {};
+  D = D || {};
+  var bez = !String(D.rt_jmeno || '').trim() && !String(D.rt_osvedceni || '').trim();
+  if (!bez) {
+    T.jmeno = D.rt_jmeno || ''; T.osvedceni = D.rt_osvedceni || '';
+    if (D.rt_ico || !muj) T.ico = D.rt_ico || '';
+    if (D.rt_opravneni || !muj) T.opravneni = D.rt_opravneni || '';
+  }
+  T.muj = muj;
+  return T;
+}
+function rtBadgeVykreslit() {
   var badge = document.getElementById('rt-badge');
   if (!badge) return;
-  if (t.jmeno) {
-    badge.innerHTML = '<div class="rt-badge"><strong>' + t.jmeno + '</strong> | Ev.c.: ' + (t.osvedceni || '—') + ' | IČO: ' + (t.ico || '—') + '</div>';
+  var F = technikFormular(), t = STORE.technik || {};
+  var tlac = '<button type="button" class="dok-mini rt-z-profilu" data-action="technikZProfilu" ' +
+    'title="Přepíše technika v této zprávě údaji z vašeho Nastavení (např. nové osvědčení)">↻ Vyplnit z mého profilu</button>';
+  if (F.rt_jmeno || F.rt_osvedceni) {
+    badge.innerHTML = '<div class="rt-badge"><strong>' + esc(F.rt_jmeno || '—') + '</strong> | Ev.č.: ' + esc(F.rt_osvedceni || '—') +
+      ' | IČO: ' + esc(F.rt_ico || '—') + (t.jmeno ? ' ' + tlac : '') + '</div>' +
+      (t.jmeno && !technikZpravyJeMuj(F) ? '<div class="rt-cizi">Zprávu zpracoval jiný technik než je ve vašem profilu.</div>' : '');
+  } else if (t.jmeno) {
+    badge.innerHTML = '<div class="rt-badge">Technik ve zprávě není vyplněný. ' + tlac + '</div>';
   } else {
     badge.innerHTML = '<div class="warn-box">Profil RT neni nastaven. <a href="#" data-action="nastaveni" style="color:var(--accent2);font-weight:600">Nastavit</a></div>';
   }
+}
+document.addEventListener('input', function (e) {
+  if (e.target && /^f_rt_(jmeno|osvedceni|ico)$/.test(e.target.id)) rtBadgeVykreslit();
+});
+function technikZProfilu() {
+  if (window.__formReadOnly) return;
+  propsatTechnika();
+  window.__formDirty = true; autoSave(); updateUlozitStav();
+  showToast('Technik vyplněn z vašeho profilu.');
+}
+function pristrojeZProfilu() {
+  if (window.__formReadOnly) return;
+  if (!(STORE.pristroje && STORE.pristroje.length)) { showToast('V Nastavení nemáte uložené žádné přístroje.'); return; }
+  propsatPristroje();
+  window.__formDirty = true; autoSave(); updateUlozitStav();
+  showToast('Přístroje vyplněny z vašeho profilu.');
+}
+// Moje NOVÁ zpráva (Navázat, ⧉ Kopírovat): technik a přístroje z profilu.
+function technikAPristrojeZProfilu() {
+  if (STORE.technik && STORE.technik.jmeno) propsatTechnika();
+  if (STORE.pristroje && STORE.pristroje.length > 0) propsatPristroje();
 }
 
 // Předvolby norem dle podtypu: true = zaškrtnuto, false = nezaškrtnuto, undefined = skryté
@@ -10715,7 +10783,7 @@ function schemaNazevSouboru(D) {
 
 // Hlavička listu — ať je z papíru poznat, ke které zprávě schéma patří
 function schemaHlavicka(D) {
-  var t = STORE.technik || {};
+  var t = technikProTisk(D);
   var den = D.ukonceni || D.vypracovani || '';
   var polozky = [
     ['Místo revize', D.misto || ''],
@@ -14960,6 +15028,7 @@ function getData() {
   var psc = t.psc || '';
   var mesto = t.mesto || '';
   var adr = [t.ulice, (psc + ' ' + mesto).trim()].filter(Boolean).join(', ');
+  var rtPrazdny = !gv('f_rt_jmeno') && !gv('f_rt_osvedceni');
   return {
     typ: aktTyp, podtyp: aktPodtyp,
     ev_cislo: gv('f_ev_cislo'), vytisk: gv('f_vytisk'), druh: gv('f_druh'),
@@ -14972,11 +15041,13 @@ function getData() {
     pritomen2: gv('f_pritomen2'),
     firma_zmena2: gv('f_firma_zmena2'), firma_opravneni2: gv('f_firma_opravneni2'),
     napetova_soustava: getNapetoveSoustavy(),
-    rt_jmeno: gv('f_rt_jmeno') || t.jmeno || '',
-    rt_osvedceni: gv('f_rt_osvedceni') || t.osvedceni || '',
-    rt_opravneni: gv('f_rt_opravneni') || t.opravneni || '',
-    rt_adresa: gv('f_rt_adresa') || adr,
-    rt_ico: gv('f_rt_ico') || t.ico || '',
+    // Z profilu jen když technik ve formuláři chybí úplně — jinak by se do
+    // zprávy od kolegy při uložení dopsaly MOJE IČO nebo oprávnění.
+    rt_jmeno: gv('f_rt_jmeno') || (rtPrazdny ? t.jmeno || '' : ''),
+    rt_osvedceni: gv('f_rt_osvedceni') || (rtPrazdny ? t.osvedceni || '' : ''),
+    rt_opravneni: gv('f_rt_opravneni') || (rtPrazdny ? t.opravneni || '' : ''),
+    rt_adresa: gv('f_rt_adresa') || (rtPrazdny ? adr : ''),
+    rt_ico: gv('f_rt_ico') || (rtPrazdny ? t.ico || '' : ''),
     trida: gv('f_trida'),
     zdroj: gv('f_zdroj'), ochrana: gv('f_ochrana'),
     predano_misto: gv('f_predano_misto'), predano_datum: gv('f_predano_datum'),
@@ -15501,7 +15572,7 @@ function pdfChybejiciPole() {
   if (!D.zahajeni) chybi.push('datum zahájení');
   if (!D.ukonceni) chybi.push('datum ukončení');
   if (!D.celkovy_vysledek) chybi.push('celkový výsledek');
-  if (!t.jmeno) chybi.push('jméno technika (⚙️ Nastavení)');
+  if (!D.rt_jmeno && !t.jmeno) chybi.push('jméno technika (⚙️ Nastavení)');
   return chybi;
 }
 
@@ -15928,8 +15999,8 @@ function generujPDF() {
     '<div class="podp-grid">' +
     '<div><div class="podp-inner"><div style="width:100%;text-align:center"><div class="podp-line"></div><div class="podp-lbl">podpis provozovatele</div></div></div></div>' +
     '<div><div class="podp-inner"><div style="width:100%;text-align:center">' +
-      ((pdfOpts.razitko && STORE.technik && STORE.technik.razitko) ? '<img class="razitko-pdf" src="' + STORE.technik.razitko + '" alt="razítko">' : '') +
-      ((pdfOpts.podpis && STORE.technik && STORE.technik.podpis) ? '<img src="' + STORE.technik.podpis + '" style="max-height:20mm;max-width:70mm;display:block;margin:0 auto -3mm;position:relative;z-index:5" alt="podpis">' : '') +
+      ((pdfOpts.razitko && STORE.technik && STORE.technik.razitko && technikZpravyJeMuj(D)) ? '<img class="razitko-pdf" src="' + STORE.technik.razitko + '" alt="razítko">' : '') +
+      ((pdfOpts.podpis && STORE.technik && STORE.technik.podpis && technikZpravyJeMuj(D)) ? '<img src="' + STORE.technik.podpis + '" style="max-height:20mm;max-width:70mm;display:block;margin:0 auto -3mm;position:relative;z-index:5" alt="podpis">' : '') +
       '<div class="podp-line"></div><div class="podp-lbl">' + PJ.podpisPdf + '</div></div></div></div>' +
     '</div></div>' + ftr();
   p1.classList.add('a4-titulni');   // titulní strana se NIKDY nedělí
@@ -19073,8 +19144,13 @@ function nacistData(D) {
   });
   window.__tiskZpravy = (D.tisk && typeof D.tisk === 'object') ? Object.assign({}, D.tisk) : {};
   updateLhutaInfo();   // doporučená lhůta je jen ke čtení, ukázat ji
-  // Vždy přepsat pole revizního technika z vlastního profilu uživatele
-  if (STORE.technik && STORE.technik.jmeno) propsatTechnika();
+  // Technik se bere ZE ZPRÁVY — zpráva od kolegy zůstane jeho (pokyn
+  // uživatele 2026-10-19; dřív se tu VŽDY přepsal vlastním profilem).
+  // Výjimka: zpráva bez jména i osvědčení technika (stará vlastní) — tu
+  // doplní profil jako dřív.
+  var bezTechnika = !String(D.rt_jmeno || '').trim() && !String(D.rt_osvedceni || '').trim();
+  if (bezTechnika && STORE.technik && STORE.technik.jmeno) propsatTechnika();
+  else rtBadgeVykreslit();
   // Restore zkousky
   if (D.zkousky) {
     Object.keys(D.zkousky).forEach(function(k) {
@@ -19104,8 +19180,8 @@ function nacistData(D) {
   if (D.pristroje && D.pristroje.length > 0) {
     D.pristroje.forEach(function(pr, i) { addPristrojRow(pr, i + 1); });
   }
-  // Přepsat přístroje vlastními uloženými z profilu (stejná logika jako u technika)
-  if (STORE.pristroje && STORE.pristroje.length > 0) propsatPristroje();
+  // Přístroje taky ZE ZPRÁVY; z profilu jen u zprávy bez technika (viz výš)
+  if (bezTechnika && STORE.pristroje && STORE.pristroje.length > 0) propsatPristroje();
   // Provázání rozváděčů: zpráva uložená dřív, než funkce vznikla, klíč
   // nemá — a musí zůstat vypnuté, aby se starým zprávám nic nezměnilo.
   __rozvStrom = (D.rozvStrom && typeof D.rozvStrom === 'object')
@@ -20693,7 +20769,7 @@ function spotrKolonka(o, id, sirka, obsah, stred) {
 
 function spotrHlavickaHtml(D, o, stran) {
   var S = D.spotrebice || {};
-  var t = STORE.technik || {};
+  var t = technikProTisk(D);
   var firma = D.provozovatel || t.firma || t.jmeno || '';
   var pop = function(x) {
     return '<td style="padding:.4mm 2mm .4mm 0;white-space:nowrap;font-weight:600;' +
@@ -20848,7 +20924,7 @@ function spotrVysvetlivkyHtml(D) {
 // čára, nad ní razítko a podpis technika, pod ní dva popisky:
 // vlevo „Jméno a příjmení revizního technika", vpravo „podpis".
 function spotrPodpisHtml(D, o) {
-  var t = STORE.technik || {};
+  var t = technikProTisk(D);   // razítko a podpis jen u vlastní zprávy
   var pdfOpts = tiskNastaveni(D);
   var razitko = (pdfOpts.razitko && t.razitko)
     ? '<img class="razitko-pdf" src="' + t.razitko + '" alt="razítko">' : '';
@@ -21428,7 +21504,7 @@ var SPOTR_PRIPOJENI = {
 };
 
 function spotrJedenHtml(D, r) {
-  var t = STORE.technik || {};
+  var t = technikProTisk(D);   // technik ZPRÁVY; razítko a podpis jen u vlastní
   var ok = spotrVyhovuje(r);
   var pdfOpts = tiskNastaveni(D);
   var esc2 = function (x) { return esc(String(x == null ? '' : x).trim()); };
@@ -22128,6 +22204,7 @@ function formArchivKopirovat(uid, idx) {
     D.timestamp = new Date().toISOString();
     vycistitNamerene(D);
     nacistData(D);
+    technikAPristrojeZProfilu();   // kopie je MOJE nová zpráva
     // Žádný řetěz — novaZprava() uvnitř nacistData() už __predchudceUid
     // vynulovala, tohle je pojistka, aby se to při úpravách neztratilo.
     window.__predchudceUid = '';
@@ -22960,6 +23037,7 @@ function navazatZpravu(i) {
   if (D.druh === 'Výchozí' && D.predchozi) D.druh = 'Pravidelná';
   // Načíst do formuláře a přepnout na form obrazovku
   nacistData(D);
+  technikAPristrojeZProfilu();   // navázaná zpráva je MOJE nová zpráva
   // Navázaná zpráva se stane nástupcem staré — stará se v archivu vnoří
   // pod novou (řetěz revizí objektu) a přestane hlásit končící platnost.
   if (!old.uid && archiv[i]) archiv[i].uid = genZpravaUid();
@@ -27042,8 +27120,11 @@ function renderTiskPanel() {
   var box = document.getElementById('pdf-nastaveni');
   if (!box) return;
   var t = tiskNastaveni();
-  var maRazitko = !!(STORE.technik && STORE.technik.razitko);
-  var maPodpis = !!(STORE.technik && STORE.technik.podpis);
+  var cizi = false;
+  try { cizi = !technikZpravyJeMuj(getData()); } catch (e) {}
+  var maRazitko = !!(STORE.technik && STORE.technik.razitko) && !cizi;
+  var maPodpis = !!(STORE.technik && STORE.technik.podpis) && !cizi;
+  var proc = cizi ? ' <span class="tisk-pozn2">(zprávu zpracoval jiný technik — vaše se nevloží)</span>' : ' <span class="tisk-pozn2">(nahrajte v Nastavení)</span>';
   var zeZpravy = window.__tiskZpravy || {};
   var upraveno = Object.keys(zeZpravy).length > 0;
   box.innerHTML =
@@ -27101,11 +27182,11 @@ function renderTiskPanel() {
     '<label class="tisk-check' + (maRazitko ? '' : ' tisk-nedostupne') + '">' +
       '<input type="checkbox" id="tisk-razitko"' + (t.razitko ? ' checked' : '') +
       (maRazitko ? '' : ' disabled') + '> Razítko' +
-      (maRazitko ? '' : ' <span class="tisk-pozn2">(nahrajte v Nastavení)</span>') + '</label>' +
+      (maRazitko ? '' : proc) + '</label>' +
     '<label class="tisk-check' + (maPodpis ? '' : ' tisk-nedostupne') + '">' +
       '<input type="checkbox" id="tisk-podpis"' + (t.podpis ? ' checked' : '') +
       (maPodpis ? '' : ' disabled') + '> Podpis' +
-      (maPodpis ? '' : ' <span class="tisk-pozn2">(nahrajte v Nastavení)</span>') + '</label>' +
+      (maPodpis ? '' : proc) + '</label>' +
 
     '<div class="tisk-akce">' +
       '<button type="button" class="tisk-btn tisk-btn-hlavni" data-action="tiskUlozitVychozi">💾 Uložit jako výchozí</button>' +
@@ -27361,6 +27442,8 @@ document.addEventListener('click', function(e) {
     case 'addDokumentace': addDokumentace(); break;
     case 'addPristroj': addPristroj(); break;
     case 'ulozitPristrojeJakoVychozi': ulozitPristrojeJakoVychozi(); break;
+    case 'technikZProfilu': technikZProfilu(); break;
+    case 'pristrojeZProfilu': pristrojeZProfilu(); break;
     case 'addMereniRow': addMereniRow(el); break;
     case 'addRcdRow': addRcdRow(el); break;
     case 'addInfoRow': addInfoRow(el); break;

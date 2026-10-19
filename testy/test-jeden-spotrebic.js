@@ -110,7 +110,9 @@ const res = []; const check = (n, ok, d) => res.push((ok?'✅':'❌')+' '+n+(d?'
 
   // ══ 3b. Kolonka „Dodavatel" — kdo revizi DODAL ══════════════════
   const dod = async (zmena) => {
-    await p.evaluate((z) => { showScreen('form'); Object.assign(STORE.technik, z); }, zmena);
+    // Od 2026-10-19 si zpráva drží technika, se kterým vznikla — změnu
+    // profilu do ní přenese až „↻ Vyplnit z mého profilu" (technikZProfilu).
+    await p.evaluate((z) => { showScreen('form'); Object.assign(STORE.technik, z); technikZProfilu(); }, zmena);
     return (await protokol()).text;
   };
   const dodOsvc = await dod({});
@@ -126,7 +128,7 @@ const res = []; const check = (n, ok, d) => res.push((ok?'✅':'❌')+' '+n+(d?'
   check('jméno technika zůstává v kolonce „Revizi provedl"',
     /Revizi provedl a protokol vystavil: Jan Novák/.test(dodZam));
   await p.evaluate(() => {
-    STORE.technik.ico = '12345678'; STORE.technik.dic = 'CZ12345678';
+    STORE.technik.ico = '12345678'; STORE.technik.dic = 'CZ12345678'; technikZProfilu();
   });
 
   // ══ 4. Výsledek — z POSLEDNÍHO sloupce, ale N přebíjí ═══════════

@@ -442,6 +442,68 @@ s otevřeným rozvaděčem / zprávou jen pruh i po schování okna, po zavřen�
 ano s hláškou, dialog a kurzor v poli ho odloží, rozepsaný text zůstane;
 nové okno, první návštěva).
 
+## Zpráva od kolegy: technik a přístroje zůstanou jeho (2026-10-19)
+
+Pokyn uživatele: „historicky má jít vidět, že zprávu dělal někdo jiný."
+**Zjištění (ověřeno v kódu):** `nacistData()` při KAŽDÉM otevření volal
+`propsatTechnika()` a `propsatPristroje()` („Vždy přepsat pole revizního
+technika z vlastního profilu") — zpráva od kolegy po otevření ukazovala mě
+jako technika a moje přístroje, a po uložení to tak i zapsala. `getData()`
+navíc doplňoval prázdná pole technika z profilu (`|| t.ico`), takže kolegovo
+prázdné IČO dostalo moje. PDF bralo razítko a podpis vždy z profilu.
+
+- **Otevření existující zprávy** (archiv, soubor, balík, postranní archiv,
+  koncept, hromadný tisk — všechno jde přes `nacistData()`) **technika
+  (`f_rt_*`) ani přístroje nepřepisuje** — ukáže, co je ve zprávě.
+- **Z profilu se vyplní jen moje NOVÁ zpráva:** `novaZprava()`,
+  „🔗 Navázat" a „⧉ Kopírovat" (`technikAPristrojeZProfilu()` hned po
+  `nacistData()`).
+- **Výjimka pro staré vlastní zprávy:** zpráva bez jména I ev. čísla
+  osvědčení technika (`bezTechnika` v `nacistData`) dostane technika
+  i přístroje z profilu jako dřív. Takové zprávy existovat můžou —
+  `getData()` ukládal `gv('f_rt_jmeno') || t.jmeno`, tedy prázdno, když byl
+  prázdný i profil (a zprávy ze starších verzí / cizí soubory klíče nemají).
+- **`getData()` doplní z profilu jen úplně prázdného technika**
+  (`rtPrazdny` = prázdné jméno i osvědčení) — jinak by do zprávy kolegy
+  dopsal moje IČO, oprávnění nebo adresu.
+- **Štítek `#rt-badge`** ukazuje technika ZE ZPRÁVY (z polí formuláře,
+  překresluje se při psaní — `rtBadgeVykreslit()`); liší-li se od profilu
+  (`technikZpravyJeMuj`: shoda ev. č. osvědčení, nebo jména — nové
+  osvědčení po obnově má jiné číslo), pod ním jeden nenápadný řádek
+  „Zprávu zpracoval jiný technik než je ve vašem profilu."
+- **„↻ Vyplnit z mého profilu"** ve štítku technika a u přístrojů
+  (`technikZProfilu`, `pristrojeZProfilu` — nové osvědčení, nová
+  kalibrace). Jsou v `.tab-panel`, takže je u dokončené zprávy CSS schová;
+  funkce to navíc hlídají přes `__formReadOnly`. Tlačítko u přístrojů jde
+  s kartou i do okna přístrojů u spotřebičů.
+- **Razítko a podpis jen u vlastní zprávy** (`technikZpravyJeMuj(D)`) —
+  hlavní PDF, seznam i protokol jednoho spotřebiče. Panel tisku u cizí
+  zprávy razítko/podpis nenabídne a řekne „(zprávu zpracoval jiný technik
+  — vaše se nevloží)".
+- **Tisk existující zprávy bere technika ze zprávy:** `technikProTisk(D)` =
+  jméno, osvědčení, IČO, oprávnění ze zprávy; telefon, e-mail, DIČ, firma,
+  město, razítko a podpis z profilu **jen u vlastní zprávy** (cizí je nemá
+  a vymýšlet se nesmí). Používá ho schéma rozváděčů (`schemaHlavicka`),
+  hlavička, podpis i protokol jednoho spotřebiče (`spotrHlavickaHtml`,
+  `spotrPodpisHtml`, `spotrJedenHtml`, kolonka „Dodavatel" tím u cizí
+  zprávy zůstane prázdná, je-li prázdné IČO). Měřicí list a tisk měření
+  braly `D.rt_jmeno` už dřív. **E-mail s přílohou** (podpis odesílatele)
+  zůstává z profilu — posílám ho já.
+- **Data se pouhým otevřením nemění** a zpráva od kolegy po otevření
+  a uložení má `rt_*` i `pristroje` přesně jako v souboru; profil se nemění.
+- Štítek 📥 a body 4–7 návrhu „Převzaté zprávy od kolegů" se NEDĚLALY.
+
+Test: `testy/test-technik-zpravy.js` (25 kontrol, vymyšlení technici —
+soubor, balík, archiv, postranní archiv, nová / Navázat / Kopírovat, stará
+zpráva bez technika, tlačítka a dokončená zpráva, razítko u cizí ne
+a u vlastní ano, spotřebiče seznam i jeden protokol, data a profil beze
+změny). Na kódu před úpravou spadne. Karta v Novinkách se nedělala.
+
+**Záměrně změněné chování:** `test-jeden-spotrebic.js` měnil IČO jen
+v profilu a čekal ho v už založené zprávě (kolonka „Dodavatel"). Teď si
+zpráva drží svého technika, takže test změnu přenese tlačítkem
+„Vyplnit z mého profilu" (`technikZProfilu()`) — upraveno ve stejném commitu.
+
 ## Zs mez — vyhodnocení impedance poruchové smyčky (blok `zsLim…`)
 
 Zadání uživatele 2026-10-15: program dosud mez Zs nikde
