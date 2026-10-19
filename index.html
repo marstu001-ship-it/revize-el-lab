@@ -1479,6 +1479,13 @@ td.plan-zruseno{color:var(--muted);text-decoration:line-through}
 .plan-pdf-tab td.plan{background:#fdf3d0}
 .plan-pdf-tab td.po{background:#f7dad6}
 .plan-pdf-tab .m{display:block;font-size:6pt;color:#444}
+/* Pruh „nová verze" — nenápadný, dole uprostřed; stránka se obnoví až po kliknutí */
+#nova-verze{position:fixed;left:50%;bottom:12px;transform:translateX(-50%);z-index:9000;display:flex;align-items:center;gap:.7rem;
+  max-width:calc(100vw - 24px);background:#2b2b2b;color:#fff;font-family:var(--sans);font-size:.84rem;padding:.4rem .5rem .4rem .9rem;
+  border-radius:4px;box-shadow:0 3px 12px rgba(0,0,0,.25)}
+#nova-verze button{background:#0f7b5f;color:#fff;border:none;border-radius:3px;padding:.35rem .9rem;font-family:var(--sans);font-size:.84rem;
+  font-weight:600;cursor:pointer;flex:0 0 auto}
+#nova-verze button:hover{background:#0b6650}
 /* ═══ TVORBA DOKUMENTACE (2026-10-16) — samostatná část mimo revize ═══ */
 .dok-typy{display:flex;flex-wrap:wrap;gap:.75rem}
 /* hlavní akce seznamu dokumentů — plné barevné tlačítko, na první pohled */
@@ -23611,6 +23618,10 @@ async function init() {
   // Obnova po pádu: koncept se ukládá průběžně při psaní a maže při
   // uložení do archivu (nebo vědomém zahození). Pokud tu po startu je,
   // prohlížeč spadl / zavřel se s neuloženou prací — nabídnout obnovu.
+  // Načetla-li se jen stránka v témže okně, kde byla zpráva otevřená
+  // (nová verze, uspaná karta), vrátí se rozepsaná zpráva bez ptaní.
+  var obnova = null, draftObnoven = false;
+  try { obnova = JSON.parse(sessionStorage.getItem(OBNOVA_KLIC) || 'null'); } catch (e) {}
   try {
     var draftRaw = localStorage.getItem('revize_el_autosave');
     if (draftRaw) {
@@ -23618,7 +23629,9 @@ async function init() {
       var draftD = (draft && draft.data) ? draft.data : draft; // starší koncept bez obálky
       if (draftD && (draftD.ev_cislo || draftD.misto || draftD.adresa)) {
         var draftKdy = draft && draft._t ? new Date(draft._t).toLocaleString('cs-CZ') : '';
-        if (confirm('Našla se neuložená rozepsaná zpráva' +
+        var tichaObnova = !!(obnova && (obnova.s === 'form' || obnova.s === 'pdf') &&
+          (!obnova.zprava || !obnova.zprava.uid || !draft.uid || obnova.zprava.uid === draft.uid));
+        if (tichaObnova || confirm('Našla se neuložená rozepsaná zpráva' +
               (draftD.ev_cislo ? ' ' + draftD.ev_cislo : '') +
               (draftKdy ? ' (naposledy upravena ' + draftKdy + ')' : '') +
               '.\n\nObnovit ji a pokračovat v práci?')) {
@@ -23629,6 +23642,7 @@ async function init() {
           if (draft && draft.uid) window.__openZpravaUid = draft.uid;
           showScreen('form');
           window.__formDirty = true;
+          draftObnoven = true;
         } else {
           localStorage.removeItem('revize_el_autosave');
         }
@@ -23663,6 +23677,8 @@ async function init() {
     var btn = document.getElementById('pt-' + pt);
     if (btn) btn.addEventListener('click', function() { volbaPodtypu(pt); });
   });
+  // Návrat tam, kde uživatel byl před načtením stránky (nová verze, uspaná karta)
+  await obnovaObrazovky(obnova, draftObnoven);
 }
 
 // ═══════════════════════════════════════════════════════════════════════
@@ -30954,27 +30970,110 @@ window.addEventListener('DOMContentLoaded', function() {
   });
 });
 
-// Service Worker — offline podpora (PWA) + auto-reload po aktualizaci
+// ═══ NOVÁ VERZE A NÁVRAT NA OBRAZOVKU PO NAČTENÍ STRÁNKY ═══════════════
+// Hlášení uživatele 2026-10-19: „program sám skočí na úvod, když jsem chvíli
+// neaktivní". Příčiny byly dvě:
+//  1. sw.js po nové verzi hned převezme kontrolu (skipWaiting + clients.claim)
+//     a stránka na `controllerchange` sama volala location.reload() — prohlížeč
+//     přitom aktualizaci hledá sám, typicky po návratu k oknu. Výjimkou byla
+//     jen rozepsaná ZPRÁVA; dokument z Tvorby dokumentace, plán ani nastavení
+//     výjimku neměly.
+//  2. Prohlížeč uspanou kartu (šetřič paměti v Chrome, telefon) po návratu
+//     načte znovu.
+// Po každém načtení program začínal na úvodu. Teď:
+//  - nová verze se jen NABÍDNE pruhem „Je k dispozici nová verze – Načíst",
+//    stránka se obnoví až po kliknutí (a předtím se dopíše rozpracované),
+//  - kde uživatel byl (obrazovka, otevřená zpráva + záložka, dokument, typ
+//    dokumentů, posun stránky), se pamatuje v sessionStorage a po JAKÉMKOLI
+//    načtení stránky v témže okně se tam vrátí.
+var OBNOVA_KLIC = 'revize_el_obnova';
+
+function obnovaStav() {
+  var akt = document.querySelector('.screen.active');
+  var s = { s: akt ? akt.id.replace(/^screen-/, '') : 'home', y: Math.round(window.scrollY || 0), t: Date.now() };
+  if (s.s === 'form' || s.s === 'pdf') {
+    s.zprava = { uid: window.__openZpravaUid || '', typ: typeof aktTyp !== 'undefined' ? aktTyp : '' };
+    var tb = document.querySelector('#screen-form .tab-btn.active');
+    if (tb) s.zprava.tab = tb.getAttribute('data-tab');
+  }
+  if (/^dok-/.test(s.s) || s.s === 'dokumentace') {
+    s.dokTyp = typeof __dokTyp !== 'undefined' ? __dokTyp : '';
+    var o = window.__dokOtevreny;
+    if (o && (s.s === 'dok-form' || (s.s === 'dok-pdf' && __dokPdf && __dokPdf.zpet === 'dok-form'))) s.dok = { uid: o.uid, typ: o.typ };
+  }
+  return s;
+}
+function obnovaZapsat() {
+  try { sessionStorage.setItem(OBNOVA_KLIC, JSON.stringify(obnovaStav())); } catch (e) {}
+}
+// Rozepsaná zpráva se do konceptu zapisuje 1,5 s po psaní — při odchodu ze
+// stránky se musí dopsat hned, jinak by se poslední slova po obnovení ztratila.
+function autoSaveHned() {
+  if (!autoSaveTimer) return;
+  clearTimeout(autoSaveTimer); autoSaveTimer = null;
+  try {
+    localStorage.setItem('revize_el_autosave', JSON.stringify({ _t: new Date().toISOString(), uid: window.__openZpravaUid || '', data: getData() }));
+  } catch (e) {}
+}
+window.addEventListener('pagehide', function () { autoSaveHned(); obnovaZapsat(); });
+document.addEventListener('visibilitychange', function () {
+  if (document.visibilityState === 'hidden') { autoSaveHned(); obnovaZapsat(); }
+});
+
+// Návrat po načtení stránky. `draftObnoven` = init() už rozepsanou zprávu
+// z konceptu vrátil do formuláře.
+async function obnovaObrazovky(st, draftObnoven) {
+  if (!st || !st.s || st.s === 'home') return;
+  var cil = st.s;
+  try {
+    if (cil === 'form' || cil === 'pdf') {
+      if (!draftObnoven) {
+        var i = st.zprava && st.zprava.uid ? archiv.findIndex(function (z) { return z.uid === st.zprava.uid; }) : -1;
+        if (i < 0) return;                  // nová, nikdy neuložená a nevyplněná zpráva — není kam
+        otevritZpravu(i);
+      }
+      showScreen('form');
+      if (st.zprava && st.zprava.tab) formArchivObnovitTab(st.zprava.tab);
+    } else if (cil === 'dok-form' || cil === 'dok-pdf') {
+      if (st.dok && dokNajit(st.dok.uid)) await dokOtevrit(st.dok.uid);
+      else dokOtevritSeznam(st.dokTyp);
+    } else if (cil === 'dok-seznam') dokOtevritSeznam(st.dokTyp);
+    else if (cil === 'dokumentace') dokOtevritTypy();
+    else if (cil === 'plan' || cil === 'plan-pdf') otevritPlan();
+    else if (cil === 'nastaveni' || cil === 'novinky' || cil === 'podtyp') showScreen(cil);
+    else return;                            // náhledy PDF a ostatní — zpět na úvod
+  } catch (e) { return; }
+  if (st.y) setTimeout(function () { window.scrollTo(0, st.y); }, 60);
+}
+
+// Pruh „nová verze" — nenápadný, dole; nic se neobnoví samo.
+function novaVerzePruh() {
+  if (document.getElementById('nova-verze')) return;
+  var p = document.createElement('div');
+  p.id = 'nova-verze';
+  p.setAttribute('role', 'status');
+  p.innerHTML = '<span>Je k dispozici nová verze programu.</span>' +
+    '<button type="button" id="nova-verze-nacist" title="Načte novou verzi — rozpracovaná práce se předtím uloží a vrátíte se, kde jste byli">Načíst</button>';
+  document.body.appendChild(p);
+  document.getElementById('nova-verze-nacist').addEventListener('click', novaVerzeNacist);
+}
+async function novaVerzeNacist() {
+  autoSaveHned();
+  try { if (typeof dokDopsat === 'function') await dokDopsat(); } catch (e) {}
+  obnovaZapsat();
+  window.location.reload();
+}
+
+// Service Worker — offline podpora (PWA). Nová verze se jen NABÍDNE
+// (pruh „Načíst"), stránka se sama neobnovuje — viz oddíl výš.
 if ('serviceWorker' in navigator) {
+  // Bez řídicího workeru = první návštěva: worker se teprve instaluje
+  // a stránka je už nejnovější, takže jeho převzetí není nová verze.
+  var swMelKontrolu = !!navigator.serviceWorker.controller;
   navigator.serviceWorker.register('./sw.js').catch(function() {});
-  // Když nový SW převezme kontrolu (po bumpu CACHE_NAME v sw.js),
-  // stránku reloadni, ať uživatel hned vidí novou verzi. Výjimka: pokud
-  // má rozepsanou neuloženou zprávu, reload by ho vylekal — místo toho
-  // se ukáže lišta s tlačítkem OBNOVIT a reload si odklikne sám.
-  var swRefreshing = false;
   navigator.serviceWorker.addEventListener('controllerchange', function() {
-    if (swRefreshing) return;
-    swRefreshing = true;
-    var form = document.getElementById('screen-form');
-    if (form && form.classList.contains('active') && window.__formDirty) {
-      showToast('Je připravena nová verze programu', {
-        actionLabel: 'OBNOVIT',
-        timeout: 600000,
-        action: function() { window.location.reload(); }
-      });
-    } else {
-      window.location.reload();
-    }
+    if (!swMelKontrolu) { swMelKontrolu = true; return; }
+    novaVerzePruh();
   });
 }
 

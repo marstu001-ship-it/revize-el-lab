@@ -364,6 +364,54 @@ a zaškrtávátka mají nativní vzhled. Obsah v rámečku s vlastním posunem
   v rozbalovátku, vzhled vlastního zaškrtávátka v Safari, dlouhý stisk prstem
   (kontextové menu), PDF z html2canvas na slabém telefonu, výřez displeje.
 
+## Nová verze se jen nabídne, po načtení stránky zpět, kde byl uživatel (2026-10-19)
+
+Hlášení uživatele: „program sám skočí na úvod, když jsem chvíli neaktivní."
+**Příčiny byly dvě:**
+
+1. **Automatické obnovení po nové verzi.** `sw.js` při instalaci volá
+   `skipWaiting()` a při aktivaci `clients.claim()`, takže nový worker hned
+   převezme otevřenou stránku a ta dostane `controllerchange`. Na něj
+   stránka volala **`location.reload()`** — výjimkou byla jen rozepsaná
+   zpráva (`__formDirty`), dokument z Tvorby dokumentace, plán ani
+   nastavení výjimku neměly. Prohlížeč přitom aktualizaci hledá sám, typicky
+   po návratu k oknu — proto to vypadalo jako „po chvíli nečinnosti".
+2. **Uspaná karta.** Chrome (šetřič paměti) i telefon kartu na pozadí
+   zahodí a po návratu ji načtou znovu.
+
+Po každém načtení program začínal na úvodu (`init()` nikam jinam nevedl).
+
+**Oprava (blok „NOVÁ VERZE A NÁVRAT NA OBRAZOVKU" před registrací workeru):**
+
+- **Na `controllerchange` se stránka NEOBNOVUJE** — ukáže se nenápadný pruh
+  dole **„Je k dispozici nová verze programu. [Načíst]"** (`#nova-verze`,
+  `novaVerzePruh()`), obnoví se až po kliknutí (`novaVerzeNacist()`: dopíše
+  koncept zprávy i dokument, zapíše polohu, pak `reload`). **První návštěva
+  (stránku ještě žádný worker neřídil) pruh neukáže** — převzetí čerstvě
+  nainstalovaným workerem není nová verze (`swMelKontrolu`). `sw.js` se
+  neměnil (skipWaiting/claim zůstávají, jen stránka se už sama neobnoví).
+- **Poloha se pamatuje v `sessionStorage` `revize_el_obnova`** (`obnovaStav`:
+  obrazovka, u zprávy `uid` + záložka, u tvorby dokumentace typ a otevřený
+  dokument, posun stránky). Zapisuje se při `pagehide` a skrytí okna
+  (`visibilitychange`) — tím se chytí obnovení, nová verze i uspaná karta.
+  **sessionStorage patří jednomu oknu** — v novém okně se nic neobnovuje.
+- **`obnovaObrazovky()` na konci `init()`**: zpráva z archivu (`otevritZpravu`
+  → formulář, záložka přes `formArchivObnovitTab`, dokončená zůstane jen pro
+  čtení), náhled PDF zprávy → formulář, dokument (`dokOtevrit`; neuložený
+  nový → jeho seznam), seznam a dlaždice dokumentů, plán (i z náhledu
+  plánu), nastavení, novinky, výběr podtypu. Ostatní náhledy PDF → úvod.
+- **Rozepsané se neztratí:** koncept zprávy se ukládá 1,5 s po psaní —
+  **`autoSaveHned()`** ho při odchodu dopíše hned. Byla-li zpráva otevřená
+  v témže okně, vrátí se z konceptu **bez dotazu** (`tichaObnova` v
+  `init()`) a zůstane „neuloženo"; v novém okně se na koncept ptá jako dřív.
+  Dokument tvorby dokumentace dopisuje `dokUlozitHned` (pagehide, už dřív).
+- **Přenést i do revize-el** (je to commit `FUNKCE:`).
+
+Test: `testy/test-obnova.js` (zpráva i záložka, psaní těsně před obnovením,
+pruh místo obnovení a „Načíst", dokončená zpráva, plán, nastavení s posunem,
+protokol, seznam dokumentů, rozvaděč s čerstvě vloženými přístroji, náhled
+PDF dokumentu, nové okno, první návštěva).
+
 ## Zs mez — vyhodnocení impedance poruchové smyčky (blok `zsLim…`)
 
 Zadání uživatele 2026-10-15: program dosud mez Zs nikde
