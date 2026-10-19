@@ -203,6 +203,7 @@ async function snimek(p) {
       await dokNacist();
       DOK.rozvKnihovna.push(rozvPolozkaNorm({ kat: 'FA', typ: 'LAB-KNIHOVNA', sirka: 1 }, 'pristroj'));
       DOK.rozvOblibene.push('v-fa-1-B16');
+      DOK.rozvObjekty.push({ id: 'lab-obj', nazev: 'LAB-OBJEKT' });
       await dokZapsat();
     });
     await lab.waitForTimeout(400);
@@ -213,11 +214,15 @@ async function snimek(p) {
           g.onsuccess = () => { db.close(); res(JSON.stringify(g.result || null)); }; };
       });
       return { lab: await cti('revize-lab-db', 'dok_rozvKnihovna'), ostra: await cti('revize-el-db', 'dok_rozvKnihovna'),
+               objLab: await cti('revize-lab-db', 'dok_rozvObjekty'), objOstra: await cti('revize-el-db', 'dok_rozvObjekty'),
                lsLab: localStorage.getItem('revize_lab_dok'), lsOstry: localStorage.getItem('revize_el_dok') };
     });
     check('rozvaděče: knihovna přístrojů jen v revize-lab-db a revize_lab_dok, ostrý program beze změny',
       /LAB-KNIHOVNA/.test(kn.lab) && /LAB-KNIHOVNA/.test(kn.lsLab || '') && !/LAB-KNIHOVNA/.test(kn.ostra) && !/LAB-KNIHOVNA/.test(kn.lsOstry || ''),
       kn.lab.slice(0, 60) + ' | ' + kn.ostra);
+    check('rozvaděče: objekty (dok_rozvObjekty) jen v revize-lab-db a revize_lab_dok, ostrý program beze změny',
+      /LAB-OBJEKT/.test(kn.objLab) && /LAB-OBJEKT/.test(kn.lsLab || '') && !/LAB-OBJEKT/.test(kn.objOstra) && !/LAB-OBJEKT/.test(kn.lsOstry || ''),
+      kn.objLab + ' | ' + kn.objOstra);
     // návrat na obrazovku po načtení stránky (sessionStorage revize_el_obnova)
     const ob = await lab.evaluate(() => { obnovaZapsat(); return { klice: Object.keys(sessionStorage).join(','), cte: !!sessionStorage.getItem('revize_el_obnova') }; });
     check('poloha pro návrat po načtení stránky: sessionStorage revize_lab_obnova, ne revize_el_obnova',
