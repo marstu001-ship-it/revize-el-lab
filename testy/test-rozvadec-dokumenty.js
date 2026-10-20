@@ -69,13 +69,15 @@ async function priprava(p) {
       akce: g && g.textContent, nahore: g && g.getBoundingClientRect().top - hl.top < 120, plne: g && getComputedStyle(g).backgroundColor,
       vyber: Array.from(document.querySelectorAll('.rz-dok-vyber input')).map(i => (i.checked ? '☑' : '☐') + i.parentNode.textContent.trim()).join('|'),
       stitek: (document.querySelector('[data-action="tdRStitek"]') || {}).textContent,
+      popisky: (document.querySelector('[data-action="tdRPopisky"]') || {}).textContent,
       oddily: Array.from(document.querySelectorAll('.rz-dok-oddil')).map(d => d.querySelector('summary').textContent + (d.open ? '+' : '-')).join('|'),
       aktivni: rozvEditorAktivni() };
   });
   check('záložka Dokumenty: jedna hlavní akce „📄 Vygenerovat dokumentaci (PDF)" nahoře, plné tlačítko', z1.dok && !z1.navrh && z1.akce === '📄 Vygenerovat dokumentaci (PDF)' &&
     z1.nahore && z1.plne !== 'rgba(0, 0, 0, 0)', JSON.stringify(z1));
   check('výběr do PDF: čelní pohled a seznam · technické údaje · prohlášení · protokol (vše zaškrtnuté), štítek zvlášť',
-    z1.vyber === '☑čelní pohled a seznam přístrojů|☑technické údaje|☑prohlášení o shodě|☑protokol o kusovém ověření' && z1.stitek === '🏷 Tisk štítku', z1.vyber);
+    z1.vyber === '☑čelní pohled a seznam přístrojů|☑technické údaje|☑prohlášení o shodě|☑protokol o kusovém ověření|☐popisky pod přístroje' && z1.stitek === '🏷 Tisk štítku' &&
+    z1.popisky === '🏷 Tisk popisků přístrojů', z1.vyber);
   check('oddíly sbalitelné: Výroba a značení (otevřený) · Technické údaje · Prohlášení · Kusové ověření', z1.oddily ===
     '🏭 Výroba a značení+|📋 Technické údaje-|📜 Prohlášení o shodě-|🔧 Kusové ověření (čl. 11)-', z1.oddily);
   check('na záložce Dokumenty nefungují klávesy návrhu (Delete nesmaže skrytý přístroj)', z1.aktivni === false);
@@ -138,50 +140,199 @@ async function priprava(p) {
   await p.evaluate(async uid => { DOK.dokumenty = DOK.dokumenty.filter(x => x.uid !== uid); await dokZapsat(); }, vc2.uid);
   await p.evaluate(async uid => { await dokOtevrit(uid); rozvZalozkaNastavit('dok'); }, prvniUid); await w(200);
 
-  // ── 4. štítek ─────────────────────────────────────────────────────────
-  await p.click('[data-action="tdRStitek"]'); await w(500);
-  const st = await p.evaluate(() => {
-    const s = document.querySelector('#dok-pdf-pages .rz-stitek'), r = s.getBoundingClientRect(), o = s.querySelector('.rz-st-obsah'), ce = s.querySelector('svg.rz-ce');
-    return { akt: document.querySelector('.screen.active').id, w: r.width, h: r.height, text: s.innerText.replace(/\s+/g, ' '), ce: ce && ce.getBoundingClientRect().height,
-      ceObrazek: !!s.querySelector('img'), cesty: ce ? ce.querySelectorAll('path').length : 0, vejde: o.scrollHeight <= o.clientHeight + 1,
+  // ── 4. štítek — tabulka s popsanými políčky (v1.22) ───────────────────
+  // každé políčko: popisek nahoře (5–7,2 pt, šedý), hodnota pod ním; nic nepřetéká
+  const stitekInfo = () => p.evaluate(() => {
+    const s = document.querySelector('#dok-pdf-pages .rz-stitek'), r = s.getBoundingClientRect(), ce = s.querySelector('svg.rz-ce'), MMx = 96 / 25.4, PT = 96 / 72;
+    const bunky = Array.from(s.querySelectorAll('.rz-sc')).map(c => {
+      const l = c.querySelector('.rz-sc-l'), v = c.querySelector('.rz-sc-v');
+      return { l: l ? l.textContent : '', v: v ? v.innerText.replace(/\s+/g, ' ').trim() : '', ok: c.scrollHeight <= c.clientHeight + 0.5 && c.scrollWidth <= c.clientWidth + 0.5 && (!l || l.scrollWidth <= l.clientWidth + 0.5),
+        lpt: l ? parseFloat(getComputedStyle(l).fontSize) / PT : 0, vpt: v ? parseFloat(getComputedStyle(v).fontSize) / PT : 0, lbarva: l ? getComputedStyle(l).color : '',
+        w: c.getBoundingClientRect().width / MMx, radek: Array.from(c.parentNode.parentNode.children).indexOf(c.parentNode), vRadku: c.parentNode.children.length };
+    });
+    return { akt: document.querySelector('.screen.active').id, w: r.width, h: r.height, tab: s.classList.contains('rz-st-tab'), bunky, text: s.innerText.replace(/\s+/g, ' '),
+      ce: ce && ce.getBoundingClientRect().height / MMx, cesty: ce ? ce.querySelectorAll('path').length : 0, img: s.querySelectorAll('img').length,
+      logo: (() => { const i = s.querySelector('img.rz-st-logo'); return i ? i.getBoundingClientRect().height / MMx : 0; })(),
+      vejde: (() => { const o = s.querySelector('.rz-st-obsah'); return o.scrollHeight <= o.clientHeight + 1; })(),
       info: document.getElementById('dok-pdf-info').textContent, kusu: document.querySelectorAll('#dok-pdf-pages .rz-stitek').length,
-      orez: document.querySelectorAll('#dok-pdf-pages .rz-orez').length, pokyn: document.querySelector('.rz-st-pokyn').innerText,
-      list: document.querySelector('#dok-pdf-pages .a4').getBoundingClientRect().width, tr2: !!s.querySelector('.rz-tr2') };
+      stran: document.querySelectorAll('#dok-pdf-pages .a4').length, orez: document.querySelectorAll('#dok-pdf-pages .rz-orez').length,
+      pokyn: (document.querySelector('.rz-st-pokyn') || {}).innerText || '', list: document.querySelector('#dok-pdf-pages .a4').getBoundingClientRect().width,
+      tr2: !!s.querySelector('.rz-tr2') };
   });
+  const stitekS = (nast) => p.evaluate(async nast => {
+    await dokOtevrit(__rz.o.uid); rozvZalozkaNastavit('dok');
+    for (const [k, v] of Object.entries(nast)) {
+      const e = dokForm().querySelector('[data-dk="' + k + '"]');
+      if (e.type === 'checkbox') { e.checked = !!v; e.dispatchEvent(new Event('change', { bubbles: true })); } else __T.dk('[data-dk="' + k + '"]', v);
+    }
+    await TD_AKCE.tdRStitek(); await __T.w(300);
+  }, nast);
+  const bunka = (st, l) => st.bunky.find(b => b.l === l) || {};
+  await p.click('[data-action="tdRStitek"]'); await w(500);
+  const st = await stitekInfo();
   check('štítek ve skutečné velikosti: 90 × 45 mm na listu A4 (210 mm), nic se nezmenšuje', Math.abs(st.w - 90 * MM) < 1 && Math.abs(st.h - 45 * MM) < 1 &&
     Math.abs(st.list - 210 * MM) < 2 && st.akt === 'screen-dok-pdf', st.w.toFixed(1) + '×' + st.h.toFixed(1));
-  check('štítek: výrobce a kontaktní adresa, typ, výr. číslo, rok/měsíc, „ČSN EN IEC 61439-3 (IEC 61439-3)", InA', /Vymyšlená elektro s\.r\.o\., Polní 1, 697 01 Kyjov/.test(st.text) &&
-    /Rozvaděč nn typ: RH1 DBO 3×12 M/.test(st.text) && new RegExp('Výr\\. č\\.: ' + ROK + '-0001 Rok/měs\\.: \\d{4}/\\d{2}').test(st.text) &&
-    /ČSN EN IEC 61439-3 \(IEC 61439-3\)/.test(st.text) && /InA 40 A/.test(st.text), st.text);
-  check('štítek — rozšířená část: 3/N/PE AC 400/230 V 50 Hz TN-S, Icc, IP40 / IP20', /3\/N\/PE AC 400\/230 V 50 Hz TN-S/.test(st.text) && /Icc 10 kA/.test(st.text) && /IP40 \/ IP20/.test(st.text), st.text);
-  check('značka CE nakreslená (SVG ze dvou oblouků, žádný obrázek), výška ≥ 5 mm', st.cesty === 2 && !st.ceObrazek && st.ce >= 5 * MM - 0.5, (st.ce / MM).toFixed(1) + ' mm');
-  check('obsah štítku se vejde, ořezové značky, pokyn „Tiskněte ve skutečné velikosti (100 %)" s kontrolní úsečkou', st.vejde && st.orez === 8 &&
-    /Tiskněte ve skutečné velikosti \(100 %\)/.test(st.pokyn) && /skutečné velikosti \(100 %\)/.test(st.info) && /50 mm/.test(st.pokyn), st.info);
-  check('značka třídy II se netiskne bez zaškrtnutí', !st.tr2);
+  check('štítek je tabulka s popsanými políčky (výchozí): Výrobce · Typové označení · Označení rozvaděče · Výrobní číslo · Datum výroby · napětí a kmitočet · Soustava · InA · Icc · Krytí IP',
+    st.tab && st.bunky.filter(b => b.l).map(b => b.l).join('|') === 'Výrobce|Typové označení|Označení rozvaděče|Výrobní číslo|Datum výroby|Jmenovité napětí a kmitočet|Soustava|Jmenovitý proud InA|Zkratová odolnost Icc|Krytí IP (zavřeno / otevřeno)',
+    st.bunky.map(b => b.l).join('|'));
+  check('hodnoty v políčkách: výrobce s adresou a IČO, typ, RH1, výr. č., RRRR/MM, 400/230 V, 50 Hz, 3/N/PE AC TN-S, 40 A, 10 kA, IP40 / IP20',
+    /^Vymyšlená elektro s\.r\.o\. Polní 1, 697 01 Kyjov · IČO 12345678$/.test(bunka(st, 'Výrobce').v) && bunka(st, 'Typové označení').v === 'RH1 DBO 3×12 M' &&
+    bunka(st, 'Označení rozvaděče').v === 'RH1' && bunka(st, 'Výrobní číslo').v === ROK + '-0001' && /^\d{4}\/\d{2}$/.test(bunka(st, 'Datum výroby').v) &&
+    bunka(st, 'Jmenovité napětí a kmitočet').v === '400/230 V, 50 Hz' && bunka(st, 'Soustava').v === '3/N/PE AC TN-S' && bunka(st, 'Jmenovitý proud InA').v === '40 A' &&
+    bunka(st, 'Zkratová odolnost Icc').v === '10 kA' && bunka(st, 'Krytí IP (zavřeno / otevřeno)').v === 'IP40 / IP20', JSON.stringify(st.bunky.map(b => b.v)));
+  check('spodní pás přes celou šířku: ČSN EN IEC 61439-3 (IEC 61439-3) — beze změny', st.bunky.some(b => b.v === 'ČSN EN IEC 61439-3 (IEC 61439-3)' && b.vRadku === 1));
+  check('popisky drobně (5–7,2 pt) a šedě, hodnoty větší a tučně', st.bunky.filter(b => b.l).every(b => b.lpt >= 5 - 0.05 && b.lpt <= 7.2 && b.vpt > b.lpt) &&
+    bunka(st, 'Výrobní číslo').lbarva !== 'rgb(0, 0, 0)', st.bunky.filter(b => b.l).map(b => b.lpt.toFixed(1) + '/' + b.vpt.toFixed(1)).join(' '));
+  check('značka CE nakreslená (SVG, žádný obrázek) v horním pásu vpravo, výška aspoň 8 mm', st.cesty === 2 && !st.img && st.ce >= 8 - 0.05 && st.bunky[1].radek === 0 && st.bunky[1].l === '', (st.ce || 0).toFixed(1) + ' mm');
+  check('90 × 45: každé políčko i celý štítek bez přetečení, ořezové značky, pokyn „Tiskněte ve skutečné velikosti (100 %)" s úsečkou 50 mm',
+    st.vejde && st.bunky.every(b => b.ok) && st.orez === 8 && /Tiskněte ve skutečné velikosti \(100 %\)/.test(st.pokyn) && /50 mm/.test(st.pokyn) && !/zvolte větší/.test(st.info), st.info);
+  check('bez třídy ochrany se políčko Třída nekreslí a značka třídy II netiskne', !st.bunky.some(b => b.l === 'Třída ochrany') && !st.tr2);
   await p.screenshot({ path: BEH + '/rz-dok-stitek.png' });
-  await p.evaluate(async uid => { await dokOtevrit(uid); rozvZalozkaNastavit('dok'); }, prvniUid); await w(150);
-  const st2 = await p.evaluate(async () => {
-    const r = {};
-    __T.dk('[data-dk="stitek.vel"]', '70x35'); __T.dk('[data-dk="stitek.kusu"]', '12');
-    __T.dk('[data-dk="tech.trida"]', 'II'); const c = dokForm().querySelector('[data-dk="stitek.tridaII"]'); c.checked = true; c.dispatchEvent(new Event('change', { bubbles: true }));
-    await TD_AKCE.tdRStitek(); await __T.w(300);
-    const s = document.querySelector('#dok-pdf-pages .rz-stitek'), o = s.querySelector('.rz-st-obsah');
-    r.w = s.getBoundingClientRect().width; r.h = s.getBoundingClientRect().height; r.kusu = document.querySelectorAll('#dok-pdf-pages .rz-stitek').length;
-    r.tr2 = !!s.querySelector('.rz-tr2'); r.vejde = o.scrollHeight <= o.clientHeight + 1; r.ce = s.querySelector('svg.rz-ce').getBoundingClientRect().height;
-    r.stran = document.querySelectorAll('#dok-pdf-pages .a4').length;
+  await stitekS({ 'stitek.vel': '70x35', 'stitek.kusu': '12', 'tech.trida': 'II', 'stitek.tridaII': true });
+  const st2 = await stitekInfo();
+  check('štítek 70 × 35 mm, 12 kusů na list, třída II se značkou — každé políčko se vejde, písmo ne pod 5 pt, CE ≥ 5 mm', Math.abs(st2.w - 70 * MM) < 1 && Math.abs(st2.h - 35 * MM) < 1 &&
+    st2.kusu === 12 && st2.stran === 1 && st2.tr2 && st2.vejde && st2.bunky.every(b => b.ok && (!b.l || b.lpt >= 4.95) && b.vpt >= 4.95) && st2.ce >= 5 - 0.05 &&
+    bunka(st2, 'Třída ochrany').v === 'II', JSON.stringify(st2.bunky.map(b => b.l + (b.ok ? '' : '✗'))));
+  check('70 × 35: soustava, napětí a kmitočet v jednom políčku; proud, Icc, krytí a třída v jednom řádku', bunka(st2, 'Soustava, jmenovité napětí a kmitočet').v === '3/N/PE AC 400/230 V 50 Hz TN-S' &&
+    bunka(st2, 'Proud InA').vRadku === 4, JSON.stringify(st2.bunky.map(b => b.l)));
+  await stitekS({ 'stitek.vel': '100x60', 'stitek.kusu': '1' });
+  const st3 = await stitekInfo();
+  check('štítek 100 × 60 mm: větší písmo, každé políčko se vejde, CE ≥ 8 mm', Math.abs(st3.w - 100 * MM) < 1 && Math.abs(st3.h - 60 * MM) < 1 && st3.vejde &&
+    st3.bunky.every(b => b.ok) && bunka(st3, 'Výrobní číslo').vpt > bunka(st, 'Výrobní číslo').vpt && st3.ce >= 8, bunka(st3, 'Výrobní číslo').vpt.toFixed(1) + ' pt');
+  await stitekS({ 'stitek.vel': '90x45', icc: '' });
+  const st4 = await stitekInfo();
+  const ina4 = bunka(st4, 'Jmenovitý proud InA');
+  check('Icc prázdné = políčko Icc chybí a InA se roztáhne přes celý řádek', !st4.bunky.some(b => /Icc/.test(b.l)) && ina4.vRadku === 1 && ina4.w > 80, JSON.stringify(ina4));
+  await stitekS({ icc: '10', 'stitek.rozsirena': false });
+  const st5 = await stitekInfo();
+  check('bez rozšířené části jen povinné údaje (InA zůstane; Icc, IP, soustava ne)', bunka(st5, 'Jmenovitý proud InA').v === '40 A' && !/Icc|IP40|TN-S/.test(st5.text), st5.text);
+  await stitekS({ 'stitek.rozsirena': true, 'stitek.styl': 'jednoduche' });
+  const st6 = await stitekInfo();
+  check('rozvržení „jednoduché": staré řádky textu (Rozvaděč nn typ, Výr. č., Rok/měs., norma, síť, InA), žádná políčka', !st6.tab && !st6.bunky.length &&
+    /Rozvaděč nn typ: RH1 DBO 3×12 M/.test(st6.text) && new RegExp('Výr\\. č\\.: ' + ROK + '-0001 Rok/měs\\.: \\d{4}/\\d{2}').test(st6.text) &&
+    /ČSN EN IEC 61439-3 \(IEC 61439-3\)/.test(st6.text) && /3\/N\/PE AC 400\/230 V 50 Hz TN-S/.test(st6.text) && /InA 40 A/.test(st6.text) && st6.vejde && st6.cesty === 2, st6.text);
+  // přeplněný malý štítek → hláška, písmo nikdy pod 5 pt
+  await stitekS({ 'stitek.styl': 'tabulka', 'stitek.vel': '70x35', 'tech.trida': '', 'vyroba.typ': 'Rozvaděč pro rodinný dům s fotovoltaikou, wallboxem a tepelným čerpadlem — typ velmi dlouhý' });
+  const st7 = await stitekInfo();
+  check('když se údaje nevejdou ani při 5 pt: hláška „zvolte větší štítek", písmo nejde pod 5 pt', /zvolte větší štítek/.test(st7.info) &&
+    st7.bunky.every(b => b.vpt >= 4.95 && (!b.l || b.lpt >= 4.95)), st7.info);
+  // logo výrobce (profil technika, max. 400 px, vlevo od CE)
+  await stitekS({ 'stitek.vel': '90x45', 'vyroba.typ': '' });
+  const lg = await p.evaluate(async () => {
     await dokOtevrit(__rz.o.uid); rozvZalozkaNastavit('dok');
-    const z = dokForm().querySelector('[data-dk="stitek.rozsirena"]'); z.checked = false; z.dispatchEvent(new Event('change', { bubbles: true }));
-    __T.dk('[data-dk="stitek.kusu"]', '1');
-    await TD_AKCE.tdRStitek(); await __T.w(300);
-    r.bez = document.querySelector('#dok-pdf-pages .rz-stitek').innerText.replace(/\s+/g, ' ');
-    await dokOtevrit(__rz.o.uid); rozvZalozkaNastavit('dok');
-    const z2 = dokForm().querySelector('[data-dk="stitek.rozsirena"]'); z2.checked = true; z2.dispatchEvent(new Event('change', { bubbles: true }));
-    __T.dk('[data-dk="stitek.vel"]', '90x45'); __T.dk('[data-dk="tech.trida"]', ''); await dokUlozitOtevreny();
+    const c = document.createElement('canvas'); c.width = 900; c.height = 300; const g = c.getContext('2d'); g.fillStyle = '#2B579A'; g.fillRect(0, 0, 900, 300);
+    const blob = await new Promise(r => c.toBlob(r, 'image/png')), f = new File([blob], 'logo.png', { type: 'image/png' });
+    await new Promise(r => rozvLogoNacist(f, r)); await __T.w(100);
+    const im = new Image(); im.src = STORE.technik.logo; await new Promise(r => { im.onload = r; });
+    const r = { w: im.naturalWidth, h: im.naturalHeight, png: /^data:image\/png/.test(STORE.technik.logo), nahled: !!document.querySelector('.rz-logo-nahled'),
+      zatrh: !!dokForm().querySelector('[data-dk="stitek.logo"]'), zaloha: (await buildZalohaBlob().text()).indexOf(STORE.technik.logo.slice(0, 80)) !== -1 };
     return r;
   });
-  check('štítek 70 × 35 mm, 12 kusů na list, se značkou třídy II (zaškrtnuto) — vše se vejde, CE ≥ 5 mm', Math.abs(st2.w - 70 * MM) < 1 && Math.abs(st2.h - 35 * MM) < 1 &&
-    st2.kusu === 12 && st2.stran === 1 && st2.tr2 && st2.vejde && st2.ce >= 5 * MM - 0.5, JSON.stringify(st2).slice(0, 160));
-  check('bez rozšířené části jen povinné údaje (InA zůstane, Icc a IP ne)', /InA 40 A/.test(st2.bez) && !/Icc/.test(st2.bez) && !/IP40/.test(st2.bez), st2.bez);
+  check('logo: nahrané v oddílu Výroba a značení se zmenší na 400 px (PNG zůstane PNG), uloží do profilu technika a jde do zálohy',
+    lg.w === 400 && lg.h === 133 && lg.png && lg.nahled && lg.zatrh && lg.zaloha, JSON.stringify(lg));
+  await p.evaluate(async () => { await TD_AKCE.tdRStitek(); await __T.w(300); });
+  const st8 = await stitekInfo();
+  check('logo na štítku vlevo od CE, nejvýš tak vysoké jako CE; CE pořád ≥ 8 mm, všechno se vejde', st8.img === 1 && st8.logo > 1 && st8.logo <= st8.ce + 0.05 &&
+    st8.ce >= 8 - 0.05 && st8.bunky.every(b => b.ok), (st8.logo || 0).toFixed(1) + ' / ' + (st8.ce || 0).toFixed(1));
+  await stitekS({ 'stitek.logo': false });
+  const st9 = await stitekInfo();
+  await p.evaluate(async () => { await dokOtevrit(__rz.o.uid); rozvZalozkaNastavit('dok'); TD_AKCE.tdRLogoSmazat(); });
+  const lg2 = await p.evaluate(() => ({ logo: !!STORE.technik.logo, tl: !!document.querySelector('[data-action="tdRLogoVybrat"]') }));
+  check('logo jde vypnout zaškrtávátkem i odebrat z profilu (tlačítko „Nahrát logo" zůstane)', st9.img === 0 && !lg2.logo && lg2.tl, JSON.stringify(lg2));
+  await p.evaluate(async () => {
+    await dokOtevrit(__rz.o.uid); rozvZalozkaNastavit('dok');
+    __T.dk('[data-dk="stitek.vel"]', '90x45'); __T.dk('[data-dk="stitek.kusu"]', '1'); __T.dk('[data-dk="tech.trida"]', '');
+    const l = dokForm().querySelector('[data-dk="stitek.logo"]'); if (l) { l.checked = true; l.dispatchEvent(new Event('change', { bubbles: true })); }
+    await dokUlozitOtevreny();
+  });
+
+  // ── 4a. popisky pod přístroje ─────────────────────────────────────────
+  const popisky = () => p.evaluate(async () => {
+    await TD_AKCE.tdRPopisky(); await __T.w(300);
+    const MMx = 96 / 25.4;
+    return { info: document.getElementById('dok-pdf-info').textContent, stran: Array.from(document.querySelectorAll('#dok-pdf-pages .a4')).map(s => s.classList.contains('a4-landscape')),
+      pasky: Array.from(document.querySelectorAll('.rz-pp-pasek')).map(x => ({ r: +x.dataset.rada, c: +x.dataset.cast, w: x.getBoundingClientRect().width / MMx,
+        bunky: Array.from(x.children).map(c => ({ w: c.getBoundingClientRect().width / MMx, t: c.innerText.replace(/\s+/g, ' ').trim(), prazdne: c.classList.contains('rz-pp-prazdne'),
+          prekryv: c.classList.contains('rz-pp-prekryv'), ok: c.scrollHeight <= c.clientHeight + 0.5 && c.scrollWidth <= c.clientWidth + 0.5 })), h: x.getBoundingClientRect().height / MMx })),
+      dal: document.querySelectorAll('.rz-pp-dal').length, orez: document.querySelectorAll('#dok-pdf-pages .rz-orez').length,
+      pokyn: (document.querySelector('.rz-popisky-list .rz-st-pokyn') || {}).innerText || '', nazev: dokPdfNazev() };
+  });
+  await p.evaluate(async () => {
+    await dokOtevrit(__rz.o.uid); rozvZalozkaNastavit('dok');
+    __rz.rady[1].prvky[3].vyvod = 'Obývací pokoj – zásuvky u televize, internetový router, satelitní přijímač a herní konzole'; await dokUlozitOtevreny();
+  });
+  const pp = await popisky();
+  const r2 = pp.pasky.find(x => x.r === 1) || { bunky: [] }, dlouhy = r2.bunky[3] || {};
+  check('popisky: tlačítko „🏷 Tisk popisků přístrojů" — náhled na šířku, ořezové značky, pokyn ke skutečné velikosti s úsečkou 50 mm',
+    pp.stran.length === 1 && pp.stran[0] && pp.orez === 8 * pp.pasky.length && /skutečné velikosti \(100 %\)/.test(pp.pokyn) && /50 mm/.test(pp.pokyn) &&
+    /popisky\.pdf$/.test(pp.nazev), pp.info);
+  check('pro každou řadu jeden pásek široký přesně moduly × 17,5 mm (3 × 210 mm), výška 12 mm', pp.pasky.length === 3 && pp.pasky.every(x => Math.abs(x.w - 210) <= 0.2 && Math.abs(x.h - 12) <= 0.2),
+    pp.pasky.map(x => x.w.toFixed(2) + '×' + x.h.toFixed(1)).join(' '));
+  check('políčko přístroje má šířku přístroje, nahoře označení, pod ním vývod a hodnota (B16, 40A/30mA); rezerva prázdná',
+    Math.abs(r2.bunky[0].w - 4 * 17.5) <= 0.2 && r2.bunky[0].t === '-FI1 40A/30mA' && /^-FA3 /.test(r2.bunky[2].t) && / B10$/.test(r2.bunky[2].t) &&
+    pp.pasky[0].bunky.some(b => b.prazdne && !b.t), r2.bunky.slice(0, 3).map(b => b.t).join(' | '));
+  check('dlouhý název vývodu se zalomí a zmenší (případně zkrátí „…"), nikdy nepřeteče', pp.pasky.every(x => x.bunky.every(b => b.ok)) && /^-FA4 Obývací pokoj.*… B16$/.test(dlouhy.t) && dlouhy.ok, dlouhy.t);
+  await p.evaluate(async () => { await dokOtevrit(__rz.o.uid); rozvZalozkaNastavit('dok'); __T.dk('[data-dk="popisky.vyska"]', '9'); await dokUlozitOtevreny(); });
+  const pp9 = await popisky();
+  check('výška pásku 9 mm (volba 9 / 12 / 15), obsah se pořád vejde', pp9.pasky.every(x => Math.abs(x.h - 9) <= 0.2 && x.bunky.every(b => b.ok)), pp9.pasky.map(x => x.h.toFixed(1)).join(' '));
+  await p.evaluate(async () => { await dokOtevrit(__rz.o.uid); rozvZalozkaNastavit('dok'); __T.dk('[data-dk="popisky.vyska"]', '12'); __rz.rady[1].prvky[3].vyvod = 'Zásuvky – obývací pokoj'; await dokUlozitOtevreny(); });
+  // dlouhá řada (6 × 24) — rozdělí se s překryvem
+  const ppd = await p.evaluate(async () => {
+    const puvodni = __rz.o.uid;
+    await dokNovy('rozv'); rozvSkrinNastavit(rozvKnihPolozka('v-sk-6x24-ocel'));
+    rozvVlozit('v-fi-4-40-30-A', 0, 0); for (let i = 0; i < 18; i++) rozvVlozit('v-fa-1-B16', 0, __rz.rady[0].prvky.length);
+    rozvVlozit('v-fa-1-B16', 1, 0);
+    await dokUlozitOtevreny(); rozvZalozkaNastavit('dok');
+    window.__ppNovy = __rz.o.uid; window.__ppPuvodni = puvodni;
+  }).then(popisky);
+  const r0 = ppd.pasky.filter(x => x.r === 0), r1 = ppd.pasky.filter(x => x.r === 1);
+  check('pásek delší než list (24 M = 420 mm) se rozdělí s překryvem jednoho políčka a značkou „pokračuje"', r0.length === 2 && r0.every(x => x.w <= 297 - 24) &&
+    Math.abs(r0[0].w + r0[1].w - 420 - r0[1].bunky[0].w) <= 0.3 && r0[1].bunky[0].prekryv && !r0[0].bunky.some(b => b.prekryv) && ppd.dal === 2,
+    r0.map(x => x.w.toFixed(1)).join(' + ') + ' · pokračuje ' + ppd.dal);
+  check('volné místo v řadě = prázdná políčka po modulech (řada 2: 1 jistič + 23 modulů volna)', r1.length === 2 &&
+    r1[0].bunky.filter(b => b.prazdne).length + r1[1].bunky.filter(b => b.prazdne && !b.prekryv).length === 23 && /^-FA19 /.test(r1[0].bunky[0].t), r1.map(x => x.bunky.length).join('+'));
+  await p.evaluate(async () => { DOK.dokumenty = DOK.dokumenty.filter(x => x.uid !== window.__ppNovy); await dokZapsat(); await dokOtevrit(window.__ppPuvodni); rozvZalozkaNastavit('dok'); });
+  // popisky i v PDF dokumentace, když jsou zaškrtnuté
+  const ppPdf = await p.evaluate(async () => {
+    const c = dokForm().querySelector('[data-dk="dokVyber.popisky"]'); c.checked = true; c.dispatchEvent(new Event('change', { bubbles: true }));
+    ['tech', 'prohl', 'ko'].forEach(k => { const e = dokForm().querySelector('[data-dk="dokVyber.' + k + '"]'); e.checked = false; e.dispatchEvent(new Event('change', { bubbles: true })); });
+    await TD_AKCE.tdRDokPdf(); await __T.w(400);
+    const r = { stran: document.querySelectorAll('#dok-pdf-pages .a4').length, pasky: document.querySelectorAll('#dok-pdf-pages .rz-pp-pasek').length, info: document.getElementById('dok-pdf-info').textContent };
+    await dokOtevrit(__rz.o.uid); rozvZalozkaNastavit('dok');
+    ['tech', 'prohl', 'ko'].forEach(k => { const e = dokForm().querySelector('[data-dk="dokVyber.' + k + '"]'); e.checked = true; e.dispatchEvent(new Event('change', { bubbles: true })); });
+    c.checked = false; const c2 = dokForm().querySelector('[data-dk="dokVyber.popisky"]'); c2.checked = false; c2.dispatchEvent(new Event('change', { bubbles: true }));
+    await dokUlozitOtevreny();
+    return r;
+  });
+  check('zaškrtnuté „popisky pod přístroje" jdou i do PDF dokumentace (za čelní pohled)', ppPdf.pasky === 3 && ppPdf.stran >= 2 && /popisky pod přístroje \(1 list\)/.test(ppPdf.info), JSON.stringify(ppPdf));
+
+  // ── 4b. přístroje různých výrobců (jen informace) ─────────────────────
+  const mix = await p.evaluate(async () => {
+    await dokOtevrit(__rz.o.uid); rozvZalozkaNastavit('navrh');
+    const r = { bez: !!document.querySelector('#rz-vlastnosti .rp-mix') };
+    const pr = __rz.rady[1].prvky;
+    pr[1].p.vyrobce = 'Výrobce A'; pr[2].p.vyrobce = 'Výrobce A'; pr[3].p.vyrobce = 'Výrobce B';
+    __rz.vyber = null; __rz.vic = null; rozvVlastnostiVykreslit();
+    const m = document.querySelector('#rz-vlastnosti .rp-mix');
+    r.text = m ? m.innerText.replace(/\s+/g, ' ') : '';
+    m.querySelector('[data-v="Výrobce A"]').click(); await __T.w(100);
+    r.vybrano = rozvVybrane().map(u => rozvNajit(u).x.uid).join(',') === [pr[1].uid, pr[2].uid].join(',');
+    r.zvyrazneno = document.querySelectorAll('#rz-pohled .rz-svg [data-puid] rect[stroke="#2B579A"]').length;
+    TD_AKCE.tdRVyberZrusit();
+    await dokUlozitOtevreny();
+    rozvZalozkaNastavit('dok');
+    ['tech', 'prohl', 'ko'].forEach(k => { const e = dokForm().querySelector('[data-dk="dokVyber.' + k + '"]'); e.checked = true; e.dispatchEvent(new Event('change', { bubbles: true })); });
+    await TD_AKCE.tdRDokPdf(); await __T.w(400);
+    r.pdf = /výrobců/.test(document.getElementById('dok-pdf-pages').innerText);
+    await dokOtevrit(__rz.o.uid);
+    const pr2 = __rz.rady[1].prvky; [1, 2, 3].forEach(i => { pr2[i].p.vyrobce = 'obecný'; }); await dokUlozitOtevreny();
+    return r;
+  });
+  check('mix výrobců: obecné se nepočítají, u různých výrobců jeden nenápadný řádek „Přístroje 2 výrobců: Výrobce A (2), Výrobce B (1)"', !mix.bez &&
+    /^Přístroje 2 výrobců: Výrobce A \(2\), Výrobce B \(1\)/.test(mix.text), mix.text);
+  check('klepnutí na výrobce jeho přístroje v pohledu vybere (zvýrazní); do PDF nic nejde', mix.vybrano && mix.zvyrazneno === 2 && !mix.pdf, JSON.stringify(mix));
+  await p.evaluate(async () => { await dokOtevrit(__rz.o.uid); rozvZalozkaNastavit('dok'); });
+
 
   // ── 5. prohlášení o shodě ─────────────────────────────────────────────
   const pdfJen = (co) => p.evaluate(async co => {
@@ -295,6 +446,30 @@ async function priprava(p) {
     return { stejne: pred === po, n };
   });
   check('starý rozvaděč bez nových polí: otevření i přepnutí záložek ho nezmění, PDF se vytvoří', stary.stejne && stary.n >= 3, JSON.stringify(stary));
+  const v120 = await p.evaluate(async () => {
+    const d = dokKopie(__rz.o.data);
+    delete d.popisky; d.stitek = { vel: '90x45', kusu: '1', rozsirena: true, tridaII: false };
+    d.dokVyber = { cp: true, tech: true, prohl: true, ko: true };
+    const z = { uid: 'v120-rz', typ: 'rozv', cislo: 'ROZ-0091', vytvoreno: '2026-10-20T10:00:00.000Z', upraveno: '2026-10-20T10:00:00.000Z', data: d };
+    await dokNacist(); DOK.dokumenty.push(dokKopie(z)); await dokZapsat();
+    const pred = JSON.stringify(dokNajit('v120-rz'));
+    await dokOtevrit('v120-rz'); rozvZalozkaNastavit('dok'); await __T.w(100);
+    const r = { popisky: dokForm().querySelector('[data-dk="dokVyber.popisky"]').checked, styl: dokForm().querySelector('[data-dk="stitek.styl"]').value };
+    rozvZalozkaNastavit('navrh'); await __T.w(100);
+    await dokOtevritSeznam('rozv'); await __T.w(100); await dokNacist();
+    r.stejne = pred === JSON.stringify(dokNajit('v120-rz'));
+    await dokOtevrit('v120-rz'); await TD_AKCE.tdRStitek(); await __T.w(300);
+    r.tab = !!document.querySelector('#dok-pdf-pages .rz-st-tab');
+    await dokNacist();   // tisk štítku formulář uloží — původní hodnoty musí zůstat (nová pole jen přibudou)
+    const po = dokNajit('v120-rz').data, puv = JSON.parse(pred).data;
+    const podmnozina = (a, b) => a === b || (a && b && typeof a === 'object' && typeof b === 'object' && Object.keys(a).every(k => podmnozina(a[k], b[k])));
+    r.stejne2 = ['rady', 'skrin', 'stitek', 'dokVyber', 'tech', 'oznaceni', 'vyrobce'].every(k => podmnozina(puv[k], po[k]));
+    DOK.dokumenty = DOK.dokumenty.filter(x => x.uid !== 'v120-rz'); await dokZapsat();
+    await dokOtevrit(__rz.o.uid === 'v120-rz' ? DOK.dokumenty.find(x => x.typ === 'rozv').uid : __rz.o.uid);
+    return r;
+  });
+  check('rozvaděč z v1.20 (štítek bez rozvržení, výběr bez popisků): načte se beze změny dat, tisk štítku nic nepřepíše, štítek jako tabulka, popisky nezaškrtnuté',
+    v120.stejne && v120.stejne2 && v120.tab && !v120.popisky && v120.styl === 'tabulka', JSON.stringify(v120));
 
   // ── 9. polozapuštěná skříň ────────────────────────────────────────────
   const polo = await p.evaluate(() => {

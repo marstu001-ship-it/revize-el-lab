@@ -1794,6 +1794,40 @@ html.dark .rz-iso-chyba{background:#3a1e1b!important}
 .rz-st-r{margin-top:.35mm}
 .rz-stitek .rz-ce{position:absolute;right:2.2mm;bottom:1.8mm;fill:#000}
 .rz-tr2{height:1.1em;width:1.1em;vertical-align:-.15em}
+/* štítek jako tabulka s popsanými políčky (v1.22) */
+.rz-stitek.rz-st-tab{padding:1mm;border-radius:1.2mm;line-height:1.12}
+.rz-st-mriz{display:flex;flex-direction:column;border:.2mm solid #000;border-radius:.6mm}
+.rz-sr{display:flex;flex:1 1 auto;min-height:0;border-top:.2mm solid #000}
+.rz-sr:first-child{border-top:none}
+.rz-sc{flex:1 1 0;min-width:0;overflow:hidden;box-sizing:border-box;padding:.25mm .9mm .3mm;border-left:.2mm solid #000;display:flex;flex-direction:column;justify-content:safe center}
+.rz-sc:first-child{border-left:none}
+.rz-sc-l{display:block;font-size:var(--rz-st-popisek,2.3mm);color:#555;font-weight:400;white-space:nowrap;line-height:1.22}
+.rz-sc-v{display:block;font-weight:700;overflow-wrap:anywhere}
+.rz-sc-vyr{flex-grow:2.4}
+.rz-sc-sirsi{flex-grow:1.5}
+.rz-sc-n{display:block}
+.rz-sc-adr{display:block;font-weight:400;font-size:.8em}
+.rz-sc-ce{flex:0 0 auto;align-items:flex-end}
+.rz-sc-ce .rz-sc-v{display:flex;align-items:center;gap:1mm}
+.rz-st-tab .rz-ce{position:static;fill:#000;display:block}
+.rz-st-logo{display:block;max-width:24mm;width:auto;object-fit:contain}
+.rz-sc-norma{align-items:center;text-align:center}
+.rz-sc-norma .rz-sc-v{font-weight:600}
+.rz-logo-r{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem .6rem;margin:.4rem 0 .3rem;font-size:.84rem}
+.rz-logo-nahled{max-height:2.4rem;max-width:8rem;border:1px solid var(--border);background:#fff;padding:2px}
+/* popisky pod přístroje — skutečná velikost v mm */
+.a4.rz-popisky-list{padding:0;height:210mm;min-height:210mm;overflow:hidden;font-family:'DM Sans',Arial,Helvetica,sans-serif;position:relative}
+.rz-pp-popis{position:absolute;font-size:7.5pt;color:#444;white-space:nowrap}
+.rz-pp-pasek{position:absolute;display:flex;box-sizing:border-box;border:.25mm solid #000;background:#fff;color:#000}
+.rz-pp-b{flex:0 0 auto;box-sizing:border-box;border-left:.15mm solid #000;overflow:hidden;display:flex;flex-direction:column;align-items:center;justify-content:center;
+  text-align:center;padding:.3mm .4mm;line-height:1.05;--rz-pp-k:1}
+.rz-pp-b:first-child{border-left:none}
+.rz-pp-volno{border-left-style:dashed;border-left-color:#999}
+.rz-pp-prekryv{background:repeating-linear-gradient(45deg,#fff,#fff 1mm,#eee 1mm,#eee 2mm)}
+.rz-pp-o{font-size:calc(var(--rz-pp-v,12mm) * .21 * var(--rz-pp-k));font-weight:700;white-space:nowrap}
+.rz-pp-t{font-size:calc(var(--rz-pp-v,12mm) * .17 * var(--rz-pp-k));overflow-wrap:anywhere;hyphens:auto;max-width:100%}
+.rz-pp-h{font-size:calc(var(--rz-pp-v,12mm) * .17 * var(--rz-pp-k));font-weight:600;white-space:nowrap}
+.rz-pp-dal{position:absolute;display:flex;align-items:center;font-size:7pt;color:#444;white-space:nowrap}
 .rz-orez{position:absolute;border-top:.15mm solid #000;border-left:.15mm solid #000;display:block}
 .rz-st-pokyn{position:absolute;font-size:8pt;color:#333}
 .rz-st-useka{display:inline-block;width:50mm;height:2mm;border:.2mm solid #000;border-top:none;vertical-align:middle;margin-left:2mm}
@@ -1848,6 +1882,8 @@ body.rz-oznacuje,body.rz-oznacuje *{cursor:crosshair!important;user-select:none!
 html.dark .rz-banner-vyber{background:#1d2a3a;color:#c9dcf3}
 .rz-banner-akce{display:inline-flex;flex-wrap:wrap;gap:.3rem;margin-left:.4rem;vertical-align:middle}
 .rp-vic-hlava{font-size:.95rem;margin-bottom:.25rem}
+.rp-mix{font-size:.78rem;color:var(--muted);line-height:1.5;margin:-.2rem 0 .5rem}
+.rp-mix-v{background:none;border:none;padding:0;color:var(--accent2);text-decoration:underline;cursor:pointer;font:inherit}
 .rp-t{font-family:var(--mono);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--accent2);margin-bottom:.5rem}
 .rp-souhrn{font-size:.84rem;line-height:1.5;margin-bottom:.5rem}
 .rp-hlava{display:flex;align-items:center;gap:.5rem;font-size:.9rem;margin-bottom:.3rem;line-height:1.3}
@@ -29892,9 +29928,11 @@ function dokPdfVykreslit(x) {
     s.style.minHeight = '';
     s.querySelector('.dok-pdf-strana').textContent = 'Strana ' + (i + 1) + ' / ' + str2.length;
   });
+  var navic = DOK_TYPY[x.typ].pdfNavic ? DOK_TYPY[x.typ].pdfNavic(x, box) : 0;   // strany bez číslování (popisky pod přístroje)
   var info = document.getElementById('dok-pdf-info');
   if (info) info.textContent = DOK_TYPY[x.typ].nazev + (x.data && x.data.cislo ? ' · ' + x.data.cislo : '') +
-    ' · ' + str2.length + (str2.length === 1 ? ' strana' : (str2.length < 5 ? ' strany' : ' stran'));
+    ' · ' + str2.length + (str2.length === 1 ? ' strana' : (str2.length < 5 ? ' strany' : ' stran')) +
+    (navic ? ' + popisky pod přístroje (' + navic + ' ' + (navic === 1 ? 'list' : navic < 5 ? 'listy' : 'listů') + ')' : '');
   window.scrollTo(0, 0);
 }
 
@@ -31366,7 +31404,7 @@ function rozvVlastnostiVykreslit() {
     var v = __rz.skrin ? rozvVolnoCelkem(__rz) : null;
     box.innerHTML = '<div class="rp-t">Vlastnosti</div>' +
       (__rz.skrin ? '<div class="rp-souhrn">🗄 <b>' + esc(rozvNazev(__rz.skrin)) + '</b><br>' + __rz.rady.length + ' × ' + __rz.skrin.modulu + ' modulů · přístrojů ' + pocet +
-        ' · volno ' + esc(rozvCisloText(Math.max(0, v.volno))) + ' M</div>' : '') +
+        ' · volno ' + esc(rozvCisloText(Math.max(0, v.volno))) + ' M</div>' : '') + rozvMixHtml() +
       '<div class="dk-pozn">Klepněte na přístroj v čelním pohledu — tady pak vyplníte název vývodu, fázi a kabel. ' +
         (rozvDotyk() ? 'Víc přístrojů vyberete delším podržením prstu na přístroji.' : 'Víc přístrojů vyberete s Ctrl nebo Shift, nebo tažením rámečku v prázdném místě pohledu.') + '</div>' +
       (__rz.skrin ? '<button class="add-row" data-action="tdRSkrinVymenit">🗄 Vyměnit skříň</button>' : '');
@@ -31425,6 +31463,35 @@ function rozvVlastnostiVykreslit() {
     '<button class="dok-mini" data-action="tdRVyberZrusit" title="Zpět na vlastnosti rozvaděče (Esc)">Hotovo</button></div>';
   box.innerHTML = h;
 }
+
+// Přístroje různých výrobců (v1.22) — jen informace, nic neblokuje a do PDF
+// nejde. Obecné vestavěné přístroje (výrobce „obecný" / prázdný) se nepočítají.
+function rozvVyrobciMix(rz) {
+  rz = rz || __rz; if (!rz) return null;
+  var m = {}, por = [];
+  (rz.rady || []).forEach(function (r) { (r.prvky || []).forEach(function (x) {
+    var p = x.p || {}, v = String(p.vyrobce || '').trim();
+    if (!v || v.toLowerCase() === 'obecný' || p.kat === 'REZ') return;
+    if (!m[v]) { m[v] = []; por.push(v); }
+    m[v].push(x.uid);
+  }); });
+  if (por.length < 2) return null;
+  por.sort(function (a, b) { return m[b].length - m[a].length || a.localeCompare(b, 'cs'); });
+  return por.map(function (v) { return { v: v, uidy: m[v] }; });
+}
+function rozvMixHtml() {
+  var mx = rozvVyrobciMix(); if (!mx) return '';
+  return '<div class="rp-mix">Přístroje ' + mx.length + ' výrobců: ' + mx.map(function (x) {
+      return '<button class="rp-mix-v" data-action="tdRMixVyber" data-v="' + esc(x.v) + '" title="Vybrat v čelním pohledu všechny přístroje výrobce ' + esc(x.v) + '">' +
+        esc(x.v) + ' (' + x.uidy.length + ')</button>'; }).join(', ') +
+    ' <span class="dk-nepov">— klepnutím je v pohledu vyberete</span></div>';
+}
+TD_AKCE.tdRMixVyber = function (el) {
+  var v = el.getAttribute('data-v'), mx = rozvVyrobciMix() || [], x = mx.filter(function (q) { return q.v === v; })[0]; if (!x) return;
+  rozvVyberNastavit(x.uidy, x.uidy[0]); __rz.kotva = x.uidy[0];
+  var z = rozvNajit(x.uidy[0]); if (z) __rz.aktRada = z.r;
+  rozvPohledVykreslit(); rozvVlastnostiVykreslit(); rozvVyberUkazat();
+};
 
 // Vlastnosti při výběru víc přístrojů: společné akce pro celý výběr.
 function rozvVlastnostiVicHtml(uidy) {
@@ -32829,7 +32896,10 @@ var ROZV_KO_POMOCNE = [['', '—'], ['vynecháno – jištěno ≤ 16 A', 'vynec
 // Druh sítě ze soustavy hlavičky (jde přepsat).
 var ROZV_SIT = { '1NPE ~230 V': '1/N/PE AC TN', '3NPE ~400/230 V TN-S': '3/N/PE AC TN-S', '3PEN ~400/230 V TN-C': '3/PEN AC TN-C',
   '3PEN/3NPE ~400/230 V TN-C-S': '3/N/PE AC TN-C-S', '3NPE ~400/230 V TT': '3/N/PE AC TT', '1NPE ~230 V TT': '1/N/PE AC TT' };
-var ROZV_STITKY = { '90x45': { w: 90, h: 45, pismo: 3.3, ce: 7 }, '70x35': { w: 70, h: 35, pismo: 2.6, ce: 5.5 }, '100x60': { w: 100, h: 60, pismo: 3.9, ce: 9 } };
+var ROZV_STITKY = { '90x45': { w: 90, h: 45, pismo: 3.3, ce: 7, tab: { pismo: 3.1, popisek: 2.3, ce: 8 } },
+  '70x35': { w: 70, h: 35, pismo: 2.6, ce: 5.5, tab: { pismo: 2.4, popisek: 1.9, ce: 5.5, sit: true } },
+  '100x60': { w: 100, h: 60, pismo: 3.9, ce: 9, tab: { pismo: 3.9, popisek: 2.45, ce: 11 } } };
+var ROZV_ST_MIN = 25.4 / 72 * 5;   // 5 pt v mm — menší písmo se na štítek netiskne
 
 function dkCesta(o, cesta) {
   return String(cesta).split('.').reduce(function (a, k) { return a == null ? undefined : a[k]; }, o);
@@ -32906,7 +32976,7 @@ function rozvIpText(e) { return [e.ipz, e.ipo].filter(Boolean).join(' / '); }
 function rozvRokMes(ym, oddel) { var m = /^(\d{4})-(\d{2})/.exec(ym || ''); return m ? (oddel === '/' ? m[1] + '/' + m[2] : +m[2] + '/' + m[1]) : (ym || ''); }
 function rozvVyber(d) {
   var v = d.dokVyber || {};
-  return { cp: v.cp !== false, tech: v.tech !== false, prohl: v.prohl !== false, ko: v.ko !== false };
+  return { cp: v.cp !== false, tech: v.tech !== false, prohl: v.prohl !== false, ko: v.ko !== false, popisky: v.popisky === true };
 }
 
 // Měření izolačního odporu (metoda B) — jen u přívodního ochranného přístroje
@@ -32969,9 +33039,10 @@ function rozvDokHtml(d) {
     '<button class="btn btn-gold dok-hlavni-akce rz-dok-generuj" data-action="tdRDokPdf">📄 Vygenerovat dokumentaci (PDF)</button>' +
     '<div class="rz-dok-vyber"><span class="rz-dok-vyber-t">Do PDF patří:</span>' +
       zatrh('cp', 'čelní pohled a seznam přístrojů') + zatrh('tech', 'technické údaje') + zatrh('prohl', 'prohlášení o shodě') +
-      zatrh('ko', 'protokol o kusovém ověření') + '</div>' +
+      zatrh('ko', 'protokol o kusovém ověření') + zatrh('popisky', 'popisky pod přístroje') + '</div>' +
     '<div class="rz-dok-stitek-r"><button class="add-row rz-dok-stitek-btn" data-action="tdRStitek" title="Štítek se tiskne zvlášť, ve skutečné velikosti">🏷 Tisk štítku</button>' +
-      '<span class="dk-nepov">štítek se tiskne zvlášť, ve skutečné velikosti</span></div>' +
+      '<button class="add-row rz-dok-popisky-btn" data-action="tdRPopisky" title="Pásky s popisky okruhů, které se nalepí pod přístroje — ve skutečné velikosti">🏷 Tisk popisků přístrojů</button>' +
+      '<span class="dk-nepov">štítek a popisky se tisknou zvlášť, ve skutečné velikosti</span></div>' +
     '<div class="rz-dok-chybi" id="rz-dok-chybi"></div>' +
     '<div class="dk-pozn">Naměřené hodnoty a výsledky zkoušek vyplňujete vy — program je nikdy nedoplní. Štítek „' + ROZV_DOK_CEKA +
       '" = údaj z rešerše norem, ne z jejich textu.</div></div>';
@@ -32994,9 +33065,15 @@ function rozvDokHtml(d) {
     '<div class="g3">' +
       rzVolba(d, {}, 'stitek.vel', 'Velikost štítku', [['90x45', '90 × 45 mm'], ['70x35', '70 × 35 mm'], ['100x60', '100 × 60 mm']]) +
       dkPole('stitek.kusu', 'Počet kusů na list', st.kusu || '1', { typ: 'number', attr: ' min="1" max="200"' }) +
+      rzVolba(d, {}, 'stitek.styl', 'Rozvržení štítku', [['tabulka', 'tabulka s popsanými políčky'], ['jednoduche', 'jednoduché (řádky textu)']]) +
     '</div>' +
+    rozvLogoHtml(st) +
     rzZatrh('stitek.rozsirena', 'rozšířená část: Un, fn, druh sítě, Icc, IP, třída ochrany', st.rozsirena !== false) +
-    rzZatrh('stitek.tridaII', 'tisknout značku třídy II (dvojitý čtverec)' + rozvCeka('Značka třídy II je v rešerši jen z paměti.'), st.tridaII === true), true);
+    rzZatrh('stitek.tridaII', 'tisknout značku třídy II (dvojitý čtverec)' + rozvCeka('Značka třídy II je v rešerši jen z paměti.'), st.tridaII === true) +
+    '<div class="dk-blok-t">Popisky pod přístroje</div>' +
+    '<div class="g3">' + rzVolba(d, {}, 'popisky.vyska', 'Výška pásku', [['12', '12 mm'], ['9', '9 mm'], ['15', '15 mm']]) + '</div>' +
+    '<div class="dk-pozn">Pro každou řadu jeden pásek přesně široký jako řada (moduly × 17,5 mm): označení, název vývodu a hodnota jističe nebo chrániče. ' +
+      'Tiskne se tlačítkem „🏷 Tisk popisků přístrojů" nahoře — na papír i samolepicí arch.</div>', true);
   // Technické údaje
   var ced = function (t2) { return { labelHtml: esc(t2) + rozvCeka() }; };
   h += rzOddil('tech', '📋 Technické údaje',
@@ -33213,7 +33290,10 @@ document.addEventListener('input', function (e) {
 
 TD_AKCE.tdRDokPdf = async function () {
   var f = dokForm(), d = f ? DOK_TYPY.rozv.cist(f) : {}, v = rozvVyber(d);
-  if (!v.cp && !v.tech && !v.prohl && !v.ko) { showToast('Zaškrtněte, co má v PDF být.'); return; }
+  if (!v.cp && !v.tech && !v.prohl && !v.ko) {
+    if (v.popisky) { await TD_AKCE.tdRPopisky(); return; }
+    showToast('Zaškrtněte, co má v PDF být.'); return;
+  }
   await dokNahled();
 };
 
@@ -33304,6 +33384,188 @@ function rozvPdfProtokol(d, e) {
   return B;
 }
 
+// ── Logo výrobce na štítek (v1.22) — v profilu technika (STORE.technik.logo,
+// jde se zálohou). Zmenší se na nejvýš 400 px; PNG zůstane PNG (průhlednost).
+var ROZV_LOGO_PX = 400;
+function rozvLogoHtml(st) {
+  var t = (typeof STORE !== 'undefined' && STORE.technik) || {};
+  return '<div class="rz-logo-r" data-dk-mimo><span class="rz-logo-t">Logo výrobce na štítek <span class="dk-nepov">(nepovinné, uloží se do profilu)</span></span>' +
+    (t.logo ? '<img class="rz-logo-nahled" src="' + t.logo + '" alt="logo">' : '') +
+    '<button class="dok-mini" data-action="tdRLogoVybrat">📂 ' + (t.logo ? 'Vyměnit logo…' : 'Nahrát logo…') + '</button>' +
+    (t.logo ? '<button class="dok-mini dok-mini-del" data-action="tdRLogoSmazat">🗑 Odebrat logo</button>' : '') +
+    '<input type="file" id="rz-logo-soubor" accept="image/png,image/jpeg" hidden></div>' +
+    (t.logo ? rzZatrh('stitek.logo', 'tisknout logo na štítek (vlevo od CE)', st.logo !== false) : '');
+}
+function rozvLogoZmensit(dataUrl, png, cb) {
+  var img = new Image();
+  img.onload = function () {
+    var k = Math.min(1, ROZV_LOGO_PX / Math.max(img.naturalWidth, img.naturalHeight));
+    var c = document.createElement('canvas');
+    c.width = Math.max(1, Math.round(img.naturalWidth * k)); c.height = Math.max(1, Math.round(img.naturalHeight * k));
+    var ctx = c.getContext('2d');
+    if (!png) { ctx.fillStyle = '#fff'; ctx.fillRect(0, 0, c.width, c.height); }
+    ctx.drawImage(img, 0, 0, c.width, c.height);
+    cb(png ? c.toDataURL('image/png') : c.toDataURL('image/jpeg', 0.9));
+  };
+  img.onerror = function () { cb(null); };
+  img.src = dataUrl;
+}
+function rozvLogoPrekreslit() {
+  var r = document.querySelector('#dok-form-obsah .rz-logo-r'); if (!r) return;
+  var st = ((window.__dokOtevreny || {}).data || {}).stitek || {};
+  var zatrh = r.nextElementSibling && r.nextElementSibling.querySelector && r.nextElementSibling.querySelector('[data-dk="stitek.logo"]') ? r.nextElementSibling : null;
+  if (zatrh) zatrh.remove();
+  r.insertAdjacentHTML('afterend', rozvLogoHtml(st)); r.remove();
+}
+TD_AKCE.tdRLogoVybrat = function () { var i = document.getElementById('rz-logo-soubor'); if (i) i.click(); };
+TD_AKCE.tdRLogoSmazat = function () {
+  if (!STORE.technik || !STORE.technik.logo) return;
+  var stare = STORE.technik.logo;
+  delete STORE.technik.logo; saveStore(); rozvLogoPrekreslit();
+  showToast('Logo odebráno z profilu.', { timeout: 6000, actionLabel: '↩ ZPĚT', action: function () {
+    STORE.technik.logo = stare; saveStore(); rozvLogoPrekreslit(); } });
+};
+function rozvLogoNacist(file, cb) {
+  if (!file) return;
+  if (!/^image\/(png|jpeg)$/.test(file.type)) { alert('Logo musí být obrázek PNG nebo JPG.'); return; }
+  if (file.size > 5 * 1024 * 1024) { alert('Soubor je moc velký (' + Math.round(file.size / 1024) + ' kB). Nejvýš 5 MB.'); return; }
+  var r = new FileReader();
+  r.onload = function (ev) {
+    rozvLogoZmensit(ev.target.result, file.type === 'image/png', function (hotovo) {
+      if (!hotovo) { alert('Obrázek se nepodařilo načíst.'); return; }
+      if (!STORE.technik) STORE.technik = {};
+      STORE.technik.logo = hotovo; saveStore();
+      rozvLogoPrekreslit();
+      showToast('Logo uloženo do profilu — na štítku bude vlevo od značky CE.', { timeout: 4000 });
+      if (cb) cb();
+    });
+  };
+  r.readAsDataURL(file);
+}
+document.addEventListener('change', function (e) {
+  if (e.target && e.target.id === 'rz-logo-soubor') { rozvLogoNacist(e.target.files && e.target.files[0]); e.target.value = ''; }
+});
+
+// ── Popisky pod přístroje (v1.22) ──
+// Pro každou řadu jeden pásek přesně široký jako řada (moduly × 17,5 mm),
+// každý přístroj políčko své šířky: označení, název vývodu, hodnota jističe
+// / chrániče. Rezerva a volné místo = prázdné políčko (po modulech).
+// Delší pásek než šířka listu na šířku se rozdělí s překryvem jednoho políčka.
+var ROZV_PP = { M: 12, P: 14, popis: 7, mezera: 5, max: 297 - 2 * 12 - 14 };
+function rozvPopiskaHodnota(p) {
+  var In = p.In !== '' && p.In != null ? rozvCisloText(p.In) : '', idn = p.idn !== '' && p.idn != null ? rozvCisloText(p.idn) : '';
+  switch (p.kat) {
+    case 'FA': case 'AFDD': return In ? (p.char || '') + In : '';
+    case 'FIFA': return In ? (p.char || '') + In + (idn ? '/' + idn + 'mA' : '') : '';
+    case 'FI': return In ? In + 'A' + (idn ? '/' + idn + 'mA' : '') : '';
+    case 'QM': case 'FU': return In ? In + ' A' : '';
+    default: return '';
+  }
+}
+function rozvPopiskyRady(d) {
+  var mod = +(d.skrin && d.skrin.modulu) || 0, M = ROZV_MODUL_MM;
+  return (d.rady || []).map(function (r, ri) {
+    var b = [], obs = 0;
+    (r.prvky || []).forEach(function (x) {
+      var p = x.p || {}, w = +p.sirka || 1; obs += w;
+      b.push(p.kat === 'REZ' ? { w: w * M, prazdne: true } : { w: w * M, ozn: x.ozn || '', vyvod: x.vyvod || '', hod: rozvPopiskaHodnota(p) });
+    });
+    var volno = Math.round((mod - obs) * 100) / 100;
+    for (var k = 0; volno > 0.001; k++) { var c = Math.min(1, volno); b.push({ w: c * M, prazdne: true, volno: true }); volno = Math.round((volno - c) * 100) / 100; }
+    return { r: ri, bunky: b, sirka: b.reduce(function (s, c) { return s + c.w; }, 0), moduly: Math.max(mod, obs), prvku: (r.prvky || []).length };
+  }).filter(function (x) { return x.prvku; });
+}
+function rozvPopiskyCasti(bunky) {   // rozdělení dlouhého pásku na kusy s překryvem jednoho políčka
+  var casti = [], akt = [], sir = 0;
+  bunky.forEach(function (c) {
+    if (akt.length && sir + c.w > ROZV_PP.max + 0.01) {
+      casti.push(akt);
+      var posl = akt[akt.length - 1];
+      akt = akt.length > 1 ? [Object.assign({}, posl, { prekryv: true })] : [];
+      sir = akt.length ? posl.w : 0;
+    }
+    akt.push(c); sir += c.w;
+  });
+  if (akt.length) casti.push(akt);
+  return casti;
+}
+function rozvPopiskyStranky(d, box) {
+  var vys = Math.max(9, Math.min(15, parseInt((d.popisky || {}).vyska, 10) || 12)), P = ROZV_PP, rady = rozvPopiskyRady(d), stran = 0;
+  var znacky = function (l, t, w, h) {
+    var a = [];
+    [[l, t], [l + w, t], [l, t + h], [l + w, t + h]].forEach(function (b, i) {
+      var sx = i % 2 ? 1 : -1, sy = i < 2 ? -1 : 1;
+      a.push('<i class="rz-orez" style="left:' + (sx < 0 ? b[0] - 4 : b[0] + 1) + 'mm;top:' + b[1] + 'mm;width:3mm;height:0"></i>');
+      a.push('<i class="rz-orez" style="left:' + b[0] + 'mm;top:' + (sy < 0 ? b[1] - 4 : b[1] + 1) + 'mm;width:0;height:3mm"></i>');
+    });
+    return a.join('');
+  };
+  var str = null, y = 0, novaStrana = function () {
+    str = document.createElement('div');
+    str.className = 'a4 a4-landscape rz-popisky-list';
+    str.style.setProperty('--rz-pp-v', vys + 'mm');
+    str.innerHTML = '<div class="rz-st-pokyn" style="left:' + P.M + 'mm;bottom:' + (P.M - 4) + 'mm">Popisky pod přístroje' + (d.oznaceni ? ' — ' + esc(d.oznaceni) : '') +
+      ' · výška ' + vys + ' mm · tiskněte ve skutečné velikosti (100 %). Kontrolní úsečka 50 mm: <span class="rz-st-useka"></span></div>';
+    box.appendChild(str); stran++; y = P.M;
+  };
+  novaStrana();
+  rady.forEach(function (rd) {
+    var casti = rozvPopiskyCasti(rd.bunky);
+    casti.forEach(function (cast, ci) {
+      var w = cast.reduce(function (s, c) { return s + c.w; }, 0), blok = P.popis + vys + P.mezera;
+      if (y + blok > 210 - P.M - P.P && y > P.M) novaStrana();
+      var popis = 'Řada ' + (rd.r + 1) + ' · ' + rozvCisloText(rd.moduly) + ' M · ' + rozvCisloText(rozvZaokr(rd.sirka)) + ' mm' +
+        (casti.length > 1 ? ' · část ' + (ci + 1) + ' / ' + casti.length + (ci ? ' — první políčko překryjte s koncem předchozí části' : '') : '');
+      var h = '<div class="rz-pp-popis" style="left:' + P.M + 'mm;top:' + y + 'mm">' + esc(popis) + '</div>' +
+        '<div class="rz-pp-pasek" data-rada="' + rd.r + '" data-cast="' + ci + '" style="left:' + P.M + 'mm;top:' + (y + P.popis) + 'mm;width:' + rozvZaokr(w) + 'mm;height:' + vys + 'mm">' +
+        cast.map(function (c) {
+          return '<div class="rz-pp-b' + (c.prazdne ? ' rz-pp-prazdne' : '') + (c.volno ? ' rz-pp-volno' : '') + (c.prekryv ? ' rz-pp-prekryv' : '') + '" style="width:' + rozvZaokr(c.w) + 'mm">' +
+            (c.prazdne ? '' : (c.ozn ? '<b class="rz-pp-o">' + esc(c.ozn) + '</b>' : '') + (c.vyvod ? '<span class="rz-pp-t">' + esc(c.vyvod) + '</span>' : '') +
+              (c.hod ? '<span class="rz-pp-h">' + esc(c.hod) + '</span>' : '')) + '</div>';
+        }).join('') + '</div>' + znacky(P.M, y + P.popis, w, vys) +
+        (ci < casti.length - 1 ? '<div class="rz-pp-dal" style="left:' + rozvZaokr(P.M + w + 2) + 'mm;top:' + (y + P.popis) + 'mm;height:' + vys + 'mm">pokračuje ▶</div>' : '');
+      str.insertAdjacentHTML('beforeend', h);
+      y += blok;
+    });
+  });
+  // každé políčko: zalomit, zmenšit, a když ani tak, zkrátit „…" — nikdy nepřetéct
+  box.querySelectorAll('.rz-pp-b').forEach(function (c) {
+    if (c.classList.contains('rz-pp-prazdne')) return;
+    var f = 1, t = c.querySelector('.rz-pp-t');
+    var vejde = function () { return c.scrollHeight <= c.clientHeight + 0.5 && c.scrollWidth <= c.clientWidth + 0.5; };
+    while (!vejde() && f > 0.72) { f = Math.round((f - 0.04) * 100) / 100; c.style.setProperty('--rz-pp-k', f); }
+    if (!vejde() && t) {
+      var txt = t.textContent;
+      while (!vejde() && txt.length > 1) { txt = txt.slice(0, -1); t.textContent = txt.replace(/\s+$/, '') + '…'; }
+      c.title = c.title || '';
+    }
+  });
+  return { stran: stran, rad: rady.length };
+}
+function rozvPopiskyVykreslit(x) {
+  var d = x.data || {}, box = document.getElementById('dok-pdf-pages');
+  showScreen('dok-pdf');   // ve skryté obrazovce mají prvky nulovou velikost
+  box.innerHTML = '';
+  var r = rozvPopiskyStranky(d, box), e = rozvDokEff(d);
+  __dokPdf = { x: x, zpet: 'dok-form', nazev: ((e.vc || d.cislo || 'ROZ') + '_popisky').replace(/[\\\/:*?"<>|\s]+/g, '_') + '.pdf' };
+  var info = document.getElementById('dok-pdf-info');
+  if (info) info.textContent = 'Popisky pod přístroje · ' + r.rad + ' ' + (r.rad === 1 ? 'řada' : r.rad < 5 ? 'řady' : 'řad') + ' · ' + r.stran + ' ' +
+    (r.stran === 1 ? 'list' : r.stran < 5 ? 'listy' : 'listů') + ' na šířku · tiskněte ve skutečné velikosti (100 %), bez přizpůsobení stránce';
+  window.scrollTo(0, 0);
+}
+TD_AKCE.tdRPopisky = async function () {
+  var o = window.__dokOtevreny; if (!o) return;
+  await dokUlozitOtevreny();
+  if (!rozvPopiskyRady(o.data || {}).length) { showToast('V rozvaděči zatím nejsou přístroje — není co popsat.'); return; }
+  rozvPopiskyVykreslit({ uid: o.uid, typ: o.typ, data: o.data });
+};
+// Popisky i do PDF dokumentace, když jsou zaškrtnuté (za ostatní strany).
+DOK_TYPY.rozv.pdfNavic = function (x, box) {
+  var d = x.data || {};
+  if (!rozvVyber(d).popisky || !rozvPopiskyRady(d).length) return 0;
+  return rozvPopiskyStranky(d, box).stran;
+};
+
 // ── Výrobní štítek (vlastní náhled ve skutečné velikosti) ──
 // CE ze dvou oblouků (C a E na stejně velkých kružnicích, svislý řez),
 // výška nejméně 5 mm. Kreslí se, žádný obrázek odjinud.
@@ -33321,7 +33583,58 @@ function rozvTridaIISvg() {
   return '<svg class="rz-tr2" viewBox="0 0 100 100" aria-label="třída II"><rect x="5" y="5" width="90" height="90" fill="none" stroke="#000" stroke-width="9"/>' +
     '<rect x="30" y="30" width="40" height="40" fill="none" stroke="#000" stroke-width="9"/></svg>';
 }
-function rozvStitekHtml(d, rz) {
+// Rozvržení štítku: tabulka s popsanými políčky (výchozí, v1.22) nebo
+// jednoduché řádky textu (v1.20). Obsah je v obou stejný — 4 normové + 3
+// zákonné údaje + rozšířená část; tabulka navíc „Označení rozvaděče" a logo.
+function rozvStitekStyl(d) { return ((d.stitek || {}).styl === 'jednoduche') ? 'jednoduche' : 'tabulka'; }
+function rozvStitekHtml(d, rz, o) {
+  return rozvStitekStyl(d) === 'jednoduche' ? rozvStitekJednoducheHtml(d, rz) : rozvStitekTabulkaHtml(d, rz, o);
+}
+function rozvStitekTabulkaHtml(d, rz, o) {
+  o = o || {};
+  var e = rozvDokEff(d), st = d.stitek || {}, roz = st.rozsirena !== false, n = '……', T = rz.tab;
+  var t = (typeof STORE !== 'undefined' && STORE.technik) || {}, logo = st.logo !== false && t.logo ? t.logo : '';
+  var b = function (l, v, cls) { return v ? { l: l, v: v, cls: cls || '' } : null; };   // prázdné nepovinné políčko se nekreslí
+  var radek = function (bunky) {
+    bunky = bunky.filter(Boolean); if (!bunky.length) return '';
+    return '<div class="rz-sr">' + bunky.map(function (c) {
+      return '<div class="rz-sc' + (c.cls ? ' ' + c.cls : '') + '">' + (c.l ? '<span class="rz-sc-l">' + esc(c.l) + '</span>' : '') + '<span class="rz-sc-v">' + c.v + '</span></div>';
+    }).join('') + '</div>';
+  };
+  var adr = [e.vyr.adresa, e.vyr.ico ? 'IČO ' + e.vyr.ico : ''].filter(Boolean).join(' · ');
+  var vyr = '<span class="rz-sc-n">' + esc(e.vyr.nazev || n) + '</span>' + (adr && !o.bezAdresy ? '<span class="rz-sc-adr">' + esc(adr) + '</span>' : '');
+  var tr2 = roz && st.tridaII === true && e.trida === 'II' ? ' ' + rozvTridaIISvg() : '';
+  var h = radek([b('Výrobce', vyr, 'rz-sc-vyr'),
+      { l: '', v: (logo ? '<img class="rz-st-logo" src="' + logo + '" alt="logo" style="max-height:' + T.ce + 'mm">' : '') + rozvCeSvg(T.ce), cls: 'rz-sc-ce' }]) +
+    radek([b('Typové označení', esc(e.typ || n)), b('Označení rozvaděče', esc(String(d.oznaceni || '').trim()))]) +
+    radek([b('Výrobní číslo', esc(e.vc || n)), b('Datum výroby', esc(rozvRokMes(e.datum, '/') || n))]);
+  if (roz) {
+    h += T.sit ? radek([b('Soustava, jmenovité napětí a kmitočet', esc(rozvSitText(e)))])
+      : radek([b('Jmenovité napětí a kmitočet', esc([e.un, e.fn].filter(Boolean).join(', '))), b('Soustava', esc(e.sit))]);
+  }
+  if (roz && T.sit) {   // malý štítek: proud, Icc, krytí a třída v jednom řádku (jinak by písmo kleslo pod 5 pt)
+    h += radek([b('Proud InA', esc(rozvJednotka(e.ina, 'A') || n)), b('Odolnost Icc', esc(rozvJednotka(e.icc, 'kA'))),
+      b('Krytí IP', esc(rozvIpText(e)), 'rz-sc-sirsi'), b('Třída ochrany', e.trida ? esc(e.trida) + tr2 : '')]);
+  } else {
+    h += radek([b('Jmenovitý proud InA', esc(rozvJednotka(e.ina, 'A') || n)), roz ? b('Zkratová odolnost Icc', esc(rozvJednotka(e.icc, 'kA'))) : null]);
+    if (roz) h += radek([b('Krytí IP (zavřeno / otevřeno)', esc(rozvIpText(e))), b('Třída ochrany', e.trida ? esc(e.trida) + tr2 : '')]);
+  }
+  h += radek([{ l: '', v: 'ČSN EN IEC 61439-3 (IEC 61439-3)', cls: 'rz-sc-norma' }]);
+  return '<div class="rz-stitek rz-st-tab" style="width:' + rz.w + 'mm;height:' + rz.h + 'mm"><div class="rz-st-obsah rz-st-mriz">' + h + '</div></div>';
+}
+// Vejde se tabulkový štítek? Každé políčko: nic nepřetéká (výška i šířka).
+function rozvStitekVejde(s) {
+  var o = s.querySelector('.rz-st-obsah'); if (!o) return true;
+  if (o.scrollHeight > o.clientHeight + 0.5) return false;
+  var bunky = s.querySelectorAll('.rz-sc');
+  for (var i = 0; i < bunky.length; i++) {
+    var c = bunky[i];
+    if (c.scrollHeight > c.clientHeight + 0.5 || c.scrollWidth > c.clientWidth + 0.5) return false;
+    var l = c.querySelector('.rz-sc-l'); if (l && l.scrollWidth > l.clientWidth + 0.5) return false;
+  }
+  return true;
+}
+function rozvStitekJednoducheHtml(d, rz) {
   var e = rozvDokEff(d), st = d.stitek || {}, roz = st.rozsirena !== false, n = '……';
   var sit = roz ? rozvSitText(e) : '', radek2 = roz ? [e.icc ? 'Icc ' + rozvJednotka(e.icc, 'kA') : '', rozvIpText(e),
     e.trida ? 'třída ' + e.trida : ''].filter(Boolean) : [];
@@ -33343,7 +33656,7 @@ function rozvStitekVykreslit(x) {
   box.innerHTML = '';
   var M = 12, G = 6, P = 14;   // okraj, mezera (ořezové značky), pruh dole s pokynem k tisku (mm)
   var sl = Math.max(1, Math.floor((210 - 2 * M + G) / (rz.w + G))), rd = Math.max(1, Math.floor((297 - 2 * M - P + G) / (rz.h + G)));
-  var naStr = sl * rd, stran = Math.ceil(kusu / naStr), html = rozvStitekHtml(d, rz);
+  var naStr = sl * rd, stran = Math.ceil(kusu / naStr), html = rozvStitekHtml(d, rz), tab = rozvStitekStyl(d) === 'tabulka';
   var znacky = function (l, t) {   // ořezové značky v rozích, 3 mm mimo štítek
     var a = [];
     [[l, t], [l + rz.w, t], [l, t + rz.h], [l + rz.w, t + rz.h]].forEach(function (b, i) {
@@ -33367,15 +33680,38 @@ function rozvStitekVykreslit(x) {
     box.appendChild(p);
   }
   // písmo zmenšit, dokud se obsah do štítku nevejde (všechny štítky jsou stejné)
-  var f = rz.pismo, prvni = box.querySelector('.rz-stitek');
-  box.style.setProperty('--rz-st-pismo', f + 'mm');
-  while (prvni && f > 1.2 && prvni.querySelector('.rz-st-obsah').scrollHeight > prvni.querySelector('.rz-st-obsah').clientHeight + 0.5) {
-    f = Math.round((f - 0.05) * 100) / 100; box.style.setProperty('--rz-st-pismo', f + 'mm');
+  var f = rz.pismo, prvni = box.querySelector('.rz-stitek'), nevejde = false;
+  if (tab) {
+    // tabulka: hodnota i popisek nejvýš na výchozí velikost, nikdy pod 5 pt;
+    // nevejde-li se ani tak, u 70 × 35 se vynechá adresa výrobce (pak hláška)
+    var zkus = function () {
+      f = rz.tab.pismo;
+      for (;;) {
+        box.style.setProperty('--rz-st-pismo', f + 'mm');
+        box.style.setProperty('--rz-st-popisek', Math.max(ROZV_ST_MIN, Math.min(rz.tab.popisek, f * 0.75)) + 'mm');
+        if (!prvni || rozvStitekVejde(prvni)) return true;
+        if (f - 0.05 < ROZV_ST_MIN) return false;
+        f = Math.round((f - 0.05) * 100) / 100;
+      }
+    };
+    if (!zkus() && rz.tab.sit) {
+      html = rozvStitekHtml(d, rz, { bezAdresy: true });
+      box.querySelectorAll('.rz-st-misto').forEach(function (m) { m.innerHTML = html; });
+      prvni = box.querySelector('.rz-stitek');
+      nevejde = !zkus();
+    } else nevejde = prvni ? !rozvStitekVejde(prvni) : false;
+  } else {
+    box.style.setProperty('--rz-st-pismo', f + 'mm');
+    while (prvni && f > 1.2 && prvni.querySelector('.rz-st-obsah').scrollHeight > prvni.querySelector('.rz-st-obsah').clientHeight + 0.5) {
+      f = Math.round((f - 0.05) * 100) / 100; box.style.setProperty('--rz-st-pismo', f + 'mm');
+    }
   }
+  if (nevejde) showToast('Pro tolik údajů zvolte větší štítek — menší písmo než 5 pt by nešlo přečíst.', { timeout: 7000 });
   var e = rozvDokEff(d);
   __dokPdf = { x: x, zpet: 'dok-form', nazev: ((e.vc || d.cislo || 'ROZ') + '_stitek').replace(/[\\\/:*?"<>|\s]+/g, '_') + '.pdf' };
   var info = document.getElementById('dok-pdf-info');
-  if (info) info.textContent = 'Výrobní štítek ' + rz.w + ' × ' + rz.h + ' mm · ' + kusu + ' ks · tiskněte ve skutečné velikosti (100 %), bez přizpůsobení stránce';
+  if (info) info.textContent = (nevejde ? '⚠ Pro tolik údajů zvolte větší štítek · ' : '') + 'Výrobní štítek ' + rz.w + ' × ' + rz.h + ' mm · ' + kusu +
+    ' ks · tiskněte ve skutečné velikosti (100 %), bez přizpůsobení stránce';
   window.scrollTo(0, 0);
 }
 TD_AKCE.tdRStitek = async function () {

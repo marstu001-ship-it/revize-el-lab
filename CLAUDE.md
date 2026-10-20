@@ -1061,7 +1061,7 @@ a výsledky zkoušek program nikdy nevymýšlí.**
   max + 1 v letošním roce, s čísly zpráv nesouvisí), předvyplní se při
   otevření Dokumentů a uloží s první změnou, ⟳ přidělí volné, jde přepsat,
   duplicitu ohlásí řádek pod polem.
-- **Štítek** (`rozvStitekVykreslit`, vlastní náhled v `#screen-dok-pdf`,
+- **Štítek** (od v1.22 jako tabulka, viz oddíl níž; `rozvStitekVykreslit`, vlastní náhled v `#screen-dok-pdf`,
   `__dokPdf.nazev`): skutečná velikost v mm na A4 (90 × 45 výchozí, 70 × 35,
   100 × 60), počet kusů, ořezové značky, pokyn „Tiskněte ve skutečné
   velikosti (100 %)" s kontrolní úsečkou 50 mm. Povinné: výrobce + kontaktní
@@ -1092,7 +1092,74 @@ a výsledky zkoušek program nikdy nevymýšlí.**
   technické údaje, prohlášení a protokol každý od nové strany na výšku se
   záhlavím „výrobce · Výrobní číslo". Prázdná první strana se jen přestaví.
 
-Test: `testy/test-rozvadec-dokumenty.js` (50 kontrol, byt 3+1 —
+### Štítek jako tabulka, popisky pod přístroje, mix výrobců (v1.22, 2026-10-20)
+
+Uživatel porovnal štítek s elektro-konstrukt.cz: obsahově úplný, ale „sedm
+řádků textu s prázdnou spodní polovinou".
+
+- **Štítek = tabulka s popsanými políčky** (`rozvStitekTabulkaHtml`, výchozí;
+  `d.stitek.styl` = `'jednoduche'` vrátí původní řádky textu
+  `rozvStitekJednoducheHtml` — volba „Rozvržení štítku"; chybí = tabulka).
+  Tenká mřížka, v každém políčku drobný šedý popisek (česky, plnými slovy)
+  a tučná hodnota. Řádky: **Výrobce** (název, pod ním adresa · IČO) + **CE**
+  (a logo) · Typové označení + **Označení rozvaděče** (nové, `d.oznaceni`) ·
+  Výrobní číslo + Datum výroby (RRRR/MM) · Jmenovité napětí a kmitočet +
+  Soustava · Jmenovitý proud InA + Zkratová odolnost Icc · Krytí IP +
+  Třída ochrany · spodní pás „ČSN EN IEC 61439-3 (IEC 61439-3)" beze změny.
+  **Obsah je přesně ten, co štítek tiskl dřív** — nové je jen označení
+  rozvaděče a logo. Prázdné nepovinné políčko se nekreslí a soused se
+  roztáhne (Icc, IP, třída, soustava, označení); prázdné povinné = tečky.
+- **Velikosti** (`ROZV_STITKY[].tab`): 90 × 45 CE 8 mm, 100 × 60 CE 11 mm,
+  **70 × 35** CE 5,5 mm a úspornější řádky — soustava + napětí + kmitočet
+  v jednom políčku, InA · Icc · Krytí IP · Třída v jednom řádku (jinak by
+  písmo kleslo pod 5 pt). Řádky se roztahují do výšky štítku (`flex:auto`).
+- **Písmo se zmenšuje, dokud se KAŽDÉ políčko nevejde** (`rozvStitekVejde`:
+  výška i šířka políčka, popisek na jednom řádku), **nikdy pod 5 pt**
+  (`ROZV_ST_MIN`). U 70 × 35 se pak zkusí vynechat adresu výrobce; nevejde-li
+  se ani tak → hláška „Pro tolik údajů zvolte větší štítek" (i v liště
+  náhledu). Políčka mají `justify-content:safe center` — při obyčejném
+  `center` přetéká obsah i nahoru a `scrollHeight` to nepozná.
+- **Logo výrobce** (nepovinné): v oddílu Výroba a značení „📂 Nahrát logo…",
+  PNG/JPG, zmenší se na nejvýš 400 px (`rozvLogoZmensit`, PNG zůstane PNG),
+  uloží se do **`STORE.technik.logo`** (klíč v technikovi, ne nový klíč
+  STORE — jde se zálohou, `ulozitTechnika()` ho nepřepíše). Na štítku
+  vlevo od CE, nejvýš tak vysoké jako CE; zaškrtávátko `stitek.logo`
+  (chybí = tisknout), „🗑 Odebrat logo" se ZPĚT. Řádek s nahráním má
+  `data-dk-mimo` (výběr souboru není změna dokumentu).
+- **Popisky pod přístroje** („🏷 Tisk popisků přístrojů" vedle Tisku štítku,
+  `rozvPopiskyVykreslit`, a zaškrtávátko `dokVyber.popisky` = i do PDF
+  dokumentace za ostatní strany přes obecný háček `DOK_TYPY[typ].pdfNavic`;
+  výchozí vypnuté). Pro každou řadu s přístroji **jeden pásek přesně
+  široký jako řada** (moduly × 17,5 mm, `rozvPopiskyRady`), výška
+  `d.popisky.vyska` 9 / 12 / 15 mm (výchozí 12). Políčko přístroje má jeho
+  šířku: označení, název vývodu, hodnota (`rozvPopiskaHodnota`: B16,
+  40A/30mA, B16/30mA u RCBO, 40 A u QM a pojistek). Rezerva a volné místo
+  = prázdná políčka (volno po modulech, čárkovaně). Text se zalomí,
+  zmenší (nejvýš na 72 %) a pak zkrátí „…" — **nikdy nepřeteče**. Listy na
+  šířku (`a4-landscape rz-popisky-list`), ořezové značky, pokyn a úsečka
+  50 mm. **Pásek delší než list** (nad 259 mm, tedy 18 a 24 M) se rozdělí
+  po políčkách s **překryvem jednoho políčka** (`rz-pp-prekryv`, šrafované)
+  a značkou „pokračuje ▶" (`rozvPopiskyCasti`).
+- **Přístroje různých výrobců** (`rozvVyrobciMix`): v souhrnu rozvaděče
+  (vlastnosti bez výběru) jeden nenápadný řádek „Přístroje 3 výrobců: OEZ
+  (12), ABB (2), Hager (1)"; klepnutí na výrobce jeho přístroje v pohledu
+  vybere (výběr víc z v1.21). Obecné vestavěné („obecný") a rezervy se
+  nepočítají. Jen informace — nic neblokuje a do PDF nejde.
+- Data (vše volitelné): `stitek.styl`, `stitek.logo`, `popisky.vyska`,
+  `dokVyber.popisky`. Rozvaděč z v1.20 se načte beze změny (test).
+
+Test: `testy/test-rozvadec-dokumenty.js` (71 kontrol — k tomu: tabulka
+s popsanými políčky a hodnotami, popisky 5–7,2 pt, CE ≥ 8 mm, všechny tři
+velikosti bez přetečení po políčkách, 70 × 35 s 12 kusy a třídou II,
+Icc prázdné = políčko chybí, bez rozšířené části, jednoduché rozvržení,
+přeplněný štítek → hláška a nikdy pod 5 pt, logo 900 → 400 px do profilu
+a zálohy a na štítku ≤ CE, popisky byt 3+1 (3 × 210 mm, šířky políček,
+hodnoty, rezerva, dlouhý název, 9 mm), 6 × 24 rozdělené s překryvem,
+popisky v PDF dokumentace, mix výrobců, rozvaděč z v1.20). V
+`test-mobil.js` stavy „…popisky pod přístroje", „…výrobní štítek,
+jednoduché rozvržení" a „…vlastnosti s přístroji různých výrobců".
+
+Test etapy 2: `testy/test-rozvadec-dokumenty.js` (50 kontrol, byt 3+1 —
 záložky, předvyplnění a prázdné odvozené hodnoty, zrcadlo, výrobní číslo,
 štítek v mm s CE, 70 × 35 s 12 kusy a třídou II, prohlášení doslova a RoHS,
 protokol, metoda B do 630 A, technické údaje, celé PDF, starý rozvaděč beze

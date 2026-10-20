@@ -566,6 +566,14 @@ function vsechnyStavy(zalozky) {
     document.querySelector('.rz-ko-met[data-met="B"]').scrollIntoView({ block: 'start' }); await __M.w(100);
   }));
   add('rozvaděč – výrobní štítek', 'Tvorba dokumentace', E(async () => { await __M.rozv(); await TD_AKCE.tdRStitek(); await __M.w(300); }));
+  add('rozvaděč – popisky pod přístroje', 'Tvorba dokumentace', E(async () => { await __M.rozv(); await TD_AKCE.tdRPopisky(); await __M.w(300); }));
+  add('rozvaděč – výrobní štítek, jednoduché rozvržení', 'Tvorba dokumentace', E(async () => {
+    await __M.rozv(); rozvZalozkaNastavit('dok'); const e = dokForm().querySelector('[data-dk="stitek.styl"]');
+    e.value = 'jednoduche'; e.dispatchEvent(new Event('change', { bubbles: true })); await TD_AKCE.tdRStitek(); await __M.w(300); }));
+  add('rozvaděč – vlastnosti s přístroji různých výrobců', 'Tvorba dokumentace', E(async () => {
+    await __M.rozv(); __rz.rady[1].prvky[1].p.vyrobce = 'Výrobce A'; __rz.rady[1].prvky[2].p.vyrobce = 'Výrobce B';
+    __rz.vyber = null; rozvVlastnostiVykreslit(); document.getElementById('rz-vlastnosti').scrollIntoView({ block: 'start' }); await __M.w(100);
+  }));
   add('rozvaděč – náhled PDF', 'Tvorba dokumentace', E(async () => { await __M.rozv(); await dokNahled(); await __M.w(400); }));
   add('rozvaděč – přeplněná řada', 'Tvorba dokumentace', E(async () => {
     await __M.rozv(); rozvVlozit('v-fa-3-C32', 0, 0); document.getElementById('rz-pohled').scrollIntoView({ block: 'start' }); await __M.w(100);
