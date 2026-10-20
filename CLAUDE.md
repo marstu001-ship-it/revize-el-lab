@@ -712,8 +712,12 @@ od revizí, záloha jako část `dokumentace`).
   (`ROZV_KAT_SKUPINY`: Vše · Jističe · Chrániče · RCBO · AFDD · SPD ·
   Hl. vypínače · Pojistky · Ostatní = KM, KT, KA, PJ, HL, SF, X, REZ)
   a vždy **výrobce, póly, In, charakteristika**; sbalené „Další filtry" jen
-  IΔn, typ chrániče, jen ověřené, jen oblíbené. Karta Skříně vždy: výrobce,
-  počet řad, modulů v řadě, provedení, materiál (jen ověřené sbalené).
+  IΔn, typ chrániče, jen ověřené, jen oblíbené. Karta Skříně vždy: **typ
+  skříně jako řada tlačítek** (Vše · Domovní · Průmyslové · Historické,
+  `__rzF.typSkrine`, `tdRTypSkrine`), výrobce, počet řad, modulů v řadě,
+  provedení, materiál (jen ověřené sbalené) a tlačítko **„📐 Vlastní
+  velikost skříně"** (viz Zakreslení — tentýž formulář v okně
+  `#modal-rz-velikost`, „Použít" = `rozvSkrinNastavit`).
   **Volby rozbalovátek se berou z dat** (`rozvVolbyZDat` — i importovaní
   výrobci; „obecný" = vestavěné), zvolená hodnota v nabídce zůstane.
   Přepnutí karty filtry vynuluje (hledaný text zůstane) — výrobce bez skříní
@@ -762,16 +766,21 @@ a prohlášení (hlavička + `skrin` + `p`). `data.model = 1`.
   3+N, 4), In, char (B/C/D/K/Z), icn (kA, ČSN EN 60898), icu, ics (kA,
   ČSN EN 60947-2), idn (mA), rcdTyp (AC/A/F/B), spdTrida, up (kV), sirka
   (moduly, DESETINNÉ), pv (W/pól při In), ue, pozn, zdroj, overeno`.
-  Skříň: `vyrobce, rada, typ, provedeni, material, rady, modulu, ip, ik,
-  ina, penc, rozmery, trida, pozn, zdroj, overeno`. Prázdné = neuvedeno;
-  `rozvPolozkaNorm()` srovná tvar a čísla (desetinná čárka).
+  Skříň: `vyrobce, rada, typ, typSkrine, provedeni, material, rady, modulu,
+  ip, ik, ina, penc, rozmery, trida, pozn, zdroj, overeno`. Prázdné =
+  neuvedeno; `rozvPolozkaNorm()` srovná tvar a čísla (desetinná čárka).
+  **`typSkrine`** (2026-10-20) = `domovni` (výchozí — **i všechny dosavadní
+  skříně bez klíče**, doplní ho `rozvPolozkaNorm`), `prumyslova`,
+  `historicka` (staré rozvaděče z ČSSR). Provedení `nástěnná`, `zapuštěná`,
+  `dutá stěna`, `stojanová` (`ROZV_PROVEDENI`).
 - **Vestavěné jen OBECNÉ položky** (`rozvVestavene()`, id `v-…`, výrobce
   „obecný", `overeno = false`): jističe 1P/1+N/3P/3+N × B/C × 6–63 A,
   chrániče 2P/4P 25/40/63 A 30 mA A/AC (+ 4P 40/63 A 300 mA), RCBO 1+N,
   AFDD, SPD T1+T2 / T2, hlavní vypínače, pojistkové odpínače 10×38, stykače,
   relé, hodiny, elektroměry, signálky, ovladače, svorka ½ modulu, rezervy
   ½–3 moduly; skříně plast 1–4×12 a 2–4×18 nástěnné i zapuštěné, oceloplech
-  3–4×24. **Pv, Icn, Icu, Ics, InA a Penc jsou prázdné — nic se nevymýšlí;
+  3–4×24 (domovní), **oceloplech nástěnné 5–8×24 a stojanové 10×24, 12×24
+  (průmyslové)**. Historické vestavěné nejsou — data pošle uživatel. **Pv, Icn, Icu, Ics, InA a Penc jsou prázdné — nic se nevymýšlí;
   šířky jsou běžné modulové a neověřené.** Žádná data výrobců (repozitář je
   veřejný).
 - **Položky uživatele** v `DOK.rozvKnihovna`, oblíbené (hvězdička) v
@@ -785,10 +794,17 @@ a prohlášení (hlavička + `skrin` + `p`). `data.model = 1`.
   „Knihovna obsahuje jen obecné přístroje. Skříně a přístroje konkrétních
   výrobců (OEZ, ABB, Eaton, Hager…) vám pošle Martin – stačí mu napsat.
   Z licenčních důvodů nejsou součástí programu. Soubor pak stačí přetáhnout
-  sem." **Zavřít nejde** (záměr). Pruh je zároveň plocha pro přetažení
+  sem." **Zavřít nejde** (záměr), ale **jde sbalit** (2026-10-20): ▴ v rohu
+  ho sbalí na jeden řádek „ℹ Data výrobců – přetáhněte soubor sem ▾", ▾
+  rozbalí (`tdRInfoPrepni`, `rozvInfoPrekreslit`). **Sám se sbalí, když
+  knihovna obsahuje importované položky** (`zdroj === 'import'`), a text je
+  pak „V knihovně máte data výrobců (N položek). Nová data přetáhněte sem."
+  Stav jen v localStorage `revize_el_rz_info` (`sbaleno` / `rozbaleno`, bez
+  klíče = podle importu; try/catch); po uloženém importu se klíč smaže, ať
+  se pruh sbalí sám. Pruh (i sbalený) je zároveň plocha pro přetažení
   souboru (`.rz-drop-cil`, tytéž posluchače jako `#rz-drop`) a v editoru má
-  „📂 Vybrat soubor…" (na telefonu přetáhnout nejde). Klidná modrá
-  (`#e8f1fb`, levý pruh `--accent2`), písmo jako text, na telefonu celý.
+  „📂 Vybrat soubor…" (sbalený jen ikonu 📂; na telefonu přetáhnout nejde).
+  Klidná modrá (`#e8f1fb`, levý pruh `--accent2`), na telefonu celý.
 - **Skříň** se vybírá „Použít" na kartě Skříně (`rozvSkrinNastavit`);
   výměna se ptá a přístroje z řad navíc přesune na konec poslední řady.
 - **Každá změna skříně a přístrojů jde přes `rozvZmena(popis, fn)`** —
@@ -894,20 +910,65 @@ na telefonu pod hlavní akcí přes celou šířku) → okno `#modal-rz-zrevize`
   (1 modul na pól, neověřená, `knih` prázdné).
 - **Upozornění** = `prvek.upoz` (pole textů): oranžové „!" v čelním pohledu
   (ne v PDF), ve vlastnostech pruh s „✓ Hotovo" (`tdRUpozHotovo`).
-- **Skříň** (`rzzSkrin`): nejmenší vestavěná **plastová nástěnná**, do které
-  se přístroje vejdou s rezervou ~20 % (`RZZ_REZERVA`) a **chránič se svými
-  obvody (do dalšího chrániče) se nerozdělí do dvou řad**; jinak největší
-  (přeplní se, krok 2 to řekne). Nadřazené chrániče přes `rozvNadrazeneAuto`.
+- **Skříň — návrh** (`rzzSkrin`): nejmenší **vestavěná nástěnná nebo
+  stojanová** (domovní plast → oceloplech → průmyslové, `rzzSkrineNavrhu`;
+  historické a vlastní se jen nabízejí), do které se přístroje vejdou
+  s rezervou ~20 % (`RZZ_REZERVA`) a skupiny chrániče zůstanou celé
+  (`rzzVejdeSe` → `rzzSkladat().cele`). **Když se nevejde nic** → vlastní
+  velikost (`rzzVlastniVelikost`: 24 modulů v řadě, řad tolik, aby zbyla
+  rezerva; přes 20 řad 36/48/72 modulů). Nadřazené chrániče přes
+  `rozvNadrazeneAuto`.
+- **Skládání do řad** (`rzzSkladat`, připomínka 2026-10-20 — budova s 86
+  obvody přeplnila poslední řadu): skupina chránič + obvody jde do řady
+  **celá**, když se vejde do zbytku řady; jinak celá do další řady; delší
+  než celá řada se **rozdělí** (chránič první, obvody pokračují v další
+  řadě). Nejdou-li skupiny poskládat celé a celkem se přístroje vejdou,
+  poskládají se jednotlivě — **dokud je jinde volno, nic se nepřeplní**.
+  Přeplní se (poslední řada) jen to, co se do skříně celkem nevejde.
+- **Výběr skříně v kroku 2** (2026-10-20): u každého vybraného rozvaděče
+  rozbalovátko „🗄 Skříň" (`data-rzz-skrin`) s předvybraným návrhem
+  („(návrh)") a stavem „✓ vejde se · obsazeno 8 z 12 M" / „⚠ nevejde se…";
+  volby ve skupinách (`RZZ_SKUPINY_SKRINI`) **Domovní plastové ·
+  Oceloplechové · Průmyslové · Historické (ČSSR) · Moje vlastní** (prázdná
+  skupina „(zatím žádné)") a na konci **„＋ Vlastní velikost…"**. Nad
+  seznamem věta „…Skříň můžete kdykoli změnit v editoru rozvaděče
+  (Vyměnit skříň)." Pod seznamem nenápadně **„Použít pro všechny:
+  [skříň]"** (`#rzz-skrin-vse`). Volby v `__rzZR.volba[uid]` (nic = návrh,
+  id knihovny, `@vlastni` + `__rzZR.vlastni[uid]`), do převodu jdou jako
+  `volby.skrine` (`rzzVolbySkrini` → `rzzSkrinZvolena`). Když se nevejde
+  nic, je předvybraná vlastní velikost **oranžově** (`.rzz-skrin-vlastni`)
+  s formulářem a dopočtenými hodnotami.
+- **Vlastní velikost** (`rozvVelikostHtml` / `rozvVelikostCist` /
+  `rozvVelikostSkrin`, totéž v kroku 2 pod rozvaděčem i v okně editoru):
+  **řady × moduly**, nebo u starých rozvaděčů bez modulů **počet DIN lišt
+  × délka lišty v mm** → moduly = ⌊mm / 17,5⌋ (do poznámky skříně „DIN
+  lišty 3 × 420 mm"); materiál, provedení, typ skříně, název (prázdný =
+  „Vlastní velikost R×M modulů"), **„Uložit do mé knihovny"** (zdroj
+  `vlastni`, příště pod „Moje vlastní"). Kontrola přes `rozvValidovat`.
+  Psaní do formuláře v kroku 2 jen přepočítá stav (`rzzStavAktualizovat`),
+  formulář se nepřekresluje (kurzor zůstane). Neplatná vlastní velikost
+  zakreslení zastaví s hláškou.
+- **Soustava:** není-li ze zprávy jednoznačná, rozvaděč dostane
+  `data.upoz = ['doplňte soustavu']` — krok 2 i hláška to spočítají,
+  v editoru je hlavička otevřená s oranžovým pruhem (`.rz-hl-upoz`, „✓ Hotovo"
+  = `tdRHlUpozHotovo`) a oranžovým polem Soustava, souhrn hlavičky začíná ⚠.
+  Výběr soustavy upozornění schová a `cist` ho z dat smaže.
 - **Napájení:** přístroj, který ve zprávě napájí jiný rozvaděč, dostane
   `napaji = [uid dokumentu]` (vlastnosti „→ napájí: RS1"), napájený rozvaděč
   `napajenZ = { uid, ozn, nazev }` (hlavička „⚡ Napájen z RH (-FA2)",
   seznam strom napájení). Nezakreslený rodič zůstane jen jménem.
 
-Test: `testy/test-rozvadec-z-revize.js` (45 kontrol, vymyšlená revize:
+Test: `testy/test-rozvadec-z-revize.js` (67 kontrol, vymyšlená revize:
 RH → RS1, RS2; chránič s obvody; RCBO; 3x16A; pojistka gG; jiný řádek;
 obvod bez čitelného In; zpráva LPS a stroje se v nabídce neobjeví; vymyšlený
-„Výrobce A" s řadami R1/R2 v knihovně testu). V `test-mobil.js` stavy
-„rozvaděč – zakreslit z revizní zprávy, krok 1 / 2".
+„Výrobce A" s řadami R1/R2 v knihovně testu; v1.19: skládání (chránič +
+15 obvodů ve 4×18, skupiny celé, přeplnění jen co se nevejde), nabídka
+skříní, „Použít pro všechny", vlastní velikost z DIN lišt s uložením do
+knihovny, soustava, vymyšlená administrativní budova se 72 a 300 obvody,
+okno vlastní velikosti v editoru). V `test-mobil.js` stavy „rozvaděč –
+zakreslit z revizní zprávy, krok 1 / 2", „…krok 2 s vlastní velikostí
+skříně", „vlastní velikost skříně (okno v editoru)" a „editor, sbalený
+informační pruh, karta Skříně".
 
 ### Vlastní položky a import (část 2)
 
@@ -928,7 +989,7 @@ obvod bez čitelného In; zpráva LPS a stroje se v nabídce neobjeví; vymyšle
 - **Formát CSV** (šablona „⬇ Prázdná šablona CSV" = jen hlavička, UTF-8
   s BOM, středníky): sloupce `druh;kategorie;nazev;vyrobce;rada;typ;poly;in;
   charakteristika;icn;icu;ics;idn;typ_chranice;trida_spd;up;sirka_moduly;pv;
-  ue;provedeni;material;rady;moduly_v_rade;ip;ik;ina;penc;rozmery;
+  ue;provedeni;material;typ_skrine;rady;moduly_v_rade;ip;ik;ina;penc;rozmery;
   trida_ochrany;overeno;poznamka`. Pořadí ani všechny sloupce nejsou
   povinné, hlavička se porovnává bez háčků a velikosti písmen (`ROZV_CSV`).
   Oddělovač `;`, `,` nebo tabulátor se pozná sám, uvozovky podle CSV,
@@ -942,8 +1003,11 @@ obvod bez čitelného In; zpráva LPS a stroje se v nabídce neobjeví; vymyšle
     číslem se toleruje** („16 A"), `charakteristika` B/C/D/K/Z,
     `typ_chranice` AC/A/F/B, `trida_spd` T1, T2, T3 nebo kombinace (T1+T2),
     `sirka_moduly` povinná u přístroje (desetinná), u skříně povinné `rady`
-    a `moduly_v_rade`, `provedeni` nástěnná/zapuštěná/dutá stěna,
-    `material` plast/oceloplech, `trida_ochrany` I/II, `overeno` ano/ne.
+    a `moduly_v_rade`, `provedeni` nástěnná/zapuštěná/dutá stěna/stojanová,
+    `material` plast/oceloplech, **`typ_skrine` domovni / prumyslova /
+    historicka** (i s háčky a velkým písmenem; prázdné nebo soubor bez
+    sloupce = domovní, jiný text = chyba řádku), `trida_ochrany` I/II,
+    `overeno` ano/ne.
 - **Formát JSON** = export „⬇ Export mé knihovny (JSON)":
   `{ "_format": "revize-el-knihovna-rozvadecu", "_version": 1,
   "pristroje": [ … ], "skrine": [ … ] }`, položky s vnitřními klíči (výš).
@@ -1037,7 +1101,9 @@ obvod bez čitelného In; zpráva LPS a stroje se v nabídce neobjeví; vymyšle
 
 Test: `testy/test-rozvadec.js` (vymyšlená data; velká knihovna = ~670
 vymyšlených položek „Výrobce A" / „Výrobce B" generovaných v testu, do
-repozitáře nejdou žádná data výrobců). V `test-mobil.js` stavy
+repozitáře nejdou žádná data výrobců; 134 kontrol — v1.19 i typ skříně,
+nové vestavěné skříně, filtr typu, CSV s `typ_skrine` i bez, sbalení
+a samočinné sbalení pruhu). V `test-mobil.js` stavy
 „rozvaděč – …" a v přípravě rozvaděč RH1 (byt 3+1, skříň 3×12).
 **`test-dokumentace.js` upraven ve stejném commitu:** dlaždic je víc
 a „správa vzorů úplně dole" se počítá z viditelných prvků.

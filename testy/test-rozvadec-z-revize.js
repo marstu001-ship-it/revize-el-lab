@@ -4,7 +4,11 @@
 //  - převod: hlavička ze zprávy, jistič / chránič / RCBO / pojistka, 3x16A, póly,
 //    upozornění (póly, proud, výrobce bez dat), jiný řádek do poznámky,
 //    nejmenší vhodná skříň, nadřazený chránič, vazby napájení, zdroj zprávy,
-//  - ZPĚT smaže zakreslené i nový objekt, data revizí bajtově stejná, telefon.
+//  - ZPĚT smaže zakreslené i nový objekt, data revizí bajtově stejná, telefon,
+//  - (v1.19) výběr skříně u každého rozvaděče (skupiny, návrh, „Použít pro všechny"),
+//    vlastní velikost (řady × moduly i DIN lišty × délka, uložení do knihovny),
+//    skládání do řad bez přeplnění (chránič + 15 obvodů ve 4×18, 72 obvodů),
+//    návrh vlastní velikosti, když se nic nevejde, „doplňte soustavu".
 // Všechna data vymyšlená (výrobce „Výrobce A" s řadami R1 / R2).
 const { chromium } = require('./pw');
 const PORT = process.env.PORT || 8901, URL = 'http://127.0.0.1:' + PORT + '/index.html';
@@ -102,13 +106,15 @@ function priprava() {
   await p.click('#rzz-zpravy [data-zuid="z-byt"]'); await w(400);
   const k2 = await p.evaluate(() => ({
     rozvy: Array.from(document.querySelectorAll('.rzz-rozv')).map(l => (l.querySelector('input').checked ? '☑' : '☐') + l.innerText.replace(/\s+/g, ' ').trim()),
+    skrine: Array.from(document.querySelectorAll('select[data-rzz-skrin]')).map(s => s.selectedOptions[0].textContent),
     vse: document.getElementById('rzz-vse').checked, obj: document.getElementById('rzz-obj').value, objNazev: document.getElementById('rzz-obj-nazev').value,
     rada: Array.from(document.querySelectorAll('.rzz-rada')).map(r => r.innerText.replace(/\s+/g, ' ') + '=' + r.querySelector('select').value),
     souhrn: document.getElementById('rzz-souhrn').innerText, ok: document.getElementById('rzz-ok').textContent
   }));
   check('krok 2: tři rozvaděče zaškrtnuté, u nich umístění, počet obvodů, „napájen z RH"', k2.rozvy.length === 3 && k2.vse &&
     /^☑RH · Chodba · 4 obvody/.test(k2.rozvy[0]) && /RS1 · Kuchyň · 6 obvodů · napájen z RH/.test(k2.rozvy[1]) && /RS2 · Garáž · 1 obvod · napájen z RH/.test(k2.rozvy[2]), k2.rozvy.join(' | '));
-  check('krok 2: u rozvaděče navržená skříň (RH 1×12, RS1 2×12)', /Rozvodnice 1×12/.test(k2.rozvy[0]) && /Rozvodnice 2×12/.test(k2.rozvy[1]), k2.rozvy.join(' | '));
+  check('krok 2: u rozvaděče předvybraná navržená skříň (RH 1×12, RS1 2×12, RS2 1×12)', k2.skrine.length === 3 && /^Rozvodnice 1×12 modulů, plast, nástěnná \(návrh\)$/.test(k2.skrine[0]) &&
+    /^Rozvodnice 2×12/.test(k2.skrine[1]) && /^Rozvodnice 1×12/.test(k2.skrine[2]), k2.skrine.join(' | '));
   check('krok 2: „Zařadit do objektu" předvyplněno místem revize (nový objekt)', k2.obj === '__novy' && k2.objNazev === 'Byt Polní 12', k2.obj + ' ' + k2.objNazev);
   check('krok 2: výběr řady výrobce, předvolená řada napsaná ve značce (R2)', k2.rada.length === 1 && /Výrobce A – jističe: řada/.test(k2.rada[0]) && /=R2$/.test(k2.rada[0]), k2.rada.join(' | '));
   check('krok 2: souhrn přístrojů (podle dat výrobce, obecné, bez značky, k doplnění, jiné řádky)',
@@ -233,6 +239,151 @@ function priprava() {
   check('v seznamu „napájen z RH" i bez zakresleného RH', /napájen z RH/.test(pod), pod);
 
   check('archiv a data revizí po zakreslení bajtově stejná', (await otisk()) === otiskPred);
+
+  // ══ v1.19: výběr skříně, vlastní velikost, skládání, soustava ════════
+  // a) skládání do řad (čistá funkce)
+  const sk = await p.evaluate(() => {
+    let n = 0;
+    const X = (w, kat) => ({ uid: 'x' + (++n), p: { sirka: w, kat: kat || 'FA' } });
+    const G = (pocet) => { const pr = [X(4, 'FI')]; for (let i = 0; i < pocet; i++) pr.push(X(1)); return { prvky: pr, w: 4 + pocet }; };
+    const J = (pocet) => { const a = []; for (let i = 0; i < pocet; i++) a.push({ prvky: [X(1)], w: 1 }); return a; };
+    const pop = r => r.rady.map(x => x.prvky.reduce((s, y) => s + y.p.sirka, 0));
+    const r1 = rzzSkladat([G(15)], 4, 18), r2 = rzzSkladat([G(6), G(6)], 2, 18), r3 = rzzSkladat([G(6), G(6), G(6)], 2, 18), r4 = rzzSkladat(J(40), 2, 18);
+    const r5 = rzzSkladat([G(12), G(12), G(12)], 3, 24);
+    return { r1: pop(r1) + '|' + r1.ok + '|' + r1.rady[0].prvky[0].p.kat, r2: pop(r2) + '|' + r2.ok, r3: pop(r3) + '|' + r3.ok, r4: pop(r4) + '|' + r4.ok,
+      r5: pop(r5) + '|' + r5.ok + '|' + r5.rady.map(r => r.prvky[0].p.kat).join() };
+  });
+  check('skládání: chránič + 15 obvodů ve 4×18 — nic přeplněné, chránič první, obvody pokračují v další řadě', sk.r1 === '18,1,0,0|true|FI', sk.r1);
+  check('skládání: skupina, která se do zbytku řady nevejde, jde celá do další řady', sk.r2 === '10,10|true' && sk.r5 === '16,16,16|true|FI,FI,FI', sk.r2 + ' · ' + sk.r5);
+  check('skládání: nejdou-li skupiny celé a celkem se vejde, nepřeplní se nic (30 M do 2×18)', sk.r3 === '18,12|true', sk.r3);
+  check('skládání: přeplní se jen to, co se celkem nevejde (40 M do 2×18 → jen poslední řada)', sk.r4 === '18,22|false', sk.r4);
+
+  // b) krok 2: nabídka skříní, souhrn se soustavou
+  await p.evaluate(() => dokOtevritSeznam('rozv')); await w(200);
+  await p.click('#dok-typy .dok-druha-akce'); await w(300);
+  await p.click('#rzz-zpravy [data-zuid="z-byt"]'); await w(400);
+  const nab = await p.evaluate(() => {
+    const s = document.querySelector('select[data-rzz-skrin="r-rh"]');
+    return { skup: Array.from(s.querySelectorAll('optgroup')).map(g => g.label).join(' · '), posledni: s.options[s.options.length - 1].textContent,
+      prum: Array.from(s.querySelectorAll('optgroup[label="Průmyslové"] option')).map(o => o.textContent).join(' | '),
+      veta: document.querySelector('.rzz-skrin-veta').innerText, stav: document.querySelector('[data-rzz-stav="r-rh"]').innerText,
+      souhrn: document.getElementById('rzz-souhrn').innerText, vse: !!document.getElementById('rzz-skrin-vse') };
+  });
+  check('krok 2: nabídka skříní ve skupinách Domovní plastové · Oceloplechové · Průmyslové · Historické (ČSSR) · Moje vlastní, na konci „＋ Vlastní velikost…"',
+    nab.skup === 'Domovní plastové · Oceloplechové · Průmyslové · Historické (ČSSR) · Moje vlastní' && nab.posledni === '＋ Vlastní velikost…' &&
+    /Rozvaděč 5×24 modulů, oceloplech, nástěnný/.test(nab.prum) && /12×24 modulů, oceloplech, stojanový/.test(nab.prum), nab.skup + ' · ' + nab.posledni + ' · ' + nab.prum);
+  check('krok 2: věta „Skříň můžete kdykoli změnit v editoru rozvaděče (Vyměnit skříň)." a u rozvaděče „✓ vejde se · obsazeno 8 z 12 M"',
+    /Skříň můžete kdykoli změnit v editoru rozvaděče \(Vyměnit skříň\)\./.test(nab.veta) && nab.stav === '✓ vejde se · obsazeno 8 z 12 M', nab.veta + ' · ' + nab.stav);
+  check('krok 2: souhrn upozorní na nejednoznačnou soustavu (RS2 — jen 1f přístroje)', /⚠ soustava není ze zprávy jednoznačná — doplňte ji \(1 rozvaděč\)/.test(nab.souhrn) && nab.vse, nab.souhrn);
+  await p.selectOption('#rzz-skrin-vse', 'v-sk-3x18-n'); await w(300);
+  const vse = await p.evaluate(() => Array.from(document.querySelectorAll('select[data-rzz-skrin]')).map(s => s.value).join());
+  check('„Použít pro všechny: [skříň]" nastaví skříň všem vybraným', vse === 'v-sk-3x18-n,v-sk-3x18-n,v-sk-3x18-n', vse);
+  // c) vlastní velikost u RS2 — DIN lišty × délka
+  await p.selectOption('select[data-rzz-skrin="r-rs2"]', '@vlastni'); await w(300);
+  const vl0 = await p.evaluate(() => ({ form: !!document.querySelector('.rzz-rozv-blok .rz-vel'), fokus: document.activeElement && document.activeElement.getAttribute('data-vel') }));
+  await p.click('.rz-vel input[data-vel="zpusob"][value="listy"]'); await w(200);
+  await p.fill('.rz-vel input[data-vel="listy"]', '3'); await p.fill('.rz-vel input[data-vel="delka"]', '420 mm'); await w(200);
+  await p.selectOption('.rz-vel select[data-vel="material"]', 'oceloplech'); await p.selectOption('.rz-vel select[data-vel="typSkrine"]', 'historicka');
+  await p.fill('.rz-vel input[data-vel="nazev"]', 'Stará rozvodnice'); await p.check('.rz-vel input[data-vel="ulozit"]'); await w(300);
+  const vl1 = await p.evaluate(() => ({ mod: document.querySelector('.rz-vel [data-vel-mod]').textContent, opt: document.querySelector('select[data-rzz-skrin="r-rs2"]').selectedOptions[0].textContent,
+    stav: document.querySelector('[data-rzz-stav="r-rs2"]').innerText }));
+  check('vlastní velikost: formulář se otevře hned pod rozvaděčem (kurzor v prvním poli), DIN lišty 3 × 420 mm = 24 modulů po 17,5 mm',
+    vl0.form && vl0.fokus === 'rady' && vl1.mod === '= 24 modulů po 17,5 mm' && vl1.opt === 'Vlastní velikost 3 × 24 modulů' && /obsazeno 1 z 72 M/.test(vl1.stav), JSON.stringify([vl0, vl1]));
+  await p.screenshot({ path: BEH + '/rozv-zrevize-skrine.png' });
+  const knPred = await p.evaluate(() => DOK.rozvKnihovna.length);
+  await p.click('#rzz-ok'); await w(600);
+  const v2 = await p.evaluate(() => {
+    const g = o => DOK.dokumenty.find(x => x.data && x.data.oznaceni === o && x.data.zdrojRevize && !x.__videno);
+    const rh = g('RH'), rs2 = g('RS2'), nove = DOK.rozvKnihovna.filter(x => x.nazev === 'Stará rozvodnice');
+    return { rh: rh.data.skrin.knih, rs2: [rs2.data.skrin.rady, rs2.data.skrin.modulu, rs2.data.skrin.nazev, rs2.data.skrin.typSkrine, rs2.data.skrin.material, rs2.data.skrin.pozn].join('|'),
+      rs2knih: rs2.data.skrin.knih, kn: nove.map(x => x.zdroj + '|' + x.typSkrine).join(), knId: nove[0] && nove[0].id, upoz: JSON.stringify(rs2.data.upoz), rhUpoz: rh.data.upoz,
+      rs2uid: rs2.uid, toast: Array.from(document.querySelectorAll('.toast')).map(t => t.innerText).pop() || '' };
+  });
+  check('zakresleno se zvolenou skříní (3×18) a vlastní velikostí: RS2 3×24 „Stará rozvodnice", historická, oceloplech, v poznámce DIN lišty',
+    v2.rh === 'v-sk-3x18-n' && v2.rs2 === '3|24|Stará rozvodnice|historicka|oceloplech|DIN lišty 3 × 420 mm', v2.rh + ' · ' + v2.rs2);
+  check('„Uložit do mé knihovny": vlastní skříň je v knihovně (vlastní, historická) a rozvaděč na ni odkazuje', v2.kn === 'vlastni|historicka' && v2.rs2knih === v2.knId &&
+    await p.evaluate(() => DOK.rozvKnihovna.length) === knPred + 1, v2.kn + ' · ' + v2.rs2knih);
+  check('soustava: RS2 dostane upozornění „doplňte soustavu", RH ne; hláška to řekne', v2.upoz === '["doplňte soustavu"]' && !v2.rhUpoz &&
+    /doplňte soustavu \(1 rozvaděč\)/.test(v2.toast) && /do knihovny uložena 1 vlastní skříň/.test(v2.toast), v2.upoz + ' · ' + v2.toast);
+  // d) editor: oranžové upozornění v hlavičce, zmizí výběrem soustavy
+  await p.evaluate(uid => dokOtevrit(uid), v2.rs2uid); await w(500);
+  const he = await p.evaluate(() => { const h = dokForm().querySelector('.rz-hlavicka');
+    return { open: h.open, upoz: (h.querySelector('.rz-hl-upoz') || {}).innerText || '', pole: !!h.querySelector('.rz-upoz-pole [data-dk="soustava"]'), souhrn: document.getElementById('rz-hl-souhrn').textContent }; });
+  check('editor: hlavička otevřená s oranžovým „⚠ doplňte soustavu" (i pole Soustava), souhrn začíná ⚠', he.open && /^⚠ doplňte soustavu/.test(he.upoz) && he.pole && /^⚠ doplňte soustavu/.test(he.souhrn), JSON.stringify(he));
+  await p.screenshot({ path: BEH + '/rozv-zrevize-soustava.png' });
+  await p.selectOption('.rz-hlavicka [data-dk="soustava"]', '1NPE ~230 V'); await w(200);
+  await p.evaluate(() => dokUlozitOtevreny()); await w(300);
+  const he2 = await p.evaluate(uid => ({ upoz: !!document.querySelector('.rz-hl-upoz'), pole: !!document.querySelector('.rz-upoz-pole'), data: JSON.stringify(dokNajit(uid).data.upoz) }), v2.rs2uid);
+  check('výběr soustavy upozornění schová a po uložení zmizí i z dat', !he2.upoz && !he2.pole && he2.data === undefined, JSON.stringify(he2));
+  await p.evaluate(() => dokOtevritSeznam('rozv')); await w(200);
+  // e) budova s velkými rozvaděči: 72 obvodů, chránič + 15 obvodů, 300 obvodů
+  await p.evaluate(() => {
+    const o = (c, n, typ, ch, a, x) => Object.assign({ rowtype: 'obvod', rcdGroup: '', napaji: [], napajiNazev: [], c: String(c), n, typ, ch, a, idn: '',
+      isc: '', zsm: '', riso: '', rpe: '', faze: '', vyp: '', cas: '', t5idn: '', ut: '', kabel: '' }, x || {});
+    const skupiny = (pocet, obvodu, pfx) => { const m = []; let c = 0;
+      for (let g = 0; g < pocet; g++) {
+        m.push(o(++c, 'Chránič ' + (g + 1), '', 'A', '4x40', { rowtype: 'rcd-header', rcdGroup: pfx + g, idn: '0,03' }));
+        for (let i = 0; i < obvodu; i++) m.push(o(++c, 'Kancelář ' + (g + 1) + '.' + (i + 1), '', 'B', '1x16'));
+      } return m; };
+    const velky = []; for (let i = 0; i < 300; i++) velky.push(o(i + 1, 'Obvod ' + (i + 1), '', 'B', '1x10'));
+    const data = { typ: 'elektro', podtyp: 'prumysl', ev_cislo: 'RE-26-0020', misto: 'Administrativní budova Vymyšlená 5', adresa: 'Vymyšlená 5, 697 01 Kyjov',
+      zahajeni: '2026-10-20', ukonceni: '2026-10-20', vypracovani: '2026-10-20', provozovatel: 'Vymyšlená a.s.', provozovatel_ico: '',
+      napetova_soustava: '3NPE ~50Hz 400V / TN-S', zavady: [], pristroje: [], rozvadece: [
+        { uid: 'a-rh', nazev: 'RH-ADM', umisteni: '1. NP', privod: '', hlavniJistic: '', faze: [], auto_cislovani: true, mereni: skupiny(6, 12, 'a') },
+        { uid: 'a-rd', nazev: 'RS-D', umisteni: '2. NP', privod: '', hlavniJistic: '', faze: [], auto_cislovani: true, mereni: skupiny(1, 15, 'd') },
+        { uid: 'a-rv', nazev: 'RV-VELKY', umisteni: 'Sklep', privod: '', hlavniJistic: '', faze: [], auto_cislovani: true, mereni: velky }] };
+    archiv.unshift({ uid: 'z-adm', typ: 'elektro', podtyp: 'prumysl', ev_cislo: 'RE-26-0020', misto: data.misto, datum: '2026-10-20', stav: '', data });
+    saveStore();
+  });
+  await p.click('#dok-typy .dok-druha-akce'); await w(300);
+  await p.click('#rzz-zpravy [data-zuid="z-adm"]'); await w(500);
+  const adm = await p.evaluate(() => {
+    const q = u => ({ opt: document.querySelector('select[data-rzz-skrin="' + u + '"]').selectedOptions[0].textContent, stav: document.querySelector('[data-rzz-stav="' + u + '"]').innerText,
+      vl: document.querySelector('select[data-rzz-skrin="' + u + '"]').closest('.rzz-skrin-volba').classList.contains('rzz-skrin-vlastni') });
+    const vb = document.querySelector('select[data-rzz-skrin="a-rv"]').closest('.rzz-rozv-blok').querySelector('.rz-vel');
+    return { rh: q('a-rh'), rd: q('a-rd'), rv: q('a-rv'), vel: vb ? ['rady', 'modulu'].map(k => vb.querySelector('[data-vel="' + k + '"]').value).join('×') : '',
+      barva: getComputedStyle(document.querySelector('select[data-rzz-skrin="a-rv"]')).borderTopColor };
+  });
+  check('72 obvodů (6 chráničů po 12): návrh průmyslový 6×24 — vejde se bez přeplnění', /^Rozvaděč 6×24 modulů, oceloplech, nástěnný \(návrh\)$/.test(adm.rh.opt) &&
+    adm.rh.stav === '✓ vejde se · obsazeno 96 z 144 M' && !adm.rh.vl, JSON.stringify(adm.rh));
+  check('nic z knihovny se nevejde (300 obvodů): předvybraná „Vlastní velikost 16 × 24", oranžově, s formulářem a dopočtenými hodnotami',
+    adm.rv.opt === 'Vlastní velikost 16 × 24 modulů' && adm.rv.vl && /Nic z knihovny se nevejde/.test(adm.rv.stav) && /obsazeno 300 z 384 M/.test(adm.rv.stav) &&
+    adm.vel === '16×24' && adm.barva === 'rgb(224, 138, 0)', JSON.stringify(adm.rv) + ' ' + adm.vel + ' ' + adm.barva);
+  await p.selectOption('select[data-rzz-skrin="a-rd"]', 'v-sk-4x18-n'); await w(300);
+  await p.screenshot({ path: BEH + '/rozv-zrevize-velke.png' });
+  await p.click('#rzz-ok'); await w(900);
+  const vel = await p.evaluate(() => {
+    const g = o => DOK.dokumenty.find(x => x.data && x.data.oznaceni === o);
+    const info = d => ({ skrin: d.data.skrin.rady + '×' + d.data.skrin.modulu, prepln: rozvPreplnene({ skrin: d.data.skrin, rady: d.data.rady }).length,
+      rady: d.data.rady.map(r => r.prvky.reduce((s, x) => s + (+x.p.sirka || 1), 0)).join(','), prvni: d.data.rady.map(r => r.prvky.length ? r.prvky[0].p.kat : '').join(','), uid: d.uid });
+    return { rh: info(g('RH-ADM')), rd: info(g('RS-D')), rv: info(g('RV-VELKY')) };
+  });
+  check('RH-ADM zakreslen do 6×24: žádná řada přeplněná, každá začíná chráničem (skupiny celé)', vel.rh.skrin === '6×24' && vel.rh.prepln === 0 &&
+    vel.rh.rady === '16,16,16,16,16,16' && vel.rh.prvni === 'FI,FI,FI,FI,FI,FI', JSON.stringify(vel.rh));
+  check('RS-D (chránič + 15 obvodů) ve zvolené 4×18: nic přeplněné, chránič první, zbytek v další řadě', vel.rd.skrin === '4×18' && vel.rd.prepln === 0 && vel.rd.rady === '18,1,0,0', JSON.stringify(vel.rd));
+  check('RV-VELKY ve vlastní velikosti 16×24 bez přeplnění', vel.rv.skrin === '16×24' && vel.rv.prepln === 0, JSON.stringify(vel.rv));
+  await p.evaluate(uid => dokOtevrit(uid), vel.rh.uid); await w(600);
+  await p.evaluate(() => { const r = document.getElementById('rz-pohled'); r.scrollIntoView({ block: 'start' }); window.scrollBy(0, -60); }); await w(200);
+  await p.screenshot({ path: BEH + '/rozv-72-obvodu.png' });
+  // f) editor: vlastní velikost přes okno (výměna skříně), Moje vlastní v nabídce
+  await p.evaluate(() => { TD_AKCE.tdRSkrinVymenit(); }); await w(200);
+  await p.click('#rz-velikost-btn'); await w(300);
+  const ok1 = await p.evaluate(() => ({ open: document.getElementById('modal-rz-velikost').classList.contains('open'),
+    hod: ['rady', 'modulu'].map(k => document.querySelector('#rz-vel-obsah [data-vel="' + k + '"]').value).join('×'), text: document.getElementById('rz-vel-obsah').innerText }));
+  check('editor: „📐 Vlastní velikost skříně" otevře okno předvyplněné stávající skříní (6×24), říká kolik modulů přístroje zabírají',
+    ok1.open && ok1.hod === '6×24' && /Přístroje v rozvaděči zabírají 96 modulů/.test(ok1.text), JSON.stringify(ok1).slice(0, 200));
+  await p.fill('#rz-vel-obsah [data-vel="rady"]', '0'); await p.click('#modal-rz-velikost [data-action="tdRVelikostPouzit"]'); await w(200);
+  const chyba = await p.evaluate(() => document.querySelector('#rz-vel-obsah [data-vel-chyby]').innerText);
+  await p.fill('#rz-vel-obsah [data-vel="rady"]', '7'); await p.click('#modal-rz-velikost [data-action="tdRVelikostPouzit"]'); await w(500);
+  const ok2 = await p.evaluate(() => ({ open: document.getElementById('modal-rz-velikost').classList.contains('open'), sk: __rz.skrin.rady + '×' + __rz.skrin.modulu + '|' + __rz.skrin.nazev, r: __rz.rady.length }));
+  check('editor: chybná velikost se neuloží a řekne proč; 7×24 se použije (výměna skříně)', /počet řad musí být celé číslo 1–20/.test(chyba) && !ok2.open &&
+    ok2.sk === '7×24|Vlastní velikost 7×24 modulů' && ok2.r === 7, chyba + ' · ' + JSON.stringify(ok2));
+  await p.evaluate(() => dokOtevritSeznam('rozv')); await w(200);
+  await p.click('#dok-typy .dok-druha-akce'); await w(300);
+  await p.click('#rzz-zpravy [data-zuid="z-byt"]'); await w(400);
+  const moje = await p.evaluate(() => Array.from(document.querySelectorAll('select[data-rzz-skrin="r-rh"] optgroup[label="Moje vlastní"] option')).map(o => o.textContent).join());
+  check('příště je uložená vlastní skříň v nabídce pod „Moje vlastní"', /Stará rozvodnice/.test(moje), moje);
+  await p.evaluate(() => TD_AKCE.tdRZZavrit());
   check('bez chyb v konzoli', !err.length, err.join(' | '));
 
   // ── telefon ───────────────────────────────────────────────────────────

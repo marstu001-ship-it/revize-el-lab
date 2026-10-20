@@ -147,6 +147,7 @@ function pomocnik() {
     if (typeof formArchivZapnut === 'function' && formArchivZapnut()) formArchivNastavit(false);
     if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
     if (window.__formReadOnly) setFormReadOnly(false);
+    try { localStorage.removeItem('revize_el_rz_info'); } catch (e) {}
     window.__formDirty = false;
     showScreen('home'); window.scrollTo(0, 0); await w(30);
   };
@@ -500,6 +501,19 @@ function vsechnyStavy(zalozky) {
   add('rozvaděč – zakreslit z revizní zprávy, krok 2', 'Tvorba dokumentace', E(async () => {
     await __M.zrevize(); document.querySelector('#rzz-zpravy [data-zuid="m-zr"]').click(); await __M.w(150);
   }), '#modal-rz-zrevize');
+  add('rozvaděč – zakreslit, krok 2 s vlastní velikostí skříně', 'Tvorba dokumentace', E(async () => {
+    await __M.zrevize(); document.querySelector('#rzz-zpravy [data-zuid="m-zr"]').click(); await __M.w(150);
+    const s = document.querySelector('select[data-rzz-skrin="m-rs1"]'); s.value = '@vlastni'; s.dispatchEvent(new Event('change', { bubbles: true })); await __M.w(150);
+    document.querySelector('.rz-vel input[data-vel="zpusob"][value="listy"]').click(); await __M.w(100);
+    if (document.activeElement && document.activeElement.blur) document.activeElement.blur();
+  }), '#modal-rz-zrevize');
+  add('rozvaděč – vlastní velikost skříně (okno v editoru)', 'Tvorba dokumentace', E(async () => {
+    await __M.rozv(); document.getElementById('toast-wrap').innerHTML = ''; TD_AKCE.tdRVelikost(); await __M.w(100);
+  }), '#modal-rz-velikost');
+  add('rozvaděč – editor, sbalený informační pruh, karta Skříně', 'Tvorba dokumentace', E(async () => {
+    await __M.rozv(); localStorage.setItem('revize_el_rz_info', 'sbaleno'); rozvInfoPrekreslit();
+    TD_AKCE.tdRTab(document.querySelector('.rz-tab[data-tab="skrine"]')); document.querySelector('.rz-knihovna').scrollIntoView({ block: 'start' }); await __M.w(100);
+  }));
   add('rozvaděč – správa knihovny s importem výrobce', 'Tvorba dokumentace', E(async () => {
     // vymyšlený výrobce, jen v paměti (nic se neukládá)
     DOK.rozvKnihovna = [];

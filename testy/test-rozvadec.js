@@ -98,6 +98,8 @@ function pomocnik() {
       spd: !!v.find(x => x.nazev === 'SPD T1+T2 3+N'), qm: !!v.find(x => x.nazev === 'Hlavní vypínač 3P 63 A'),
       polmodul: !!v.find(x => x.sirka === 0.5),
       skrine: v.filter(x => x.druh === 'skrin').map(x => x.rady + 'x' + x.modulu + x.material[0] + x.provedeni[0]).join(),
+      typy: v.filter(x => x.druh === 'skrin').map(x => x.rady + 'x' + x.modulu + ':' + x.typSkrine).filter(t => !/:domovni$/.test(t)).join(),
+      domovni: v.filter(x => x.druh === 'skrin' && x.typSkrine === 'domovni').length,
       etim: ['FA', 'FI', 'FIFA', 'SPD'].map(k => rozvKat(k).etim).join() + ',' + ROZV_SKRIN_ETIM
     };
   });
@@ -106,8 +108,10 @@ function pomocnik() {
   check('vestavěné: každý přístroj má šířku v modulech, i ½ modulu', vest.sirky === 0 && vest.polmodul);
   check('vestavěné: všech 15 kategorií', vest.kat === 15, String(vest.kat));
   check('vestavěné: jistič, chránič, RCBO, SPD, hlavní vypínač v zadaném tvaru', vest.jistic && vest.chranic && vest.rcbo && vest.spd && vest.qm);
-  check('vestavěné skříně: 1–4×12, 2–4×18 plast nástěnné i zapuštěné, 3–4×24 oceloplech',
-    vest.skrine === '1x12pn,1x12pz,2x12pn,2x12pz,3x12pn,3x12pz,4x12pn,4x12pz,2x18pn,2x18pz,3x18pn,3x18pz,4x18pn,4x18pz,3x24on,4x24on', vest.skrine);
+  check('vestavěné skříně: 1–4×12, 2–4×18 plast nástěnné i zapuštěné, 3–4×24 oceloplech, 5–8×24 oceloplech nástěnné, 10 a 12×24 stojanové',
+    vest.skrine === '1x12pn,1x12pz,2x12pn,2x12pz,3x12pn,3x12pz,4x12pn,4x12pz,2x18pn,2x18pz,3x18pn,3x18pz,4x18pn,4x18pz,3x24on,4x24on,5x24on,6x24on,7x24on,8x24on,10x24os,12x24os', vest.skrine);
+  check('typ skříně: velké 5–8×24 a stojanové průmyslové, ostatní (16) domovní', vest.typy === '5x24:prumyslova,6x24:prumyslova,7x24:prumyslova,8x24:prumyslova,10x24:prumyslova,12x24:prumyslova' &&
+    vest.domovni === 16, vest.typy + ' / domovních ' + vest.domovni);
   check('kódy ETIM 10 u tříd: MCB, RCD, RCBO, SPD, skříň', vest.etim === 'EC000042,EC000003,EC000905,EC000941,EC000214', vest.etim);
 
   // ── 3. nový rozvaděč: hlavička z profilu, knihovna a filtry ───────────
@@ -139,6 +143,14 @@ function pomocnik() {
   await p.evaluate(() => __T.filtr('provedeni', 'zapuštěná')); f.sk36z = await p.evaluate(() => __T.nalezeno());
   await p.evaluate(() => { TD_AKCE.tdRFiltrZrusit(); __T.filtr('material', 'oceloplech'); }); f.ocel = await p.evaluate(() => __T.nalezeno());
   await p.evaluate(() => TD_AKCE.tdRFiltrZrusit());
+  f.typyTl = await p.evaluate(() => Array.from(document.querySelectorAll('#rz-filtry-hlavni .rz-skup')).filter(b => b.offsetHeight > 0).map(b => b.textContent).join('·'));
+  await p.click('#rz-filtry-hlavni .rz-skup[data-k="prumyslova"]');
+  f.prum = await p.evaluate(() => ({ n: __T.nalezeno(), akt: document.querySelector('#rz-filtry-hlavni .rz-skup.akt').textContent, meta: document.querySelector('#rz-seznam .rz-polozka small').textContent }));
+  await p.click('#rz-filtry-hlavni .rz-skup[data-k="historicka"]');
+  f.hist = await p.evaluate(() => document.getElementById('rz-seznam').innerText);
+  await p.click('#rz-filtry-hlavni .rz-skup[data-k="domovni"]'); f.dom = await p.evaluate(() => __T.nalezeno());
+  await p.evaluate(() => TD_AKCE.tdRFiltrZrusit());
+  f.velBtn = await p.evaluate(() => { const b = document.getElementById('rz-velikost-btn'); return b && b.offsetHeight > 0 ? b.textContent : ''; });
   await p.evaluate(() => TD_AKCE.tdRTab(document.querySelector('.rz-tab[data-tab="pristroje"]')));
   f.vse = await p.evaluate(() => document.getElementById('rz-kn-pocet').textContent);
   f.viditelne = await p.evaluate(() => ({
@@ -164,7 +176,11 @@ function pomocnik() {
   await p.evaluate(() => { TD_AKCE.tdRFiltrZrusit(); __T.filtr('overene', true); }); f.over = await p.evaluate(() => __T.nalezeno());
   await p.evaluate(() => TD_AKCE.tdRFiltrZrusit());
   check('skříně: výrobce, počet řad, modulů v řadě, provedení a materiál jsou vidět vždy', f.skrineViditelne === 'vyrobce,rady,modulu,provedeni,material', f.skrineViditelne);
-  check('filtr skříní: 3 řady × 12 modulů, provedení, materiál', f.skrineVse === 16 && f.sk36 === 2 && f.sk36z === 1 && f.ocel === 2, JSON.stringify([f.skrineVse, f.sk36, f.sk36z, f.ocel]));
+  check('filtr skříní: 3 řady × 12 modulů, provedení, materiál', f.skrineVse === 22 && f.sk36 === 2 && f.sk36z === 1 && f.ocel === 8, JSON.stringify([f.skrineVse, f.sk36, f.sk36z, f.ocel]));
+  check('karta Skříně: typ jako řada tlačítek Vše · Domovní · Průmyslové · Historické', f.typyTl === 'Vše·Domovní·Průmyslové·Historické', f.typyTl);
+  check('filtr typu: průmyslové 6 (u položky „průmyslová"), historické zatím nic, domovní 16', f.prum.n === 6 && f.prum.akt === 'Průmyslové' && /průmyslová/.test(f.prum.meta) &&
+    /Nic neodpovídá/.test(f.hist) && f.dom === 16, JSON.stringify(f.prum) + ' / ' + f.dom);
+  check('karta Skříně: tlačítko „📐 Vlastní velikost skříně"', /📐 Vlastní velikost skříně/.test(f.velBtn), f.velBtn);
   check('přístroje: kategorie jako řada tlačítek a výrobce, póly, In, charakteristika vždy vidět', f.viditelne.skupiny === 'Vše·Jističe·Chrániče·RCBO·AFDD·SPD·Hl. vypínače·Pojistky·Ostatní' &&
     f.viditelne.sel === 'vyrobce,poly,In,char', JSON.stringify(f.viditelne));
   check('sbalené „Další filtry" jen IΔn, typ chrániče, jen ověřené, jen oblíbené', f.viditelne.sbalene && /^Další filtry/.test(f.viditelne.souhrn), f.viditelne.souhrn);
@@ -200,12 +216,33 @@ function pomocnik() {
   const INFO = 'Knihovna obsahuje jen obecné přístroje. Skříně a přístroje konkrétních výrobců (OEZ, ABB, Eaton, Hager…) vám pošle Martin – stačí mu napsat. Z licenčních důvodů nejsou součástí programu. Soubor pak stačí přetáhnout sem.';
   const info = await p.evaluate(() => {
     const ed = document.querySelector('.rz-knihovna .rz-info-knihovna');
-    const r = { text: ed ? ed.innerText.replace(/\s+/g, ' ').replace(/^ℹ ?/, '').replace(/ 📂 Vybrat soubor…$/, '').trim() : '',
+    const r = { text: ed ? ed.querySelector('.rz-info-text').innerText.replace(/\s+/g, ' ').replace(/ 📂 Vybrat soubor…$/, '').trim() : '',
                 vybrat: !!(ed && ed.querySelector('[data-action="tdRImportVybratEd"]')), nahore: !!ed && ed === document.querySelector('.rz-knihovna').firstElementChild,
-                tlacitka: ed ? ed.querySelectorAll('button:not([data-action="tdRImportVybratEd"])').length : -1, vidno: !!ed && ed.offsetHeight > 30 };
+                tlacitka: ed ? ed.querySelectorAll('button:not([data-action="tdRImportVybratEd"]):not([data-action="tdRInfoPrepni"])').length : -1, vidno: !!ed && ed.offsetHeight > 30,
+                prepni: ed ? ed.querySelector('[data-action="tdRInfoPrepni"]').textContent : '' };
     return r;
   });
-  check('knihovna v editoru: nahoře informační pruh s textem o přístrojích výrobců od Martina, bez zavírání', info.text === INFO && info.nahore && info.tlacitka === 0 && info.vidno && info.vybrat, info.text);
+  check('knihovna v editoru: nahoře informační pruh s textem o přístrojích výrobců od Martina, bez zavírání (jen ▴ sbalit)', info.text === INFO && info.nahore && info.tlacitka === 0 &&
+    info.vidno && info.vybrat && info.prepni === '▴', info.text);
+  await p.click('.rz-knihovna .rz-info-prepni');
+  const sbal = await p.evaluate(async () => {
+    const e = document.querySelector('.rz-knihovna .rz-info-knihovna'), r = { text: e.innerText.replace(/\s+/g, ' ').trim(), h: e.offsetHeight,
+      ls: localStorage.getItem('revize_el_rz_info'), vybrat: !!e.querySelector('[data-action="tdRImportVybratEd"]'), nahore: e === document.querySelector('.rz-knihovna').firstElementChild };
+    const dt = new DataTransfer(); dt.items.add(new File(['kategorie;typ;sirka_moduly\nKA;VV-KA-9;1\n'], 'rele.csv', { type: 'text/csv' }));
+    e.dispatchEvent(new DragEvent('dragover', { dataTransfer: dt, bubbles: true, cancelable: true }));
+    e.dispatchEvent(new DragEvent('drop', { dataTransfer: dt, bubbles: true, cancelable: true }));
+    await __T.w(300);
+    r.drop = document.getElementById('modal-rz-import').classList.contains('open');
+    TD_AKCE.tdRImportZavrit();
+    return r;
+  });
+  check('▴ sbalí pruh na jeden řádek „ℹ Data výrobců – přetáhněte soubor sem ▾" (zapamatuje se), sbalený je pořád plocha pro přetažení', /^ℹ Data výrobců – přetáhněte soubor sem 📂 ▾$/.test(sbal.text) &&
+    sbal.h < 50 && sbal.ls === 'sbaleno' && sbal.vybrat && sbal.nahore && sbal.drop, JSON.stringify(sbal));
+  await p.click('.rz-knihovna .rz-info-prepni');
+  const rozb = await p.evaluate(() => ({ text: document.querySelector('.rz-knihovna .rz-info-text').innerText.replace(/\s+/g, ' ').replace(/ 📂 Vybrat soubor…$/, '').trim(),
+    ls: localStorage.getItem('revize_el_rz_info') }));
+  check('▾ pruh zase rozbalí', rozb.text === INFO && rozb.ls === 'rozbaleno', JSON.stringify(rozb));
+  await p.evaluate(() => localStorage.removeItem('revize_el_rz_info'));
   const infoDrop = await p.evaluate(async () => {
     const z = document.querySelector('.rz-knihovna .rz-info-knihovna');
     const dt = new DataTransfer(); dt.items.add(new File(['kategorie;typ;sirka_moduly\nKA;VV-KA-1;1\n'], 'rele.csv', { type: 'text/csv' }));
@@ -321,6 +358,27 @@ function pomocnik() {
     imp.export.pocty === '4/1' && /\.json$/.test(imp.export.name), JSON.stringify(imp.export));
   check('import JSON z exportu: pozná stejné položky (aktualizace)', /Načte se 5/.test(imp.json) && /nových 0, aktualizovaných 5/.test(imp.json), imp.json.split('\n').slice(0, 2).join(' | '));
   check('rozbitý JSON: srozumitelná chyba, nic k uložení', /není platný JSON/.test(imp.rozbity), imp.rozbity.slice(0, 120));
+  const ts = await p.evaluate(async () => {
+    const r = {};
+    const s = (k) => __rzImport ? __rzImport.v.polozky.map(x => [x.polozka.typ, x.polozka.typSkrine, x.polozka.provedeni, x.polozka.rady + 'x' + x.polozka.modulu].join('|')).join(' / ') : '';
+    await rozvImportSoubor(new File(['druh;vyrobce;typ;rady;moduly_v_rade;provedeni;material;typ_skrine\n' +
+      'skrin;Vymyšlený;S-PR;6;24;stojanová;oceloplech;průmyslová\n' +
+      'skrin;Vymyšlený;S-HI;4;20;nástěnná;oceloplech;Historická\n' +
+      'skrin;Vymyšlený;S-DO;2;12;;plast;\n' +
+      'skrin;Vymyšlený;S-XX;2;12;;plast;garážová\n'], 'skrine.csv'));
+    r.s = s(); r.text = document.getElementById('rz-import-obsah').innerText; TD_AKCE.tdRImportZavrit();
+    await rozvImportSoubor(new File(['druh;vyrobce;typ;rady;moduly_v_rade\nskrin;Vymyšlený;S-BEZ;3;12\n'], 'bez.csv'));
+    r.bez = s(); TD_AKCE.tdRImportZavrit();
+    await rozvImportSoubor(new File([JSON.stringify({ _format: 'revize-el-knihovna-rozvadecu', _version: 1, pristroje: [], skrine: [{ druh: 'skrin', vyrobce: 'Vymyšlený', typ: 'S-STARY', rady: 3, modulu: 12 }] })], 'stary.json'));
+    r.json = s(); TD_AKCE.tdRImportZavrit();
+    r.vKnihovne = DOK.rozvKnihovna.filter(x => x.druh === 'skrin').map(x => rozvPolozkaNorm(x).typSkrine).join();
+    return r;
+  });
+  check('CSV se sloupcem typ_skrine: průmyslová / Historická (s háčky, velkým) / prázdné = domovní, provedení „stojanová"',
+    ts.s === 'S-PR|prumyslova|stojanová|6x24 / S-HI|historicka|nástěnná|4x20 / S-DO|domovni||2x12' && /typ skříně „garážová"/.test(ts.text), ts.s + ' · ' + ts.text.replace(/\n/g, ' | ').slice(0, 300));
+  check('CSV bez sloupce typ_skrine i starší JSON = domovní; uložené skříně bez typu se čtou jako domovní', ts.bez === 'S-BEZ|domovni||3x12' && ts.json === 'S-STARY|domovni||3x12' &&
+    /^(domovni,?)+$/.test(ts.vKnihovne), ts.bez + ' · ' + ts.json + ' · ' + ts.vKnihovne);
+  check('šablona CSV má sloupec typ_skrine', /;material;typ_skrine;rady;/.test(imp.sablona.text), imp.sablona.text.trim());
 
   // přetažení souboru na plochu v knihovně (na seznamu) — nesmí ho chytit obecný import
   const drop = await p.evaluate(async () => {
@@ -341,8 +399,14 @@ function pomocnik() {
   });
   check('přetažení CSV na vyznačenou plochu: náhled importu, ne obecný import zálohy', drop.nad && drop.open && /Načte se 1/.test(drop.text) && !drop.obecny, drop.text.slice(0, 80));
   const infoSpr = await p.evaluate(() => { const e = document.querySelector('#rz-sprava .rz-info-knihovna');
-    return e && e === document.getElementById('rz-sprava').firstElementChild ? e.innerText.replace(/\s+/g, ' ').replace(/^ℹ ?/, '').trim() : ''; });
-  check('správa knihovny na seznamu: tentýž pruh úplně nahoře', infoSpr === INFO, infoSpr);
+    return e && e === document.getElementById('rz-sprava').firstElementChild ? e.innerText.replace(/\s+/g, ' ').trim() : ''; });
+  check('s daty výrobců v knihovně se pruh sám sbalí: „V knihovně máte data výrobců (4 položky). Nová data přetáhněte sem."',
+    infoSpr === 'ℹ V knihovně máte data výrobců (4 položky). Nová data přetáhněte sem. ▾', infoSpr);
+  await p.click('#rz-sprava .rz-info-prepni');
+  const infoSpr2 = await p.evaluate(() => { const e = document.querySelector('#rz-sprava .rz-info-knihovna');
+    return e && e === document.getElementById('rz-sprava').firstElementChild ? e.querySelector('.rz-info-text').innerText.replace(/\s+/g, ' ').trim() : ''; });
+  check('správa knihovny na seznamu: tentýž pruh úplně nahoře (po ▾ celý text)', infoSpr2 === INFO, infoSpr2);
+  await p.evaluate(() => { localStorage.removeItem('revize_el_rz_info'); rozvInfoPrekreslit(); });
   check('správa knihovny: vaše položky se zdrojem vlastní / import', /Vaše položky: 6/.test(drop.sprava) && /VV-KM-1/.test(drop.sprava) && /import/i.test(drop.sprava) && /vlastní/i.test(drop.sprava),
     drop.sprava.replace(/\n/g, ' | '));
   const smaz = await p.evaluate(async () => {

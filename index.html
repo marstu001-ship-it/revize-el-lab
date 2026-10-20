@@ -1523,9 +1523,29 @@ html.dark .rzz-zprava:hover:not([disabled]){background:#2a3242}
 .rzz-z-pod{text-align:right;white-space:nowrap}
 .rzz-zprava-info{font-size:.86rem;margin-bottom:.6rem}
 .rzz-rozvy{border:1px solid var(--border);border-radius:6px;padding:.2rem .6rem;margin:.3rem 0 .8rem;max-height:40vh;overflow:auto}
-.rzz-rozv{padding:.35rem 0;border-bottom:1px solid var(--border)}
-.rzz-rozv:last-child{border-bottom:none}
-.rzz-skrin{display:block;color:var(--muted);font-size:.75rem}
+.rzz-rozv{padding:.35rem 0}
+.rzz-rozv-blok{border-bottom:1px solid var(--border);padding-bottom:.35rem}
+.rzz-rozv-blok:last-child{border-bottom:none}
+.rzz-skrin-volba{margin:0 0 .1rem 1.9rem;font-size:.82rem}
+.rzz-skrin-volba label{display:flex;gap:.4rem;align-items:center;flex-wrap:wrap}
+.rzz-skrin-volba select{flex:1 1 240px;max-width:100%;padding:.25rem;border:1px solid var(--border);border-radius:4px;background:var(--surface);color:var(--text)}
+.rzz-skrin-stav{display:block;color:var(--muted);font-size:.75rem;margin-top:.15rem}
+.rzz-skrin-prepln .rzz-skrin-stav{color:var(--accent)}
+.rzz-skrin-vlastni select{border-color:#e08a00;background:#fff4e0;color:#8a4b00}
+.rzz-skrin-vlastni .rzz-skrin-stav{color:#8a4b00}
+html.dark .rzz-skrin-vlastni select{background:#3a2c14;color:#f0c27a}
+html.dark .rzz-skrin-vlastni .rzz-skrin-stav{color:#f0c27a}
+.rzz-vl-box{margin:.3rem 0 .2rem 1.9rem;padding:.5rem .6rem;border:1px dashed #e08a00;border-radius:4px}
+.rzz-skrin-veta{margin:.1rem 0 .3rem}
+.rzz-pro-vse{font-size:.78rem;color:var(--muted);margin:-.4rem 0 .7rem}
+.rzz-pro-vse select{margin-left:.3rem;padding:.15rem;font-size:.78rem;border:1px solid var(--border);border-radius:4px;background:var(--surface);color:var(--text);max-width:60%}
+.rz-vel-zpusob{display:flex;flex-wrap:wrap;gap:.2rem 1rem;margin-bottom:.3rem;font-size:.84rem}
+.rz-vel .g3{margin-bottom:.2rem}
+.rz-vel-mod{padding:.45rem 0;font-size:.85rem;color:var(--muted)}
+.rz-vel .teren-radek{font-size:.84rem}
+.rz-velikost-btn{margin:0 0 .5rem}
+.rz-upoz-pole select{border-color:#e08a00!important;background:#fff4e0}
+html.dark .rz-upoz-pole select{background:#3a2c14}
 .rzz-pozn{font-size:.8rem;color:var(--muted);line-height:1.4}
 .rzz-rada{margin:.2rem 0 .5rem;font-size:.85rem}
 .rzz-rada select{margin-left:.3rem;padding:.25rem;border:1px solid var(--border);border-radius:4px}
@@ -1775,6 +1795,14 @@ body.rz-tahne,body.rz-tahne *{cursor:grabbing!important;user-select:none!importa
 .rz-info-knihovna{display:flex;gap:.6rem;align-items:flex-start;background:#e8f1fb;border:1px solid #b9d0ec;border-left:4px solid #2B579A;
   color:#1f3a5f;font-size:.84rem;line-height:1.5;padding:.6rem .8rem;margin:0 0 .8rem;border-radius:3px}
 .rz-info-vybrat{display:inline-block;margin-top:.35rem}
+.rz-info-text{flex:1 1 auto;min-width:0}
+.rz-info-prepni{flex:0 0 auto;margin:-.25rem -.35rem 0 0;border:none;background:none;color:#2B579A;font-size:1rem;line-height:1;padding:.2rem .4rem;cursor:pointer;border-radius:3px}
+.rz-info-prepni:hover{background:rgba(43,87,154,.12)}
+.rz-info-knihovna.rz-info-sbaleno{padding:.25rem .5rem;align-items:center;gap:.4rem;font-size:.78rem;line-height:1.35}
+.rz-info-sbaleno .rz-info-ikona{width:1.1rem;height:1.1rem;font-size:.7rem}
+.rz-info-sbaleno .rz-info-vybrat{flex:0 0 auto;margin:0;padding:.1rem .35rem}
+.rz-info-sbaleno .rz-info-prepni{margin:0 -.35rem 0 0}
+html.dark .rz-info-prepni{color:#c8daf3}
 .rz-info-knihovna.nad{background:#d6e7fa;border-color:#2B579A}
 .rz-info-ikona{flex:0 0 auto;display:inline-flex;align-items:center;justify-content:center;width:1.35rem;height:1.35rem;border-radius:50%;
   background:#2B579A;color:#fff;font-weight:700;font-size:.8rem;margin-top:.05rem}
@@ -1986,6 +2014,9 @@ html.dark .rz-imp-chyby{background:#3a1f1c;border-color:#6b2c25}
   .rzz-zprava{flex-wrap:wrap;min-height:44px}
   .rzz-z-pod{text-align:left}
   .rzz-lista select,.rzz-rada select{min-height:44px;font-size:16px}
+  .rzz-skrin-volba,.rzz-vl-box{margin-left:0}
+  .rzz-skrin-volba select,.rzz-pro-vse select{min-height:44px;font-size:16px;flex-basis:100%;max-width:100%}
+  .rz-info-prepni{min-width:44px;min-height:44px}
   .dok-sprava>summary{min-height:44px;align-items:center}
   .dok-katalog-odkaz{display:inline-block;padding:12px 0;margin:-12px 0}
   .dok-objekt{min-height:44px}
@@ -4571,6 +4602,17 @@ html.dark .rz-imp-chyby{background:#3a1f1c;border-color:#6b2c25}
     <div class="modal-actions">
       <button class="btn btn-ghost" style="background:var(--bg);color:var(--text);border:1px solid var(--border)" data-action="tdRZZavrit">Zrušit</button>
       <button class="btn btn-gold" id="rzz-ok" data-action="tdRZZakreslit">✓ Zakreslit vybrané</button>
+    </div>
+  </div>
+</div>
+<!-- MODAL: rozvaděč — vlastní velikost skříně (řady × moduly / DIN lišty) -->
+<div class="modal-overlay" id="modal-rz-velikost">
+  <div class="modal" style="max-width:640px">
+    <div class="modal-title">📐 Vlastní velikost skříně</div>
+    <div id="rz-vel-obsah"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" style="background:var(--bg);color:var(--text);border:1px solid var(--border)" data-action="tdRVelikostZavrit">Zrušit</button>
+      <button class="btn btn-gold" data-action="tdRVelikostPouzit">✓ Použít skříň</button>
     </div>
   </div>
 </div>
@@ -29945,8 +29987,26 @@ function rozvCisloText(n) { return n === '' || n == null ? '' : String(n).replac
 
 var ROZV_PRISTROJ_KLICE = ['kat', 'nazev', 'vyrobce', 'rada', 'typ', 'poly', 'In', 'char', 'icn', 'icu', 'ics', 'idn', 'rcdTyp',
   'spdTrida', 'up', 'sirka', 'pv', 'ue', 'pozn', 'zdroj', 'overeno'];
-var ROZV_SKRIN_KLICE = ['nazev', 'vyrobce', 'rada', 'typ', 'provedeni', 'material', 'rady', 'modulu', 'ip', 'ik', 'ina', 'penc',
+var ROZV_SKRIN_KLICE = ['nazev', 'vyrobce', 'rada', 'typ', 'typSkrine', 'provedeni', 'material', 'rady', 'modulu', 'ip', 'ik', 'ina', 'penc',
   'rozmery', 'trida', 'pozn', 'zdroj', 'overeno'];
+// Typ skříně (2026-10-20): domovní (výchozí — i všechny dosavadní), průmyslová,
+// historická (staré rozvaděče z ČSSR, často bez modulů — DIN lišty × délka).
+var ROZV_TYPY_SKRINE = [['domovni', 'Domovní'], ['prumyslova', 'Průmyslové'], ['historicka', 'Historické']];
+var ROZV_PROVEDENI = ['nástěnná', 'zapuštěná', 'dutá stěna', 'stojanová'];
+function rozvTypSkrineNazev(k) { for (var i = 0; i < ROZV_TYPY_SKRINE.length; i++) if (ROZV_TYPY_SKRINE[i][0] === k) return ROZV_TYPY_SKRINE[i][1]; return ''; }
+// Text ze souboru / formuláře → kód typu ('' = domovní, null = nesmysl).
+function rozvTypSkrineZTextu(v) {
+  var n = rozvNorm(v).trim();
+  if (!n) return 'domovni';
+  if (/^domov/.test(n)) return 'domovni';
+  if (/^prumysl/.test(n)) return 'prumyslova';
+  if (/^histor|^cssr|^stara|^stary/.test(n)) return 'historicka';
+  return null;
+}
+function rozvProvedeniZTextu(v) {
+  var pr = rozvNorm(v || '').trim();
+  return /^nast/.test(pr) ? 'nástěnná' : /^zapus/.test(pr) ? 'zapuštěná' : /^duta/.test(pr) ? 'dutá stěna' : /^stoj/.test(pr) ? 'stojanová' : String(v || '').trim();
+}
 var ROZV_CISELNE = ['In', 'icn', 'icu', 'ics', 'idn', 'up', 'sirka', 'pv', 'ue', 'rady', 'modulu', 'ina', 'penc'];
 
 // Položka knihovny ve tvaru, se kterým program počítá (chybějící = '').
@@ -29960,6 +30020,7 @@ function rozvPolozkaNorm(o, druh) {
     else r[k] = v == null ? '' : String(v).trim();
   });
   if (!r.zdroj) r.zdroj = 'vlastni';
+  if (d === 'skrin' && ['domovni', 'prumyslova', 'historicka'].indexOf(r.typSkrine) === -1) r.typSkrine = 'domovni';
   return r;
 }
 
@@ -30057,6 +30118,13 @@ function rozvVestavene() {
   [3, 4].forEach(function (r) {
     S('sk-' + r + 'x24-ocel', 'Rozvodnice ' + r + '×24 modulů, oceloplech, nástěnná', { rady: r, modulu: 24, material: 'oceloplech', provedeni: 'nástěnná' });
   });
+  // velké skříně (2026-10-20) — obecné, bez dat výrobců, neověřené
+  [5, 6, 7, 8].forEach(function (r) {
+    S('sk-' + r + 'x24-ocel', 'Rozvaděč ' + r + '×24 modulů, oceloplech, nástěnný', { rady: r, modulu: 24, material: 'oceloplech', provedeni: 'nástěnná', typSkrine: 'prumyslova' });
+  });
+  [10, 12].forEach(function (r) {
+    S('sk-' + r + 'x24-stoj', 'Rozvaděč ' + r + '×24 modulů, oceloplech, stojanový', { rady: r, modulu: 24, material: 'oceloplech', provedeni: 'stojanová', typSkrine: 'prumyslova' });
+  });
   __rozvVestavene = L;
   return L;
 }
@@ -30098,7 +30166,7 @@ var ROZV_KAT_SKUPINY = [
 function rozvSkupina(k) { for (var i = 0; i < ROZV_KAT_SKUPINY.length; i++) if (ROZV_KAT_SKUPINY[i].k === k) return ROZV_KAT_SKUPINY[i]; return null; }
 function rozvFiltrVychozi(tab) {
   return { tab: tab || 'pristroje', q: '', skup: '', kat: '', vyrobce: '', poly: '', In: '', char: '', idn: '', rcdTyp: '',
-    overene: false, oblibene: false, rady: '', modulu: '', provedeni: '', material: '', limit: ROZV_STRANKA };
+    overene: false, oblibene: false, typSkrine: '', rady: '', modulu: '', provedeni: '', material: '', limit: ROZV_STRANKA };
 }
 var __rzF = rozvFiltrVychozi('pristroje');
 
@@ -30123,6 +30191,7 @@ function rozvFiltrovat(vse, f) {
       if (je('idn') && String(it.idn) !== String(f.idn)) return false;
       if (f.rcdTyp && it.rcdTyp !== f.rcdTyp) return false;
     } else {
+      if (f.typSkrine && it.typSkrine !== f.typSkrine) return false;
       if (je('moduly') && String((+it.rady || 0) * (+it.modulu || 0)) !== String(f.moduly)) return false;
       if (je('rady') && String(it.rady) !== String(f.rady)) return false;
       if (je('modulu') && String(it.modulu) !== String(f.modulu)) return false;
@@ -30157,12 +30226,45 @@ function rozvUnikatni(seznam, k) {
 // musí platit, ať pruh stojí kdekoli. Zavřít nejde (záměr).
 var ROZV_INFO_KNIHOVNA = 'Knihovna obsahuje jen obecné přístroje. Skříně a přístroje konkrétních výrobců (OEZ, ABB, Eaton, Hager…) ' +
   'vám pošle Martin – stačí mu napsat. Z licenčních důvodů nejsou součástí programu. Soubor pak stačí přetáhnout sem.';
+// Sbalitelný (2026-10-20): ▴ v rohu ho sbalí na jeden řádek, ▾ rozbalí; sbalený
+// řádek je pořád plocha pro přetažení. Sám se sbalí, když knihovna obsahuje
+// importované položky. Stav jen v localStorage (zvyk na tomhle počítači).
+var ROZV_INFO_KLIC = 'revize_el_rz_info';   // 'sbaleno' / 'rozbaleno', bez klíče = podle importu
+function rozvInfoImportu() { return (DOK.rozvKnihovna || []).filter(function (x) { return x.zdroj === 'import'; }).length; }
+function rozvInfoSbaleno() {
+  var v = null;
+  try { v = localStorage.getItem(ROZV_INFO_KLIC); } catch (e) {}
+  return v === 'sbaleno' ? true : v === 'rozbaleno' ? false : rozvInfoImportu() > 0;
+}
 function rozvInfoKnihovnaHtml(sVyberem) {
   // V editoru má pruh i „Vybrat soubor…" — na telefonu soubor přetáhnout nejde.
-  return '<div class="rz-info-knihovna rz-drop-cil" role="note"><span class="rz-info-ikona" aria-hidden="true">ℹ</span>' +
-    '<span>' + esc(ROZV_INFO_KNIHOVNA) +
-    (sVyberem ? ' <button class="dok-mini rz-info-vybrat" data-action="tdRImportVybratEd" title="Načíst soubor s přístroji a skříněmi (CSV nebo JSON)">📂 Vybrat soubor…</button>' +
-      '<input type="file" id="rz-import-soubor-ed" accept=".csv,.json,.txt,text/csv,application/json" hidden>' : '') + '</span></div>';
+  var vyber = sVyberem ? ' <button class="dok-mini rz-info-vybrat" data-action="tdRImportVybratEd" title="Načíst soubor s přístroji a skříněmi (CSV nebo JSON)">📂 Vybrat soubor…</button>' +
+      '<input type="file" id="rz-import-soubor-ed" accept=".csv,.json,.txt,text/csv,application/json" hidden>' : '';
+  var n = rozvInfoImportu();
+  if (rozvInfoSbaleno()) {
+    // sbalený = jeden řádek: „Vybrat soubor" jen jako ikona
+    vyber = sVyberem ? ' <button class="dok-mini rz-info-vybrat" data-action="tdRImportVybratEd" title="Vybrat soubor s přístroji a skříněmi (CSV nebo JSON)" aria-label="Vybrat soubor…">📂</button>' +
+      '<input type="file" id="rz-import-soubor-ed" accept=".csv,.json,.txt,text/csv,application/json" hidden>' : '';
+    return '<div class="rz-info-knihovna rz-drop-cil rz-info-sbaleno" role="note" data-vyber="' + (sVyberem ? 1 : '') + '">' +
+      '<span class="rz-info-ikona" aria-hidden="true">ℹ</span><span class="rz-info-text">' +
+      (n ? 'V knihovně máte data výrobců (' + dokPocetTvar(n, ['položka', 'položky', 'položek']) + '). Nová data přetáhněte sem.'
+         : 'Data výrobců – přetáhněte soubor sem') + '</span>' + vyber +
+      '<button type="button" class="rz-info-prepni" data-action="tdRInfoPrepni" title="Rozbalit celé upozornění" aria-expanded="false">▾</button></div>';
+  }
+  return '<div class="rz-info-knihovna rz-drop-cil" role="note" data-vyber="' + (sVyberem ? 1 : '') + '"><span class="rz-info-ikona" aria-hidden="true">ℹ</span>' +
+    '<span class="rz-info-text">' + esc(ROZV_INFO_KNIHOVNA) + vyber + '</span>' +
+    '<button type="button" class="rz-info-prepni" data-action="tdRInfoPrepni" title="Sbalit na jeden řádek" aria-expanded="true">▴</button></div>';
+}
+TD_AKCE.tdRInfoPrepni = function () {
+  var sb = !rozvInfoSbaleno();
+  try { localStorage.setItem(ROZV_INFO_KLIC, sb ? 'sbaleno' : 'rozbaleno'); } catch (e) {}
+  rozvInfoPrekreslit();
+};
+function rozvInfoPrekreslit() {
+  document.querySelectorAll('.rz-info-knihovna').forEach(function (el) {
+    var d = document.createElement('div'); d.innerHTML = rozvInfoKnihovnaHtml(!!el.getAttribute('data-vyber'));
+    el.replaceWith(d.firstChild);
+  });
 }
 
 function rozvKnihovnaPanelHtml() {
@@ -30170,6 +30272,7 @@ function rozvKnihovnaPanelHtml() {
       '<button class="rz-tab" data-action="tdRTab" data-tab="pristroje">🔌 Přístroje</button>' +
       '<button class="rz-tab" data-action="tdRTab" data-tab="skrine">🗄 Skříně</button></div>' +
     '<div class="rz-rychle" id="rz-rychle"></div>' +
+    '<button class="add-row rz-velikost-btn" id="rz-velikost-btn" data-action="tdRVelikost" title="Skříň, která v knihovně není: řady × moduly, nebo u starého rozvaděče bez modulů DIN lišty × délka">📐 Vlastní velikost skříně</button>' +
     '<input type="search" class="dk-in rz-f" data-f="q" id="rz-hledat" placeholder="🔍 Hledat v knihovně" autocomplete="off">' +
     '<div class="rz-filtry-hlavni" id="rz-filtry-hlavni"></div>' +
     '<details class="rz-filtry" id="rz-filtry"><summary>Další filtry <span id="rz-filtry-pocet"></span></summary><div id="rz-filtry-obsah"></div></details>' +
@@ -30190,7 +30293,7 @@ function rozvVolbyZDat(mnozina, k, akt, poradi) {
   });
 }
 function rozvFiltryAktivni(f) {
-  return ['skup', 'kat', 'vyrobce', 'poly', 'In', 'char', 'idn', 'rcdTyp', 'moduly', 'rady', 'modulu', 'provedeni', 'material']
+  return ['skup', 'kat', 'vyrobce', 'poly', 'In', 'char', 'idn', 'rcdTyp', 'typSkrine', 'moduly', 'rady', 'modulu', 'provedeni', 'material']
     .filter(function (k) { return f[k] !== '' && f[k] != null; }).length + (f.overene ? 1 : 0) + (f.oblibene ? 1 : 0);
 }
 function rozvFiltryVykreslit() {
@@ -30223,9 +30326,14 @@ function rozvFiltryVykreslit() {
       sel('rcdTyp', 'Typ chrániče', rozvVolby(rozvVolbyZDat(vVyr, 'rcdTyp', f.rcdTyp, ROZV_POLE.rcdTyp.volby), f.rcdTyp, 'všechny')) +
       chk('overene', 'jen ověřené') + chk('oblibene', 'jen oblíbené ★');
   } else {
-    var vVyrS = mnozina.filter(function (it) { return !f.vyrobce || it.vyrobce === f.vyrobce; });
+    var vTyp = mnozina.filter(function (it) { return !f.typSkrine || it.typSkrine === f.typSkrine; });
+    var vVyrS = vTyp.filter(function (it) { return !f.vyrobce || it.vyrobce === f.vyrobce; });
+    h += '<div class="rz-skupiny" role="group" aria-label="Typ skříně">' + [['', 'Vše']].concat(ROZV_TYPY_SKRINE).map(function (g) {
+      return '<button type="button" class="rz-skup' + (f.typSkrine === g[0] ? ' akt' : '') + '" data-action="tdRTypSkrine" data-k="' + g[0] + '"' +
+        (f.typSkrine === g[0] ? ' aria-pressed="true"' : '') + '>' + esc(g[1]) + '</button>';
+    }).join('') + '</div>';
     h += '<div class="rz-f-mrizka">' +
-      sel('vyrobce', 'Výrobce', rozvVolby(rozvVolbyZDat(mnozina, 'vyrobce', f.vyrobce), f.vyrobce, 'všichni')) +
+      sel('vyrobce', 'Výrobce', rozvVolby(rozvVolbyZDat(vTyp, 'vyrobce', f.vyrobce), f.vyrobce, 'všichni')) +
       sel('rady', 'Počet řad', rozvVolby(rozvVolbyZDat(vVyrS, 'rady', f.rady), f.rady, 'všechny')) +
       sel('modulu', 'Modulů v řadě', rozvVolby(rozvVolbyZDat(vVyrS, 'modulu', f.modulu), f.modulu, 'všechny')) +
       sel('provedeni', 'Provedení', rozvVolby(rozvVolbyZDat(vVyrS, 'provedeni', f.provedeni), f.provedeni, 'všechna')) +
@@ -30242,7 +30350,8 @@ function rozvFiltryVykreslit() {
 function rozvPolozkaHtml(it) {
   var k = rozvKat(it.kat), skrin = it.druh === 'skrin';
   var meta = skrin
-    ? [it.rady && it.modulu ? it.rady + ' × ' + it.modulu + ' M' : '', it.vyrobce, it.ip, rozvZdrojText(it)]
+    ? [it.rady && it.modulu ? it.rady + ' × ' + it.modulu + ' M' : '', it.typSkrine !== 'domovni' ? rozvTypSkrineNazev(it.typSkrine).toLowerCase().replace(/é$/, 'á') : '',
+       it.vyrobce, it.ip, rozvZdrojText(it)]
     : [k ? k.nazev : it.kat, it.vyrobce, rozvSirkaText(it.sirka), rozvZdrojText(it)];
   meta = meta.filter(Boolean).map(esc).join(' · ') + (it.overeno ? ' · <span class="rz-overeno">✓ ověřeno</span>' : ' · <span class="rz-neovereno">neověřeno</span>');
   var vybr = __rz && (__rz.knihVyber === it.id);
@@ -30284,6 +30393,7 @@ function rozvKnihovnaVykreslit() {
 
 function rozvRychleVykreslit() {
   var box = document.getElementById('rz-rychle'); if (!box) return;
+  var vb = document.getElementById('rz-velikost-btn'); if (vb) vb.style.display = __rzF.tab === 'skrine' ? '' : 'none';
   if (__rzF.tab === 'skrine') { box.innerHTML = ''; box.style.display = 'none'; return; }
   box.style.display = '';
   var obl = (DOK.rozvOblibene || []).map(rozvKnihPolozka).filter(Boolean);
@@ -30325,6 +30435,13 @@ TD_AKCE.tdRSkup = function (el) {
   __rzF.skup = __rzF.skup === k ? '' : k;
   // hodnoty, které v nové kategorii nedávají smysl, by seznam tiše vyprázdnily
   ['poly', 'In', 'char', 'idn', 'rcdTyp', 'kat'].forEach(function (x) { __rzF[x] = ''; });
+  __rzF.limit = ROZV_STRANKA;
+  rozvFiltryVykreslit(); rozvKnihovnaVykreslit();
+};
+TD_AKCE.tdRTypSkrine = function (el) {
+  var k = el.getAttribute('data-k');
+  __rzF.typSkrine = __rzF.typSkrine === k ? '' : k;
+  ['vyrobce', 'rady', 'modulu', 'provedeni', 'material'].forEach(function (x) { __rzF[x] = ''; });
   __rzF.limit = ROZV_STRANKA;
   rozvFiltryVykreslit(); rozvKnihovnaVykreslit();
 };
@@ -30386,12 +30503,18 @@ function rozvHlavickaHtml(d) {
       '</select></div>';
   };
   // Sbalená — hlavní práce je skládání; souhrn v záhlaví říká, co je vyplněné.
-  return '<details class="dok-sprava rz-hlavicka">' +
+  // Upozornění ze zakreslení (soustava nebyla jednoznačná) ji otevře.
+  var upoz = (d.upoz || []).length && !d.soustava;
+  var soustava = sel('soustava', 'Soustava', ROZV_SOUSTAVY, d.soustava, '— vyberte —');
+  if (upoz) soustava = soustava.replace('<div class="f">', '<div class="f rz-upoz-pole">');
+  return '<details class="dok-sprava rz-hlavicka"' + (upoz ? ' open' : '') + '>' +
     '<summary>🗄 Hlavička rozvaděče <small id="rz-hl-souhrn">' + esc(rozvHlavickaSouhrn(d)) + '</small></summary>' +
     '<div class="dok-sprava-obsah">' +
       (d.zdrojRevize ? '<div class="rz-zdroj">📋 Zakresleno ze zprávy ' + esc(d.zdrojRevize.ev_cislo || '') +
         (d.zdrojRevize.datum ? ' (' + esc(dokDatumCz(d.zdrojRevize.datum)) + ')' : '') + '</div>' : '') +
       (d.napajenZ ? '<div class="rz-zdroj">⚡ ' + esc(dokNapajenText({ data: d }).replace(/^n/, 'N')) + '</div>' : '') +
+      (upoz ? '<div class="rp-upoz rz-hl-upoz">⚠ ' + d.upoz.map(esc).join(' · ') + ' — ze zprávy nešla poznat jednoznačně ' +
+        '<button class="dok-mini" data-action="tdRHlUpozHotovo" title="Doplněno — upozornění schovat">✓ Hotovo</button></div>' : '') +
       '<div class="g3">' +
         '<div class="f"><label>Číslo dokumentu</label><div class="dk-ares">' +
           '<input type="text" data-dk="cislo" value="' + esc(d.cislo) + '" placeholder="ROZ-0001" autocomplete="off">' +
@@ -30406,7 +30529,7 @@ function rozvHlavickaHtml(d) {
       dkFirma('investor', 'Odběratel', d.investor) +
       '<div class="dk-blok-t">Soustava a přívod</div>' +
       '<div class="g3">' +
-        sel('soustava', 'Soustava', ROZV_SOUSTAVY, d.soustava, '— vyberte —') +
+        soustava +
         dkPole('privodIn', 'Jmenovitý proud přívodu (A)', rozvCisloText(d.privodIn) || d.privodIn, { ph: '25' }) +
         sel('privodSmer', 'Přívod', [['shora', 'shora'], ['zespodu', 'zespodu']], d.privodSmer || 'shora') +
         dkPole('privodKabel', 'Přívodní kabel – typ', d.privodKabel, { list: 'rz-kabel-typ', ph: 'CYKY-J' }) +
@@ -30446,6 +30569,7 @@ document.addEventListener('change', function (e) {
 var ROZV_HL_PRAZDNA = 'nevyplněno — klepněte a doplňte zakázku, odběratele, soustavu, přívod a krytí';
 function rozvHlavickaSouhrn(d) {
   var ob = dokObjNazev(d.objekt);
+  if ((d.upoz || []).length && !d.soustava) return '⚠ ' + d.upoz.join(' · ') + ' · ' + ([d.oznaceni, d.stavba].filter(Boolean).join(' · ') || '');
   return [d.oznaceni, d.stavba, ob ? '🏠 ' + ob : '', d.investor && d.investor.nazev, d.soustava].filter(Boolean).join(' · ') || ROZV_HL_PRAZDNA;
 }
 
@@ -30475,6 +30599,7 @@ DOK_TYPY.rozv.cist = function (koren) {
   d.investor = {}; d.vyrobce = {};
   koren.querySelectorAll('[data-dk]').forEach(function (el) { dkNastavCestu(d, el.getAttribute('data-dk'), el.value); });
   d.model = 1;
+  if (d.soustava && d.upoz) { d.upoz = d.upoz.filter(function (x) { return x !== 'doplňte soustavu'; }); if (!d.upoz.length) delete d.upoz; }
   if (d.objekt === '__novy') d.objekt = ((window.__dokOtevreny || {}).data || {}).objekt || '';
   d.skrin = __rz && __rz.skrin ? dokKopie(__rz.skrin) : null;
   d.rady = __rz ? dokKopie(__rz.rady) : [];
@@ -30487,8 +30612,19 @@ document.addEventListener('input', function (e) {
   if (!t || !t.closest || !t.closest('.rz-hlavicka')) return;   // `change` u výběru soustavy jde přes input taky
   var f = dokForm(), v = function (k) { var el = f.querySelector('[data-dk="' + k + '"]'); return el ? el.value.trim() : ''; };
   var s = document.getElementById('rz-hl-souhrn');
-  if (s) s.textContent = rozvHlavickaSouhrn({ oznaceni: v('oznaceni'), stavba: v('stavba'), investor: { nazev: v('investor.nazev') }, soustava: v('soustava'), objekt: v('objekt') });
+  var up = v('soustava') ? null : (((window.__dokOtevreny || {}).data || {}).upoz || null);
+  if (s) s.textContent = rozvHlavickaSouhrn({ oznaceni: v('oznaceni'), stavba: v('stavba'), investor: { nazev: v('investor.nazev') }, soustava: v('soustava'), objekt: v('objekt'), upoz: up });
+  if (v('soustava')) {
+    var u = f.querySelector('.rz-hl-upoz'); if (u) u.remove();
+    var p = f.querySelector('.rz-upoz-pole'); if (p) p.classList.remove('rz-upoz-pole');
+  }
 });
+TD_AKCE.tdRHlUpozHotovo = function (el) {
+  var o = window.__dokOtevreny; if (o && o.data) delete o.data.upoz;
+  var u = el.closest('.rz-hl-upoz'); if (u) u.remove();
+  var f = dokForm(), p = f && f.querySelector('.rz-upoz-pole'); if (p) p.classList.remove('rz-upoz-pole');
+  if (typeof dokZmena === 'function') dokZmena();
+};
 
 // ── Skříň ───────────────────────────────────────────────────────────────
 function rozvSkrinKopie(it) {
@@ -31392,34 +31528,82 @@ function rzzPrvek(a, rady, lib) {
   return { x: x, zdroj: zdroj };
 }
 
-// Skříň: nejmenší vestavěná plastová nástěnná, do které se jednotky vejdou
-// s rezervou ~20 % a beze zlomu skupiny; jinak největší (přeplní se).
+// Skládání do řad (2026-10-20, připomínka po zakreslení budovy s 86 obvody):
+// skupina chránič + obvody jde do řady CELÁ, když se do zbytku řady vejde;
+// jinak celá do další řady; delší než celá řada = rozdělí se (chránič první,
+// obvody pokračují v další řadě). Dokud je jinde volno, nic se nepřeplní —
+// když skupiny nejdou poskládat celé, poskládají se přístroje jednotlivě.
+// Přeplní se (poslední řada) jen to, co se do skříně celkem nevejde.
 function rzzSkladat(jednotky, rady, mod) {
-  var r = [], used = 0, ok = true;
-  for (var i = 0; i < rady; i++) r.push({ prvky: [] });
-  var ri = 0;
-  jednotky.forEach(function (j) {
-    if (used + j.w > mod + 0.001 && used > 0) {
-      if (ri + 1 < rady) { ri++; used = 0; } else ok = false;
-    }
-    if (j.w > mod + 0.001) ok = false;
-    j.prvky.forEach(function (x) { r[ri].prvky.push(x); });
-    used += j.w;
-  });
-  return { rady: r, ok: ok };
+  var E = 0.001;
+  var zkus = function (jedn) {
+    var r = [], used = [], ri = 0, ok = true;
+    for (var i = 0; i < rady; i++) { r.push({ prvky: [] }); used.push(0); }
+    var dej = function (x, w) {
+      if (used[ri] + w > mod + E && used[ri] > 0 && ri + 1 < rady) ri++;
+      r[ri].prvky.push(x); used[ri] += w;
+      if (used[ri] > mod + E) ok = false;
+    };
+    jedn.forEach(function (j) {
+      if (used[ri] + j.w <= mod + E) { j.prvky.forEach(function (x) { r[ri].prvky.push(x); }); used[ri] += j.w; return; }
+      if (j.w <= mod + E && ri + 1 < rady) { ri++; j.prvky.forEach(function (x) { r[ri].prvky.push(x); }); used[ri] += j.w; return; }
+      j.prvky.forEach(function (x) { dej(x, +x.p.sirka || 1); });   // delší než řada (nebo došly řady) — rozdělit
+    });
+    return { rady: r, ok: ok };
+  };
+  var s = zkus(jednotky);
+  s.cele = s.ok;   // skupiny, které se do řady vejdou, zůstaly celé
+  if (s.ok) return s;
+  var jednotlive = [];
+  jednotky.forEach(function (j) { j.prvky.forEach(function (x) { jednotlive.push({ prvky: [x], w: +x.p.sirka || 1 }); }); });
+  var s2 = zkus(jednotlive);
+  return s2.ok ? s2 : s;
 }
-function rzzSkrin(jednotky) {
-  var celkem = jednotky.reduce(function (s, j) { return s + j.w; }, 0);
-  var sk = rozvVestavene().filter(function (s) { return s.druh === 'skrin' && s.material === 'plast' && s.provedeni === 'nástěnná'; })
-    .sort(function (a, b) { return a.rady * a.modulu - b.rady * b.modulu || a.rady - b.rady; });
-  for (var i = 0; i < sk.length; i++) {
-    var kap = sk[i].rady * sk[i].modulu;
-    if (celkem > kap * (1 - RZZ_REZERVA) + 0.001) continue;
-    var s = rzzSkladat(jednotky, sk[i].rady, sk[i].modulu);
-    if (s.ok) return { skrin: sk[i], rady: s.rady, prepln: false };
+function rzzKapacita(sk) { return (+sk.rady || 0) * (+sk.modulu || 0); }
+function rzzCelkem(jednotky) { return jednotky.reduce(function (s, j) { return s + j.w; }, 0); }
+// Vejde se do skříně s rezervou ~20 % a beze zlomu skupiny?
+function rzzVejdeSe(sk, jednotky) {
+  if (!sk || !sk.modulu || !sk.rady) return false;
+  if (rzzCelkem(jednotky) > rzzKapacita(sk) * (1 - RZZ_REZERVA) + 0.001) return false;
+  return !!rzzSkladat(jednotky, +sk.rady, +sk.modulu).cele;
+}
+// Kandidáti návrhu: vestavěné nástěnné (domovní plast, oceloplech, průmyslové)
+// a stojanové, od nejmenší. Historické a vlastní se jen nabízejí v seznamu.
+function rzzSkrineNavrhu() {
+  var vaha = function (s) { return s.typSkrine === 'prumyslova' ? 2 : s.material === 'plast' ? 0 : 1; };
+  return rozvVestavene().filter(function (s) {
+    return s.druh === 'skrin' && s.typSkrine !== 'historicka' && (s.provedeni === 'nástěnná' || s.provedeni === 'stojanová');
+  }).sort(function (a, b) { return rzzKapacita(a) - rzzKapacita(b) || vaha(a) - vaha(b) || a.rady - b.rady; });
+}
+// Vlastní velikost, když se nevejde nic z knihovny: 24 modulů v řadě
+// (víc, kdyby řad bylo přes 20), řad tolik, aby zbyla rezerva ~20 %.
+function rzzVlastniVelikost(jednotky) {
+  var celkem = rzzCelkem(jednotky), MOD = [24, 36, 48, 72];
+  for (var m = 0; m < MOD.length; m++) {
+    for (var r = Math.max(1, Math.ceil(celkem / (MOD[m] * (1 - RZZ_REZERVA)))); r <= 20; r++) {
+      var sk = rzzVlastniSkrin({ rady: r, modulu: MOD[m] });
+      if (rzzVejdeSe(sk, jednotky)) return sk;
+    }
   }
-  var nej = sk[sk.length - 1];
-  return { skrin: nej, rady: rzzSkladat(jednotky, nej.rady, nej.modulu).rady, prepln: true };
+  return rzzVlastniSkrin({ rady: 20, modulu: 72 });
+}
+function rzzVlastniSkrin(o) {
+  var sk = rozvPolozkaNorm(Object.assign({ nazev: '', vyrobce: '', zdroj: 'vlastni', overeno: false }, o), 'skrin');
+  if (!sk.nazev) sk.nazev = 'Vlastní velikost ' + sk.rady + '×' + sk.modulu + ' modulů';
+  sk.id = '';
+  return sk;
+}
+// Návrh: nejmenší vhodná z knihovny; když nic, vlastní velikost (vlastni: true).
+function rzzSkrin(jednotky) {
+  var sk = rzzSkrineNavrhu();
+  for (var i = 0; i < sk.length; i++) if (rzzVejdeSe(sk[i], jednotky)) return { skrin: sk[i], rady: rzzSkladat(jednotky, sk[i].rady, sk[i].modulu).rady, prepln: false };
+  var v = rzzVlastniVelikost(jednotky), s = rzzSkladat(jednotky, v.rady, v.modulu);
+  return { skrin: v, rady: s.rady, prepln: !s.ok, vlastni: true };
+}
+// Zvolená skříň (z nabídky kroku 2): poskládat, přeplní se jen co se nevejde.
+function rzzSkrinZvolena(sk, jednotky) {
+  var s = rzzSkladat(jednotky, Math.max(1, Math.round(+sk.rady || 1)), +sk.modulu);
+  return { skrin: sk, rady: s.rady, prepln: !s.ok };
 }
 
 // Soustava jen při jednoznačné shodě s ROZV_SOUSTAVY (3f přístroj vybere 3f).
@@ -31442,7 +31626,7 @@ function rzzSoustava(text, ma3f) {
 function rzzPrevod(z, vybrane, volby) {
   var D = dokKopie(z.data), lib = rozvKnihovnaVse(), znami = rzzVyrobceZnamy();
   var rozvy = (D.rozvadece || []).filter(function (r) { return vybrane.indexOf(r.uid) !== -1; });
-  var mapa = {}, docs = [], pocty = { celkem: 0, vyrobce: {}, obecne: 0, bezZnacky: 0, zDat: 0, upoz: 0, info: 0 };
+  var mapa = {}, docs = [], pocty = { celkem: 0, vyrobce: {}, obecne: 0, bezZnacky: 0, zDat: 0, upoz: 0, info: 0, bezSoustavy: 0 };
   var dalsi = (function () { var re = /^ROZ-(\d+)$/, max = 0;
     DOK.dokumenty.forEach(function (x) { var m = re.exec(String(x.cislo || '').trim()); if (m) max = Math.max(max, +m[1]); });
     return function () { return 'ROZ-' + String(++max).padStart(4, '0'); }; })();
@@ -31475,26 +31659,31 @@ function rzzPrevod(z, vybrane, volby) {
         if (akt && !o.a.q.hlava) { akt.prvky.push(o.x); akt.w += +o.x.p.sirka || 1; return; }
         jedn.push({ prvky: [o.x], w: +o.x.p.sirka || 1 });
       });
-      var sk = rzzSkrin(jedn);
+      var zvol = (volby.skrine || {})[r.uid];
+      var sk = zvol ? rzzSkrinZvolena(zvol, jedn) : rzzSkrin(jedn);
       __rz = { rady: sk.rady, skrin: rozvSkrinKopie(sk.skrin) };
       rozvNadrazeneAuto();
       var ma3f = vse.some(function (o) { return /^(3|3\+N|4)$/.test(o.x.p.poly); });
       var prov = rzzProvozovatel(D);
       var hl = rzzProud(r.hlavniJistic), cislo = dalsi();
+      var sous = rzzSoustava(D.napetova_soustava, ma3f);
+      if (!sous) pocty.bezSoustavy++;
       var data = Object.assign(DOK_TYPY.rozv.novy(), {
         cislo: cislo, oznaceni: String(r.nazev || '').trim(), stavba: String(D.misto || '').trim(), objekt: volby.objekt || '',
         investor: prov,
         misto: [String(r.umisteni || '').trim(), String(D.adresa || '').trim()].filter(Boolean).join(', '),
-        soustava: rzzSoustava(D.napetova_soustava, ma3f),
+        soustava: sous,
         privodIn: hl.In === '' ? '' : hl.In,
         privodKabel: String(r.privod || '').trim(),
         skrin: __rz.skrin, rady: __rz.rady,
         pozn: rb.info.map(function (i) { return i.text; }).join('\n'),
         zdrojRevize: { uid: z.uid || '', ev_cislo: z.ev_cislo || D.ev_cislo || '', rozvUid: r.uid || '', datum: rzzDatumZpravy(z), zakresleno: new Date().toISOString() }
       });
+      if (!sous) data.upoz = ['doplňte soustavu'];   // jako u přístrojů „doplňte póly"
+
       pocty.info += rb.info.length;
       docs.push({ uid: mapa[r.uid], typ: 'rozv', cislo: cislo, vytvoreno: new Date().toISOString(), upraveno: new Date().toISOString(),
-                  data: data, _rozvUid: r.uid, _prepln: sk.prepln });
+                  data: data, _rozvUid: r.uid, _prepln: sk.prepln, _vlastni: !!sk.vlastni, _moduly: rzzCelkem(jedn) });
     });
   } finally { __rz = puvodni; }
   // vazby napájení: přístroj → rozvaděč (napaji), rozvaděč → odkud (napajenZ)
@@ -31529,7 +31718,9 @@ function rzzSouhrnText(p) {
   if (p.zDat) c.push(p.zDat + ' z údajů zprávy (v knihovně není shodný)');
   if (p.bezZnacky) c.push(p.bezZnacky + ' bez značky');
   return dokPocetTvar(p.celkem, ['přístroj', 'přístroje', 'přístrojů']) + (c.length ? ': ' + c.join(', ') : '') +
-    (p.upoz ? ' · ⚠ ' + p.upoz + ' k doplnění' : '') + (p.info ? ' · jiné řádky (' + p.info + ') půjdou do poznámky rozvaděče' : '');
+    (p.upoz ? ' · ⚠ ' + p.upoz + ' k doplnění' : '') +
+    (p.bezSoustavy ? ' · ⚠ soustava není ze zprávy jednoznačná — doplňte ji (' + dokPocetTvar(p.bezSoustavy, ['rozvaděč', 'rozvaděče', 'rozvaděčů']) + ')' : '') +
+    (p.info ? ' · jiné řádky (' + p.info + ') půjdou do poznámky rozvaděče' : '');
 }
 
 // ── Okno: krok 1 (zpráva) ──
@@ -31550,6 +31741,7 @@ TD_AKCE.tdRZZprava = function (el) {
   __rzZR.obj = objStejny ? objStejny.id : '__novy';
   __rzZR.objNazev = String(z.data.misto || z.ev_cislo || '').trim();
   __rzZR.rady = null;
+  __rzZR.volba = {}; __rzZR.vlastni = {};
   rzzVykreslit();
 };
 TD_AKCE.tdRZZpet = function () { __rzZR.krok = 1; rzzVykreslit(); };
@@ -31585,8 +31777,13 @@ function rzzVykreslit() {
   });
   __rzZR.rady = __rzZR.rady || {};
   Object.keys(skup).forEach(function (k) { if (!(k in __rzZR.rady)) __rzZR.rady[k] = rzzRadaVychozi(skup[k]); });
-  var nahled = rzzPrevod(z, __rzZR.vyber, { rady: __rzZR.rady, objekt: '' });
+  var nahled = rzzPrevod(z, __rzZR.vyber, { rady: __rzZR.rady, objekt: '', skrine: rzzVolbySkrini() });
   var podle = {}; nahled.docs.forEach(function (d) { podle[d._rozvUid] = d; });
+  // návrh vlastní velikosti (nic z knihovny se nevejde) → formulář s dopočtenými hodnotami
+  nahled.docs.forEach(function (d) {
+    if (d._vlastni && !__rzZR.volba[d._rozvUid] && !__rzZR.vlastni[d._rozvUid]) __rzZR.vlastni[d._rozvUid] = rozvVelikostVychozi({
+      rady: d.data.skrin.rady, modulu: d.data.skrin.modulu, typSkrine: rzzKapacita(d.data.skrin) > 96 ? 'prumyslova' : 'domovni', auto: true });
+  });
   var odkud = {};
   rozvy.forEach(function (r) { (r.mereni || []).forEach(function (m) { naSeznam(m.napaji).forEach(function (u) { if (!odkud[u]) odkud[u] = r.nazev; }); }); });
   var nObv = function (r) { return (r.mereni || []).filter(function (m) { return m.rowtype === 'obvod' || m.rowtype === 'rcd-header' || !m.rowtype; }).length; };
@@ -31605,22 +31802,207 @@ function rzzVykreslit() {
     '<div class="rzz-zprava-info"><button class="dok-katalog-odkaz" data-action="tdRZZpet">← Jiná zpráva</button> ' +
       '<b>' + esc(z.ev_cislo || D.ev_cislo || '') + '</b> · ' + esc(D.misto || '') + (rzzDatumZpravy(z) ? ' · ' + esc(dokDatumCz(rzzDatumZpravy(z))) : '') + '</div>' +
     '<label class="teren-radek rzz-vse"><input type="checkbox" id="rzz-vse"' + (vsechny ? ' checked' : '') + '> <b>Označit vše</b></label>' +
+    '<div class="rzz-pozn rzz-skrin-veta">U každého rozvaděče je předvybraná nejmenší vhodná skříň (rezerva ~20 %). ' +
+      'Skříň můžete kdykoli změnit v editoru rozvaděče (Vyměnit skříň).</div>' +
     '<div class="rzz-rozvy">' + rozvy.map(function (r) {
-      var d = podle[r.uid], sk = d ? rozvNazev(d.data.skrin) + (d._prepln ? ' — ⚠ nevejde se, přeplní se' : '') : '';
-      return '<label class="teren-radek rzz-rozv"><input type="checkbox" data-rzz-rozv="' + esc(r.uid) + '"' + (d ? ' checked' : '') + '> ' +
+      var d = podle[r.uid];
+      return '<div class="rzz-rozv-blok"><label class="teren-radek rzz-rozv"><input type="checkbox" data-rzz-rozv="' + esc(r.uid) + '"' + (d ? ' checked' : '') + '> ' +
         '<span><b>' + esc(r.nazev || '(bez názvu)') + '</b>' + (r.umisteni ? ' · ' + esc(r.umisteni) : '') +
-        ' · ' + dokPocetTvar(nObv(r), ['obvod', 'obvody', 'obvodů']) + (odkud[r.uid] ? ' · napájen z ' + esc(odkud[r.uid]) : '') +
-        (sk ? '<small class="rzz-skrin">🗄 ' + esc(sk) + '</small>' : '') + '</span></label>';
+        ' · ' + dokPocetTvar(nObv(r), ['obvod', 'obvody', 'obvodů']) + (odkud[r.uid] ? ' · napájen z ' + esc(odkud[r.uid]) : '') + '</span></label>' +
+        (d ? rzzSkrinRadekHtml(r.uid, d) : '') + '</div>';
     }).join('') + '</div>' +
-    '<div class="g2 rzz-volby"><div class="f"><label>Zařadit do objektu</label><select id="rzz-obj">' + objVolby + '</select>' +
-      '<input type="text" id="rzz-obj-nazev" autocomplete="off" value="' + esc(__rzZR.objNazev) + '" placeholder="Název objektu"' + (__rzZR.obj === '__novy' ? '' : ' hidden') + '></div>' +
-      '<div class="f"><label>Skříň</label><div class="rzz-pozn">nejmenší vhodná z knihovny — plastová nástěnná s rezervou ~20 % (u každého rozvaděče zvlášť, jde pak vyměnit)</div></div></div>' +
+    (__rzZR.vyber.length > 1 ? '<div class="rzz-pro-vse"><label>Použít pro všechny: <select id="rzz-skrin-vse">' +
+      rzzSkrinVolbyHtml('', { prazdna: '— vyberte skříň —', vlastni: false }) + '</select></label></div>' : '') +
+    '<div class="rzz-volby"><div class="f"><label>Zařadit do objektu</label><select id="rzz-obj">' + objVolby + '</select>' +
+      '<input type="text" id="rzz-obj-nazev" autocomplete="off" value="' + esc(__rzZR.objNazev) + '" placeholder="Název objektu"' + (__rzZR.obj === '__novy' ? '' : ' hidden') + '></div></div>' +
     radyVolby +
     '<div class="rzz-souhrn" id="rzz-souhrn">' + esc(rzzSouhrnText(nahled.pocty)) + '</div>';
   ok.style.display = '';
   ok.disabled = !__rzZR.vyber.length;
   ok.textContent = '✓ Zakreslit vybrané (' + __rzZR.vyber.length + ')';
 }
+
+// ── Výběr skříně v kroku 2 (2026-10-20) ──
+// Volba u rozvaděče: undefined = návrh programu, id = skříň z knihovny,
+// '@vlastni' = vlastní velikost (__rzZR.vlastni[uid] = hodnoty formuláře).
+var RZZ_SKUPINY_SKRINI = [
+  ['Domovní plastové', function (s) { return s.zdroj !== 'vlastni' && s.typSkrine === 'domovni' && s.material === 'plast'; }],
+  ['Oceloplechové', function (s) { return s.zdroj !== 'vlastni' && s.typSkrine === 'domovni' && s.material !== 'plast'; }],
+  ['Průmyslové', function (s) { return s.zdroj !== 'vlastni' && s.typSkrine === 'prumyslova'; }],
+  ['Historické (ČSSR)', function (s) { return s.zdroj !== 'vlastni' && s.typSkrine === 'historicka'; }],
+  ['Moje vlastní', function (s) { return s.zdroj === 'vlastni'; }]
+];
+function rzzSkrinPopis(s) {
+  var n = rozvNazev(s);
+  return n + (s.vyrobce && s.vyrobce !== 'obecný' && n.indexOf(s.vyrobce) === -1 ? ' · ' + s.vyrobce : '');
+}
+function rzzSkrinVolbyHtml(akt, o) {
+  o = o || {};
+  var vse = rozvKnihovnaVse().filter(function (s) { return s.druh === 'skrin' && +s.modulu > 0 && +s.rady > 0; });
+  var h = o.prazdna ? '<option value="">' + esc(o.prazdna) + '</option>' : '';
+  RZZ_SKUPINY_SKRINI.forEach(function (g) {
+    var L = vse.filter(g[1]).sort(function (a, b) { return rzzKapacita(a) - rzzKapacita(b) || rozvNazev(a).localeCompare(rozvNazev(b), 'cs'); });
+    h += '<optgroup label="' + esc(g[0]) + '">' + (L.length ? L.map(function (s) {
+      return '<option value="' + esc(s.id) + '"' + (s.id === akt ? ' selected' : '') + '>' + esc(rzzSkrinPopis(s) + (s.id === o.navrh ? ' (návrh)' : '')) + '</option>';
+    }).join('') : '<option disabled>(zatím žádné)</option>') + '</optgroup>';
+  });
+  if (o.vlastni !== false) h += '<option value="@vlastni"' + (akt === '@vlastni' ? ' selected' : '') + '>' + esc(o.vlastniText || '＋ Vlastní velikost…') + '</option>';
+  return h;
+}
+function rzzVolbySkrini() {
+  var m = {};
+  Object.keys((__rzZR && __rzZR.volba) || {}).forEach(function (u) {
+    var v = __rzZR.volba[u];
+    if (v === '@vlastni') { var x = __rzZR.vlastni[u]; if (x) { var r = rozvVelikostSkrin(x); if (!r.chyby.length) m[u] = r.polozka; } }
+    else if (v) { var it = rozvKnihPolozka(v); if (it) m[u] = it; }
+  });
+  return m;
+}
+function rzzStavText(d) {
+  var sk = d.data.skrin, kap = rzzKapacita(sk), mod = d._moduly;
+  if (d._prepln) return '⚠ nevejde se — přístroje ' + rozvCisloText(Math.round(mod * 10) / 10) + ' M, skříň ' + kap + ' M — přeplní se poslední řada';
+  return '✓ vejde se · obsazeno ' + rozvCisloText(Math.round(mod * 10) / 10) + ' z ' + kap + ' M';
+}
+function rzzSkrinRadekHtml(uid, d) {
+  var v = __rzZR.volba[uid], vl = __rzZR.vlastni[uid];
+  var auto = !v && d._vlastni, jeVl = v === '@vlastni' || auto;
+  var akt = jeVl ? '@vlastni' : (v || d.data.skrin.knih || '');
+  var vlText = jeVl ? 'Vlastní velikost ' + d.data.skrin.rady + ' × ' + d.data.skrin.modulu + ' modulů' : '＋ Vlastní velikost…';
+  return '<div class="rzz-skrin-volba' + (auto ? ' rzz-skrin-vlastni' : '') + (d._prepln ? ' rzz-skrin-prepln' : '') + '">' +
+      '<label><span>🗄 Skříň</span><select data-rzz-skrin="' + esc(uid) + '">' +
+        rzzSkrinVolbyHtml(akt, { navrh: !v && !d._vlastni ? d.data.skrin.knih : '', vlastniText: vlText }) + '</select></label>' +
+      '<small class="rzz-skrin-stav" data-rzz-stav="' + esc(uid) + '">' +
+        (auto ? 'Nic z knihovny se nevejde — navržena vlastní velikost (rezerva ~20 %), upravte ji níže. ' : '') + esc(rzzStavText(d)) + '</small></div>' +
+    (jeVl ? '<div class="rzz-vl-box">' + rozvVelikostHtml(vl || rozvVelikostVychozi({ rady: d.data.skrin.rady, modulu: d.data.skrin.modulu }), uid) + '</div>' : '');
+}
+// Po úpravě vlastní velikosti jen přepočítat stav (formulář zůstane, kurzor taky).
+function rzzStavAktualizovat() {
+  var z = rzzZprava(__rzZR.zuid); if (!z) return;
+  var n = rzzPrevod(z, __rzZR.vyber, { rady: __rzZR.rady || {}, objekt: '', skrine: rzzVolbySkrini() });
+  n.docs.forEach(function (d) {
+    var el = document.querySelector('[data-rzz-stav="' + CSS.escape(d._rozvUid) + '"]'); if (!el) return;
+    el.textContent = rzzStavText(d);
+    el.parentNode.classList.toggle('rzz-skrin-prepln', !!d._prepln);
+    el.parentNode.classList.remove('rzz-skrin-vlastni');
+    var o = el.parentNode.querySelector('option[value="@vlastni"]');
+    if (o && __rzZR.volba[d._rozvUid] === '@vlastni') o.textContent = 'Vlastní velikost ' + d.data.skrin.rady + ' × ' + d.data.skrin.modulu + ' modulů';
+  });
+  var s = document.getElementById('rzz-souhrn'); if (s) s.textContent = rzzSouhrnText(n.pocty);
+}
+
+// ── Vlastní velikost skříně (krok 2 zakreslení i editor) ──
+// Řady × moduly, nebo u starých rozvaděčů bez modulů počet DIN lišt × délka
+// lišty v mm (modul 17,5 mm). Kontrola jde přes rozvValidovat jako jinde.
+var RZ_MODUL_MM = 17.5;
+function rozvVelikostVychozi(o) {
+  return Object.assign({ zpusob: 'moduly', rady: '', modulu: '', listy: '', delka: '', material: '', provedeni: '', typSkrine: 'domovni', nazev: '', ulozit: false }, o || {});
+}
+function rozvVelikostModulu(delka) {
+  var d = rozvCislo(String(delka == null ? '' : delka).replace(/\s*mm$/i, ''));
+  return d > 0 ? Math.floor(d / RZ_MODUL_MM + 1e-9) : '';
+}
+function rozvVelikostSkrin(v) {
+  var listy = v.zpusob === 'listy';
+  var rady = listy ? v.listy : v.rady, modulu = listy ? rozvVelikostModulu(v.delka) : v.modulu;
+  var r = rozvValidovat({ druh: 'skrin', nazev: v.nazev, rady: rady, modulu: modulu, material: v.material, provedeni: v.provedeni, typSkrine: v.typSkrine,
+    pozn: listy && modulu ? 'DIN lišty ' + rady + ' × ' + String(v.delka).trim().replace(/\s*mm$/i, '') + ' mm' : '', zdroj: 'vlastni' });
+  if (listy) r.chyby = r.chyby.map(function (c) { return c.replace('počet řad', 'počet DIN lišt').replace(/počet modulů v řadě/, 'délka lišty (aspoň 17,5 mm)'); });
+  if (!r.polozka.nazev && r.polozka.rady && r.polozka.modulu) r.polozka.nazev = 'Vlastní velikost ' + r.polozka.rady + '×' + r.polozka.modulu + ' modulů';
+  r.polozka.id = '';
+  return r;
+}
+function rozvVelikostHtml(v, kl) {
+  v = rozvVelikostVychozi(v);
+  var a = ' data-vel-k="' + esc(kl) + '"';
+  var inp = function (k, label, ph) {
+    return '<div class="f"><label>' + esc(label) + '</label><input type="text" inputmode="decimal" data-vel="' + k + '"' + a +
+      ' value="' + esc(v[k]) + '" placeholder="' + esc(ph) + '" autocomplete="off"></div>';
+  };
+  var sel = function (k, label, volby, prazdna) {
+    return '<div class="f"><label>' + esc(label) + '</label><select data-vel="' + k + '"' + a + '>' + (prazdna ? '<option value="">' + esc(prazdna) + '</option>' : '') +
+      volby.map(function (x) { var h = Array.isArray(x) ? x : [x, x]; return '<option value="' + esc(h[0]) + '"' + (h[0] === v[k] ? ' selected' : '') + '>' + esc(h[1]) + '</option>'; }).join('') +
+      '</select></div>';
+  };
+  var radio = function (hod, text) {
+    return '<label class="teren-radek"><input type="radio" name="rz-vel-z-' + esc(kl || 'ed') + '" data-vel="zpusob"' + a + ' value="' + hod + '"' +
+      (v.zpusob === hod ? ' checked' : '') + '> ' + text + '</label>';
+  };
+  var mod = rozvVelikostModulu(v.delka), chyby = rozvVelikostSkrin(v).chyby;
+  var vyplneno = v.zpusob === 'listy' ? String(v.listy).trim() || String(v.delka).trim() : String(v.rady).trim() || String(v.modulu).trim();
+  return '<div class="rz-vel"' + a + '>' +
+    '<div class="rz-vel-zpusob" role="radiogroup" aria-label="Jak zadat velikost">' + radio('moduly', 'řady × moduly') +
+      radio('listy', 'DIN lišty × délka lišty (starý rozvaděč bez modulů)') + '</div>' +
+    '<div class="g3">' + (v.zpusob === 'listy'
+      ? inp('listy', 'Počet DIN lišt', '4') + inp('delka', 'Délka lišty (mm)', '420') +
+        '<div class="f"><label>Modulů na lištu</label><div class="rz-vel-mod" data-vel-mod>' + (mod ? '= ' + mod + ' modulů po 17,5 mm' : '—') + '</div></div>'
+      : inp('rady', 'Počet řad', '6') + inp('modulu', 'Modulů v řadě', '24') + '<div class="f"></div>') +
+      sel('material', 'Materiál', ['plast', 'oceloplech'], 'neuvedeno') + sel('provedeni', 'Provedení', ROZV_PROVEDENI, 'neuvedeno') +
+      sel('typSkrine', 'Typ skříně', ROZV_TYPY_SKRINE) +
+      '<div class="f span3"><label>Název <span class="dk-nepov">(nepovinné)</span></label><input type="text" data-vel="nazev"' + a +
+        ' value="' + esc(v.nazev) + '" placeholder="Vlastní velikost řady×moduly" autocomplete="off"></div>' +
+    '</div>' +
+    '<label class="teren-radek"><input type="checkbox" data-vel="ulozit"' + a + (v.ulozit ? ' checked' : '') + '> Uložit do mé knihovny ' +
+      '<span class="dk-nepov">(příště ji najdete v nabídce pod „Moje vlastní")</span></label>' +
+    '<div class="rz-pol-chyby" data-vel-chyby>' + (vyplneno && chyby.length ? '⚠ ' + chyby.map(esc).join('<br>⚠ ') : '') + '</div></div>';
+}
+function rozvVelikostCist(box) {
+  var v = {};
+  box.querySelectorAll('[data-vel]').forEach(function (el) {
+    var k = el.getAttribute('data-vel');
+    if (el.type === 'radio') { if (el.checked) v[k] = el.value; }
+    else v[k] = el.type === 'checkbox' ? el.checked : el.value;
+  });
+  return rozvVelikostVychozi(v);
+}
+// Psaní do formuláře vlastní velikosti (oba výskyty).
+function rozvVelikostZmena(t, kres) {
+  var box = t.closest('.rz-vel'); if (!box) return;
+  var v = rozvVelikostCist(box), kl = t.getAttribute('data-vel-k') || '';
+  if (kres) { var nove = document.createElement('div'); nove.innerHTML = rozvVelikostHtml(v, kl); box.replaceWith(nove.firstChild); }
+  else {
+    var m = box.querySelector('[data-vel-mod]'), mod = rozvVelikostModulu(v.delka);
+    if (m) m.textContent = mod ? '= ' + mod + ' modulů po 17,5 mm' : '—';
+    var ch = box.querySelector('[data-vel-chyby]'), r = rozvVelikostSkrin(v);
+    if (ch) ch.innerHTML = r.chyby.length ? '⚠ ' + r.chyby.map(esc).join('<br>⚠ ') : '';
+  }
+  if (t.closest('#rzz-obsah') && __rzZR) {
+    __rzZR.vlastni[kl] = v; __rzZR.volba[kl] = '@vlastni';
+    rzzStavAktualizovat();
+  }
+}
+document.addEventListener('input', function (e) {
+  var t = e.target; if (t && t.hasAttribute && t.hasAttribute('data-vel') && t.type !== 'radio' && t.type !== 'checkbox' && t.tagName !== 'SELECT') rozvVelikostZmena(t, false);
+});
+document.addEventListener('change', function (e) {
+  var t = e.target; if (!t || !t.hasAttribute || !t.hasAttribute('data-vel')) return;
+  if (t.type === 'radio' || t.type === 'checkbox' || t.tagName === 'SELECT') rozvVelikostZmena(t, t.type === 'radio');
+});
+
+// Editor: „📐 Vlastní velikost" → okno, Použít = výměna skříně (s dotazem).
+TD_AKCE.tdRVelikost = function () {
+  var sk = __rz && __rz.skrin, w = 0;
+  if (__rz) __rz.rady.forEach(function (r) { r.prvky.forEach(function (x) { w += +x.p.sirka || 1; }); });
+  var v = sk ? rozvVelikostVychozi({ rady: sk.rady, modulu: sk.modulu, material: sk.material, provedeni: sk.provedeni, typSkrine: sk.typSkrine || 'domovni' })
+             : rozvVelikostVychozi(w ? { rady: Math.max(1, Math.ceil(w / (24 * (1 - RZZ_REZERVA)))), modulu: 24 } : {});
+  document.getElementById('rz-vel-obsah').innerHTML = '<div class="dk-pozn">Skříň, která v knihovně není — zadejte počet řad a modulů, ' +
+    'nebo u starého rozvaděče bez modulů počet DIN lišt a jejich délku.' + (w ? ' Přístroje v rozvaděči zabírají ' + rozvCisloText(w) + ' modulů.' : '') + '</div>' +
+    rozvVelikostHtml(v, '');
+  document.getElementById('modal-rz-velikost').classList.add('open');
+};
+TD_AKCE.tdRVelikostZavrit = function () { closeModal('modal-rz-velikost'); };
+TD_AKCE.tdRVelikostPouzit = async function () {
+  var box = document.querySelector('#rz-vel-obsah .rz-vel'); if (!box) return;
+  var v = rozvVelikostCist(box), r = rozvVelikostSkrin(v);
+  if (r.chyby.length) { box.querySelector('[data-vel-chyby]').innerHTML = '⚠ ' + r.chyby.map(esc).join('<br>⚠ '); return; }
+  var it = r.polozka;
+  if (v.ulozit) {
+    it.id = 'u' + dokUid(); it.zdroj = 'vlastni';
+    await dokNacist(); DOK.rozvKnihovna.push(it); await dokZapsat();
+    rozvKnihovnaZmenena();
+  }
+  closeModal('modal-rz-velikost');
+  rozvSkrinNastavit(it);
+};
 
 function rzzZpravyVykreslit() {
   var box = document.getElementById('rzz-zpravy'); if (!box) return;
@@ -31667,12 +32049,37 @@ document.addEventListener('change', function (e) {
     __rzZR.vyber = (zz.data.rozvadece || []).map(function (r) { return r.uid; }).filter(function (x) { return __rzZR.vyber.indexOf(x) !== -1; });
     rzzVykreslit(); return;
   }
-  if (t.hasAttribute('data-rzz-rada')) { __rzZR.rady[t.getAttribute('data-rzz-rada')] = t.value; rzzVykreslit(); }
+  if (t.hasAttribute('data-rzz-rada')) { __rzZR.rady[t.getAttribute('data-rzz-rada')] = t.value; rzzVykreslit(); return; }
+  if (t.hasAttribute('data-rzz-skrin')) {
+    var su = t.getAttribute('data-rzz-skrin');
+    __rzZR.volba[su] = t.value;
+    if (t.value === '@vlastni' && !__rzZR.vlastni[su]) {   // předvyplnit podle přístrojů
+      var zp = rzzZprava(__rzZR.zuid), n = rzzPrevod(zp, [su], { rady: __rzZR.rady || {}, objekt: '' }).docs[0];
+      __rzZR.vlastni[su] = rozvVelikostVychozi(n ? { rady: n.data.skrin.rady, modulu: n.data.skrin.modulu } : {});
+    }
+    rzzVykreslit();
+    var vb = t.value === '@vlastni' && document.querySelector('[data-rzz-skrin="' + CSS.escape(su) + '"]');
+    var pole = vb && vb.closest('.rzz-rozv-blok').querySelector('.rz-vel input[type=text]');
+    if (pole) pole.focus();
+    return;
+  }
+  if (t.id === 'rzz-skrin-vse' && t.value) {
+    __rzZR.vyber.forEach(function (u) { __rzZR.volba[u] = t.value; });
+    var it = rozvKnihPolozka(t.value);
+    rzzVykreslit();
+    showToast('🗄 Všem vybraným rozvaděčům: ' + (it ? rozvNazev(it) : ''), { timeout: 3000 });
+  }
 });
 
 TD_AKCE.tdRZZakreslit = async function () {
   if (!__rzZR || !__rzZR.vyber.length) return;
   var z = rzzZprava(__rzZR.zuid); if (!z) return;
+  var vadne = __rzZR.vyber.filter(function (u) { return __rzZR.volba[u] === '@vlastni' && (!__rzZR.vlastni[u] || rozvVelikostSkrin(__rzZR.vlastni[u]).chyby.length); });
+  if (vadne.length) {
+    var jm = (z.data.rozvadece || []).filter(function (r) { return vadne.indexOf(r.uid) !== -1; }).map(function (r) { return r.nazev || '(bez názvu)'; });
+    showToast('⚠ Doplňte vlastní velikost skříně: ' + jm.join(', '), { timeout: 6000 });
+    return;
+  }
   await dokNacist();
   var objId = __rzZR.obj, novyObj = null;
   if (objId === '__novy') {
@@ -31680,8 +32087,17 @@ TD_AKCE.tdRZZakreslit = async function () {
     novyObj = { id: 'obj' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), nazev: jm, vytvoreno: new Date().toISOString() };
     dokObjekty().push(novyObj); objId = novyObj.id;
   } else if (objId && !dokObjNajit(objId)) objId = '';
-  var vys = rzzPrevod(z, __rzZR.vyber, { rady: __rzZR.rady || {}, objekt: objId });
-  var uidy = vys.docs.map(function (d) { delete d._rozvUid; delete d._prepln; return d.uid; });
+  var skrine = rzzVolbySkrini(), ulozene = [];
+  __rzZR.vyber.forEach(function (u) {
+    if (__rzZR.volba[u] !== '@vlastni' || !__rzZR.vlastni[u]) return;
+    if (!skrine[u]) return;
+    if (__rzZR.vlastni[u].ulozit) {
+      var it = dokKopie(skrine[u]); it.id = 'u' + dokUid(); it.zdroj = 'vlastni';
+      DOK.rozvKnihovna.push(it); ulozene.push(it); skrine[u] = it;
+    }
+  });
+  var vys = rzzPrevod(z, __rzZR.vyber, { rady: __rzZR.rady || {}, objekt: objId, skrine: skrine });
+  var uidy = vys.docs.map(function (d) { delete d._rozvUid; delete d._prepln; delete d._vlastni; delete d._moduly; return d.uid; });
   DOK.dokumenty = vys.docs.concat(DOK.dokumenty);
   await dokZapsat();
   __rzZR = null; closeModal('modal-rz-zrevize');
@@ -31692,6 +32108,8 @@ TD_AKCE.tdRZZakreslit = async function () {
   var sInfo = vys.docs.filter(function (d) { return d.data.pozn; }).map(function (d) { return d.data.oznaceni || d.cislo; });
   var text = 'Zakresleno: ' + dokPocetTvar(uidy.length, ['rozvaděč', 'rozvaděče', 'rozvaděčů']) + (objId ? ' do objektu „' + dokObjNazev(objId) + '"' : '') +
     (vys.pocty.upoz ? ' · ⚠ ' + dokPocetTvar(vys.pocty.upoz, ['přístroj', 'přístroje', 'přístrojů']) + ' k doplnění (oranžové „!")' : '') +
+    (vys.pocty.bezSoustavy ? ' · ⚠ doplňte soustavu (' + dokPocetTvar(vys.pocty.bezSoustavy, ['rozvaděč', 'rozvaděče', 'rozvaděčů']) + ')' : '') +
+    (ulozene.length ? ' · do knihovny ' + (ulozene.length === 1 ? 'uložena ' : ulozene.length < 5 ? 'uloženy ' : 'uloženo ') + dokPocetTvar(ulozene.length, ['vlastní skříň', 'vlastní skříně', 'vlastních skříní']) : '') +
     (vys.pocty.info ? ' · jiné řádky zprávy (' + vys.pocty.info + ') jsou v poznámce: ' + sInfo.join(', ') : '');
   showToast(text, { timeout: 12000, actionLabel: '↩ ZPĚT', action: function () {
     dokNacist().then(function () {
@@ -31938,8 +32356,10 @@ function rozvValidovat(raw) {
     if (r.modulu !== '' && (r.modulu < 1 || r.modulu > 72)) { chyby.push('počet modulů v řadě musí být 1–72'); r.modulu = ''; }
     r.ina = cislo('ina', 'InA', false);
     r.penc = cislo('penc', 'Penc', false);
-    var pr = rozvNorm(o.provedeni || '').trim();
-    r.provedeni = /^nast/.test(pr) ? 'nástěnná' : /^zapus/.test(pr) ? 'zapuštěná' : /^duta/.test(pr) ? 'dutá stěna' : String(o.provedeni || '').trim();
+    r.provedeni = rozvProvedeniZTextu(o.provedeni);
+    var ts = rozvTypSkrineZTextu(o.typSkrine);
+    if (ts === null) { chyby.push('typ skříně „' + o.typSkrine + '" (domovni, prumyslova nebo historicka)'); ts = 'domovni'; }
+    r.typSkrine = ts;
     var ma = rozvNorm(o.material || '').trim();
     r.material = /^plast/.test(ma) ? 'plast' : /^ocel/.test(ma) ? 'oceloplech' : String(o.material || '').trim();
     var tr = String(o.trida || '').trim().toUpperCase();
@@ -31979,6 +32399,7 @@ var ROZV_CSV = [
   ['ue', 'ue', ['ue', 'uev', 'napeti']],
   ['provedeni', 'provedeni', ['provedeni']],
   ['material', 'material', ['material']],
+  ['typ_skrine', 'typSkrine', ['typskrine', 'typskrin', 'druhskrine']],
   ['rady', 'rady', ['rady', 'pocetrad']],
   ['moduly_v_rade', 'modulu', ['modulyvrade', 'modulu', 'modulvrade', 'pocetmodulu']],
   ['ip', 'ip', ['ip', 'kryti']],
@@ -32130,7 +32551,9 @@ TD_AKCE.tdRImportUlozit = async function () {
     if (i >= 0) DOK.rozvKnihovna[i] = p.polozka; else DOK.rozvKnihovna.push(p.polozka);
   });
   await dokZapsat();
+  try { localStorage.removeItem(ROZV_INFO_KLIC); } catch (e) {}   // s daty výrobců se pruh sám sbalí
   rozvKnihovnaZmenena();
+  rozvInfoPrekreslit();
   showToast('📥 Do knihovny uloženo ' + x.v.polozky.length + ' (nových ' + x.nove + ', aktualizovaných ' + x.akt + ')', { timeout: 9000,
     actionLabel: '↩ ZPĚT', action: function () { dokNacist().then(function () { DOK.rozvKnihovna = pred; return dokZapsat(); }).then(rozvKnihovnaZmenena); } });
 };
@@ -32219,7 +32642,8 @@ function rozvPolozkaFormular(it) {
     h += '<div class="g3">' +
       pole('nazev', 'Název', { span: 'span3', ph: 'Nechte prázdné — složí se z údajů' }) +
       pole('vyrobce', 'Výrobce') + pole('rada', 'Řada') + pole('typ', 'Typ / obj. číslo') +
-      pole('provedeni', 'Provedení', { volby: ['nástěnná', 'zapuštěná', 'dutá stěna'] }) +
+      pole('typSkrine', 'Typ skříně', { volby: ROZV_TYPY_SKRINE, prazdna: false }) +
+      pole('provedeni', 'Provedení', { volby: ROZV_PROVEDENI }) +
       pole('material', 'Materiál', { volby: ['plast', 'oceloplech'] }) +
       pole('trida', 'Třída ochrany', { volby: [['I', 'I'], ['II', 'II']] }) +
       pole('rady', 'Počet řad', { req: true, cislo: true, ph: '3' }) +
