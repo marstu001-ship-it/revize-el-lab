@@ -1728,6 +1728,75 @@ html.dark .rz-chip{background:#1e3328;color:#9fd8b8}
 .rz-f-mrizka .rz-f-l>span{flex:0 0 auto}
 .rz-f-mrizka .rz-f-l select{width:100%}
 .rz-odkaz{background:none;border:none;padding:0;font:inherit;color:var(--accent2);text-decoration:underline;cursor:pointer}
+.rz-zalozky{display:flex;gap:.4rem;margin:0 0 .9rem;border-bottom:2px solid var(--border)}
+.rz-zal{border:1px solid var(--border);border-bottom:none;background:var(--bg);color:var(--text);padding:.55rem 1.2rem;font:inherit;font-size:.95rem;
+  border-radius:6px 6px 0 0;cursor:pointer;margin-bottom:-2px}
+.rz-zal.akt{background:var(--surface);border-color:var(--border);border-bottom:2px solid var(--surface);font-weight:700;color:var(--accent2)}
+.rz-ceka{display:inline-block;font-size:.66rem;font-weight:600;color:#8a4b00;border:1px solid #e0b46a;background:#fff7e6;border-radius:3px;
+  padding:0 .3rem;margin-left:.25rem;vertical-align:middle;letter-spacing:0;text-transform:none;font-family:var(--sans,sans-serif);white-space:nowrap}
+html.dark .rz-ceka{background:#3a2c14;color:#f0c27a;border-color:#7a5a20}
+.rz-dok-hlava .rz-dok-generuj{margin:.2rem 0 .7rem}
+.rz-dok-vyber{display:flex;flex-wrap:wrap;gap:.1rem 1.1rem;align-items:center;font-size:.86rem;margin-bottom:.5rem}
+.rz-dok-vyber-t{font-weight:600}
+.rz-zatrh{font-size:.86rem;margin:.3rem 0}
+.rz-dok-stitek-r{display:flex;flex-wrap:wrap;align-items:center;gap:.2rem .7rem;margin:.2rem 0 .5rem}
+.rz-dok-stitek-r .add-row{margin:0}
+.rz-dok-stitek-r .dk-nepov{font-size:.78rem}
+.rz-dok-chybi{font-size:.84rem;margin:.3rem 0 .6rem;color:#0f7b5f}
+.rz-dok-chybi.chybi{color:#8a4b00}
+.rz-vc-dup{font-size:.75rem;color:var(--accent);min-height:0}
+.rz-dok-oddil{margin-bottom:.8rem}
+.rz-ko-lista{display:flex;flex-wrap:wrap;gap:.3rem .8rem;align-items:center;margin:.3rem 0 .5rem}
+.rz-ko-ram{overflow-x:auto;margin-bottom:.6rem}
+.rz-ko-tab{width:100%;border-collapse:collapse;font-size:.84rem;min-width:620px;table-layout:fixed}
+.rz-ko-tab th{background:#1F497D;color:#fff;font-weight:600;padding:.35rem .4rem;text-align:left}
+.rz-ko-tab td{border-bottom:1px solid var(--border);padding:.3rem .4rem;vertical-align:middle}
+.rz-ko-tab td.c{text-align:center}
+.rz-ko-tab .rz-ceka{white-space:normal}
+.rz-ko-tab select,.rz-ko-tab input{width:100%;padding:.3rem;border:1px solid var(--border);border-radius:3px;background:var(--surface);color:var(--text);font:inherit;font-size:.82rem}
+.rz-ko-met{margin:.3rem 0 .4rem}
+.rz-iso-ok{border-color:#0f7b5f!important;background:#e6f2ec!important}
+.rz-iso-chyba{border-color:var(--accent)!important;background:#fbe9e7!important}
+html.dark .rz-iso-ok{background:#1e3328!important}
+html.dark .rz-iso-chyba{background:#3a1e1b!important}
+.rz-iso-stav{display:block;font-size:.75rem;min-height:1em;margin-top:.15rem}
+.rz-iso-ok+.rz-iso-stav{color:#0f7b5f}
+.rz-iso-chyba+.rz-iso-stav{color:var(--accent)}
+.rz-ko-pristroj{display:flex;align-items:center;justify-content:space-between;gap:.6rem;font-size:.86rem;padding:.3rem 0;border-bottom:1px solid var(--border)}
+.rz-ko-pridat{margin:.4rem 0 .6rem;padding:.35rem;border:1px solid var(--border);border-radius:4px;background:var(--surface);color:var(--text);max-width:100%}
+.rz-ko-osoba{margin-bottom:.6rem}
+.rz-ko-osoba>b{display:block;font-size:.86rem;margin-bottom:.2rem}
+/* PDF dokumentů rozvaděče */
+.rz-ps-titul{font-size:14pt;font-weight:700;text-align:center;margin:2mm 0 5mm;letter-spacing:.02em}
+.rz-ko-pdf-pod{text-align:center;font-size:9pt;margin:-3mm 0 4mm;color:#333}
+.rz-ps-bod{margin:0 0 3.2mm}
+.rz-ps-n{font-weight:700}
+.rz-ps-o{margin:1mm 0 0 5mm}
+.rz-ps-ul{list-style:none;margin:0;padding:0}
+.rz-ps-podepsano{margin:7mm 0 2mm;font-weight:600}
+.rz-ps-podpis-tab{width:100%;border-collapse:collapse;font-size:9.5pt}
+.rz-ps-podpis-tab td{border:.5pt solid #666;padding:1.5mm 2mm;vertical-align:top;width:33%}
+.rz-ps-podpis-tab td.rz-ps-p{height:30mm;position:relative}
+.rz-ps-podpis-tab small{color:#444}
+.rz-ps-razitko{position:absolute;right:2mm;bottom:2mm;max-height:24mm;max-width:40mm}
+.rz-ps-podpis{position:absolute;left:3mm;bottom:3mm;max-height:14mm;max-width:35mm}
+.rz-pdf-tech td.l{width:62mm}
+.rz-ko-pdf td,.rz-ko-pdf th{font-size:8.5pt}
+.rz-ko-pdf-podpisy{margin-top:3mm}
+.rz-ko-razitko{margin-top:3mm;font-size:9pt;height:22mm;width:55mm;border:.5pt dashed #888;padding:1mm 2mm}
+/* výrobní štítek — skutečná velikost v mm */
+.a4.rz-stitky-list{padding:0;height:297mm;min-height:297mm;overflow:hidden;font-family:'DM Sans',Arial,Helvetica,sans-serif}
+.rz-st-misto{position:absolute}
+.rz-stitek{position:relative;box-sizing:border-box;border:.3mm solid #000;border-radius:1.5mm;padding:2mm 2.4mm;background:#fff;color:#000;overflow:hidden;
+  font-size:var(--rz-st-pismo,2.6mm);line-height:1.28}
+.rz-st-obsah{height:100%;overflow:hidden;box-sizing:border-box}
+.rz-st-vyr{margin-bottom:.6mm}
+.rz-st-r{margin-top:.35mm}
+.rz-stitek .rz-ce{position:absolute;right:2.2mm;bottom:1.8mm;fill:#000}
+.rz-tr2{height:1.1em;width:1.1em;vertical-align:-.15em}
+.rz-orez{position:absolute;border-top:.15mm solid #000;border-left:.15mm solid #000;display:block}
+.rz-st-pokyn{position:absolute;font-size:8pt;color:#333}
+.rz-st-useka{display:inline-block;width:50mm;height:2mm;border:.2mm solid #000;border-top:none;vertical-align:middle;margin-left:2mm}
 .rz-vice{display:block;width:100%;margin:.3rem 0}
 .rz-sf-radek{display:flex;flex-wrap:wrap;gap:.2rem 1rem;margin:.3rem 0}
 .rz-sf-radek .rz-f-l>span{flex:0 0 auto}
@@ -2015,6 +2084,11 @@ html.dark .rz-imp-chyby{background:#3a1f1c;border-color:#6b2c25}
   .rzz-z-pod{text-align:left}
   .rzz-lista select,.rzz-rada select{min-height:44px;font-size:16px}
   .rzz-skrin-volba,.rzz-vl-box{margin-left:0}
+  .rz-zal{flex:1 1 0;min-height:44px;padding:.5rem .4rem}
+  .rz-dok-hlava .rz-dok-generuj{display:flex;width:100%;justify-content:center}
+  .rz-ko-pridat{min-height:44px;font-size:16px;width:100%}
+  .rz-ko-tab select,.rz-ko-tab input{font-size:16px;min-height:44px}
+  .rz-ko-tab{min-width:860px}
   .rzz-skrin-volba select,.rzz-pro-vse select{min-height:44px;font-size:16px;flex-basis:100%;max-width:100%}
   .rz-info-prepni{min-width:44px;min-height:44px}
   .dok-sprava>summary{min-height:44px;align-items:center}
@@ -29047,7 +29121,7 @@ function dkPole(cesta, label, hodnota, o) {
   var pole = o.radky
     ? '<textarea' + attr + ' rows="' + o.radky + '" spellcheck="true" lang="cs">' + esc(hodnota) + '</textarea>'
     : '<input type="' + (o.typ || 'text') + '"' + attr + ' value="' + esc(hodnota) + '" autocomplete="off">';
-  return '<div class="f' + (o.span ? ' ' + o.span : '') + '"><label>' + esc(label) +
+  return '<div class="f' + (o.span ? ' ' + o.span : '') + '"><label>' + (o.labelHtml || esc(label)) +
     (o.nepov ? ' <span class="dk-nepov">(nepovinné)</span>' : '') + '</label>' + pole + (o.za || '') + '</div>';
 }
 
@@ -29754,12 +29828,17 @@ DOK_TYPY.pouvv.pdf = function (d) {
 
 var __dokPdf = null;   // { x: záznam dokumentu, zpet: obrazovka }
 
-function dokPdfStranka(x) {
+// `naSirku` / `zahlavi` ([vlevo, vpravo]) může určit blok, který začíná
+// novou stranu (`strana: 'sirka' | 'vyska'`) — rozvaděč má čelní pohled na
+// šířku a prohlášení, protokol a technické údaje na výšku.
+function dokPdfStranka(x, naSirku, zahlavi) {
   var t = DOK_TYPY[x.typ], d = x.data || {};
+  if (naSirku === undefined) naSirku = !!t.naSirku;
+  var zl = zahlavi ? zahlavi[0] : t.nazev, zp = zahlavi ? zahlavi[1] : (d.cislo ? 'č. ' + d.cislo : '');
   var p = document.createElement('div');
-  p.className = 'a4 a4-dok' + (t.naSirku ? ' a4-landscape' : '');
+  p.className = 'a4 a4-dok' + (naSirku ? ' a4-landscape' : '');
   p.style.minHeight = '0';
-  p.innerHTML = '<div class="dok-pdf-zahlavi"><span>' + esc(t.nazev) + '</span><span>' + (d.cislo ? 'č. ' + esc(d.cislo) : '') + '</span></div>' +
+  p.innerHTML = '<div class="dok-pdf-zahlavi"><span>' + esc(zl) + '</span><span>' + esc(zp) + '</span></div>' +
     '<div class="dok-pdf-obsah"></div>' +
     '<div class="dok-pdf-paticka"><span>' + esc(d.stavba || '') + '</span><span class="dok-pdf-strana"></span></div>';
   return p;
@@ -29769,11 +29848,19 @@ function dokPdfVykreslit(x) {
   var box = document.getElementById('dok-pdf-pages');
   showScreen('dok-pdf');   // ve skryté obrazovce mají prvky nulovou výšku
   box.innerHTML = '';
-  var limit = (DOK_TYPY[x.typ].naSirku ? 210 : 297) * 96 / 25.4 + 0.5;
+  var ns = !!DOK_TYPY[x.typ].naSirku, zahl = null;
+  var limit = (ns ? 210 : 297) * 96 / 25.4 + 0.5;
   var bloky = DOK_TYPY[x.typ].pdf(x.data || {});
   var str = dokPdfStranka(x); box.appendChild(str);
   var obsah = str.querySelector('.dok-pdf-obsah');
   bloky.forEach(function (b) {
+    if (b.strana) {   // blok začíná novou stranou (prázdná první se jen přestaví)
+      ns = b.strana === 'sirka'; zahl = b.zahlavi || null;
+      limit = (ns ? 210 : 297) * 96 / 25.4 + 0.5;
+      var nova = dokPdfStranka(x, ns, zahl);
+      if (obsah.children.length) box.appendChild(nova); else box.replaceChild(nova, str);
+      str = nova; obsah = str.querySelector('.dok-pdf-obsah');
+    }
     var el = document.createElement('div');
     el.innerHTML = b.html;
     if (b.drz) el.setAttribute('data-drz', '1');
@@ -29781,7 +29868,7 @@ function dokPdfVykreslit(x) {
     if (str.getBoundingClientRect().height > limit && obsah.children.length > 1) {
       var presun = [obsah.removeChild(el)];
       while (obsah.children.length > 1 && obsah.lastElementChild.getAttribute('data-drz')) presun.unshift(obsah.removeChild(obsah.lastElementChild));
-      str = dokPdfStranka(x); box.appendChild(str);
+      str = dokPdfStranka(x, ns, zahl); box.appendChild(str);
       obsah = str.querySelector('.dok-pdf-obsah');
       presun.forEach(function (e) { obsah.appendChild(e); });
     }
@@ -29812,6 +29899,7 @@ async function dokNahledZeSeznamu(uid) {
 }
 
 function dokPdfNazev() {
+  if (__dokPdf.nazev) return __dokPdf.nazev;
   var x = __dokPdf.x, d = x.data || {};
   return ((d.cislo || DOK_TYPY[x.typ].prefix) + '_' + DOK_TYPY[x.typ].kratce + (d.stavba ? '_' + d.stavba : ''))
     .replace(/[\\\/:*?"<>|]+/g, '').replace(/\s+/g, '_').slice(0, 90) + '.pdf';
@@ -29992,7 +30080,7 @@ var ROZV_SKRIN_KLICE = ['nazev', 'vyrobce', 'rada', 'typ', 'typSkrine', 'provede
 // Typ skříně (2026-10-20): domovní (výchozí — i všechny dosavadní), průmyslová,
 // historická (staré rozvaděče z ČSSR, často bez modulů — DIN lišty × délka).
 var ROZV_TYPY_SKRINE = [['domovni', 'Domovní'], ['prumyslova', 'Průmyslové'], ['historicka', 'Historické']];
-var ROZV_PROVEDENI = ['nástěnná', 'zapuštěná', 'dutá stěna', 'stojanová'];
+var ROZV_PROVEDENI = ['nástěnná', 'zapuštěná', 'polozapuštěná', 'dutá stěna', 'stojanová'];
 function rozvTypSkrineNazev(k) { for (var i = 0; i < ROZV_TYPY_SKRINE.length; i++) if (ROZV_TYPY_SKRINE[i][0] === k) return ROZV_TYPY_SKRINE[i][1]; return ''; }
 // Text ze souboru / formuláře → kód typu ('' = domovní, null = nesmysl).
 function rozvTypSkrineZTextu(v) {
@@ -30005,7 +30093,7 @@ function rozvTypSkrineZTextu(v) {
 }
 function rozvProvedeniZTextu(v) {
   var pr = rozvNorm(v || '').trim();
-  return /^nast/.test(pr) ? 'nástěnná' : /^zapus/.test(pr) ? 'zapuštěná' : /^duta/.test(pr) ? 'dutá stěna' : /^stoj/.test(pr) ? 'stojanová' : String(v || '').trim();
+  return /^nast/.test(pr) ? 'nástěnná' : /^zapus/.test(pr) ? 'zapuštěná' : /^polo-?\s*zapus/.test(pr) ? 'polozapuštěná' : /^duta/.test(pr) ? 'dutá stěna' : /^stoj/.test(pr) ? 'stojanová' : String(v || '').trim();
 }
 var ROZV_CISELNE = ['In', 'icn', 'icu', 'ics', 'idn', 'up', 'sirka', 'pv', 'ue', 'rady', 'modulu', 'ina', 'penc'];
 
@@ -30575,29 +30663,43 @@ function rozvHlavickaSouhrn(d) {
 
 DOK_TYPY.rozv.form = function (d) {
   if (typeof zpetVycistit === 'function') zpetVycistit();   // ZPĚT jiného rozvaděče sem nepatří
-  __rz = { o: window.__dokOtevreny, skrin: d.skrin ? dokKopie(d.skrin) : null, rady: dokKopie(d.rady || []),
-           vyber: null, knihVyber: null, presun: null, aktRada: 0, zoom: (__rz && __rz.zoom) || 1 };
+  var o = window.__dokOtevreny;
+  // záložka zůstane, když se týž otevřený rozvaděč jen překresluje (uložení
+  // v jiném okně); nové otevření začíná na Návrhu
+  var zal = (__rz && o && __rz.o === o && __rz.zalozka) || 'navrh';
+  __rz = { o: o, skrin: d.skrin ? dokKopie(d.skrin) : null, rady: dokKopie(d.rady || []),
+           vyber: null, knihVyber: null, presun: null, aktRada: 0, zoom: (__rz && __rz.zoom) || 1, zalozka: zal };
   __rzF.tab = __rz.skrin ? 'pristroje' : 'skrine';
-  return rozvHlavickaHtml(d) +
+  return '<div class="rz-zalozky" role="tablist" aria-label="Rozvaděč">' +
+      '<button type="button" class="rz-zal" role="tab" data-action="tdRZalozka" data-z="navrh">🧩 Návrh</button>' +
+      '<button type="button" class="rz-zal" role="tab" data-action="tdRZalozka" data-z="dok">📄 Dokumenty</button></div>' +
+    '<div id="rz-pan-navrh" class="rz-pan">' + rozvHlavickaHtml(d) +
     '<div class="scard rz-sklad"><div class="scard-title">🧩 Čelní pohled — skládání z knihovny</div>' +
       '<div class="rz-mrizka">' +
         '<aside class="rz-knihovna" data-dk-mimo>' + rozvKnihovnaPanelHtml() + '</aside>' +
         '<section class="rz-pohled" id="rz-pohled"></section>' +
         '<aside class="rz-vlastnosti" id="rz-vlastnosti"></aside>' +
-      '</div></div>';
+      '</div></div></div>' +
+    '<div id="rz-pan-dok" class="rz-pan" hidden></div>';
 };
 
 DOK_TYPY.rozv.poVykresleni = function () {
   rozvFiltryVykreslit();
   rozvKnihovnaVykreslit();
-  rozvPohledVykreslit();
+  rozvZalozkaNastavit(__rz.zalozka);
 };
 
 DOK_TYPY.rozv.cist = function (koren) {
   // Co formulář nemá (napájení z jiného rozvaděče, zdroj ze zprávy…), zůstane.
   var d = dokKopie(((window.__dokOtevreny || {}).data) || {});
   d.investor = {}; d.vyrobce = {};
-  koren.querySelectorAll('[data-dk]').forEach(function (el) { dkNastavCestu(d, el.getAttribute('data-dk'), el.value); });
+  koren.querySelectorAll('[data-dk]').forEach(function (el) {
+    var v = el.type === 'checkbox' ? el.checked : el.value;
+    // odvozená hodnota (z návrhu, profilu…) se neukládá — ať se mění s návrhem
+    if (el.hasAttribute('data-odv') && String(v).trim() === el.getAttribute('data-odv').trim()) v = '';
+    dkNastavCestu(d, el.getAttribute('data-dk'), v);
+  });
+  rozvDokCistNavic(koren, d);
   d.model = 1;
   if (d.soustava && d.upoz) { d.upoz = d.upoz.filter(function (x) { return x !== 'doplňte soustavu'; }); if (!d.upoz.length) delete d.upoz; }
   if (d.objekt === '__novy') d.objekt = ((window.__dokOtevreny || {}).data || {}).objekt || '';
@@ -31160,7 +31262,7 @@ TD_AKCE.tdRSkrinVymenit = function () {
 var __rzTah = null, __rzBezKliku = false;
 function rozvEditorAktivni() {
   var f = document.getElementById('screen-dok-form');
-  return !!(__rz && f && f.classList.contains('active') && f.getAttribute('data-typ') === 'rozv');
+  return !!(__rz && f && f.classList.contains('active') && f.getAttribute('data-typ') === 'rozv' && __rz.zalozka !== 'dok');
 }
 
 document.addEventListener('pointerdown', function (e) {
@@ -32184,6 +32286,621 @@ DOK_TYPY.rozv.pdf = function (d) {
       seznam.slice(i, i + ROZV_PDF_RADKU).map(radek).join('') + '</table>' });
   }
   if (neover) B.push({ html: '<p class="rz-pdf-pozn">* Údaje přístroje nejsou ověřené (obecná položka knihovny nebo neověřený záznam) — před výrobou je ověřte podle katalogu výrobce.</p>' });
+  return B;
+};
+
+// ═══════════════════════════════════════════════════════════════════════
+// ROZVADĚČ DBO — DOKUMENTY Z NÁVRHU (etapa 2, 2026-10-20)
+//
+// Záložka „Dokumenty" v editoru: výrobní štítek, EU prohlášení o shodě,
+// protokol o kusovém ověření a technické údaje (ČSN EN IEC 61439-1 ed. 3,
+// -3 ed. 2, NV 118/2016 Sb.). Texty jsou z rešerše norem, kterou dodal
+// uživatel — NIC se nedoplňuje z hlavy. Body, které rešerše uvádí jen
+// z paměti, mají ve formuláři štítek „čeká na ověření v ČSN" (do PDF nejde).
+//
+// Naměřené hodnoty a výsledky zkoušek vyplňuje technik — program je nikdy
+// nevymýšlí (jen porovná izolační odpor s kritériem a obarví ho).
+//
+// Nová data (všechna VOLITELNÁ, starý rozvaděč se načte beze změny):
+//   rezim ('DBO'; PSC přijde v etapě 5), rohs, dokVyber {cp, tech, prohl, ko},
+//   vyroba {cislo, typ, datum}, tech {un, fn, sit, ina, ik, trida, umisteni,
+//   znec, rdf, rozmery, hmotnost}, stitek {vel, kusu, rozsirena, tridaII},
+//   prohl {cislo, overeni, otepleni, misto, datum, jmeno, funkce, razitko},
+//   ko {cislo, v {k11_2…}, p {k11_2…}, metoda, a {u, t, i, v}, b {u, l1, l2,
+//   l3, n}, pomocne, pristroje [], zapojil {jmeno, kval, datum}, zkousel {…}}
+// Odvozené hodnoty (z návrhu, soustavy, skříně, profilu) se ukládají PRÁZDNÉ
+// (`data-odv`), takže se mění s návrhem; přepsaná hodnota se uloží a platí.
+// ═══════════════════════════════════════════════════════════════════════
+var ROZV_DOK_CEKA = 'čeká na ověření v ČSN';
+function rozvCeka(titulek) {
+  return ' <span class="rz-ceka" title="' + esc(titulek || 'Údaj je z rešerše norem, ne přímo z textu ČSN — ověřte ho.') + '">' + ROZV_DOK_CEKA + '</span>';
+}
+
+// Kusové ověření, čl. 11.2–11.10 (S = prohlídka, P = zkouška).
+var ROZV_KO_POLOZKY = [
+  { cl: '11.2', nazev: 'Stupeň krytí krytu', zp: 'S' },
+  { cl: '11.3', nazev: 'Vzdušné vzdálenosti a povrchové cesty', zp: 'S/P' },
+  { cl: '11.4', nazev: 'Ochrana před úrazem el. proudem a celistvost ochranných obvodů', zp: 'S/P',
+    ceka: 'Způsob ověření celistvosti ochranného obvodu podle ed. 3 rešerše nezná — hodnoty typu „10 A / 0,1 Ω" nepoužívejte.' },
+  { cl: '11.5', nazev: 'Zabudování spínacích přístrojů a komponent', zp: 'S' },
+  { cl: '11.6', nazev: 'Vnitřní elektrické obvody a spoje', zp: 'S/P' },
+  { cl: '11.7', nazev: 'Svorky pro vnější vodiče', zp: 'S' },
+  { cl: '11.8', nazev: 'Mechanická funkce', zp: 'P' },
+  { cl: '11.9', nazev: 'Dielektrické vlastnosti', zp: 'P' },
+  { cl: '11.10', nazev: 'Zapojení, provozní vlastnosti a funkce', zp: 'P' }
+];
+function rozvKoKlic(cl) { return 'k' + cl.replace('.', '_'); }
+var ROZV_KO_VYSL = [['', '—'], ['vyhovuje', 'vyhovuje'], ['nevyhovuje', 'nevyhovuje'], ['netýká se', 'netýká se']];
+var ROZV_KO_POMOCNE = [['', '—'], ['vynecháno – jištěno ≤ 16 A', 'vynecháno – jištěno ≤ 16 A'],
+  ['vynecháno – funkční zkouška při Ue', 'vynecháno – funkční zkouška při Ue']];
+// Druh sítě ze soustavy hlavičky (jde přepsat).
+var ROZV_SIT = { '1NPE ~230 V': '1/N/PE AC TN', '3NPE ~400/230 V TN-S': '3/N/PE AC TN-S', '3PEN ~400/230 V TN-C': '3/PEN AC TN-C',
+  '3PEN/3NPE ~400/230 V TN-C-S': '3/N/PE AC TN-C-S', '3NPE ~400/230 V TT': '3/N/PE AC TT', '1NPE ~230 V TT': '1/N/PE AC TT' };
+var ROZV_STITKY = { '90x45': { w: 90, h: 45, pismo: 3.3, ce: 7 }, '70x35': { w: 70, h: 35, pismo: 2.6, ce: 5.5 }, '100x60': { w: 100, h: 60, pismo: 3.9, ce: 9 } };
+
+function dkCesta(o, cesta) {
+  return String(cesta).split('.').reduce(function (a, k) { return a == null ? undefined : a[k]; }, o);
+}
+function rozvDokPrvky(d) {
+  var a = [];
+  (d.rady || []).forEach(function (r) { (r.prvky || []).forEach(function (x) { if (x.p && x.p.kat !== 'REZ') a.push(x); }); });
+  return a;
+}
+
+// Výrobní číslo — vlastní řada rozvaděčů RRRR-NNNN (s čísly zpráv nesouvisí).
+function rozvVyrDalsi(bezUid) {
+  var rok = String(new Date().getFullYear()), max = 0;
+  (DOK.dokumenty || []).forEach(function (x) {
+    if (x.typ !== 'rozv' || x.uid === bezUid) return;
+    var m = /^(\d{4})-(\d+)$/.exec(String(((x.data || {}).vyroba || {}).cislo || '').trim());
+    if (m && m[1] === rok) max = Math.max(max, +m[2]);
+  });
+  return rok + '-' + String(max + 1).padStart(4, '0');
+}
+function rozvVyrDuplicita(vc, uid) {
+  vc = String(vc || '').trim(); if (!vc) return null;
+  return (DOK.dokumenty || []).filter(function (x) { return x.typ === 'rozv' && x.uid !== uid && String(((x.data || {}).vyroba || {}).cislo || '').trim() === vc; })[0] || null;
+}
+
+// Hodnoty odvozené z návrhu, soustavy, skříně a profilu technika.
+function rozvDokOdvozene(d) {
+  d = d || {};
+  var sk = d.skrin || {}, t = (typeof STORE !== 'undefined' && STORE.technik) || {}, vc = String((d.vyroba || {}).cislo || '').trim();
+  var m = /~\s*([\d\/]+)\s*V/.exec(d.soustava || ''), prv = rozvDokPrvky(d);
+  var fi = prv.filter(function (x) { return x.p.kat === 'FI' || x.p.kat === 'FIFA'; }).map(function (x) { return x.ozn; }).filter(Boolean);
+  return {
+    'vyroba.typ': [String(d.oznaceni || '').trim() || 'Rozvaděč', 'DBO', sk.rady && sk.modulu ? sk.rady + '×' + sk.modulu + ' M' : ''].filter(Boolean).join(' '),
+    'vyroba.datum': String(d.datum || '').slice(0, 7),
+    'tech.un': m ? m[1] + ' V' : '', 'tech.fn': '50 Hz', 'tech.sit': ROZV_SIT[d.soustava] || '',
+    'tech.ik': sk.ik || '', 'tech.trida': sk.trida || '', 'tech.rozmery': sk.rozmery || '',
+    'prohl.cislo': vc ? 'PS-' + vc : '', 'ko.cislo': vc ? 'KO-' + vc : '',
+    'prohl.misto': t.mesto || '', 'prohl.datum': d.datum || '', 'prohl.jmeno': t.jmeno || '',
+    'ko.zkousel.jmeno': t.jmeno || '', 'ko.a.t': '1',
+    'ko.p.k11_2': 'deklarované krytí ' + (d.krytiZavreno || 'IP…') + ' / ' + (d.krytiOtevreno || 'IP…') + ' (zavřeno/otevřeno)',
+    'ko.p.k11_5': prv.length ? 'osazení a značení dle seznamu přístrojů (' + prv.length + ' ks: ' +
+      prv.map(function (x) { return x.ozn; }).filter(Boolean).join(', ') + ')' : 'osazení a značení dle seznamu přístrojů',
+    'ko.p.k11_6': 'namátkově zkontrolováno __ spojů, utahovací moment dle výrobce přístroje',
+    'ko.p.k11_10': 'úplnost štítku a dokumentace; funkční zkouška chráničů tlačítkem T' + (fi.length ? ' (' + fi.join(', ') + ')' : '')
+  };
+}
+function rozvDokHodnota(d, odv, cesta) {
+  var v = dkCesta(d, cesta);
+  return (v != null && String(v).trim() !== '') ? String(v).trim() : (odv[cesta] || '');
+}
+// Co se tiskne — uložená hodnota, jinak odvozená.
+function rozvDokEff(d) {
+  var o = rozvDokOdvozene(d), g = function (c) { return rozvDokHodnota(d, o, c); };
+  var t = (typeof STORE !== 'undefined' && STORE.technik) || {};
+  return {
+    vc: g('vyroba.cislo'), typ: g('vyroba.typ'), datum: g('vyroba.datum'),
+    un: g('tech.un'), fn: g('tech.fn'), sit: g('tech.sit'), ina: g('tech.ina'), icc: String(d.icc || '').trim(),
+    ipz: String(d.krytiZavreno || '').trim(), ipo: String(d.krytiOtevreno || '').trim(),
+    ik: g('tech.ik'), trida: g('tech.trida'), umisteni: g('tech.umisteni'), znec: g('tech.znec'), rdf: g('tech.rdf'),
+    rozmery: g('tech.rozmery'), hmotnost: g('tech.hmotnost'),
+    vyr: d.vyrobce || {}, ps: g('prohl.cislo'), ko: g('ko.cislo'),
+    pMisto: g('prohl.misto'), pDatum: g('prohl.datum'), pJmeno: g('prohl.jmeno'), pFunkce: g('prohl.funkce'),
+    overeni: g('prohl.overeni'), otepleni: g('prohl.otepleni'),
+    zkJmeno: g('ko.zkousel.jmeno'), zkDatum: g('ko.zkousel.datum'),
+    razitko: ((d.prohl || {}).razitko !== false) && !!(t.razitko || t.podpis)
+  };
+}
+function rozvJednotka(v, j) { v = String(v || '').trim(); return v && /^[\d.,\s]+$/.test(v) ? v + ' ' + j : v; }
+function rozvSitText(e) {   // „3/N/PE AC 400/230 V 50 Hz TN-S"
+  var m = /^(.*?\bAC)\s*(.*)$/.exec(e.sit || '');
+  return (m ? [m[1], e.un, e.fn, m[2]] : [e.un, e.fn, e.sit]).filter(Boolean).join(' ');
+}
+function rozvIpText(e) { return [e.ipz, e.ipo].filter(Boolean).join(' / '); }
+function rozvRokMes(ym, oddel) { var m = /^(\d{4})-(\d{2})/.exec(ym || ''); return m ? (oddel === '/' ? m[1] + '/' + m[2] : +m[2] + '/' + m[1]) : (ym || ''); }
+function rozvVyber(d) {
+  var v = d.dokVyber || {};
+  return { cp: v.cp !== false, tech: v.tech !== false, prohl: v.prohl !== false, ko: v.ko !== false };
+}
+
+// Měření izolačního odporu (metoda B) — jen u přívodního ochranného přístroje
+// do 630 A a Un do 500 V. Hodnoty jen porovná s ≥ 1 MΩ, nikdy je nevyplní.
+function rozvKoMetodaB(d, e) {
+  var qm = rozvDokPrvky(d).filter(function (x) { return x.p.kat === 'QM' && x.p.In !== '' && x.p.In != null; })[0];
+  var In = qm ? +qm.p.In : rozvCislo(String(d.privodIn || '').replace(/\s*A$/i, ''));
+  var un = (String(e.un || '').match(/\d+/g) || []).map(Number), U = un.length ? Math.max.apply(null, un) : '';
+  var ok = In !== '' && In > 0 && In <= 630 && U !== '' && U <= 500;
+  return { ok: ok, In: In, U: U, zdroj: qm ? (qm.ozn || 'hlavní vypínač') : 'přívod v hlavičce' };
+}
+function rozvIsoStav(v) {
+  var s = String(v || '').trim().replace(',', '.').replace(/\s*M?Ω$/i, '');
+  if (!s) return '';
+  var m = /^([<>≥≤]?)\s*(\d+(?:\.\d+)?)$/.exec(s); if (!m) return '';
+  var n = +m[2];
+  if (m[1] === '<' || m[1] === '≤') return n <= 1 ? 'chyba' : '';
+  return n >= 1 ? 'ok' : (m[1] ? '' : 'chyba');
+}
+
+// ── Formulář záložky Dokumenty ──
+function rzPole(d, odv, cesta, label, o) {
+  o = o || {};
+  var ul = dkCesta(d, cesta), v = (ul != null && String(ul) !== '') ? ul : (odv[cesta] || '');
+  var attr = (o.attr || '') + (odv[cesta] ? ' data-odv="' + esc(odv[cesta]) + '"' : '');
+  return dkPole(cesta, label, v, Object.assign({}, o, { attr: attr }));
+}
+function rzVolba(d, odv, cesta, label, volby, o) {
+  o = o || {};
+  var ul = dkCesta(d, cesta), v = (ul != null && String(ul) !== '') ? String(ul) : (odv[cesta] || '');
+  return '<div class="f' + (o.span ? ' ' + o.span : '') + '"><label>' + (o.labelHtml || esc(label)) + '</label><select data-dk="' + cesta + '"' +
+    (odv[cesta] ? ' data-odv="' + esc(odv[cesta]) + '"' : '') + (o.attr || '') + '>' +
+    volby.map(function (x) { var h = Array.isArray(x) ? x : [x, x]; return '<option value="' + esc(h[0]) + '"' + (String(h[0]) === v ? ' selected' : '') + '>' + esc(h[1]) + '</option>'; }).join('') +
+    '</select></div>';
+}
+function rzZatrh(cesta, text, zapnuto, o) {
+  o = o || {};
+  return '<label class="teren-radek rz-zatrh"><input type="checkbox" data-dk="' + cesta + '"' + (zapnuto ? ' checked' : '') + (o.attr || '') + '> ' + text + '</label>';
+}
+// Pole, které je i v hlavičce — píše se do téhož pole (data-zrc), ať nejsou dvě hodnoty.
+function rzZrcadlo(cesta, label, v, o) {
+  o = o || {};
+  return '<div class="f' + (o.span ? ' ' + o.span : '') + '"><label>' + (o.labelHtml || esc(label)) + '</label><input type="text" data-zrc="' + cesta + '" value="' + esc(v) + '"' +
+    (o.ph ? ' placeholder="' + esc(o.ph) + '"' : '') + ' autocomplete="off"></div>';
+}
+function rzOddil(k, titul, obsah, otevreny) {
+  return '<details class="dok-sprava rz-dok-oddil" data-oddil="' + k + '"' + (otevreny ? ' open' : '') + '><summary>' + titul + '</summary>' +
+    '<div class="dok-sprava-obsah">' + obsah + '</div></details>';
+}
+
+function rozvDokHtml(d) {
+  var o = window.__dokOtevreny || {}, t = (typeof STORE !== 'undefined' && STORE.technik) || {};
+  d = dokKopie(d || {});
+  d.vyroba = d.vyroba || {};
+  if (!String(d.vyroba.cislo || '').trim()) d.vyroba.cislo = rozvVyrDalsi(o.uid);   // předvyplní se, uloží se s první změnou
+  var odv = rozvDokOdvozene(d), e = rozvDokEff(d), v = rozvVyber(d), st = d.stitek || {}, mb = rozvKoMetodaB(d, e);
+  var ko = d.ko || {}, met = String(ko.metoda || ''), vyr = d.vyrobce || {};
+  var zatrh = function (k, text) { return '<label class="teren-radek rz-zatrh"><input type="checkbox" data-dk="dokVyber.' + k + '"' + (v[k] ? ' checked' : '') + '> ' + text + '</label>'; };
+  var h = '<div class="scard rz-dok-hlava"><div class="scard-title">📄 Dokumenty z návrhu — ČSN EN IEC 61439-3 (DBO)</div>' +
+    '<button class="btn btn-gold dok-hlavni-akce rz-dok-generuj" data-action="tdRDokPdf">📄 Vygenerovat dokumentaci (PDF)</button>' +
+    '<div class="rz-dok-vyber"><span class="rz-dok-vyber-t">Do PDF patří:</span>' +
+      zatrh('cp', 'čelní pohled a seznam přístrojů') + zatrh('tech', 'technické údaje') + zatrh('prohl', 'prohlášení o shodě') +
+      zatrh('ko', 'protokol o kusovém ověření') + '</div>' +
+    '<div class="rz-dok-stitek-r"><button class="add-row rz-dok-stitek-btn" data-action="tdRStitek" title="Štítek se tiskne zvlášť, ve skutečné velikosti">🏷 Tisk štítku</button>' +
+      '<span class="dk-nepov">štítek se tiskne zvlášť, ve skutečné velikosti</span></div>' +
+    '<div class="rz-dok-chybi" id="rz-dok-chybi"></div>' +
+    '<div class="dk-pozn">Naměřené hodnoty a výsledky zkoušek vyplňujete vy — program je nikdy nedoplní. Štítek „' + ROZV_DOK_CEKA +
+      '" = údaj z rešerše norem, ne z jejich textu.</div></div>';
+  // Výroba a značení
+  h += rzOddil('vyroba', '🏭 Výroba a značení',
+    '<div class="g3">' +
+      '<div class="f"><label>Výrobní číslo</label><div class="dk-ares"><input type="text" data-dk="vyroba.cislo" value="' + esc(d.vyroba.cislo) +
+        '" placeholder="2026-0001" autocomplete="off"><button class="dok-mini" data-action="tdRVyrCislo" title="Přidělit další volné číslo řady rozvaděčů">⟳</button></div>' +
+        '<div class="rz-vc-dup" id="rz-vc-dup"></div></div>' +
+      rzPole(d, odv, 'vyroba.typ', 'Typové označení') +
+      rzPole(d, odv, 'vyroba.datum', 'Datum výroby (měsíc a rok)', { typ: 'month' }) +
+      rzVolba(d, {}, 'rezim', 'Režim', [['DBO', 'DBO – rozvodnice pro obsluhu laiky (ČSN EN IEC 61439-3)']], { span: 'span3' }) +
+    '</div>' +
+    '<div class="dk-blok-t">Výrobce rozvaděče <span class="dk-nepov">(totéž pole jako v hlavičce)</span></div>' +
+    '<div class="g3">' + rzZrcadlo('vyrobce.nazev', 'Jméno / firma', vyr.nazev, { span: 'span2' }) + rzZrcadlo('vyrobce.ico', 'IČO', vyr.ico) +
+      rzZrcadlo('vyrobce.adresa', 'Kontaktní adresa', vyr.adresa, { span: 'span3', ph: 'Ulice 1, 697 01 Kyjov' }) + '</div>' +
+    rzZatrh('rohs', 'Uvádět RoHS (NV č. 481/2012 Sb., ČSN EN IEC 63000)' + rozvCeka('Číslo NV 481/2012 Sb. a ČSN EN IEC 63000 jsou v rešerši jen z paměti.'), d.rohs === true) +
+    '<div class="dk-pozn">U zakázkové rozvodnice pevně instalované jako součást rozvodu budovy se RoHS obvykle neuvádí, u hotové rozvodnice prodávané koncovému uživateli ano.</div>' +
+    '<div class="dk-blok-t">Štítek</div>' +
+    '<div class="g3">' +
+      rzVolba(d, {}, 'stitek.vel', 'Velikost štítku', [['90x45', '90 × 45 mm'], ['70x35', '70 × 35 mm'], ['100x60', '100 × 60 mm']]) +
+      dkPole('stitek.kusu', 'Počet kusů na list', st.kusu || '1', { typ: 'number', attr: ' min="1" max="200"' }) +
+    '</div>' +
+    rzZatrh('stitek.rozsirena', 'rozšířená část: Un, fn, druh sítě, Icc, IP, třída ochrany', st.rozsirena !== false) +
+    rzZatrh('stitek.tridaII', 'tisknout značku třídy II (dvojitý čtverec)' + rozvCeka('Značka třídy II je v rešerši jen z paměti.'), st.tridaII === true), true);
+  // Technické údaje
+  var ced = function (t2) { return { labelHtml: esc(t2) + rozvCeka() }; };
+  h += rzOddil('tech', '📋 Technické údaje',
+    '<div class="g3">' +
+      rzPole(d, odv, 'tech.un', 'Jmenovité napětí Un', { ph: 'např. 400/230 V' }) +
+      rzPole(d, odv, 'tech.fn', 'Jmenovitá frekvence fn') +
+      rzPole(d, odv, 'tech.sit', 'Druh sítě', { ph: 'např. 3/N/PE AC TN-S' }) +
+      rzPole(d, odv, 'tech.ina', 'Jmenovitý proud rozvaděče InA (A)', { ph: d.privodIn ? 'přívod v hlavičce: ' + rozvJednotka(d.privodIn, 'A') : 'např. 40', attr: ' inputmode="decimal"' }) +
+      rzZrcadlo('icc', 'Zkratová odolnost Icc (kA)', d.icc, { ph: '6' }) +
+      rzZrcadlo('krytiZavreno', 'Krytí – dveře zavřené', d.krytiZavreno, { ph: 'IP40', labelHtml: 'Krytí – dveře zavřené' + rozvCeka() }) +
+      rzZrcadlo('krytiOtevreno', 'Krytí – dveře otevřené', d.krytiOtevreno, { ph: 'IP20' }) +
+      rzPole(d, odv, 'tech.ik', 'Odolnost IK', Object.assign({ ph: 'IK07' }, ced('Odolnost IK'))) +
+      rzVolba(d, odv, 'tech.trida', 'Třída ochrany', [['', '—'], ['I', 'I'], ['II', 'II']]) +
+      rzVolba(d, odv, 'tech.umisteni', 'Umístění', [['', '— vyberte —'], ['vnitřní', 'vnitřní'], ['venkovní', 'venkovní']], ced('Umístění')) +
+      rzPole(d, odv, 'tech.znec', 'Stupeň znečištění', Object.assign({ ph: 'stupeň 1–4 podle prostředí — doplňte' }, ced('Stupeň znečištění'))) +
+      rzPole(d, odv, 'tech.rdf', 'Součinitel soudobosti RDF', { ph: 'doplní výpočet oteplení (etapa 4)', nepov: true }) +
+      rzPole(d, odv, 'tech.rozmery', 'Rozměry v × š × h (mm)', Object.assign({ ph: '550 × 310 × 100' }, ced('Rozměry v × š × h (mm)'))) +
+      rzPole(d, odv, 'tech.hmotnost', 'Hmotnost (kg)', { nepov: true, attr: ' inputmode="decimal"' }) +
+    '</div>');
+  // Prohlášení
+  h += rzOddil('prohl', '📜 Prohlášení o shodě',
+    '<div class="g3">' +
+      rzPole(d, odv, 'prohl.cislo', 'Číslo prohlášení', { ph: 'PS-2026-0001' }) +
+      rzPole(d, odv, 'prohl.misto', 'Místo vydání') +
+      rzPole(d, odv, 'prohl.datum', 'Datum vydání', { typ: 'date' }) +
+      rzPole(d, odv, 'prohl.jmeno', 'Jméno (podepisuje)') +
+      rzPole(d, odv, 'prohl.funkce', 'Funkce', { ph: 'např. jednatel, OSVČ' }) +
+    '</div>' +
+    rzPole(d, odv, 'prohl.overeni', 'Ověření návrhu (bod 7)', { radky: 2, ph: 'dokumentace ověření návrhu výrobce skříňového systému (výrobce, číslo dokumentu)' }) +
+    rzPole(d, odv, 'prohl.otepleni', 'Oteplení (bod 7)', { radky: 2, ph: 'jak bylo oteplení ověřeno — výpočet přijde v etapě 4' }) +
+    ((t.razitko || t.podpis) ? rzZatrh('prohl.razitko', 'vložit razítko a podpis z profilu', (d.prohl || {}).razitko !== false)
+      : '<div class="dk-pozn">Razítko a podpis se vloží, až je nahrajete v Nastavení (profil technika).</div>'));
+  // Kusové ověření
+  var radky = ROZV_KO_POLOZKY.map(function (p) {
+    var k = rozvKoKlic(p.cl);
+    var vys = String(((ko.v || {})[k]) || ''), pz = (ko.p || {})[k], pozn = (pz != null && String(pz) !== '') ? pz : (odv['ko.p.' + k] || '');
+    return '<tr data-cl="' + p.cl + '" data-zp="' + p.zp + '"><td class="c">' + p.cl + '</td><td>' + esc(p.nazev) + (p.ceka ? rozvCeka(p.ceka) : '') + '</td>' +
+      '<td class="c">' + p.zp + '</td><td><select data-dk="ko.v.' + k + '" class="rz-ko-v">' + ROZV_KO_VYSL.map(function (x) {
+        return '<option value="' + esc(x[0]) + '"' + (x[0] === vys ? ' selected' : '') + '>' + esc(x[1]) + '</option>'; }).join('') + '</select></td>' +
+      '<td><input type="text" data-dk="ko.p.' + k + '" value="' + esc(pozn) + '"' + (odv['ko.p.' + k] ? ' data-odv="' + esc(odv['ko.p.' + k]) + '"' : '') + ' autocomplete="off"></td></tr>';
+  }).join('');
+  var iso = function (k, n) {
+    var val = ((ko.b || {})[k]) || '', s = rozvIsoStav(val);
+    return '<div class="f"><label>' + n + ' proti PE (MΩ)</label><input type="text" data-dk="ko.b.' + k + '" class="rz-iso' + (s ? ' rz-iso-' + s : '') + '" value="' + esc(val) +
+      '" inputmode="decimal" autocomplete="off"><span class="rz-iso-stav">' + (s === 'ok' ? '✓ vyhovuje' : s === 'chyba' ? '✗ nevyhovuje' : '') + '</span></div>';
+  };
+  var pristroje = (ko.pristroje || []).map(rozvKoPristrojHtml).join('');
+  var prof = (typeof STORE !== 'undefined' && STORE.pristroje) || [];
+  h += rzOddil('ko', '🔧 Kusové ověření (čl. 11)',
+    '<div class="g3">' + rzPole(d, odv, 'ko.cislo', 'Číslo protokolu', { ph: 'KO-2026-0001' }) + '</div>' +
+    '<div class="rz-ko-lista"><button class="dok-mini" data-action="tdRKoS" title="Vyplní „vyhovuje" jen u prázdných položek se způsobem S (prohlídka); zkoušky (P) vždy ručně">✓ Všechny prohlídky (S) vyhovují</button>' +
+      '<span class="dk-nepov">S = prohlídka, P = zkouška — výsledky zkoušek vyplňujte ručně</span></div>' +
+    '<div class="rz-ko-ram"><table class="rz-ko-tab"><colgroup><col style="width:3.6rem"><col><col style="width:4.6rem"><col style="width:8.5rem"><col style="width:38%"></colgroup>' +
+      '<tr><th>Čl.</th><th>Položka</th><th>Způsob</th><th>Výsledek</th><th>Poznámka</th></tr>' + radky + '</table></div>' +
+    '<div class="dk-blok-t">11.9 Dielektrické vlastnosti</div>' +
+    '<div class="g3">' +
+      '<div class="f"><label>Způsob ověření</label><select data-dk="ko.metoda" class="rz-ko-metoda">' +
+        '<option value="">— vyberte —</option><option value="A"' + (met === 'A' ? ' selected' : '') + '>A – zkouška přiloženým napětím</option>' +
+        (mb.ok || met === 'B' ? '<option value="B"' + (met === 'B' ? ' selected' : '') + '>B – měření izolačního odporu</option>' : '') + '</select></div>' +
+      rzVolba(d, {}, 'ko.pomocne', 'Pomocné obvody', ROZV_KO_POMOCNE, { span: 'span2' }) +
+    '</div>' +
+    '<div class="dk-pozn rz-ko-bpozn">' + (mb.ok ? 'Měření izolačního odporu (B) jde použít — přívodní přístroj ' + esc(mb.zdroj) + ' ' + rozvCisloText(mb.In) + ' A, Un ' + mb.U + ' V.'
+      : 'Měření izolačního odporu (B) jde jen u přívodního ochranného přístroje do 630 A a Un do 500 V' +
+        (mb.In === '' ? ' — zadejte jmenovitý proud přívodu nebo hlavního vypínače.' : mb.U === '' ? ' — doplňte soustavu.' : ' (teď ' + rozvCisloText(mb.In) + ' A, ' + mb.U + ' V).')) + '</div>' +
+    '<div class="rz-ko-met" data-met="A"' + (met === 'A' ? '' : ' hidden') + '><div class="g4">' +
+      dkPole('ko.a.u', 'Zkušební napětí (V AC)', (ko.a || {}).u || '', { ph: 'podle tab. 8 ČSN EN IEC 61439-1 – ověřte', attr: ' inputmode="decimal"' }).replace('<label>Zkušební napětí (V AC)', '<label>Zkušební napětí (V AC)' + rozvCeka('Hodnotu z tab. 8 má rešerše jen z paměti — program ji nepředvyplňuje.')) +
+      rzPole(d, odv, 'ko.a.t', 'Doba (s)', { attr: ' inputmode="decimal"' }) +
+      dkPole('ko.a.i', 'Vybavovací proud zkušebního přístroje (mA)', (ko.a || {}).i || '', { ph: '≥ 3,5', attr: ' inputmode="decimal"' }) +
+      rzVolba(d, {}, 'ko.a.v', 'Výsledek', ROZV_KO_VYSL.slice(0, 3)) +
+    '</div></div>' +
+    '<div class="rz-ko-met" data-met="B"' + (met === 'B' ? '' : ' hidden') + '>' +
+      (mb.ok ? '' : '<div class="rp-upoz">⚠ Podmínky pro měření izolačního odporu teď nejsou splněné — zvolte zkoušku přiloženým napětím.</div>') +
+      '<div class="g4">' + dkPole('ko.b.u', 'Měřicí napětí (V DC)', (ko.b || {}).u || '', { ph: '≥ 500', attr: ' inputmode="decimal"' }) + '</div>' +
+      '<div class="g4">' + iso('l1', 'L1') + iso('l2', 'L2') + iso('l3', 'L3') + iso('n', 'N') + '</div>' +
+      '<div class="dk-pozn">Kritérium: ≥ 1 MΩ mezi obvody a neživými částmi. Program hodnotu jen porovná a obarví — nikdy ji nevyplní.</div></div>' +
+    '<div class="dk-blok-t">Měřicí přístroje</div>' +
+    '<div id="rz-ko-pristroje">' + pristroje + '</div>' +
+    (prof.length ? '<select class="rz-ko-pridat" aria-label="Přidat měřicí přístroj z profilu"><option value="">＋ přidat přístroj z profilu…</option>' +
+      prof.map(function (p, i) { return '<option value="' + i + '">' + esc([p.nazev, p.vyrCislo ? 'výr. č. ' + p.vyrCislo : ''].filter(Boolean).join(', ')) + '</option>'; }).join('') + '</select>'
+      : '<div class="dk-pozn">Měřicí přístroje si zapište do profilu technika (Nastavení) — tady je pak vyberete.</div>') +
+    '<div class="dk-blok-t">Podpisy</div>' +
+    '<div class="rz-ko-podpisy"><div class="rz-ko-osoba"><b>Zapojení provedl</b><div class="g3">' +
+      dkPole('ko.zapojil.jmeno', 'Jméno', ((ko.zapojil || {}).jmeno) || '') +
+      dkPole('ko.zapojil.kval', 'Kvalifikace', ((ko.zapojil || {}).kval) || '', { ph: 'podle NV 194/2022 Sb.' }) +
+      dkPole('ko.zapojil.datum', 'Datum', ((ko.zapojil || {}).datum) || '', { typ: 'date' }) + '</div></div>' +
+    '<div class="rz-ko-osoba"><b>Zkoušku provedl (zkušební technik)</b><div class="g3">' +
+      rzPole(d, odv, 'ko.zkousel.jmeno', 'Jméno') +
+      dkPole('ko.zkousel.kval', 'Kvalifikace', ((ko.zkousel || {}).kval) || '', { ph: 'podle NV 194/2022 Sb.' }).replace('<label>Kvalifikace', '<label>Kvalifikace' + rozvCeka('Kvalifikace podle NV 194/2022 Sb. je v rešerši jen z paměti.')) +
+      dkPole('ko.zkousel.datum', 'Datum zkoušky', ((ko.zkousel || {}).datum) || '', { typ: 'date' }) + '</div></div></div>');
+  return h;
+}
+function rozvKoPristrojHtml(p) {
+  p = p || {};
+  return '<div class="rz-ko-pristroj" data-nazev="' + esc(p.nazev) + '" data-vyr="' + esc(p.vyrCislo) + '" data-kal="' + esc(p.kalibrace) + '">' +
+    '<span>' + esc([p.nazev, p.vyrCislo ? 'výr. č. ' + p.vyrCislo : '', p.kalibrace ? 'kalibrace ' + p.kalibrace : ''].filter(Boolean).join(' · ')) + '</span>' +
+    '<button class="dok-mini dok-mini-del" data-action="tdRKoPristrojSmazat" title="Odebrat z protokolu">✕ Odebrat</button></div>';
+}
+// Co cist() nečte z [data-dk]: měřicí přístroje protokolu.
+function rozvDokCistNavic(koren, d) {
+  var box = koren.querySelector('#rz-ko-pristroje'); if (!box) return;
+  d.ko = d.ko || {};
+  d.ko.pristroje = Array.prototype.map.call(box.querySelectorAll('.rz-ko-pristroj'), function (r) {
+    return { nazev: r.getAttribute('data-nazev') || '', vyrCislo: r.getAttribute('data-vyr') || '', kalibrace: r.getAttribute('data-kal') || '' };
+  });
+}
+
+// Řádek „Chybí: …" — co potřebuje štítek a prohlášení.
+function rozvDokChybi(d) {
+  var e = rozvDokEff(d), ch = [];
+  var pridej = function (ok, text, sel) { if (!ok) ch.push([text, sel]); };
+  pridej(e.vyr.nazev, 'výrobce', '[data-zrc="vyrobce.nazev"]');
+  pridej(e.vyr.adresa, 'adresa výrobce', '[data-zrc="vyrobce.adresa"]');
+  pridej(e.vc, 'výrobní číslo', '[data-dk="vyroba.cislo"]');
+  pridej(e.typ, 'typové označení', '[data-dk="vyroba.typ"]');
+  pridej(e.datum, 'datum výroby', '[data-dk="vyroba.datum"]');
+  pridej(e.ina, 'InA', '[data-dk="tech.ina"]');
+  pridej(e.un, 'Un (soustava)', '[data-dk="tech.un"]');
+  return ch;
+}
+function rozvDokChybiVykreslit() {
+  var box = document.getElementById('rz-dok-chybi'), f = dokForm(); if (!box || !f) return;
+  var d = DOK_TYPY.rozv.cist(f), ch = rozvDokChybi(d);
+  box.className = 'rz-dok-chybi' + (ch.length ? ' chybi' : '');
+  box.innerHTML = ch.length ? 'Chybí: ' + ch.map(function (c) {
+    return '<button type="button" class="rz-odkaz" data-action="tdRDokNaPole" data-cil="' + esc(c[1]) + '">' + esc(c[0]) + '</button>'; }).join(', ')
+    : '✓ Pro štítek a prohlášení je vyplněno vše potřebné.';
+  var dup = document.getElementById('rz-vc-dup'), o = window.__dokOtevreny || {};
+  var x = rozvVyrDuplicita((d.vyroba || {}).cislo, o.uid);
+  if (dup) dup.textContent = x ? '⚠ toto výrobní číslo už má ' + (x.cislo || 'jiný rozvaděč') + ((x.data || {}).oznaceni ? ' (' + x.data.oznaceni + ')' : '') : '';
+}
+
+// ── Přepínač Návrh | Dokumenty ──
+function rozvZalozkaNastavit(z) {
+  if (!__rz) return;
+  __rz.zalozka = z === 'dok' ? 'dok' : 'navrh';
+  var f = dokForm(); if (!f) return;
+  f.querySelectorAll('.rz-zal').forEach(function (b) {
+    var a = b.getAttribute('data-z') === __rz.zalozka;
+    b.classList.toggle('akt', a); b.setAttribute('aria-selected', a ? 'true' : 'false');
+  });
+  var pn = document.getElementById('rz-pan-navrh'), pd = document.getElementById('rz-pan-dok');
+  if (!pn || !pd) return;
+  if (__rz.zalozka === 'dok') {
+    __rz.vyber = null; __rz.knihVyber = null; __rz.presun = null;
+    var otevrene = Array.prototype.map.call(pd.querySelectorAll('details[open]'), function (x) { return x.getAttribute('data-oddil'); });
+    var d = DOK_TYPY.rozv.cist(f);   // včetně neuložených změn z návrhu
+    pd.innerHTML = rozvDokHtml(d);
+    if (otevrene.length) pd.querySelectorAll('details.rz-dok-oddil').forEach(function (x) { x.open = otevrene.indexOf(x.getAttribute('data-oddil')) !== -1; });
+    pn.hidden = true; pd.hidden = false;
+    rozvDokChybiVykreslit();
+  } else {
+    pn.hidden = false; pd.hidden = true;
+    rozvPohledVykreslit(); rozvVlastnostiVykreslit();
+  }
+}
+TD_AKCE.tdRZalozka = function (el) {
+  var z = el.getAttribute('data-z');
+  if (__rz && z === __rz.zalozka && !document.getElementById('rz-pan-' + (z === 'dok' ? 'dok' : 'navrh')).hidden) return;
+  rozvZalozkaNastavit(z);
+};
+TD_AKCE.tdRDokNaPole = function (el) {
+  var f = dokForm(), cil = f && f.querySelector(el.getAttribute('data-cil')); if (!cil) return;
+  var det = cil.closest('details'); if (det) det.open = true;
+  cil.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  setTimeout(function () { cil.focus(); }, 250);
+};
+TD_AKCE.tdRVyrCislo = function () {
+  var f = dokForm(), el = f && f.querySelector('[data-dk="vyroba.cislo"]'); if (!el) return;
+  el.value = rozvVyrDalsi((window.__dokOtevreny || {}).uid);
+  el.dispatchEvent(new Event('input', { bubbles: true }));
+};
+TD_AKCE.tdRKoS = function () {
+  var f = dokForm(); if (!f) return;
+  var zm = [];
+  f.querySelectorAll('.rz-ko-tab tr[data-zp="S"] select.rz-ko-v').forEach(function (s) {
+    if (!s.value) { zm.push(s); s.value = 'vyhovuje'; }
+  });
+  if (!zm.length) { showToast('Všechny prohlídky (S) už mají výsledek.'); return; }
+  dokZmena();
+  showToast('Vyplněno „vyhovuje" u ' + zm.map(function (s) { return s.closest('tr').getAttribute('data-cl'); }).join(', ') + ' — zkoušky (P) vyplňte ručně.',
+    { timeout: 8000, actionLabel: '↩ ZPĚT', action: function () { zm.forEach(function (s) { s.value = ''; }); dokZmena(); } });
+};
+TD_AKCE.tdRKoPristrojSmazat = function (el) { var r = el.closest('.rz-ko-pristroj'); if (r) { r.remove(); dokZmena(); } };
+document.addEventListener('change', function (e) {
+  var t = e.target; if (!t || !t.classList) return;
+  if (t.classList.contains('rz-ko-pridat') && t.value !== '') {
+    var p = ((STORE.pristroje || [])[+t.value]) || {};
+    var box = document.getElementById('rz-ko-pristroje');
+    if (box) box.insertAdjacentHTML('beforeend', rozvKoPristrojHtml({ nazev: p.nazev, vyrCislo: p.vyrCislo, kalibrace: p.kalibrace }));
+    t.value = '';
+    dokZmena();
+  }
+});
+// Zrcadlová pole (Icc, krytí, výrobce) a živé obnovení stavu záložky Dokumenty.
+document.addEventListener('input', function (e) {
+  var t = e.target; if (!t || !t.getAttribute) return;
+  var f = dokForm(); if (!f || !f.contains(t)) return;
+  var z = t.getAttribute('data-zrc');
+  if (z) {
+    var c = f.querySelector('[data-dk="' + z + '"]');
+    if (c && c.value !== t.value) { c.value = t.value; }
+  } else if (t.getAttribute('data-dk')) {
+    f.querySelectorAll('[data-zrc="' + t.getAttribute('data-dk') + '"]').forEach(function (m) { if (m !== t && m.value !== t.value) m.value = t.value; });
+  }
+  if (!t.closest('#rz-pan-dok')) return;
+  if (t.classList.contains('rz-iso')) {
+    var s = rozvIsoStav(t.value), st = t.parentNode.querySelector('.rz-iso-stav');
+    t.classList.toggle('rz-iso-ok', s === 'ok'); t.classList.toggle('rz-iso-chyba', s === 'chyba');
+    if (st) st.textContent = s === 'ok' ? '✓ vyhovuje' : s === 'chyba' ? '✗ nevyhovuje' : '';
+  }
+  if (t.classList.contains('rz-ko-metoda')) f.querySelectorAll('.rz-ko-met').forEach(function (b) { b.hidden = b.getAttribute('data-met') !== t.value; });
+  rozvDokChybiVykreslit();
+});
+
+TD_AKCE.tdRDokPdf = async function () {
+  var f = dokForm(), d = f ? DOK_TYPY.rozv.cist(f) : {}, v = rozvVyber(d);
+  if (!v.cp && !v.tech && !v.prohl && !v.ko) { showToast('Zaškrtněte, co má v PDF být.'); return; }
+  await dokNahled();
+};
+
+// ── PDF: technické údaje, prohlášení, protokol ──
+function rozvPdfZahlavi(e) { return [e.vyr.nazev || 'Výrobce rozvaděče', 'Výrobní číslo: ' + (e.vc || '……')]; }
+function rozvPdfTech(d, e) {
+  var tr = function (l, v) { return v ? '<tr><td class="l">' + l + '</td><td>' + v + '</td></tr>' : ''; };
+  var radky = tr('Norma', 'ČSN EN IEC 61439-3 — rozvodnice pro obsluhu laiky (DBO)') +
+    tr('Výrobce', dokPdfFirma(e.vyr)) + tr('Typové označení', esc(e.typ)) + tr('Výrobní číslo', esc(e.vc)) +
+    tr('Datum výroby', esc(rozvRokMes(e.datum))) + tr('Jmenovité napětí Un', esc(e.un)) + tr('Jmenovitá frekvence fn', esc(e.fn)) +
+    tr('Druh sítě', esc(e.sit)) + tr('Jmenovitý proud rozvaděče InA', esc(rozvJednotka(e.ina, 'A'))) +
+    tr('Zkratová odolnost Icc', esc(rozvJednotka(e.icc, 'kA'))) +
+    tr('Krytí', [e.ipz ? esc(e.ipz) + ' (dveře zavřené)' : '', e.ipo ? esc(e.ipo) + ' (dveře otevřené)' : ''].filter(Boolean).join(', ')) +
+    tr('Odolnost IK', esc(e.ik)) + tr('Třída ochrany', esc(e.trida)) + tr('Umístění', esc(e.umisteni)) +
+    tr('Stupeň znečištění', esc(e.znec)) + tr('Součinitel soudobosti RDF', esc(e.rdf)) +
+    tr('Skříň', d.skrin ? esc(rozvNazev(d.skrin)) : '') + tr('Rozměry (v × š × h)', esc(rozvJednotka(e.rozmery, 'mm'))) +
+    tr('Hmotnost', esc(rozvJednotka(e.hmotnost, 'kg')));
+  return [{ strana: 'vyska', zahlavi: rozvPdfZahlavi(e), html: '<div class="dok-pdf-titul"><div class="t1">Technické údaje rozvaděče</div>' +
+      '<div class="t2">' + esc(d.oznaceni || '') + (d.oznaceni ? ' · ' : '') + 'údaje podle čl. 6.2.1 ČSN EN IEC 61439-1</div></div>' },
+    { html: '<table class="dok-pdf-tab rz-pdf-tech">' + radky + '</table>' }];
+}
+function rozvPdfProhlaseni(d, e) {
+  var t = (typeof STORE !== 'undefined' && STORE.technik) || {};
+  var bod = function (n, nadpis, obsah) {
+    return '<div class="rz-ps-bod"><div class="rz-ps-n">' + n + '. ' + esc(nadpis) + '</div>' + (obsah ? '<div class="rz-ps-o">' + obsah + '</div>' : '') + '</div>';
+  };
+  var predmet = 'Rozvodnice pro obsluhu laiky (DBO) dle ČSN EN IEC 61439-3' + [', ' + [[e.un, e.fn].filter(Boolean).join(' '), e.sit].filter(Boolean).join(', '),
+    e.ina ? ', InA ' + rozvJednotka(e.ina, 'A') : '', rozvIpText(e) ? ', ' + rozvIpText(e) : '',
+    e.trida ? ', třída ' + e.trida : '', e.datum ? ', rok výroby ' + String(e.datum).slice(0, 4) : '',
+    d.stavba ? ', zakázka ' + d.stavba : '', d.misto ? ', místo určení ' + d.misto : ''].filter(function (x) { return x && x !== ', '; }).join('') + '.';
+  var pred = ['nařízení vlády č. 118/2016 Sb. (směrnice 2014/35/EU)', 'nařízení vlády č. 117/2016 Sb. (směrnice 2014/30/EU)']
+    .concat(d.rohs === true ? ['nařízení vlády č. 481/2012 Sb. (směrnice 2011/65/EU ve znění směrnice (EU) 2015/863)'] : []);
+  var normy = ['ČSN EN IEC 61439-1 ed. 3 (EN IEC 61439-1:2021)', 'ČSN EN IEC 61439-3 ed. 2 (EN IEC 61439-3:2024)'].concat(d.rohs === true ? ['ČSN EN IEC 63000'] : []);
+  var ul = function (a) { return '<ul class="rz-ps-ul">' + a.map(function (x) { return '<li>– ' + esc(x) + '</li>'; }).join('') + '</ul>'; };
+  var dalsi = [e.overeni ? 'ověření návrhu: ' + e.overeni : '', e.otepleni ? 'oteplení: ' + e.otepleni : '',
+    'kusové ověření dle čl. 11 – protokol č. ' + (e.ko || '……') + ' ze dne ' + (dokDatumCz(e.zkDatum) || '……')].filter(Boolean).join('; ') + '.';
+  var vyr = e.vyr;
+  var obr = e.razitko ? (t.razitko ? '<img class="rz-ps-razitko" src="' + t.razitko + '">' : '') + (t.podpis ? '<img class="rz-ps-podpis" src="' + t.podpis + '">' : '') : '';
+  var B = [{ strana: 'vyska', zahlavi: rozvPdfZahlavi(e), html: '<div class="rz-ps-titul">EU PROHLÁŠENÍ O SHODĚ č. ' + esc(e.ps || '……') + '</div>' }];
+  B.push({ html: bod(1, 'Model výrobku/výrobek (číslo dávky, výrobku či typu nebo sériové číslo):', esc('Rozvaděč nn ' + (e.typ || '……') + ', výrobní číslo ' + (e.vc || '……'))) });
+  B.push({ html: bod(2, 'Jméno a adresa výrobce:', esc([vyr.nazev || '……', vyr.adresa, vyr.ico ? 'IČO ' + vyr.ico : ''].filter(Boolean).join(', '))) });
+  B.push({ html: bod(3, 'Toto prohlášení o shodě se vydává na výhradní odpovědnost výrobce.') });
+  B.push({ html: bod(4, 'Předmět prohlášení:', esc(predmet)) });
+  B.push({ html: bod(5, 'Výše popsaný předmět prohlášení je ve shodě s příslušnými harmonizačními právními předpisy Evropské unie:', ul(pred)) });
+  B.push({ html: bod(6, 'Použité harmonizované normy a jiné technické specifikace:', ul(normy)) });
+  B.push({ html: bod(7, 'Další informace:', esc(dalsi)) });
+  B.push({ html: '<div class="rz-ps-podepsano">Podepsáno za a jménem: ' + esc(vyr.nazev || '……') + '</div>' +
+    '<table class="rz-ps-podpis-tab"><tr><td><small>Místo, datum vydání</small><br>' + esc([e.pMisto, dokDatumCz(e.pDatum)].filter(Boolean).join(', ') || '……………') + '</td>' +
+    '<td><small>Jméno, funkce</small><br>' + esc([e.pJmeno, e.pFunkce].filter(Boolean).join(', ') || '……………') + '</td>' +
+    '<td class="rz-ps-p"><small>Podpis</small>' + obr + '</td></tr></table>' });
+  return B;
+}
+function rozvPdfProtokol(d, e) {
+  var ko = d.ko || {}, odv = rozvDokOdvozene(d), tr = function (l, v) { return '<tr><td class="l">' + l + '</td><td>' + (v || '—') + '</td></tr>'; };
+  var tr2 = function (l1, v1, l2, v2) { return '<tr><td class="l">' + l1 + '</td><td>' + (v1 || '—') + '</td><td class="l">' + l2 + '</td><td>' + (v2 || '—') + '</td></tr>'; };
+  var B = [{ strana: 'vyska', zahlavi: rozvPdfZahlavi(e), html: '<div class="rz-ps-titul">PROTOKOL O KUSOVÉM OVĚŘENÍ č. ' + esc(e.ko || '……') + '</div>' +
+    '<div class="rz-ko-pdf-pod">kusové ověření dle čl. 11 ČSN EN IEC 61439-1 ed. 3 a ČSN EN IEC 61439-3 ed. 2</div>' }];
+  B.push({ html: '<table class="dok-pdf-tab rz-pdf-hl">' +
+    tr2('Výrobce', dokPdfFirma(e.vyr), 'Zákazník', dokPdfFirma(d.investor)) +
+    tr2('Projekt / zakázka', esc(d.stavba), 'Místo instalace', esc(d.misto)) +
+    tr2('Typ', esc(e.typ), 'Výrobní číslo', esc(e.vc)) +
+    tr2('Normy', 'ČSN EN IEC 61439-1 ed. 3, ČSN EN IEC 61439-3 ed. 2', 'Druh sítě', esc(e.sit)) +
+    tr2('Un / fn', esc([e.un, e.fn].filter(Boolean).join(' / ')), 'InA', esc(rozvJednotka(e.ina, 'A'))) +
+    tr2('Icc', esc(rozvJednotka(e.icc, 'kA')), 'IP (zavřeno / otevřeno)', esc(rozvIpText(e))) +
+    (e.overeni ? '<tr><td class="l">Ověření návrhu</td><td colspan="3">' + esc(e.overeni) + '</td></tr>' : '') + '</table>' });
+  B.push({ html: '<table class="rz-pdf-tab rz-ko-pdf"><colgroup><col style="width:12mm"><col><col style="width:15mm"><col style="width:24mm"><col style="width:62mm"></colgroup>' +
+    '<tr><th>Čl.</th><th>Položka</th><th>Způsob</th><th>Výsledek</th><th>Poznámka</th></tr>' +
+    ROZV_KO_POLOZKY.map(function (p) {
+      var k = rozvKoKlic(p.cl), pz = (ko.p || {})[k];
+      var pozn = (pz != null && String(pz) !== '') ? pz : (odv['ko.p.' + k] || '');
+      return '<tr><td class="c">' + p.cl + '</td><td>' + esc(p.nazev) + '</td><td class="c">' + p.zp + '</td><td class="c">' + esc(((ko.v || {})[k]) || '') + '</td><td>' + esc(pozn) + '</td></tr>';
+    }).join('') + '</table><div class="rz-pdf-pozn">S = prohlídka, P = zkouška</div>' });
+  var a = ko.a || {}, b = ko.b || {}, diel = '';
+  if (ko.metoda === 'A') diel = 'Zkouška přiloženým napětím: ' + (a.u ? a.u + ' V AC' : '…… V AC') + ', doba ' + rozvDokHodnota(d, odv, 'ko.a.t') + ' s' +
+    ', vybavovací proud zkušebního přístroje ' + (a.i ? a.i + ' mA' : '…… mA') + (a.v ? ' — ' + a.v : '') + '.';
+  else if (ko.metoda === 'B') diel = 'Měření izolačního odporu: měřicí napětí ' + (b.u ? b.u + ' V DC' : '…… V DC') + '; ' +
+    [['l1', 'L1'], ['l2', 'L2'], ['l3', 'L3'], ['n', 'N']].map(function (x) { return x[1] + '–PE ' + (b[x[0]] ? b[x[0]] + ' MΩ' : '……'); }).join(', ') +
+    ' (kritérium ≥ 1 MΩ).';
+  B.push({ html: '<div class="dok-pdf-h2">11.9 Dielektrické vlastnosti</div><p class="dok-pdf-p">' + esc(diel || 'Způsob ověření nevyplněn.') +
+    (ko.pomocne ? '<br>Pomocné obvody: ' + esc(ko.pomocne) + '.' : '') + '</p>', drz: false });
+  var pr = (ko.pristroje || []).filter(function (p) { return p.nazev || p.vyrCislo; });
+  B.push({ html: '<div class="dok-pdf-h2">Měřicí přístroje</div><p class="dok-pdf-p">' + (pr.length ? pr.map(function (p) {
+    return esc([p.nazev, p.vyrCislo ? 'výr. č. ' + p.vyrCislo : '', p.kalibrace ? 'kalibrace ' + p.kalibrace : ''].filter(Boolean).join(', ')); }).join('<br>') : '—') + '</p>' });
+  var os = function (role, o, jm) { o = o || {}; return '<tr><td>' + role + '</td><td>' + esc(jm || o.jmeno || '') + '</td><td>' + esc(o.kval || '') + '</td><td>' + esc(dokDatumCz(o.datum) || '') + '</td><td class="podpis"></td></tr>'; };
+  B.push({ html: '<table class="dok-pdf-podpisy rz-ko-pdf-podpisy"><tr><th></th><th>Jméno</th><th>Kvalifikace</th><th>Datum</th><th>Podpis</th></tr>' +
+    os('Zapojení provedl', ko.zapojil) + os('Zkoušku provedl (zkušební technik)', ko.zkousel, e.zkJmeno) + '</table>' +
+    '<div class="rz-ko-razitko">Razítko:</div>' });
+  return B;
+}
+
+// ── Výrobní štítek (vlastní náhled ve skutečné velikosti) ──
+// CE ze dvou oblouků (C a E na stejně velkých kružnicích, svislý řez),
+// výška nejméně 5 mm. Kreslí se, žádný obrázek odjinud.
+function rozvCeSvg(vyskaMm) {
+  var R = 50, r = 36, dx = 25, yo = Math.sqrt(R * R - dx * dx), yi = Math.sqrt(r * r - dx * dx);
+  var oblouk = function (cx) {
+    return 'M' + (cx + dx) + ' ' + (50 - yo) + ' A' + R + ' ' + R + ' 0 1 0 ' + (cx + dx) + ' ' + (50 + yo) +
+      ' L' + (cx + dx) + ' ' + (50 + yi) + ' A' + r + ' ' + r + ' 0 1 1 ' + (cx + dx) + ' ' + (50 - yi) + ' Z';
+  };
+  var h = Math.max(5, vyskaMm || 5);
+  return '<svg class="rz-ce" viewBox="0 0 180 100" style="height:' + h + 'mm;width:' + (h * 1.8) + 'mm" aria-label="CE">' +
+    '<path d="' + oblouk(50) + '"/><path d="' + oblouk(154) + '"/><rect x="' + (154 - r - 1) + '" y="43" width="' + (r + 1 + 17.5) + '" height="14"/></svg>';
+}
+function rozvTridaIISvg() {
+  return '<svg class="rz-tr2" viewBox="0 0 100 100" aria-label="třída II"><rect x="5" y="5" width="90" height="90" fill="none" stroke="#000" stroke-width="9"/>' +
+    '<rect x="30" y="30" width="40" height="40" fill="none" stroke="#000" stroke-width="9"/></svg>';
+}
+function rozvStitekHtml(d, rz) {
+  var e = rozvDokEff(d), st = d.stitek || {}, roz = st.rozsirena !== false, n = '……';
+  var sit = roz ? rozvSitText(e) : '', radek2 = roz ? [e.icc ? 'Icc ' + rozvJednotka(e.icc, 'kA') : '', rozvIpText(e),
+    e.trida ? 'třída ' + e.trida : ''].filter(Boolean) : [];
+  return '<div class="rz-stitek" style="width:' + rz.w + 'mm;height:' + rz.h + 'mm"><div class="rz-st-obsah" style="padding-bottom:' + (rz.ce + 0.8) + 'mm">' +
+    '<div class="rz-st-vyr"><b>' + esc(e.vyr.nazev || n) + '</b>' + (e.vyr.adresa ? ', ' + esc(e.vyr.adresa) : '') + '</div>' +
+    '<div class="rz-st-r">Rozvaděč nn typ: <b>' + esc(e.typ || n) + '</b></div>' +
+    '<div class="rz-st-r">Výr. č.: <b>' + esc(e.vc || n) + '</b> &nbsp; Rok/měs.: <b>' + esc(rozvRokMes(e.datum, '/') || n) + '</b></div>' +
+    '<div class="rz-st-r">ČSN EN IEC 61439-3 (IEC 61439-3)</div>' +
+    (sit ? '<div class="rz-st-r">' + esc(sit) + '</div>' : '') +
+    '<div class="rz-st-r">InA <b>' + esc(rozvJednotka(e.ina, 'A') || n) + '</b>' + (radek2.length ? ' &nbsp; ' + radek2.map(esc).join(' &nbsp; ') : '') +
+      (roz && st.tridaII === true && e.trida === 'II' ? ' ' + rozvTridaIISvg() : '') + '</div>' +
+    '</div>' + rozvCeSvg(rz.ce) + '</div>';
+}
+function rozvStitekVykreslit(x) {
+  var d = x.data || {}, st = d.stitek || {}, rz = ROZV_STITKY[st.vel] || ROZV_STITKY['90x45'];
+  var kusu = Math.max(1, Math.min(200, parseInt(st.kusu, 10) || 1));
+  var box = document.getElementById('dok-pdf-pages');
+  showScreen('dok-pdf');   // ve skryté obrazovce mají prvky nulovou velikost
+  box.innerHTML = '';
+  var M = 12, G = 6, P = 14;   // okraj, mezera (ořezové značky), pruh dole s pokynem k tisku (mm)
+  var sl = Math.max(1, Math.floor((210 - 2 * M + G) / (rz.w + G))), rd = Math.max(1, Math.floor((297 - 2 * M - P + G) / (rz.h + G)));
+  var naStr = sl * rd, stran = Math.ceil(kusu / naStr), html = rozvStitekHtml(d, rz);
+  var znacky = function (l, t) {   // ořezové značky v rozích, 3 mm mimo štítek
+    var a = [];
+    [[l, t], [l + rz.w, t], [l, t + rz.h], [l + rz.w, t + rz.h]].forEach(function (b, i) {
+      var sx = i % 2 ? 1 : -1, sy = i < 2 ? -1 : 1;
+      a.push('<i class="rz-orez" style="left:' + (sx < 0 ? b[0] - 4 : b[0] + 1) + 'mm;top:' + b[1] + 'mm;width:3mm;height:0"></i>');
+      a.push('<i class="rz-orez" style="left:' + b[0] + 'mm;top:' + (sy < 0 ? b[1] - 4 : b[1] + 1) + 'mm;width:0;height:3mm"></i>');
+    });
+    return a.join('');
+  };
+  for (var s = 0, k = 0; s < stran; s++) {
+    var p = document.createElement('div');
+    p.className = 'a4 rz-stitky-list';
+    var h = '';
+    for (var i = 0; i < naStr && k < kusu; i++, k++) {
+      var l = M + (i % sl) * (rz.w + G), t = M + Math.floor(i / sl) * (rz.h + G);
+      h += '<div class="rz-st-misto" style="left:' + l + 'mm;top:' + t + 'mm">' + html + '</div>' + znacky(l, t);
+    }
+    h += '<div class="rz-st-pokyn" style="left:' + M + 'mm;bottom:' + (M - 4) + 'mm">Tiskněte ve skutečné velikosti (100 %) — štítek ' + rz.w + ' × ' + rz.h +
+      ' mm. Kontrolní úsečka 50 mm: <span class="rz-st-useka"></span></div>';
+    p.innerHTML = h;
+    box.appendChild(p);
+  }
+  // písmo zmenšit, dokud se obsah do štítku nevejde (všechny štítky jsou stejné)
+  var f = rz.pismo, prvni = box.querySelector('.rz-stitek');
+  box.style.setProperty('--rz-st-pismo', f + 'mm');
+  while (prvni && f > 1.2 && prvni.querySelector('.rz-st-obsah').scrollHeight > prvni.querySelector('.rz-st-obsah').clientHeight + 0.5) {
+    f = Math.round((f - 0.05) * 100) / 100; box.style.setProperty('--rz-st-pismo', f + 'mm');
+  }
+  var e = rozvDokEff(d);
+  __dokPdf = { x: x, zpet: 'dok-form', nazev: ((e.vc || d.cislo || 'ROZ') + '_stitek').replace(/[\\\/:*?"<>|\s]+/g, '_') + '.pdf' };
+  var info = document.getElementById('dok-pdf-info');
+  if (info) info.textContent = 'Výrobní štítek ' + rz.w + ' × ' + rz.h + ' mm · ' + kusu + ' ks · tiskněte ve skutečné velikosti (100 %), bez přizpůsobení stránce';
+  window.scrollTo(0, 0);
+}
+TD_AKCE.tdRStitek = async function () {
+  var o = window.__dokOtevreny; if (!o) return;
+  await dokUlozitOtevreny();
+  rozvStitekVykreslit({ uid: o.uid, typ: o.typ, data: o.data });
+};
+
+// PDF rozvaděče = čelní pohled a seznam (etapa 1) + vybrané dokumenty.
+var rozvPdfNavrh = DOK_TYPY.rozv.pdf;
+DOK_TYPY.rozv.pdf = function (d) {
+  var v = rozvVyber(d), e = rozvDokEff(d), B = [];
+  if (!v.cp && !v.tech && !v.prohl && !v.ko) v.cp = true;
+  if (v.cp) B = B.concat(rozvPdfNavrh(d));
+  if (v.tech) B = B.concat(rozvPdfTech(d, e));
+  if (v.prohl) B = B.concat(rozvPdfProhlaseni(d, e));
+  if (v.ko) B = B.concat(rozvPdfProtokol(d, e));
+  if (v.cp) B[0].strana = 'sirka';
   return B;
 };
 

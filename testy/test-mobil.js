@@ -547,6 +547,15 @@ function vsechnyStavy(zalozky) {
     const g = document.querySelector('#rz-pohled [data-puid]'), r = g.getBoundingClientRect();
     rozvKontextZkusit(r.left + r.width / 2, r.top + 10, g); await __M.w(100);
   }), '.kt-menu');
+  add('rozvaděč – záložka Dokumenty, všechny oddíly otevřené', 'Tvorba dokumentace', E(async () => {
+    await __M.rozv(); rozvZalozkaNastavit('dok'); document.querySelectorAll('.rz-dok-oddil').forEach(d => { d.open = true; }); await __M.w(100);
+  }));
+  add('rozvaděč – kusové ověření, měření izolačního odporu', 'Tvorba dokumentace', E(async () => {
+    await __M.rozv(); rozvZalozkaNastavit('dok'); const o = document.querySelector('[data-oddil="ko"]'); o.open = true;
+    const m = document.querySelector('.rz-ko-metoda'); m.value = 'B'; m.dispatchEvent(new Event('input', { bubbles: true }));
+    document.querySelector('.rz-ko-met[data-met="B"]').scrollIntoView({ block: 'start' }); await __M.w(100);
+  }));
+  add('rozvaděč – výrobní štítek', 'Tvorba dokumentace', E(async () => { await __M.rozv(); await TD_AKCE.tdRStitek(); await __M.w(300); }));
   add('rozvaděč – náhled PDF', 'Tvorba dokumentace', E(async () => { await __M.rozv(); await dokNahled(); await __M.w(400); }));
   add('rozvaděč – přeplněná řada', 'Tvorba dokumentace', E(async () => {
     await __M.rozv(); rozvVlozit('v-fa-3-C32', 0, 0); document.getElementById('rz-pohled').scrollIntoView({ block: 'start' }); await __M.w(100);

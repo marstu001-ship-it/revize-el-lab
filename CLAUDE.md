@@ -772,7 +772,8 @@ a prohlášení (hlavička + `skrin` + `p`). `data.model = 1`.
   **`typSkrine`** (2026-10-20) = `domovni` (výchozí — **i všechny dosavadní
   skříně bez klíče**, doplní ho `rozvPolozkaNorm`), `prumyslova`,
   `historicka` (staré rozvaděče z ČSSR). Provedení `nástěnná`, `zapuštěná`,
-  `dutá stěna`, `stojanová` (`ROZV_PROVEDENI`).
+  `polozapuštěná` (staré plechové chodbové rozvaděče, 2026-10-20 — v CSV
+  projde i „polozapustena"), `dutá stěna`, `stojanová` (`ROZV_PROVEDENI`).
 - **Vestavěné jen OBECNÉ položky** (`rozvVestavene()`, id `v-…`, výrobce
   „obecný", `overeno = false`): jističe 1P/1+N/3P/3+N × B/C × 6–63 A,
   chrániče 2P/4P 25/40/63 A 30 mA A/AC (+ 4P 40/63 A 300 mA), RCBO 1+N,
@@ -1003,7 +1004,8 @@ informační pruh, karta Skříně".
     číslem se toleruje** („16 A"), `charakteristika` B/C/D/K/Z,
     `typ_chranice` AC/A/F/B, `trida_spd` T1, T2, T3 nebo kombinace (T1+T2),
     `sirka_moduly` povinná u přístroje (desetinná), u skříně povinné `rady`
-    a `moduly_v_rade`, `provedeni` nástěnná/zapuštěná/dutá stěna/stojanová,
+    a `moduly_v_rade`, `provedeni` nástěnná/zapuštěná/polozapuštěná/dutá
+    stěna/stojanová,
     `material` plast/oceloplech, **`typ_skrine` domovni / prumyslova /
     historicka** (i s háčky a velkým písmenem; prázdné nebo soubor bez
     sloupce = domovní, jiný text = chyba řádku), `trida_ochrany` I/II,
@@ -1012,6 +1014,92 @@ informační pruh, karta Skříně".
   `{ "_format": "revize-el-knihovna-rozvadecu", "_version": 1,
   "pristroje": [ … ], "skrine": [ … ] }`, položky s vnitřními klíči (výš).
   Import bere i holý seznam položek. `TYPY_SOUBORU` zná `text/csv`.
+
+### Dokumenty z návrhu — etapa 2 (2026-10-20, blok „DOKUMENTY Z NÁVRHU")
+
+Zadání uživatele: z navrženého rozvaděče výrobní štítek, EU prohlášení
+o shodě, protokol o kusovém ověření a technické údaje. **Texty jsou
+z rešerše norem, kterou dodal uživatel** (ČSN EN IEC 61439-1 ed. 3, -3 ed. 2,
+NV 118/2016 Sb.) — **nic se nedoplňuje z hlavy, normy samotné nikdo
+nečetl.** Co rešerše uvádí jen z paměti, má ve formuláři štítek
+**„čeká na ověření v ČSN"** (`rozvCeka()`, do PDF nejde): RoHS (NV 481/2012,
+ČSN EN IEC 63000), značka třídy II, krytí IP, IK, umístění, stupeň
+znečištění, rozměry, 11.4 (způsob ověření celistvosti PE), 11.9 zkušební
+napětí (tab. 8), kvalifikace podle NV 194/2022 Sb. **Naměřené hodnoty
+a výsledky zkoušek program nikdy nevymýšlí.**
+
+- **Editor má nahoře přepínač „🧩 Návrh | 📄 Dokumenty"** (`.rz-zal`,
+  `rozvZalozkaNastavit`, `__rz.zalozka` — jen v paměti; nové otevření
+  začíná na Návrhu, překreslení téhož otevřeného rozvaděče záložku drží).
+  Na záložce Dokumenty klávesy návrhu neplatí (`rozvEditorAktivni`).
+  Obsah záložky se kreslí při každém přepnutí z aktuálního `cist()`
+  (`rozvDokHtml`), takže vidí i neuložené změny návrhu.
+- **Záložka Dokumenty:** jedna hlavní akce **„📄 Vygenerovat dokumentaci
+  (PDF)"**, pod ní zaškrtávátka co do PDF patří (`dokVyber`: čelní pohled
+  a seznam · technické údaje · prohlášení · protokol; chybí = vše),
+  **„🏷 Tisk štítku"** zvlášť, řádek **„Chybí: …"** s odkazy na pole
+  (`rozvDokChybi`: výrobce, adresa, výrobní číslo, typ, datum výroby, InA,
+  Un). Oddíly sbalitelné: Výroba a značení · Technické údaje · Prohlášení ·
+  Kusové ověření. Lištové „📄 Náhled PDF" dělá totéž co hlavní akce.
+- **Data (vše VOLITELNÉ, starý rozvaděč se načte beze změny — test):**
+  `rezim` ('DBO'; PSC v etapě 5), `rohs`, `dokVyber`, `vyroba {cislo, typ,
+  datum}`, `tech {un, fn, sit, ina, ik, trida, umisteni, znec, rdf, rozmery,
+  hmotnost}`, `stitek {vel, kusu, rozsirena, tridaII}`, `prohl {cislo,
+  overeni, otepleni, misto, datum, jmeno, funkce, razitko}`, `ko {cislo,
+  v {k11_2…}, p {k11_2…}, metoda, a {u, t, i, v}, b {u, l1, l2, l3, n},
+  pomocne, pristroje [], zapojil, zkousel}`. Vše v dokumentu rozvaděče
+  (úložiště tvorby dokumentace) — **žádný nový klíč úložiště**.
+- **Odvozené hodnoty se ukládají PRÁZDNÉ** (`rozvDokOdvozene`, pole mají
+  `data-odv`, `cist` uloží '' když se hodnota rovná odvozené) — mění se
+  s návrhem (přejmenování → typ, soustava → Un / druh sítě, skříň → IK,
+  třída, rozměry, výrobní číslo → PS-… / KO-…, profil → jméno a místo,
+  přístroje → poznámky protokolu). Přepsaná hodnota se uloží a platí.
+  Tiskne se `rozvDokEff(d)`.
+- **Icc, krytí a výrobce jsou v hlavičce** — v Dokumentech jsou zrcadlová
+  pole (`data-zrc`), která píšou do téhož pole hlavičky (žádná druhá hodnota).
+- **Výrobní číslo** = vlastní řada rozvaděčů `RRRR-NNNN` (`rozvVyrDalsi`,
+  max + 1 v letošním roce, s čísly zpráv nesouvisí), předvyplní se při
+  otevření Dokumentů a uloží s první změnou, ⟳ přidělí volné, jde přepsat,
+  duplicitu ohlásí řádek pod polem.
+- **Štítek** (`rozvStitekVykreslit`, vlastní náhled v `#screen-dok-pdf`,
+  `__dokPdf.nazev`): skutečná velikost v mm na A4 (90 × 45 výchozí, 70 × 35,
+  100 × 60), počet kusů, ořezové značky, pokyn „Tiskněte ve skutečné
+  velikosti (100 %)" s kontrolní úsečkou 50 mm. Povinné: výrobce + kontaktní
+  adresa, typ, výr. č., rok/měsíc, „ČSN EN IEC 61439-3 (IEC 61439-3)", CE,
+  InA (u DBO vždy). Rozšířená část (výchozí zapnutá): druh sítě s Un a fn,
+  Icc, IP, třída; značka třídy II jen při zaškrtnutí a třídě II. **CE kreslí
+  `rozvCeSvg`** (dva oblouky na stejných kružnicích se svislým řezem a příčka
+  E, výška ≥ 5 mm), žádný obrázek. Písmo se zmenší, dokud se obsah nevejde.
+- **Prohlášení** (`rozvPdfProhlaseni`): vzor přílohy č. 4 NV 118/2016 —
+  7 bodů a „Podepsáno za a jménem:" **doslova**; bod 5 NV 118/2016 a 117/2016
+  (+ 481/2012 jen s RoHS), bod 6 normy ed. 3 / ed. 2 (+ ČSN EN IEC 63000 jen
+  s RoHS) — u norem se „harmonizovaná" nepíše, jen nadpis bodu; bod 7
+  ověření návrhu, oteplení (obojí prázdné, nic se nevymýšlí) a odkaz na
+  protokol kusového ověření. Razítko a podpis z profilu, když jsou nahrané
+  a zaškrtnuté.
+- **Protokol o kusovém ověření** (`ROZV_KO_POLOZKY`, `rozvPdfProtokol`):
+  9 položek čl. 11.2–11.10 se způsobem S / S/P / P, výsledky prázdné,
+  poznámky z návrhu. „✓ Všechny prohlídky (S) vyhovují" vyplní jen prázdné
+  položky se způsobem S (11.2, 11.5, 11.7), se ZPĚT. 11.9: metoda A (napětí
+  NEpředvyplněné — tab. 8 jen z paměti, doba 1 s, vybavovací proud ≥ 3,5 mA)
+  nebo B — **nabídne se jen při přívodním přístroji (-QM, jinak přívod)
+  do 630 A a Un do 500 V** (`rozvKoMetodaB`); izolační odpory se jen porovnají
+  s ≥ 1 MΩ a obarví (`rozvIsoStav`). Pomocné obvody, měřicí přístroje
+  (kopie z profilu), podpisy „Zapojení provedl" a „Zkoušku provedl".
+- **Technické údaje** (`rozvPdfTech`): jen vyplněné řádky.
+- **PDF:** `dokPdfVykreslit` umí blok `strana: 'sirka' | 'vyska'` (+ `zahlavi`)
+  = nová strana s orientací a záhlavím — čelní pohled a seznam na šířku,
+  technické údaje, prohlášení a protokol každý od nové strany na výšku se
+  záhlavím „výrobce · Výrobní číslo". Prázdná první strana se jen přestaví.
+
+Test: `testy/test-rozvadec-dokumenty.js` (50 kontrol, byt 3+1 —
+záložky, předvyplnění a prázdné odvozené hodnoty, zrcadlo, výrobní číslo,
+štítek v mm s CE, 70 × 35 s 12 kusy a třídou II, prohlášení doslova a RoHS,
+protokol, metoda B do 630 A, technické údaje, celé PDF, starý rozvaděč beze
+změny, polozapuštěná, data revizí beze změny, telefon). V `test-mobil.js`
+stavy „rozvaděč – záložka Dokumenty…", „…kusové ověření, měření izolačního
+odporu" a „…výrobní štítek". **`test-rozvadec.js` upraven:** PDF etapy 1
+kontroluje jen čelní pohled a seznam (`dokVyber`).
 
 ### Čelní pohled a skládání (část 3)
 
@@ -1088,7 +1176,7 @@ informační pruh, karta Skříně".
   řady) a **„Seznam přístrojů"** bez rezerv po 18 řádcích (záhlaví se
   opakuje): označení, popis vývodu, typ, In, charakteristika, póly, IΔn,
   fáze, kabel. **Neověřené přístroje mají `*`** a pod seznamem vysvětlivku.
-  Štítek, prohlášení, kusové ověření a schéma zatím NE (etapa 2–3).
+  Štítek, prohlášení, kusové ověření a technické údaje viz etapa 2 výš; schéma zatím NE (etapa 3).
 - **Vektorově přes svg2pdf.js se NEDĚLÁ** (ověřeno 2026-10-18): svg2pdf 2.x
   by s jsPDF 2.5.1 technicky šel, ale (1) text kreslí písmy jsPDF, které
   nemají české háčky — popisky vývodů by se rozbily, šlo by to jen
