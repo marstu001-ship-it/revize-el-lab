@@ -840,6 +840,75 @@ v hlavičce i nový objekt z něj, strom napájení, zámek pořadí, sbalení, 
 F2 / dvojklik / Esc, Delete se ZPĚT a Ctrl+Z, záloha a obnova, data revizí
 bajtově stejná, telefon). V `test-mobil.js` stav „rozvaděč – seznam s objekty".
 
+### Zakreslení z revizní zprávy (2026-10-19)
+
+Pokyn uživatele: rozvaděče, které už jsou popsané v revizní zprávě, se nemají
+skládat znovu ručně. Na seznamu vedle hlavní akce **obrysové tlačítko
+„📋 Zakreslit z revizní zprávy"** (`DOK_TYPY.rozv.zRevize`, `.dok-druha-akce`,
+na telefonu pod hlavní akcí přes celou šířku) → okno `#modal-rz-zrevize`.
+
+- **Krok 1 — zpráva:** jen zprávy **elektro** z archivu (`rzzZpravy`; LPS,
+  stroje ani spotřebiče ne), od nejnovější, hledání (ev. číslo, místo, adresa,
+  provozovatel, **názvy rozvaděčů**), filtr roku. Zpráva bez rozvaděčů je šedá.
+- **Krok 2 — rozvaděče:** zaškrtávátka (název, umístění, počet obvodů,
+  „napájen z …", navržená skříň), „Označit vše", **„Zařadit do objektu"**
+  (nový objekt předvyplněný místem revize, nebo existující — objekt téhož
+  jména se předvybere, nebo bez objektu), poznámka ke skříni, **výběr řady
+  výrobce** (jen když data výrobce nabízejí víc řad — předvolená je řada
+  napsaná ve značce „OEZ LTN", jinak ta s nejvíc shodami), **souhrn**
+  („11 přístrojů: 5 podle dat …, 2 obecných …, 4 bez značky · ⚠ 3 k doplnění")
+  a „✓ Zakreslit vybrané (N)".
+- **Po zakreslení** seznam s rozbaleným objektem a hláška se **ZPĚT / Ctrl+Z**
+  (smaže zakreslené rozvaděče i nově založený objekt).
+- **Archiv se JEN ČTE** (`dokKopie(z.data)`) — data revizí po zakreslení
+  bajtově stejná (test).
+
+**Převod (`rzzPrevod`, nic se nevymýšlí):**
+- Hlavička: `oznaceni` = název rozvaděče, `stavba` = místo revize,
+  `investor` = provozovatel (1. řádek název, další adresa, řádek „IČ: …" →
+  IČO, jinak `provozovatel_ico`), `misto` = umístění + adresa zprávy,
+  `privodKabel` = text Přívod, `privodIn` jen když jde z hlavního jističe
+  přečíst číslo, `soustava` jen při **jednoznačné** shodě s `ROZV_SOUSTAVY`
+  (`rzzSoustava`; víc soustav a rozvaděč má 3pólový přístroj → ta 3f, IT nic),
+  `pozn` = **jiné řádky** zprávy (nepřevádějí se na přístroje), `zdrojRevize =
+  { uid, ev_cislo, rozvUid, datum, zakresleno }` → v hlavičce nenápadně
+  „📋 Zakresleno ze zprávy RE-26-0012 (19. 10. 2026)".
+- Řádky (`rzzRadekPozadavek`): obvod → **jistič** (In z `a`: „16", „16 A",
+  „3x16A", „1×20"; charakteristika z `ch`), `ch` gG/gL/aM → **pojistkový
+  odpínač** (vložka do poznámky přístroje), `ch` „B/A" s IΔn → **RCBO**,
+  hlavička chrániče → **chránič** (IΔn „0,03" A → 30 mA, typ AC/A/F/B) nebo
+  RCBO („B/A"). Podřádky chrániče a prázdné řádky se přeskočí. Vývod = název
+  obvodu, kabel ze sloupce Kabel (typ + průřez), fáze L1–L3 u 1pólových,
+  označení automaticky v pořadí tabulky.
+- **Póly jen z dat** (`rzzPoly`: „3x16", „1×", „4P", „1+N"); jinak
+  nejčastější provedení kategorie (`RZZ_POLY_VYCHOZI`) a upozornění
+  „doplňte póly". Chybí In → „doplňte jmenovitý proud".
+- **Značka = výrobce** (`rzzVyrobce`: bez háčků a velikosti písmen, známí
+  výrobci z knihovny i `RZZ_ZNAMI`, aliasy `RZZ_ALIAS`, zbytek = řada).
+  Knihovna (`rzzShoda`: kategorie + póly + In + charakteristika, u chráničů
+  IΔn + typ): shoda u výrobce → **kopie jeho dat** (ve zvolené řadě);
+  výrobce bez dat → **obecná vestavěná položka** s výrobcem ze značky
+  a upozorněním „doplňte typ – data výrobce nejsou v knihovně" (výrobce
+  s daty, ale bez shody → „…shodný přístroj není"); prázdná značka →
+  obecná bez výrobce; bez jakékoli shody → položka **z údajů zprávy**
+  (1 modul na pól, neověřená, `knih` prázdné).
+- **Upozornění** = `prvek.upoz` (pole textů): oranžové „!" v čelním pohledu
+  (ne v PDF), ve vlastnostech pruh s „✓ Hotovo" (`tdRUpozHotovo`).
+- **Skříň** (`rzzSkrin`): nejmenší vestavěná **plastová nástěnná**, do které
+  se přístroje vejdou s rezervou ~20 % (`RZZ_REZERVA`) a **chránič se svými
+  obvody (do dalšího chrániče) se nerozdělí do dvou řad**; jinak největší
+  (přeplní se, krok 2 to řekne). Nadřazené chrániče přes `rozvNadrazeneAuto`.
+- **Napájení:** přístroj, který ve zprávě napájí jiný rozvaděč, dostane
+  `napaji = [uid dokumentu]` (vlastnosti „→ napájí: RS1"), napájený rozvaděč
+  `napajenZ = { uid, ozn, nazev }` (hlavička „⚡ Napájen z RH (-FA2)",
+  seznam strom napájení). Nezakreslený rodič zůstane jen jménem.
+
+Test: `testy/test-rozvadec-z-revize.js` (45 kontrol, vymyšlená revize:
+RH → RS1, RS2; chránič s obvody; RCBO; 3x16A; pojistka gG; jiný řádek;
+obvod bez čitelného In; zpráva LPS a stroje se v nabídce neobjeví; vymyšlený
+„Výrobce A" s řadami R1/R2 v knihovně testu). V `test-mobil.js` stavy
+„rozvaděč – zakreslit z revizní zprávy, krok 1 / 2".
+
 ### Vlastní položky a import (část 2)
 
 - **„＋ Vlastní přístroj / skříň"** (v editoru pod knihovnou, na seznamu ve

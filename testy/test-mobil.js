@@ -122,6 +122,15 @@ function pomocnik() {
     showScreen('home');
   };
   M.dok = async () => { await dokOtevrit(DOK.dokumenty.find(x => x.typ === 'pouvv').uid); await w(150); };
+  M.zrevize = async () => {
+    // vymyšlená zpráva jen v paměti (nic se neukládá)
+    const o = (c, n, typ, ch, a, x) => Object.assign({ rowtype: 'obvod', napaji: [], c, n, typ, ch, a, idn: '', kabel: '' }, x || {});
+    if (!archiv.some(z => z.uid === 'm-zr')) archiv.unshift({ uid: 'm-zr', typ: 'elektro', ev_cislo: 'RE-26-0012', misto: 'Byt Polní 12', datum: '2026-10-19', stav: '',
+      data: { typ: 'elektro', ev_cislo: 'RE-26-0012', misto: 'Byt Polní 12', zahajeni: '2026-10-19', provozovatel: 'Jan Vymyšlený\nPolní 12', napetova_soustava: '1NPE ~50Hz 230V / TN-C-S',
+        rozvadece: [{ uid: 'm-rh', nazev: 'RH', umisteni: 'Chodba', mereni: [o('1', 'Sporák', 'Hager', 'B', '3x16A'), o('2', 'Vývod RS1', '', 'B', '1x20', { napaji: ['m-rs1'] })] },
+          { uid: 'm-rs1', nazev: 'RS1 kuchyň', umisteni: 'Kuchyň', mereni: [o('1', 'Chránič', '', 'A', '40', { rowtype: 'rcd-header', idn: '0,03' }), o('2', 'Zásuvky', '', 'B', '1x16')] }] } });
+    dokOtevritSeznam('rozv'); await w(100); TD_AKCE.tdRZRevize(); await w(100);
+  };
   M.rozv = async () => { await dokOtevrit(DOK.dokumenty.find(x => x.typ === 'rozv').uid); await w(200); };
   M.otevri = async (ev) => {
     const i = archiv.findIndex(z => (z.ev_cislo || (z.data && z.data.ev_cislo)) === ev);
@@ -487,6 +496,10 @@ function vsechnyStavy(zalozky) {
       r('m-d', 'ROZ-0004', 'RX', '')]);
     dokOtevritSeznam('rozv'); await __M.w(100);
   }));
+  add('rozvaděč – zakreslit z revizní zprávy, krok 1', 'Tvorba dokumentace', E(async () => { await __M.zrevize(); }), '#modal-rz-zrevize');
+  add('rozvaděč – zakreslit z revizní zprávy, krok 2', 'Tvorba dokumentace', E(async () => {
+    await __M.zrevize(); document.querySelector('#rzz-zpravy [data-zuid="m-zr"]').click(); await __M.w(150);
+  }), '#modal-rz-zrevize');
   add('rozvaděč – správa knihovny s importem výrobce', 'Tvorba dokumentace', E(async () => {
     // vymyšlený výrobce, jen v paměti (nic se neukládá)
     DOK.rozvKnihovna = [];
