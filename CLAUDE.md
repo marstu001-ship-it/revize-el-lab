@@ -1114,13 +1114,76 @@ kontroluje jen čelní pohled a seznam (`dokVyber`).
   `<title>` u přístroje = celý popis.
 - **Měřítko na obrazovce** `rozvMeritko()`: vejít se do rámečku, ale
   2,3–4 px/mm (čitelnost); širší skříň se posouvá **ve svém rámečku**
-  (`.rz-svg-ram`), tlačítka − / ＋ zoom (jen v paměti).
+  (`.rz-svg-ram`), tlačítka − / ＋ zoom (jen v paměti). Rámeček je na PC
+  nejvýš `max(380px, 100vh − 150px)` vysoký a posouvá se **v obou směrech**
+  (v1.21 — vodorovný posuvník byl u vysoké skříně až pod koncem stránky);
+  na telefonu `max-height:none` (blok MOBIL), posouvá se stránka.
+- **Poloha posuvníku se překreslením NIKDY nemění** (v1.21, chyba „klik vedle
+  přístroje odroluje rámeček"): `rozvPohledVykreslit()` staví rámeček znovu
+  přes `innerHTML`, takže si **před přepsáním zapamatuje `scrollLeft/Top`
+  a vrátí je**; u zoomu zůstane na místě **střed rámečku** (`ram.__k` =
+  měřítko posledního kreslení). Vrácení polohy vyvolá `scroll` — ten nesmí
+  zavřít právě otevřené menu (`ram.__tichyPosun`, hlídá posluchač `scroll`
+  menu). Kde stačí překreslit jen kresbu, je **`rozvSvgPrekreslit()`**
+  (rámeček zůstane). Klávesy (šipky, Ctrl+D, Ctrl+V) a rychlé přidání
+  posunou rámeček jen o tolik, aby byl vybraný přístroj vidět
+  (`rozvVyberUkazat`); myš rámečkem nehýbe nikdy.
 - **Myš:** tažení z knihovny (řádek i rychlá tlačítka) a přesun přístroje
-  v pohledu — vlastní pointer events (žádná knihovna), duch u kurzoru,
-  žlutá svislá značka místa (`rozvCilZBodu` → řada + pořadí podle středu
-  přístrojů, `rozvZnacka`), u okraje okna se stránka posouvá. Po tažení se
+  v pohledu — vlastní pointer events (žádná knihovna), žlutá svislá značka
+  místa (`rozvCilZBodu` → řada + pořadí podle středu přístrojů,
+  `rozvZnacka`; cíl jen ve **viditelné** části rámečku). Po tažení se
   potlačí následný `click` (zachytávací posluchač), aby rychlé tlačítko
   nevložilo přístroj podruhé.
+  - **Duch** (v1.21) = přístroj nebo celý blok nakreslený **stejnou funkcí
+    `rozvPrvekSvg` ve stejném měřítku** (`rozvDuchSvg`, `.rz-duch`,
+    poloprůhledný, u bloku štítek „5 ks", mimo skříň šedý); u přesunu je
+    kurzor na stejném místě přístroje, jako kde se chytil. **Původní místo
+    zešedne** (`__rz.tazene`, třída `rz-tazeny`). **Esc během tažení** ho
+    zruší (`rozvTahZrusit`, tažení dojede do puštění myši se značkou
+    `zruseno`) — nic se nezmění.
+  - **Automatický posun** (`rozvAutoKrok`, requestAnimationFrame — při
+    stojící myši `pointermove` nechodí): ukazatel ve 56 px u okraje rámečku
+    (nebo do 36 px za ním) posouvá rámeček vodorovně i svisle, tím rychleji,
+    čím blíž okraji (2–26 px za snímek); **stránka se posouvá až u horního /
+    dolního kraje okna a jen když rámeček svisle už nemůže**. Po posunu se
+    znovu spočítá cíl pod kurzorem.
+  - **Označený text na stránce** (třeba po Shift+klik) Chrome při stisku
+    myši začal táhnout jako text a tažení přístroje **zrušil `pointercancel`**
+    — tažení pak tiše nedělalo nic (našla prohlídka v1.21). Shift/Ctrl
+    v pohledu proto text neoznačuje (`mousedown` → `preventDefault`), začátek
+    tažení označení zruší a `dragstart` se během tažení potlačí.
+- **Výběr víc přístrojů** (v1.21, jako v Průzkumníku): **Ctrl+klik** přidá /
+  ubere, **Shift+klik** úsek od posledního kliknutého (`__rz.kotva`) přes
+  řady zleva doprava a shora dolů (`rozvPoradi`), **obdélník** tažením
+  z prázdného místa pohledu (Ctrl + obdélník přidá; `__rz.obdelnik` kreslí
+  `rozvSvg`, začátek je v mm skříně, takže roste i s automatickým posunem),
+  **Ctrl+A** vše, Esc / klik do prázdna zruší. Model: `__rz.vyber` = hlavní
+  přístroj, `__rz.vic` = celý výběr — **platí jen, když v něm hlavní je**
+  (`rozvVic()`), takže kód, který vybere jeden přístroj, výběr víc zruší
+  sám. `rozvVybrane()` = výběr v pořadí ve skříni.
+  - **Tažení kteréhokoli vybraného přesune celý výběr** jako souvislý blok
+    v původním pořadí na místo značky (`rozvPresunBlok`). Co se do cílové
+    řady nevejde, **pokračuje na začátku další řady**, pak na konci řad nad
+    ní (`rozvRozmistit` — stejné pravidlo jako zakreslení: nepřeplnit, dokud
+    je jinde volno). Přeplní se jen cílová řada, když se blok do skříně
+    nevejde vůbec (u přesunu nenastane — uvolní si místo; u kopií ano),
+    a hláška to řekne. Hláška: „Přesunuto: 5 přístrojů — 4 do řady 2,
+    pokračuje 1 v řadě 3…" se ZPĚT.
+  - Klávesy nad výběrem: Delete, Ctrl+C / Ctrl+V (`__rzSchranka` je teď
+    **pole** kopií), Ctrl+D (kopie za výběr, `rozvKopiePrvku` — nové uid
+    a označení, **bez `napaji`**), šipky (blok o místo, ↑ ↓ do sousední
+    řady). Pravý klik nad výběrem: Duplikovat, Kopírovat, Vložit za ně,
+    Přesunout do řady N, Smazat vybrané (N) (`rozvKontextVic`).
+  - **Vlastnosti výběru** (`rozvVlastnostiVicHtml`): „Vybráno 5 přístrojů",
+    označení, **fáze všem** (i „postupně L1, L2, L3" u jednopólových),
+    nadřazený chránič, ◀ ▶ ▲ ▼, ✥ Přesunout jinam, ⧉ Duplikovat, 🗑 Smazat
+    vybrané (N), Zrušit výběr. Všechno přes `rozvZmena` = jedno ZPĚT / Ctrl+Z.
+  - **Dotyk:** dlouhý stisk přístroje (`window.__ktDotykem` z časovače
+    dlouhého stisku) zapne **výběr více** (`__rz.rezimVyberu`, modrý pruh
+    „☑ Výběr více přístrojů — Vybráno: N · ✥ Přesunout jinam · ⋯ Další akce
+    · ✓ Hotovo"), klepnutí pak přidává a ubírá; další dlouhý stisk otevře
+    menu. Puštění prstu po dlouhém stisku se nebere jako klepnutí
+    (`__rz.dlouhyStisk`). „☑ Vybrat víc" je i ve vlastnostech přístroje.
 - **Dotyk (pravidlo 375 px):** žádné tažení — **klepnout na přístroj
   v knihovně → banner „klepněte do řady" → klepnout na místo v řadě**;
   „＋ Vložit" a rychlá tlačítka dají přístroj na konec vybrané řady (je-li
@@ -1129,7 +1192,8 @@ kontroluje jen čelní pohled a seznam (`dokVyber`).
   Na úzkém okně se po výběru posune na pohled / vlastnosti.
 - **Klávesy** (když se nepíše do pole): Delete smaže (hláška se ZPĚT),
   Ctrl+Z vrací (společný zásobník), ← → posun v řadě, ↑ ↓ do sousední
-  řady na podobné místo, Ctrl+D duplikát vedle, Esc zruší výběr / vkládání.
+  řady na podobné místo, Ctrl+D duplikát vedle, Ctrl+A vše, Esc zruší
+  tažení / výběr / vkládání.
 - **Označení** automaticky `předpona + (max + 1)` podle kategorie
   (`rozvDalsiOzn`; -FI/FA má vlastní řadu, AFDD sdílí -FA); jde přepsat
   ve vlastnostech; **„🔢 Přečíslovat označení"** = podle pořadí v řadách
@@ -1189,9 +1253,17 @@ kontroluje jen čelní pohled a seznam (`dokVyber`).
 
 Test: `testy/test-rozvadec.js` (vymyšlená data; velká knihovna = ~670
 vymyšlených položek „Výrobce A" / „Výrobce B" generovaných v testu, do
-repozitáře nejdou žádná data výrobců; 134 kontrol — v1.19 i typ skříně,
+repozitáře nejdou žádná data výrobců; 166 kontrol — v1.19 i typ skříně,
 nové vestavěné skříně, filtr typu, CSV s `typ_skrine` i bez, sbalení
-a samočinné sbalení pruhu). V `test-mobil.js` stavy
+a samočinné sbalení pruhu; v1.21 skříň 6×24 **skutečnou myší**: Ctrl / Shift
+/ obdélník, tažení 5 přístrojů s pokračováním do další řady, duch ve
+stejném měřítku a zašedlé místo, Esc, automatický posun rámečku doleva,
+doprava i dolů (i z knihovny), poloha posuvníku po kliku vedle přístroje,
+vložení, smazání, Ctrl+Z a zoomu, Shift+klik neoznačí text, klávesy, menu
+a vlastnosti výběru, přeplnění kopiemi; telefon: dlouhý stisk → výběr více
+a přesun dvou přístrojů klepnutím). **Dlouhý stisk** dřív rovnou otevřel
+menu — test upraven ve stejném commitu (první stisk = výběr, další = menu).
+V `test-mobil.js` stavy
 „rozvaděč – …" a v přípravě rozvaděč RH1 (byt 3+1, skříň 3×12).
 **`test-dokumentace.js` upraven ve stejném commitu:** dlaždic je víc
 a „správa vzorů úplně dole" se počítá z viditelných prvků.

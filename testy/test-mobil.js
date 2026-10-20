@@ -538,6 +538,16 @@ function vsechnyStavy(zalozky) {
     await __M.rozv(); __rz.vyber = __rz.rady[1].prvky[3].uid; rozvPohledVykreslit(); rozvVlastnostiVykreslit();
     document.getElementById('rz-vlastnosti').scrollIntoView({ block: 'start' }); await __M.w(100);
   }));
+  add('rozvaděč – výběr více přístrojů (pruh a vlastnosti výběru)', 'Tvorba dokumentace', E(async () => {
+    await __M.rozv(); rozvRezimVyberu(__rz.rady[1].prvky[1].uid);
+    rozvVyberNastavit(__rz.rady[1].prvky.slice(1, 4).map(x => x.uid)); rozvPohledVykreslit(); rozvVlastnostiVykreslit();
+    document.querySelectorAll('.toast').forEach(t => t.remove());
+    document.getElementById('rz-pohled').scrollIntoView({ block: 'start' }); await __M.w(100);
+  }));
+  add('rozvaděč – výběr více přístrojů, vlastnosti výběru', 'Tvorba dokumentace', E(async () => {
+    await __M.rozv(); rozvVyberNastavit(__rz.rady[1].prvky.slice(1, 4).map(x => x.uid)); rozvPohledVykreslit(); rozvVlastnostiVykreslit();
+    document.getElementById('rz-vlastnosti').scrollIntoView({ block: 'start' }); await __M.w(100);
+  }));
   add('rozvaděč – přístroj vybraný k vložení klepnutím', 'Tvorba dokumentace', E(async () => {
     await __M.rozv(); __rz.knihVyber = 'v-fa-1-B16'; rozvKnihovnaVykreslit(); rozvPohledVykreslit();
     document.getElementById('rz-pohled').scrollIntoView({ block: 'start' }); await __M.w(100);

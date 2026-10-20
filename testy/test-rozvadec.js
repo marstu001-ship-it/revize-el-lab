@@ -881,6 +881,211 @@ function pomocnik() {
   });
   check('PDF: zpět do editoru, „📄 PDF" i ze seznamu', zpet.akt === 'screen-dok-form' && zpet.zeSeznamu === 'screen-dok-pdf|1' && zpet.zpetNaSeznam === 'screen-dok-seznam', JSON.stringify(zpet));
 
+  // ── 5c. výběr víc přístrojů, viditelné tažení, posun široké skříně (v1.21) ──
+  // Skříň 6×24 (širší než obrazovka), všechno skutečnou myší (page.mouse).
+  {
+  await p.evaluate(async () => {
+    __T.bod = (r, m, dy) => { const svg = document.querySelector('#rz-pohled .rz-svg'), M = svg.getScreenCTM();
+      const q = new DOMPoint(RZG.okraj + m * RZG.M, rozvRadaY(r) + (dy == null ? RZG.H / 2 : dy)).matrixTransform(M); return { x: Math.round(q.x), y: Math.round(q.y) }; };
+    __T.rada = r => __rz.rady[r].prvky.map(x => x.ozn).join(',');
+    __T.sel = () => rozvVybrane().map(u => rozvNajit(u).x.ozn).join(',');
+    __T.ram = () => { const r = document.getElementById('rz-svg-ram'); return { l: Math.round(r.scrollLeft), t: Math.round(r.scrollTop), sw: r.scrollWidth, cw: r.clientWidth, sh: r.scrollHeight, ch: r.clientHeight }; };
+    __T.naplnit = () => {
+      const pis = ['A', 'B', 'C', 'D', 'E', 'F'], poc = [22, 20, 10, 6, 6, 6];
+      __rz.rady.forEach((r, ri) => { r.prvky = []; for (let i = 0; i < poc[ri]; i++) { const x = rozvNovyPrvek(rozvKnihPolozka('v-fa-1-B16')); x.ozn = pis[ri] + i; r.prvky.push(x); } });
+      rozvVyberNastavit([]); __rz.kotva = null; rozvPohledVykreslit(); rozvVlastnostiVykreslit();
+    };
+    await dokNovy('rozv'); rozvSkrinNastavit(rozvKnihPolozka('v-sk-6x24-ocel'));
+    __T.naplnit();
+    document.querySelectorAll('.toast').forEach(t => t.remove());
+    __T.ukaz = () => { document.getElementById('rz-svg-ram').scrollIntoView({ block: 'start' }); window.scrollBy(0, -140); };   // lišta formuláře je přilepená nahoře
+    __T.ukaz();
+  });
+  await w(250);
+  const ram0 = await p.evaluate(() => __T.ram());
+  check('skříň 6×24 je širší i vyšší než rámeček — rámeček se posouvá v obou směrech, posuvník je vidět', ram0.sw > ram0.cw + 200 && ram0.sh > ram0.ch &&
+    await p.evaluate(() => { const r = document.getElementById('rz-svg-ram').getBoundingClientRect(); return r.bottom <= innerHeight + 1; }), JSON.stringify(ram0));
+  const klik = async (r, m, mod) => { const q = await p.evaluate(([r, m]) => { document.querySelectorAll('.toast').forEach(t => t.remove()); return __T.bod(r, m); }, [r, m]);
+    if (mod) await p.keyboard.down(mod); await p.mouse.click(q.x, q.y); if (mod) await p.keyboard.up(mod); await w(120); };
+  const sel = () => p.evaluate(() => __T.sel());
+  // Ctrl+klik, Shift+klik (i přes řady)
+  await klik(0, 1.5); await klik(0, 3.5, 'Control');
+  const s1 = await sel();
+  await klik(0, 6.5, 'Shift');
+  const s2 = await sel();
+  const bezTextu = await p.evaluate(() => window.getSelection().isCollapsed);
+  await klik(0, 4.5, 'Control');
+  const s3 = await sel();
+  const pan = await p.evaluate(() => document.getElementById('rz-vlastnosti').innerText);
+  await klik(0, 12.5); await klik(1, 1.5, 'Shift');
+  const s4 = await sel();
+  check('Ctrl+klik přidá přístroj, Shift+klik vybere úsek od posledního kliknutého, Ctrl+klik vybraný ubere', s1 === 'A1,A3' && s2 === 'A3,A4,A5,A6' && s3 === 'A3,A5,A6', [s1, s2, s3].join(' | '));
+  check('Shift+klik v pohledu neoznačí text stránky (označený text by Chrome začal táhnout a tažení přístroje by se zrušilo)', bezTextu);
+  check('Shift+klik úsek přes řady zleva doprava, shora dolů', s4 === 'A12,A13,A14,A15,A16,A17,A18,A19,A20,A21,B0,B1', s4);
+  check('vlastnosti výběru: „Vybráno 3 přístroje", fáze, nadřazený chránič, přesun, smazat', /Vybráno 3 přístroje/.test(pan) && /Fáze všem vybraným/i.test(pan) &&
+    /Nadřazený chránič/i.test(pan) && /Přesunout jinam/.test(pan) && /Smazat vybrané \(3\)/.test(pan), pan.replace(/\n/g, ' | ').slice(0, 200));
+  // klik do prázdna výběr zruší
+  await p.evaluate(() => document.querySelectorAll('.toast').forEach(t => t.remove())); const pz = await p.evaluate(() => __T.bod(0, 8, RZG.H + 9)); await p.mouse.click(pz.x, pz.y); await w(120); const s5 = await sel();
+  check('klik do prázdného místa výběr zruší', s5 === '', s5);
+  // obdélník tažením z prázdného místa (mezera pod řadou 1 → nahoru doprava)
+  let od = await p.evaluate(() => __T.bod(0, 2.3, RZG.H + 9)), kam = await p.evaluate(() => __T.bod(0, 6.4, 10));
+  await p.mouse.move(od.x, od.y); await p.mouse.down(); await p.mouse.move(od.x + 8, od.y - 4, { steps: 2 }); await p.mouse.move(kam.x, kam.y, { steps: 8 }); await w(80);
+  const ob = await p.evaluate(() => ({ rect: !!document.getElementById('rz-obdelnik'), sel: __T.sel() }));
+  await p.mouse.up(); await w(150);
+  const s6 = await sel();
+  od = await p.evaluate(() => __T.bod(0, 9.2, RZG.H + 9)); kam = await p.evaluate(() => __T.bod(0, 10.6, 10));
+  await p.keyboard.down('Control'); await p.mouse.move(od.x, od.y); await p.mouse.down(); await p.mouse.move(kam.x, kam.y, { steps: 8 }); await p.mouse.up(); await p.keyboard.up('Control'); await w(150);
+  const s7 = await sel();
+  check('obdélník tažením z prázdného místa vybere přístroje, kterých se dotkne (rámeček je vidět)', ob.rect && ob.sel === 'A2,A3,A4,A5,A6' && s6 === 'A2,A3,A4,A5,A6', JSON.stringify(ob) + ' → ' + s6);
+  check('Ctrl + obdélník přidá k výběru', s7 === 'A2,A3,A4,A5,A6,A9,A10', s7);
+  // tažení 5 přístrojů do řady 2 na místo 18 → 4 se vejdou, 1 pokračuje v řadě 3
+  await p.evaluate(() => { rozvVyberNastavit(['A2', 'A3', 'A4', 'A5', 'A6'].map(o => __rz.rady[0].prvky.find(x => x.ozn === o).uid)); rozvPohledVykreslit(); rozvVlastnostiVykreslit(); });
+  od = await p.evaluate(() => __T.bod(0, 4.5));
+  await p.mouse.move(od.x, od.y); await p.mouse.down(); await p.mouse.move(od.x + 10, od.y + 6, { steps: 3 });
+  await p.evaluate(() => { document.getElementById('rz-svg-ram').scrollLeft = 260; }); await w(60);
+  kam = await p.evaluate(() => __T.bod(1, 18.05));
+  await p.mouse.move(kam.x, kam.y, { steps: 10 }); await w(120);
+  const tah = await p.evaluate(([x, y]) => {
+    const d = document.querySelector('.rz-duch'), s = d && d.querySelector('svg'), b = s && s.getBoundingClientRect(), z = document.getElementById('rz-znacka');
+    const svg = document.querySelector('#rz-pohled .rz-svg'), k = svg.getScreenCTM().a;
+    return { duch: !!s, ks: (d && d.querySelector('.rz-duch-ks') || {}).textContent || '', sirka: b ? Math.round(b.width) : 0, ocek: Math.round((5 * RZG.M + 2) * k),
+             uKurzoru: b ? (x >= b.left - 5 && x <= b.right + 5 && y >= b.top - 5 && y <= b.bottom + 5) : false, opac: d ? +getComputedStyle(d).opacity : 1,
+             sede: document.querySelectorAll('#rz-pohled .rz-tazeny').length, sedeOpac: +getComputedStyle(document.querySelector('#rz-pohled .rz-tazeny')).opacity,
+             znacka: z && z.getAttribute('visibility'), kurzor: document.body.classList.contains('rz-tahne') };
+  }, [kam.x, kam.y]);
+  await p.mouse.up(); await w(250);
+  const pres = await p.evaluate(() => ({ r0: __T.rada(0), r1: __T.rada(1), r2: __T.rada(2), sel: __T.sel(), toast: Array.from(document.querySelectorAll('.toast')).map(t => t.textContent).join(' | '),
+    chyba: !!document.querySelector('.rz-chyba'), duch: !!document.querySelector('.rz-duch'), sede: document.querySelectorAll('#rz-pohled .rz-tazeny').length }));
+  check('při tažení je u kurzoru duch ve stejném měřítku jako přístroje (5 kusů vedle sebe) s „5 ks"', tah.duch && tah.ks === '5 ks' && Math.abs(tah.sirka - tah.ocek) <= 2 && tah.uKurzoru && tah.opac < 1, JSON.stringify(tah));
+  check('při tažení je původní místo zašedlé a žlutá značka ukazuje cíl', tah.sede === 5 && tah.sedeOpac < 0.5 && tah.znacka === 'visible' && tah.kurzor, JSON.stringify(tah));
+  check('tažení výběru: 5 přístrojů přesunuto jako blok v původním pořadí, co se do řady 2 nevešlo, pokračuje v řadě 3',
+    pres.r0 === 'A0,A1,A7,A8,A9,A10,A11,A12,A13,A14,A15,A16,A17,A18,A19,A20,A21' &&
+    pres.r1 === 'B0,B1,B2,B3,B4,B5,B6,B7,B8,B9,B10,B11,B12,B13,B14,B15,B16,B17,A2,A3,A4,A5,B18,B19' && pres.r2 === 'A6,C0,C1,C2,C3,C4,C5,C6,C7,C8,C9' &&
+    !pres.chyba && pres.sel === 'A2,A3,A4,A5,A6' && !pres.duch && !pres.sede, pres.r1 + ' / ' + pres.r2);
+  check('hláška po přesunu řekne, kolik pokračuje v další řadě, a nabídne ZPĚT', /Přesunuto: 5 přístrojů/.test(pres.toast) && /pokračuje 1 v řadě 3/.test(pres.toast) && /ZPĚT/.test(pres.toast), pres.toast);
+  await p.keyboard.press('Control+z'); await w(200);
+  const zp = await p.evaluate(() => [__T.rada(0), __T.rada(1).split(',').length, __T.rada(2).split(',').length].join(' / '));
+  check('jedno Ctrl+Z vrátí celý přesun bloku', zp === 'A0,A1,A2,A3,A4,A5,A6,A7,A8,A9,A10,A11,A12,A13,A14,A15,A16,A17,A18,A19,A20,A21 / 20 / 10', zp);
+  // přeplnění: když se kopie bloku do skříně nevejdou, přeplní se jen cílová řada a program to řekne
+  const prep = await p.evaluate(() => {
+    const o = __rz.rady.map(r => r.prvky.slice());
+    __rz.rady.forEach(r => { while (rozvObsazeno(r) < 24) r.prvky.push(rozvNovyPrvek(rozvKnihPolozka('v-fa-1-B16'))); });
+    rozvDuplikovatVic(['A0', 'A1', 'A2'].map(z => __rz.rady[0].prvky.find(x => x.ozn === z).uid));
+    const r = { r0: rozvObsazeno(__rz.rady[0]), ostatni: __rz.rady.slice(1).every(q => rozvObsazeno(q) === 24), chyba: (document.querySelector('.rz-chyba') || {}).textContent || '',
+      toast: Array.from(document.querySelectorAll('.toast')).map(t => t.textContent).join(' | ') };
+    zpetPosledni(); __rz.rady.forEach((rr, ri) => rr.prvky = o[ri]); rozvPohledVykreslit();
+    return r;
+  });
+  check('když se blok do skříně nevejde, přeplní se jen cílová řada a program to řekne', prep.r0 === 27 && prep.ostatni && /Řada 1 je přeplněná/.test(prep.chyba) && /Do skříně se nevejdou/.test(prep.toast), JSON.stringify(prep).slice(0, 250));
+  // Esc během tažení zruší a nic se nezmění
+  await p.evaluate(() => { __T.naplnit(); __T.ukaz(); document.querySelectorAll('.toast').forEach(t => t.remove()); });
+  const pred = await p.evaluate(() => JSON.stringify(__rz.rady));
+  od = await p.evaluate(() => __T.bod(0, 3.5)); kam = await p.evaluate(() => __T.bod(2, 12.5));
+  await p.mouse.move(od.x, od.y); await p.mouse.down(); await p.mouse.move(kam.x, kam.y, { steps: 8 }); await w(80);
+  await p.keyboard.press('Escape'); await w(80);
+  const esc1 = await p.evaluate(() => ({ duch: !!document.querySelector('.rz-duch'), sede: document.querySelectorAll('#rz-pohled .rz-tazeny').length, z: document.getElementById('rz-znacka').getAttribute('visibility') }));
+  await p.mouse.move(kam.x + 20, kam.y, { steps: 2 }); await p.mouse.up(); await w(200);
+  const esc2 = await p.evaluate(() => JSON.stringify(__rz.rady));
+  check('Esc během tažení: duch a značka zmizí, po puštění myši se nic nezmění', !esc1.duch && !esc1.sede && esc1.z === 'hidden' && esc2 === pred, JSON.stringify(esc1));
+  // automatický posun rámečku při tažení k okraji (vodorovně i svisle)
+  await p.evaluate(() => { const r = document.getElementById('rz-svg-ram'); r.scrollLeft = 0; r.scrollTop = 0; __T.ukaz(); });
+  await w(100);
+  const R = await p.evaluate(() => { const r = document.getElementById('rz-svg-ram').getBoundingClientRect(); return { l: r.left, r: r.right, t: r.top, b: r.bottom }; });
+  od = await p.evaluate(() => __T.bod(1, 2.5));
+  await p.mouse.move(od.x, od.y); await p.mouse.down(); await p.mouse.move(od.x + 15, od.y, { steps: 3 });
+  await p.mouse.move(R.r - 12, od.y, { steps: 6 }); await w(600);
+  const ap = await p.evaluate(() => __T.ram());
+  const cilVpravo = await p.evaluate(() => { const z = document.getElementById('rz-znacka'); return z.getAttribute('visibility') === 'visible' ? +z.getAttribute('x1') : 0; });
+  await p.mouse.move(R.l + 12, od.y, { steps: 6 }); await w(600);
+  const al = await p.evaluate(() => __T.ram());
+  await p.mouse.move((R.l + R.r) / 2, Math.min(R.b - 12, 888), { steps: 6 }); await w(600);
+  const ad = await p.evaluate(() => __T.ram());
+  await p.keyboard.press('Escape'); await p.mouse.up(); await w(150);
+  check('tažení k pravému okraji rámeček sám posune doprava (a značka jde se skříní)', ap.l > 150 && cilVpravo > 14 + 15 * 17.5, JSON.stringify(ap) + ' značka x ' + cilVpravo);
+  check('tažení k levému okraji ho posune zpátky doleva', al.l < ap.l - 100, al.l + ' < ' + ap.l);
+  check('tažení k dolnímu okraji posune rámeček dolů (svisle)', ad.t > 100, JSON.stringify(ad));
+  // z knihovny k pravému okraji
+  await p.evaluate(() => { const r = document.getElementById('rz-svg-ram'); r.scrollLeft = 0; r.scrollTop = 0; __T.filtr('q', 'Jistič 1P B10'); });
+  od = await p.evaluate(() => { const el = document.querySelector('#rz-seznam .rz-polozka .rz-p-text'); const b = el.getBoundingClientRect(); return { x: Math.round(b.left + 20), y: Math.round(b.top + b.height / 2) }; });
+  await p.mouse.move(od.x, od.y); await p.mouse.down(); await p.mouse.move(od.x + 15, od.y + 4, { steps: 3 });
+  const duchK = await p.evaluate(() => { const s = document.querySelector('.rz-duch svg'); const k = document.querySelector('#rz-pohled .rz-svg').getScreenCTM().a; return s ? [Math.round(s.getBoundingClientRect().width), Math.round((RZG.M + 2) * k)].join('/') : ''; });
+  await p.mouse.move(R.r - 10, R.t + 120, { steps: 10 }); await w(600);
+  const ak = await p.evaluate(() => __T.ram());
+  await p.mouse.move(R.r - 200, R.t + 120, { steps: 4 }); await w(60);
+  await p.mouse.up(); await w(200);
+  const vk = await p.evaluate(() => ({ n: __rz.rady.reduce((s, r) => s + r.prvky.length, 0), vyb: (rozvNajit(__rz.vyber) || { x: { p: {} } }).x.p.nazev, ram: __T.ram() }));
+  const [dw, dk] = duchK.split('/').map(Number);
+  check('z knihovny: duch přístroje ve stejném měřítku, u pravého okraje se rámeček posune a přístroj padne na viditelné místo',
+    Math.abs(dw - dk) <= 2 && ak.l > 150 && vk.n === 71 && vk.vyb === 'Jistič 1P B10' && vk.ram.l === ak.l, duchK + ' · ' + JSON.stringify(ak) + ' · ' + JSON.stringify(vk));
+  // poloha posuvníku se nemění: klik vedle přístroje, klik na přístroj, vložení, smazání, ZPĚT
+  await p.evaluate(() => { __T.filtr('q', ''); __T.naplnit(); __T.ukaz(); const r = document.getElementById('rz-svg-ram'); r.scrollLeft = 300; r.scrollTop = 120; });
+  await w(150);
+  const poloha = [];
+  const ted = async () => { const r = await p.evaluate(() => __T.ram()); poloha.push(r.l + ':' + r.t); };
+  await ted();
+  const prazdno = await p.evaluate(() => { const r = document.getElementById('rz-svg-ram').getBoundingClientRect(); const q = __T.bod(2, 0, RZG.H + 9); return { x: Math.round(r.left + r.width * 0.6), y: q.y }; });
+  await p.mouse.click(prazdno.x, prazdno.y); await w(120); await ted();
+  const naPr = await p.evaluate(() => { const r = document.getElementById('rz-svg-ram').getBoundingClientRect(); const q = __T.bod(1, 0); return { x: Math.round(r.left + r.width * 0.6), y: q.y }; });
+  await p.mouse.click(naPr.x, naPr.y); await w(120); await ted();
+  const vybranyPoKliku = await sel();
+  await p.mouse.click(naPr.x, naPr.y, { button: 'right' }); await w(150);
+  const menuOtevrene = await p.evaluate(() => !!document.querySelector('.kt-menu'));
+  await p.evaluate(() => { const b = Array.from(document.querySelectorAll('.kt-menu .kt-pol')).find(b => /rezervu/.test(b.textContent)); if (b) b.click(); }); await w(150); await ted();
+  await p.keyboard.press('Delete'); await w(120); await ted();
+  await p.keyboard.press('Control+z'); await w(150); await ted();
+  check('poloha posuvníku se nezmění: klik vedle přístroje, klik na přístroj, vložení, smazání, Ctrl+Z', poloha.every(x => x === '300:120'), poloha.join(' → '));
+  check('klik na přístroj ve odrolované části ho vybere a pravý klik otevře menu (nezavře ho vrácení polohy)', /^B1[0-9]$/.test(vybranyPoKliku) && menuOtevrene, vybranyPoKliku + ' · menu ' + menuOtevrene);
+  // zoom: střed rámečku zůstane na stejném místě skříně
+  const stred = () => p.evaluate(() => { const r = document.getElementById('rz-svg-ram').getBoundingClientRect(); const s = document.querySelector('#rz-pohled .rz-svg'); const pt = new DOMPoint(r.left + r.width / 2, r.top + r.height / 2).matrixTransform(s.getScreenCTM().inverse()); return [Math.round(pt.x), Math.round(pt.y)]; });
+  const z0 = await stred();
+  await p.evaluate(() => TD_AKCE.tdRZoom(document.querySelector('[data-action="tdRZoom"][data-z="+"]'))); await w(100);
+  const z1 = await stred();
+  await p.evaluate(() => TD_AKCE.tdRZoom(document.querySelector('[data-action="tdRZoom"][data-z="-"]'))); await w(100);
+  const z2 = await stred();
+  check('zoom ＋ / − nechá střed rámečku na stejném místě skříně (neskočí na začátek)', [z1, z2].every(z => Math.abs(z[0] - z0[0]) <= 3 && Math.abs(z[1] - z0[1]) <= 3), [z0, z1, z2].join(' → '));
+  await p.evaluate(() => { __rz.zoom = 1; rozvPohledVykreslit(); __T.ukaz(); const r = document.getElementById('rz-svg-ram'); r.scrollLeft = 0; r.scrollTop = 0; });
+  // klávesy a menu nad výběrem
+  await klik(0, 1.5); await klik(0, 3.5, 'Shift');
+  await p.keyboard.press('Control+d'); await w(150);
+  const kd = await p.evaluate(() => ({ r0: __T.rada(0), sel: __T.sel(), r1: __T.rada(1) }));
+  await p.keyboard.press('Control+z'); await w(150);
+  await klik(0, 1.5); await klik(0, 3.5, 'Shift');
+  await p.keyboard.press('ArrowRight'); await w(120);
+  const ka = await p.evaluate(() => __T.rada(0).split(',').slice(0, 6).join(','));
+  await p.keyboard.press('ArrowDown'); await w(120);
+  const kdol = await p.evaluate(() => ({ r0: __T.rada(0).split(',').slice(0, 4).join(','), r1: __T.rada(1).split(',').slice(0, 5).join(',') }));
+  await p.keyboard.press('Control+c'); await w(80);
+  await klik(3, 5.5); await p.keyboard.press('Control+v'); await w(150);
+  const kv = await p.evaluate(() => ({ r3: __T.rada(3), sel: __T.sel() }));
+  await p.keyboard.press('Delete'); await w(150);
+  const kdel = await p.evaluate(() => ({ r3: __T.rada(3), toast: Array.from(document.querySelectorAll('.toast')).map(t => t.textContent).join(' | ') }));
+  await p.keyboard.press('Control+z'); await w(150);
+  const kz = await p.evaluate(() => __T.rada(3));
+  check('Ctrl+D u výběru: kopie celého bloku hned za ním (co se nevejde, pokračuje v další řadě), vybrané jsou kopie',
+    kd.r0.startsWith('A0,A1,A2,A3,-FA1,-FA2,A4,') && kd.r1.startsWith('-FA3,B0,') && kd.sel === '-FA1,-FA2,-FA3', JSON.stringify(kd).slice(0, 300));
+  check('šipka → posune celý výběr o místo, ↓ do sousední řady na podobné místo', ka === 'A0,A4,A1,A2,A3,A5' && kdol.r0 === 'A0,A4,A5,A6' && kdol.r1 === 'B0,B1,A1,A2,A3', ka + ' | ' + JSON.stringify(kdol));
+  check('Ctrl+C / Ctrl+V u výběru: vloží všechny 3 za vybraný přístroj, vložené jsou vybrané', /^D0,D1,D2,D3,D4,D5,[^,]+,[^,]+,[^,]+$/.test(kv.r3) && kv.sel.split(',').length === 3, JSON.stringify(kv));
+  check('Delete smaže celý výběr (hláška se ZPĚT), jedno Ctrl+Z ho vrátí', kdel.r3 === 'D0,D1,D2,D3,D4,D5' && /Smazáno: 3 přístroje/.test(kdel.toast) && kz === kv.r3, kdel.r3 + ' | ' + kz);
+  // pravý klik nad výběrem
+  await klik(0, 1.5); await klik(0, 2.5, 'Control');
+  const q = await p.evaluate(() => __T.bod(0, 2.5)); await p.mouse.click(q.x, q.y, { button: 'right' }); await w(150);
+  const mv = await p.evaluate(() => ({ m: Array.from(document.querySelectorAll('.kt-menu .kt-pol')).map(b => b.childNodes[0].textContent.trim()).join('|'), sel: __T.sel() }));
+  check('pravý klik nad výběrem: menu pro celý výběr (výběr zůstane)', mv.m === 'Duplikovat|Kopírovat|Vložit za ně|Přesunout do řady 1|Přesunout do řady 2|Přesunout do řady 3|Přesunout do řady 4|Přesunout do řady 5|Přesunout do řady 6|Smazat vybrané (2)' &&
+    mv.sel.split(',').length === 2, JSON.stringify(mv));
+  await p.evaluate(() => { const b = Array.from(document.querySelectorAll('.kt-menu .kt-pol')).find(b => b.textContent.trim().startsWith('Přesunout do řady 5')); if (b) b.click(); }); await w(150);
+  const m5 = await p.evaluate(() => __T.rada(4).split(',').slice(-2).join(','));
+  check('„Přesunout do řady 5" dá výběr na konec řady 5', m5.split(',').length === 2 && !/^E/.test(m5), m5);
+  // vlastnosti výběru: fáze všem, postupně L1–L3
+  await p.evaluate(() => { const u = __rz.rady[2].prvky.slice(0, 4).map(x => x.uid); rozvVyberNastavit(u); rozvPohledVykreslit(); rozvVlastnostiVykreslit(); });
+  await p.selectOption('#rz-vlastnosti select[data-rpv="faze"]', 'L2'); await w(120);
+  const f1 = await p.evaluate(() => __rz.rady[2].prvky.slice(0, 4).map(x => x.faze).join(','));
+  await p.selectOption('#rz-vlastnosti select[data-rpv="faze"]', '@L123'); await w(120);
+  const f2 = await p.evaluate(() => __rz.rady[2].prvky.slice(0, 4).map(x => x.faze).join(','));
+  await p.keyboard.press('Escape'); await w(80);
+  const f3 = await sel();
+  check('vlastnosti výběru: fáze všem vybraným, „postupně L1, L2, L3"; Esc výběr zruší', f1 === 'L2,L2,L2,L2' && f2 === 'L1,L2,L3,L1' && f3 === '', [f1, f2, f3].join(' | '));
+  }
+
   // ── 6. telefon: klepnutí místo tažení ────────────────────────────────
   {
     const c2 = await b.newContext({ viewport: { width: 375, height: 760 }, hasTouch: true, isMobile: true, deviceScaleFactor: 2 });
@@ -927,14 +1132,41 @@ function pomocnik() {
       document.getElementById('rz-svg-ram').scrollIntoView({ block: 'center' }); await new Promise(r => setTimeout(r, 150));
       const q = __T.bod(1, 0.5), el = document.elementFromPoint(q.x, q.y), o = { bubbles: true, cancelable: true, pointerType: 'touch', isPrimary: true, clientX: q.x, clientY: q.y };
       el.dispatchEvent(new PointerEvent('pointerdown', o)); await new Promise(r => setTimeout(r, 750));
-      const m = document.querySelector('.kt-menu');
-      const r = { menu: m ? Array.from(m.querySelectorAll('.kt-pol')).map(b => b.childNodes[0].textContent.trim()).join('|') : '', vyber: (rozvNajit(__rz.vyber) || { x: {} }).x.ozn };
+      // první dlouhý stisk zapne výběr více přístrojů (v1.21), další otevře menu
+      const rezim = { zap: !!__rz.rezimVyberu, banner: (document.querySelector('.rz-banner-vyber') || {}).textContent || '', menu: !!document.querySelector('.kt-menu') };
       el.dispatchEvent(new PointerEvent('pointerup', o));
+      const q2 = __T.bod(1, 0.5), el2 = document.querySelector('#rz-pohled [data-puid="' + __rz.rady[1].prvky[0].uid + '"] rect');   // pruh výběru posunul pohled, hláška může bod zakrýt
+      Object.assign(o, { clientX: q2.x, clientY: q2.y });
+      el2.dispatchEvent(new PointerEvent('pointerdown', o)); await new Promise(r => setTimeout(r, 750));
+      const m = document.querySelector('.kt-menu');
+      const r = { rezim, menu: m ? Array.from(m.querySelectorAll('.kt-pol')).map(b => b.childNodes[0].textContent.trim()).join('|') : '', vyber: (rozvNajit(__rz.vyber) || { x: {} }).x.ozn };
+      el2.dispatchEvent(new PointerEvent('pointerup', o));
       r.vyska = m ? Math.min.apply(null, Array.from(m.querySelectorAll('.kt-pol')).map(b => b.getBoundingClientRect().height)) : 0;
-      ktZavrit(); return r;
+      ktZavrit(); TD_AKCE.tdRVyberZrusit(); return r;
     });
-    check('telefon: dlouhý stisk prstem na přístroji otevře totéž menu (položky ≥ 40 px)', /^Vlastnosti\|Duplikovat\|Kopírovat\|Vložit za něj\|Vložit rezervu vedle\|Přesunout do řady 1\|🔢 Přečíslovat označení\|Smazat$/.test(dl.menu) &&
+    check('telefon: první dlouhý stisk zapne výběr více přístrojů (pruh nahoře), přístroj je vybraný', dl.rezim.zap && !dl.rezim.menu &&
+      /Výběr více přístrojů/.test(dl.rezim.banner) && /Vybráno: 1/.test(dl.rezim.banner), JSON.stringify(dl.rezim));
+    check('telefon: ve výběru dlouhý stisk prstem na přístroji otevře totéž menu (položky ≥ 40 px)', /^Vlastnosti\|Duplikovat\|Kopírovat\|Vložit za něj\|Vložit rezervu vedle\|Přesunout do řady 1\|🔢 Přečíslovat označení\|Smazat$/.test(dl.menu) &&
       dl.vyber === '-FI1' && dl.vyska >= 40, JSON.stringify(dl));
+    // výběr více prstem: dlouhý stisk -FA1, klepnutí na -FA2, „✥ Přesunout jinam" v pruhu, klepnutí do řady 1
+    await t.evaluate(async () => {
+      document.getElementById('rz-svg-ram').scrollIntoView({ block: 'center' }); await new Promise(r => setTimeout(r, 150));
+      const q = __T.bod(1, 4.5), el = document.elementFromPoint(q.x, q.y), o = { bubbles: true, cancelable: true, pointerType: 'touch', isPrimary: true, clientX: q.x, clientY: q.y };
+      el.dispatchEvent(new PointerEvent('pointerdown', o)); await new Promise(r => setTimeout(r, 750)); el.dispatchEvent(new PointerEvent('pointerup', o));
+      __rz.dlouhyStisk = 0;
+    });
+    await w(200);
+    await tap(() => __T.bod(1, 5.5));
+    const dv1 = await t.evaluate(() => ({ sel: rozvVybrane().map(u => rozvNajit(u).x.ozn).join(','), ban: (document.querySelector('.rz-banner-vyber') || {}).textContent || '',
+      panel: document.getElementById('rz-vlastnosti').innerText }));
+    q = await vid('.rz-banner-vyber [data-action="tdRPresunKlep"]'); await t.touchscreen.tap(q.x, q.y); await w(350);
+    const dv2 = await t.evaluate(() => (document.querySelector('.rz-banner') || {}).textContent || '');
+    await t.evaluate(() => document.getElementById('rz-svg-ram').scrollIntoView({ block: 'center' })); await w(200);
+    await tap(() => __T.bod(0, 0.2));
+    const dv3 = await t.evaluate(() => ({ r: __rz.rady.map(r => r.prvky.map(x => x.ozn).join(',')).join(' / '), rezim: !!__rz.rezimVyberu }));
+    check('telefon: výběr více — dlouhý stisk a klepnutí vyberou 2 přístroje, pruh i vlastnosti to říkají', dv1.sel === '-FA1,-FA2' && /Vybráno: 2/.test(dv1.ban) &&
+      /Vybráno 2 přístroje/.test(dv1.panel), JSON.stringify(dv1).slice(0, 200));
+    check('telefon: „✥ Přesunout jinam" a klepnutí do řady přesune oba přístroje jako blok', /Přesun 2 přístroje/.test(dv2) && dv3.r === '-FA1,-FA2 / -FI1' && !dv3.rezim, dv2 + ' → ' + dv3.r);
     const infoT = await t.evaluate(() => { const e = document.querySelector('.rz-knihovna .rz-info-knihovna'); e.scrollIntoView({ block: 'center' });
       const r = e.getBoundingClientRect(), cs = getComputedStyle(e);
       return { l: Math.round(r.left), r: Math.round(r.right), h: Math.round(r.height), fs: parseFloat(cs.fontSize), cely: e.scrollWidth <= e.clientWidth + 1 && e.scrollHeight <= e.clientHeight + 1 }; });
