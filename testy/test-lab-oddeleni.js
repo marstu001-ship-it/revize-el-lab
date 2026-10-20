@@ -223,6 +223,13 @@ async function snimek(p) {
     check('rozvaděče: objekty (dok_rozvObjekty) jen v revize-lab-db a revize_lab_dok, ostrý program beze změny',
       /LAB-OBJEKT/.test(kn.objLab) && /LAB-OBJEKT/.test(kn.lsLab || '') && !/LAB-OBJEKT/.test(kn.objOstra) && !/LAB-OBJEKT/.test(kn.lsOstry || ''),
       kn.objLab + ' | ' + kn.objOstra);
+    // sbalení informačního pruhu v knihovně rozvaděčů (localStorage revize_el_rz_info)
+    await surova.evaluate(() => localStorage.setItem('revize_el_rz_info', 'rozbaleno'));
+    const pr = await lab.evaluate(() => { TD_AKCE.tdRInfoPrepni(); return { cte: localStorage.getItem('revize_el_rz_info') }; });
+    const prOstry = await surova.evaluate(() => ({ ostry: localStorage.getItem('revize_el_rz_info'), lab: localStorage.getItem('revize_lab_rz_info') }));
+    check('sbalení pruhu knihovny rozvaděčů: localStorage revize_lab_rz_info, revize_el_rz_info ostrého programu nedotčený',
+      prOstry.lab === pr.cte && !!pr.cte && prOstry.ostry === 'rozbaleno', JSON.stringify([pr.cte, prOstry]));
+    await surova.evaluate(() => localStorage.removeItem('revize_el_rz_info'));   // ať ho neshodí kontrola „žádný klíč revize_el_…"
     // návrat na obrazovku po načtení stránky (sessionStorage revize_el_obnova)
     const ob = await lab.evaluate(() => { obnovaZapsat(); return { klice: Object.keys(sessionStorage).join(','), cte: !!sessionStorage.getItem('revize_el_obnova') }; });
     check('poloha pro návrat po načtení stránky: sessionStorage revize_lab_obnova, ne revize_el_obnova',
