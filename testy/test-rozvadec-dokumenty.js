@@ -61,7 +61,7 @@ async function priprava(p) {
   // ── 1. přepínač Návrh | Dokumenty ─────────────────────────────────────
   const z0 = await p.evaluate(() => ({ tl: Array.from(document.querySelectorAll('.rz-zal')).map(b => b.textContent + (b.classList.contains('akt') ? '*' : '')).join('|'),
     navrh: !document.getElementById('rz-pan-navrh').hidden, dok: !document.getElementById('rz-pan-dok').hidden }));
-  check('editor: nahoře přepínač „🧩 Návrh | 📄 Dokumenty", otevřený Návrh', z0.tl === '🧩 Návrh*|📄 Dokumenty' && z0.navrh && !z0.dok, JSON.stringify(z0));
+  check('editor: nahoře přepínač „🧩 Návrh | ⚡ Schéma | 📄 Dokumenty", otevřený Návrh', z0.tl === '🧩 Návrh*|⚡ Schéma|📄 Dokumenty' && z0.navrh && !z0.dok, JSON.stringify(z0));
   await p.click('.rz-zal[data-z="dok"]'); await w(200);
   const z1 = await p.evaluate(() => {
     const g = document.querySelector('#rz-pan-dok .rz-dok-generuj'), hl = document.querySelector('#rz-pan-dok').getBoundingClientRect();
@@ -76,7 +76,7 @@ async function priprava(p) {
   check('záložka Dokumenty: jedna hlavní akce „📄 Vygenerovat dokumentaci (PDF)" nahoře, plné tlačítko', z1.dok && !z1.navrh && z1.akce === '📄 Vygenerovat dokumentaci (PDF)' &&
     z1.nahore && z1.plne !== 'rgba(0, 0, 0, 0)', JSON.stringify(z1));
   check('výběr do PDF: čelní pohled a seznam · technické údaje · prohlášení · protokol (vše zaškrtnuté), štítek zvlášť',
-    z1.vyber === '☑čelní pohled a seznam přístrojů|☑technické údaje|☑prohlášení o shodě|☑protokol o kusovém ověření|☐popisky pod přístroje' && z1.stitek === '🏷 Tisk štítku' &&
+    z1.vyber === '☑čelní pohled a seznam přístrojů|☑schéma zapojení|☑technické údaje|☑prohlášení o shodě|☑protokol o kusovém ověření|☐popisky pod přístroje' && z1.stitek === '🏷 Tisk štítku' &&
     z1.popisky === '🏷 Tisk popisků přístrojů', z1.vyber);
   check('oddíly sbalitelné: Výroba a značení (otevřený) · Technické údaje · Prohlášení · Kusové ověření', z1.oddily ===
     '🏭 Výroba a značení+|📋 Technické údaje-|📜 Prohlášení o shodě-|🔧 Kusové ověření (čl. 11)-', z1.oddily);
@@ -337,7 +337,7 @@ async function priprava(p) {
   // ── 5. prohlášení o shodě ─────────────────────────────────────────────
   const pdfJen = (co) => p.evaluate(async co => {
     await dokOtevrit(__rz.o.uid); rozvZalozkaNastavit('dok');
-    ['cp', 'tech', 'prohl', 'ko'].forEach(k => { const c = dokForm().querySelector('[data-dk="dokVyber.' + k + '"]'); c.checked = co.indexOf(k) !== -1; c.dispatchEvent(new Event('change', { bubbles: true })); });
+    ['cp', 'schema', 'tech', 'prohl', 'ko'].forEach(k => { const c = dokForm().querySelector('[data-dk="dokVyber.' + k + '"]'); c.checked = co.indexOf(k) !== -1; c.dispatchEvent(new Event('change', { bubbles: true })); });
     await TD_AKCE.tdRDokPdf(); await __T.w(400);
     const st = Array.from(document.querySelectorAll('#dok-pdf-pages .a4'));
     return { pocet: st.length, nasirku: st.map(s => s.classList.contains('a4-landscape')), text: st.map(s => s.innerText).join('\n'),

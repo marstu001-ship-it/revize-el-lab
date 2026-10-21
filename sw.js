@@ -11,7 +11,11 @@ function zCache(req) {
 var URLS_TO_CACHE = [
   './',
   './index.html',
-  './manifest.json'
+  './manifest.json',
+  // vektorové PDF schématu rozvaděče — knihovna a písmo s háčky, musí jít offline
+  './vektor/svg2pdf.umd.min.js',
+  './vektor/RobotoCondensed-Regular.ttf',
+  './vektor/RobotoCondensed-Bold.ttf'
 ];
 // Externí zdroje — uložit, když to jde. Když CDN nebo fonty nejdou stáhnout
 // (offline při první návštěvě, firemní proxy), instalace SW nesmí spadnout,

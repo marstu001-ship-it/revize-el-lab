@@ -33,6 +33,7 @@ sed -e 's#https://fonts.googleapis.com/css2?[^"]*#http://127.0.0.1:8903/css2#' \
 cp "$R/sw.js" "$R/manifest.json" "$R/CLAUDE.md" "$B/zipapp/"
 mkdir -p "$B/zipapp/.github/workflows"; cp "$R/.github/workflows/pages.yml" "$B/zipapp/.github/workflows/"
 [ -f "$R/.nojekyll" ] && cp "$R/.nojekyll" "$B/zipapp/"
+mkdir -p "$B/zipapp/vektor"; cp "$R"/vektor/* "$B/zipapp/vektor/"
 
 start() { (cd "$1" && exec setsid nohup "${@:2}" </dev/null >/dev/null 2>&1 &) </dev/null >/dev/null 2>&1; }
 start "$R"           python3 -m http.server 8901

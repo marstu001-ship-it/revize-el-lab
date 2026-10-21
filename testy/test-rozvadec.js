@@ -816,7 +816,7 @@ function pomocnik() {
     __rz.aktRada = 2; for (let i = 0; i < 4; i++) rozvVlozit('v-fa-1-B6', 2, __rz.rady[2].prvky.length);
     await dokUlozitOtevreny();
     // etapa 1 = jen čelní pohled a seznam (dokumenty etapy 2 hlídá test-rozvadec-dokumenty.js)
-    window.__dokOtevreny.data.dokVyber = { cp: true, tech: false, prohl: false, ko: false };
+    window.__dokOtevreny.data.dokVyber = { cp: true, schema: false, tech: false, prohl: false, ko: false };
     await dokNahled(); await __T.w(600);
   });
   const pdf = await p.evaluate(() => {

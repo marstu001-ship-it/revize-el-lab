@@ -1168,6 +1168,120 @@ stavy „rozvaděč – záložka Dokumenty…", „…kusové ověření, měř
 odporu" a „…výrobní štítek". **`test-rozvadec.js` upraven:** PDF etapy 1
 kontroluje jen čelní pohled a seznam (`dokVyber`).
 
+### Schéma zapojení — etapa 3 (v1.23, 2026-10-21, blok „SCHÉMA ZAPOJENÍ")
+
+Zadání uživatele: výkres jako od projektanta (vzor ELMER, rozvaděč RS),
+generovaný z návrhu. **Editor má tři záložky „🧩 Návrh | ⚡ Schéma |
+📄 Dokumenty"** (`rozvZalozkaNastavit('sch')`; klávesy návrhu platí jen na
+Návrhu — `rozvEditorAktivni`). **Nic se nevymýšlí** — hodnoty jen z návrhu,
+co chybí, je prázdné, „L?" nebo „–".
+
+- **Kreslí JEDNA funkce `rozvSchemaListy(d)` pro náhled i PDF** → `[{ g, svg }]`,
+  každý list samostatné SVG **v mm** (A4 297 × 210, A3 420 × 297, `d.schema.format`).
+  **Jen jednoduché prvky** (line, rect, path, circle, ellipse, text s výslovným
+  stroke/fill — pomocníci `rsCara`, `rsObd`, `rsKruh`, `rsCesta`, `rsText`),
+  **žádné třídy, style, filtry, masky, foreignObject, image** (test to hlídá),
+  písmo `RozvSchema`, svislé texty `rotate(-90)`. `data-puid` (klik),
+  `data-znacka`, `data-ram`, `data-razitko` jsou jen atributy pro náhled a test.
+- **Rám se zónami** (`rsRam`: 1–8 nahoře i dole, A–F vlevo i vpravo) a **rohové
+  razítko** (`rsRazitko`, 128 × 36 mm vpravo dole): Vypracoval (profil), Datum,
+  Akce (= stavba), Investor (= odběratel), Název výkresu, Projekt, Zakázka,
+  Soubor (název PDF), Listů N, Výkres i — na **každém** listu.
+- **List 1** (`rsListOsazeni`): vlevo osazení = **`rozvSvg(rz, { osazeni: true })`**
+  (žádný nový kreslič — černobílý režim bez obalu `<svg>`, svislé označení,
+  rezerva i volné místo v řadě přeškrtnuté úhlopříčkou), nad ním
+  „Rozvodnice R×M modulů, IP…, třída …, rozměry …"; vpravo **tabulka 12 řádků**:
+  Rozvaděč, Rozvodná soustava, Ochrana před nebezpečným dotykem (odvozená
+  `rsOchranaOdv`: „automatickým odpojením od zdroje" + „; doplňková ochrana
+  proudovým chráničem 30 mA", když je v návrhu chránič ≤ 30 mA — **bez čísla
+  normy**), Typ, Provedení, Přívod / vývody, Rozměr, Krytí, Vnější vlivy,
+  Pi, Pm, Hmotnost. Prázdné řádky zůstanou prázdné.
+- **Listy 2…N — jednopólové schéma** (`rsListSchema`, geometrie `rsGeom`):
+  čárkovaný obrys „Rozvaděč RH1" (přívod i vývody ho kříží), fázová sběrnice
+  nahoře se značkami /// a textem soustavy, N a PE sběrnice dole přes celou
+  šířku. **Přívod** (první list) vlevo: kabel `privodKabel privodPrurez`,
+  „z RH1 (-FA3)" u napájeného rozvaděče, **čárkovaný „Elektroměrový rozvaděč"
+  s předřazeným jističem jen při vyplněném `privodJistic`** (hlavička,
+  + `privodIn`), **první hlavní vypínač (QM) na přívodu**. **Chránič** visí
+  z L, má vlastní sběrnici skupiny a vlastní N můstek; přístroje bez chrániče
+  visí přímo z L. Každý vývod = jeden sloupec 11 mm: značka se svorkami 1/2,
+  označení nad ní, svisle hodnota (B16 6 kA, 40 A 30 mA typ A…) a typ, L plnou
+  čarou ven, **N a PE čárkovanými odbočkami**, lomítka podle počtu vodičů,
+  svisle „L1 · CYKY-J 3×2,5" a název vývodu, dole **značka spotřebiče**
+  (zásuvka / světlo / motor / jiné) nebo u `napaji` šipka a „RS1". Pod tím
+  tabulka **OBVOD č.** (`x.obvod`) a **Pi /kW/** (`x.pi`, prázdné = „–").
+  **1f bez fáze → červené „L?"**, 3f → „L1 L2 L3". **MET** vpravo jen při
+  `schema.metKreslit` (řádky `schema.met`, uzemnění). Stykače, relé, hodiny,
+  elektroměry, signálky, ovladače (`RS_RIDICI`) se **nekreslí** — první list má
+  poznámku „Ovládací obvody nejsou na výkresu zakresleny…" s jejich značkami.
+  Pořadí sloupců = pořadí čelního pohledu; obvody chrániče (`nadr`) jdou za
+  svým chráničem (`rsModel`).
+- **Zlom listu jen na hranici skupiny chrániče** (`rsRozlozit`); skupina delší
+  než celý list se rozdělí a obě části mají odkaz **„-FI1 pokračuje na /3.1"**
+  a **„-FI1 (pokračování z /2.8)"** (`/list.sloupec zóny`), sběrnice „L, N, PE
+  pokračují na /3.1" / „L, N, PE z /2.8". A3 = víc sloupců na list (26 proti 15),
+  **ne menší písmo**; spotřebiče na A3 nejvýš 50 mm pod rozvaděčem.
+- **Značky** `RS_ZNACKY` (vlastní šablony ve stylu IEC 60617, svisle, horní
+  bod 0;0, dolní 0;h, mm): jistič, chránič, RCBO, AFDD, SPD s uzemněním,
+  pojistka, hlavní vypínač, stykač, relé, elektroměr, hodiny, signálka, svorka,
+  zásuvka, svítidlo, motor (3~ u 3f), jiné, uzemnění. **Z QElectroTech nic
+  (CC-BY).**
+- **Záložka Schéma** (`rozvSchHtml`, `rozvSchKreslit` — kreslí se z aktuálního
+  `cist()`, i s neuloženými změnami): hlavní akce **„🖨 Tisk schématu (PDF)"**
+  (`tdRSchPdf` → `rozvSchemaVykreslit`, náhled v obrazovce PDF tvorby
+  dokumentace), ◀ ▶ listy, − ＋ zoom, formát A4 / A3, řádek **„Ve schématu
+  chybí: 3× fáze (…), 2× kabel (…)"** s odkazy, které přístroj vyberou
+  (`rsChybi`), náhled se nedá upravovat — **klik na přístroj → Návrh s ním
+  vybraným** (`rozvSchVybrat`). Sbalené „🏷 Razítko, tabulka údajů a MET":
+  název výkresu, projekt, zakázka, ochrana, vnější vlivy, Pi, Pm, Kreslit MET
+  + řádky. **Vlastnosti přístroje** (jen FA, AFDD, FI/FA, FU — `RS_OBVODOVE`):
+  „Spotřebič ve schématu" (`podle názvu (zásuvka)` = předpověď
+  `rsSpotrPredikce`: „zás…"/„zásuv…" → zásuvka, „svět"/„osvět" → světlo, jinak
+  jiné; **předpověď se neukládá**, jen ruční volba), Obvod č., v „Dalších
+  údajích" Pi.
+- **Dokumenty:** zaškrtávátko **„schéma zapojení"** (`dokVyber.schema`, chybí =
+  zapnuto) — v souhrnném PDF za čelním pohledem a seznamem jako celé listy
+  (blok `{ cela: html }` v `dokPdfVykreslit`, bez záhlaví a patičky).
+- **Data (vše VOLITELNÉ, starý rozvaděč se načte beze změny — test):**
+  `d.schema = { format, nazev, projekt, zakazka, metKreslit, met: [řádky] }`,
+  `tech.pi`, `tech.pm`, `tech.vlivy`, `tech.ochrana`, `privodJistic`, prvek
+  `spotr`, `obvod`, `pi`. Odvozené (název „Rozvaděč RH1", projekt = stavba,
+  zakázka = číslo, ochrana) se ukládají prázdné (`rozvSchOdvozene`, `data-odv`).
+  **Zakreslení z revizní zprávy** vyplní `obvod` číslem řádku (sloupec Č.).
+
+**PDF — vektorově** (ověřeno 2026-10-21): **svg2pdf.js 2.8.1 (MIT)** má peer
+závislost jspdf ^2.0.0 a s programovým **jsPDF 2.5.1 funguje** beze změny
+jsPDF. **Na cdnjs svg2pdf.js NENÍ** (v `cdnjs/packages` chybí), proto leží
+s písmem **v repozitáři ve složce `vektor/`** (README tam: zdroj, licence):
+`svg2pdf.umd.min.js` (z npm `svg2pdf.js@2.8.1/dist`, bez řádku sourceMappingURL)
+a **Roboto Condensed** Regular + Bold (OFL 1.1) zmenšené `pyftsubset` na
+latinku s háčky (33 kB každé). Vlastní soubor = **bez SRI** (stejný původ),
+**v `sw.js` URLS_TO_CACHE** (offline) a **v `ZIP_VLASTNI`** (záloha programu;
+`testy/servery.sh` je kopíruje i do 8904). Na obrazovce totéž písmo přes
+`@font-face RozvSchema`.
+- `vektorNacist()` načte knihovnu a písma **až při prvním PDF se schématem**;
+  `renderPagesToPDF` u stránek s `data-vektor` volá `vektorStrana()` — list
+  na šířku se **otočí o 90° doleva na stránku na výšku** (jako ostatní listy na
+  šířku), A3 (`.rz-sch-a3`) jde na stránku A3. jsPDF založený před načtením
+  svg2pdf metodu `svg` v instanci nemá — bere se z `jsPDF.API.svg`.
+  `window.__pdfVektor` = šlo to vektorově. **Když svg2pdf nejde načíst, list jde
+  jako obrázek 300 dpi.** Výsledek: byt 3+1 na A3 = 35 kB, 60 vývodů = 63 kB,
+  písmo vložené (CID TrueType), háčky jsou text (`pdftotext`).
+
+Test: `testy/test-rozvadec-schema.js` (53 kontrol — záložky, hlavní akce,
+list 1 s osazením a tabulkou, razítko a zóny, byt 3+1 (QM na přívodu, SPD,
+sporák 3f, dva chrániče, RCBO, AFDD), spotřebič z názvu i ručně, 1f bez fáze,
+napájení RS1, Pi a obvod, nic nepřetéká rám ani razítko, jen jednoduché prvky,
+◀ ▶ a zoom, klik na přístroj i odkaz „chybí", vlastnosti, MET, předřazený
+jistič, A3, vektorové PDF přes pdfinfo / pdffonts / pdftotext, souhrnné PDF,
+skříň 6×24 se 60 vývody přes 4 listy s rozdělenou skupinou a odkazy oběma
+směry, starý rozvaděč beze změny, data revizí, telefon). V `test-mobil.js`
+stavy „…záložka Schéma, list 1", „…jednopólový list a údaje výkresu"
+a „…náhled schématu (PDF)". **Upraveno ve stejném commitu:**
+`test-rozvadec-dokumenty.js` (tři záložky, zaškrtávátko schématu, `pdfJen`
+ho vypíná), `test-rozvadec.js` (PDF etapy 1 bez schématu),
+`test-rozvadec-z-revize.js` (číslo obvodu).
+
 ### Čelní pohled a skládání (část 3)
 
 - **SVG v milimetrech, modul 17,5 mm** (`RZG`: okraj 14, výška přístroje 50,
@@ -1307,8 +1421,9 @@ kontroluje jen čelní pohled a seznam (`dokVyber`).
   řady) a **„Seznam přístrojů"** bez rezerv po 18 řádcích (záhlaví se
   opakuje): označení, popis vývodu, typ, In, charakteristika, póly, IΔn,
   fáze, kabel. **Neověřené přístroje mají `*`** a pod seznamem vysvětlivku.
-  Štítek, prohlášení, kusové ověření a technické údaje viz etapa 2 výš; schéma zatím NE (etapa 3).
-- **Vektorově přes svg2pdf.js se NEDĚLÁ** (ověřeno 2026-10-18): svg2pdf 2.x
+  Štítek, prohlášení, kusové ověření a technické údaje viz etapa 2 výš, schéma zapojení etapa 3 výš.
+- **Čelní pohled vektorově přes svg2pdf.js NEJDE** (ověřeno 2026-10-18; listy
+  **schématu** od etapy 3 vektorově jdou — viz výš, s vloženým písmem): svg2pdf 2.x
   by s jsPDF 2.5.1 technicky šel, ale (1) text kreslí písmy jsPDF, které
   nemají české háčky — popisky vývodů by se rozbily, šlo by to jen
   s vloženým TTF písmem (stovky kB navíc a offline cache), a (2) celý
@@ -4663,6 +4778,8 @@ panel scan + závada scan u všech 3 providerů, ke kterým má klíč.**
 - `sw.js` — service worker (network-first pro HTML, stale-while-revalidate
   pro fonty a CDN)
 - `manifest.json` — PWA manifest
+- `vektor/` — svg2pdf.js a písmo Roboto Condensed pro vektorové PDF schématu
+  rozvaděče (README.txt: zdroj, verze, licence; svg2pdf na cdnjs není)
 - `literatura/` — odborné podklady (vzory zpráv Macháček/Dolenský,
   normy ČSN) — read-only reference pro implementaci, neměnit
 

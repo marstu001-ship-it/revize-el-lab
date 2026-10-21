@@ -565,6 +565,12 @@ function vsechnyStavy(zalozky) {
     const m = document.querySelector('.rz-ko-metoda'); m.value = 'B'; m.dispatchEvent(new Event('input', { bubbles: true }));
     document.querySelector('.rz-ko-met[data-met="B"]').scrollIntoView({ block: 'start' }); await __M.w(100);
   }));
+  add('rozvaděč – záložka Schéma, list 1', 'Tvorba dokumentace', E(async () => { await __M.rozv(); rozvZalozkaNastavit('sch'); await __M.w(300); }));
+  add('rozvaděč – záložka Schéma, jednopólový list a údaje výkresu', 'Tvorba dokumentace', E(async () => {
+    await __M.rozv(); rozvZalozkaNastavit('sch'); __rzSch.list = 1; rozvSchKreslit();
+    const o = document.querySelector('[data-oddil="schema"]'); o.open = true; await __M.w(200);
+  }));
+  add('rozvaděč – náhled schématu (PDF)', 'Tvorba dokumentace', E(async () => { await __M.rozv(); await TD_AKCE.tdRSchPdf(); await __M.w(300); }));
   add('rozvaděč – výrobní štítek', 'Tvorba dokumentace', E(async () => { await __M.rozv(); await TD_AKCE.tdRStitek(); await __M.w(300); }));
   add('rozvaděč – popisky pod přístroje', 'Tvorba dokumentace', E(async () => { await __M.rozv(); await TD_AKCE.tdRPopisky(); await __M.w(300); }));
   add('rozvaděč – výrobní štítek, jednoduché rozvržení', 'Tvorba dokumentace', E(async () => {

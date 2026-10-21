@@ -193,6 +193,8 @@ function priprava() {
   check('RS1: obvod C/A s IΔn → RCBO C16', s1[4].p.kat === 'FIFA' && s1[4].p.char === 'C' && s1[4].ozn === '-FI/FA2', JSON.stringify(s1[4]));
   check('RS1: obvod bez čitelného In → jistič z údajů zprávy (1 modul, neověřený) s upozorněním', s1[5].p.kat === 'FA' && s1[5].p.In === '' &&
     s1[5].p.sirka === 1 && s1[5].p.overeno === false && s1[5].knih === '' && (s1[5].upoz || []).join('|') === 'doplňte póly|doplňte jmenovitý proud', JSON.stringify(s1[5]));
+  check('číslo obvodu ze zprávy (sloupec Č.) → OBVOD č. ve schématu; chránič číslo nedostane', f[0].obvod === '1' && f[3].obvod === '4' &&
+    s1[1].obvod === '2' && s1[2].obvod === '3' && s1[4].obvod === '5' && !('obvod' in s1[0]), JSON.stringify([f[0].obvod, f[3].obvod, s1[0].obvod, s1[1].obvod, s1[4].obvod]));
   check('RS1: skříň 2×12 (11 M se do 1×12 s rezervou nevejde), napájen z RH (-FA2)', D.RS1.data.skrin.rady === 2 && D.RS1.data.skrin.modulu === 12 &&
     D.RS1.data.napajenZ.uid === D.RH.uid && D.RS1.data.napajenZ.ozn === '-FA2', JSON.stringify([D.RS1.data.skrin.nazev, D.RS1.data.napajenZ]));
   check('RS2: C16 výrobce A bez shody v jeho datech → obecný s upozorněním', D.RS2.pr[0].p.vyrobce === 'Výrobce A' && D.RS2.pr[0].knih === 'v-fa-1-C16' &&
