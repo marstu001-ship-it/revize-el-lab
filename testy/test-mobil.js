@@ -119,6 +119,16 @@ function pomocnik() {
     rozvSkrinNastavit(rozvKnihPolozka('v-sk-3x12-n'));
     if (window.__rozvByt) window.__rozvByt();   // testy/rozvadec-byt.js
     await dokUlozitOtevreny();
+    // ROZVADĚČ PSC — tři pole, DIN segment, montážní deska, sběrnice přes dvě pole
+    await dokNovy('psc');
+    dk('[data-dk="oznaceni"]', 'RH-hala'); dk('[data-dk="stavba"]', 'Hala Vymyšlená 3');
+    ['v-pole-600', 'v-pole-800', 'v-pole-400'].forEach(k => rozvSkrinNastavit(rozvKnihPolozka(k)));
+    __rz.pole = 0; __rz.aktRada = 0; ['v-fi-4-40-30-A', 'v-fa-1-B16', 'v-fa-1-B16', 'v-fa-1-B10'].forEach(k => rozvVlozit(k));
+    __rz.pole = 1; ['v-qf-3-630', 'v-qs-3-400', 'v-fu-nh00-3'].forEach(k => rozvVlozit(k));
+    pscDilAkce(0, 0, 'pridat', 'sbernice'); pscDilAkce(1, 0, 'pridat', 'sbernice');
+    pscDilZmena(0, __rz.skrin.pole[0].dily.length - 1, 'spojka', true);
+    __rz.vyber = null; __rz.vic = null;
+    await dokUlozitOtevreny();
     showScreen('home');
   };
   M.dok = async () => { await dokOtevrit(DOK.dokumenty.find(x => x.typ === 'pouvv').uid); await w(150); };
@@ -132,6 +142,7 @@ function pomocnik() {
     dokOtevritSeznam('rozv'); await w(100); TD_AKCE.tdRZRevize(); await w(100);
   };
   M.rozv = async () => { await dokOtevrit(DOK.dokumenty.find(x => x.typ === 'rozv').uid); await w(200); };
+  M.psc = async () => { await dokOtevrit(DOK.dokumenty.find(x => x.typ === 'psc').uid); await w(200); document.getElementById('toast-wrap') && (document.getElementById('toast-wrap').innerHTML = ''); };
   M.otevri = async (ev) => {
     const i = archiv.findIndex(z => (z.ev_cislo || (z.data && z.data.ev_cislo)) === ev);
     otevritZpravu(i); await w(400);
@@ -607,6 +618,28 @@ function vsechnyStavy(zalozky) {
   add('rozvaděč – přeplněná řada', 'Tvorba dokumentace', E(async () => {
     await __M.rozv(); rozvVlozit('v-fa-3-C32', 0, 0); document.getElementById('rz-pohled').scrollIntoView({ block: 'start' }); await __M.w(100);
   }));
+  // rozvaděč PSC (etapa 5a)
+  add('rozvaděč – výstraha DBO nad 250 A (převést na PSC)', 'Tvorba dokumentace', E(async () => {
+    await __M.rozv(); const e = dokForm().querySelector('[data-dk="privodIn"]'); e.value = '400'; rozvPscUpozObnovit(); await __M.w(100);
+  }));
+  add('rozvaděč PSC – seznam', 'Tvorba dokumentace', E(async () => { dokOtevritSeznam('psc'); await __M.w(100); }));
+  add('rozvaděč PSC – editor se třemi poli a panelem pole', 'Tvorba dokumentace', E(async () => { await __M.psc(); }));
+  add('rozvaděč PSC – hlavička rozbalená (forma, Icw, Ipk, provedení)', 'Tvorba dokumentace', E(async () => {
+    await __M.psc(); document.querySelector('.rz-hlavicka').open = true; await __M.w(100);
+  }));
+  add('rozvaděč PSC – karta Pole a skříně', 'Tvorba dokumentace', E(async () => {
+    await __M.psc(); __rzF.tab = 'skrine'; rozvFiltryVykreslit(); rozvKnihovnaVykreslit(); await __M.w(100);
+  }));
+  add('rozvaděč PSC – MCCB na montážní desce vybraný', 'Tvorba dokumentace', E(async () => {
+    await __M.psc(); const x = __rz.rady.flatMap(r => r.prvky).find(x => x.ozn === '-QF1'); __rz.vyber = x.uid; rozvPohledVykreslit(); rozvVlastnostiVykreslit(); await __M.w(100);
+  }));
+  add('rozvaděč PSC – MCCB vybraný k vložení klepnutím', 'Tvorba dokumentace', E(async () => {
+    await __M.psc(); __rz.knihVyber = 'v-qf-3-250'; rozvKnihovnaVykreslit(); rozvPohledVykreslit(); await __M.w(100);
+  }));
+  add('rozvaděč PSC – náhled PDF', 'Tvorba dokumentace', E(async () => { await __M.psc(); await dokNahled(); await __M.w(400); }));
+  add('rozvaděč PSC – vlastní pole (okno)', 'Tvorba dokumentace', E(async () => {
+    await __M.psc(); __rzF.tab = 'skrine'; rozvFiltryVykreslit(); rozvKnihovnaVykreslit(); TD_AKCE.tdRVlastni(); await __M.w(100);
+  }), '#modal-rz-polozka');
   // dialogy
   const D = (id, krok) => add('dialog ' + id, 'Dialogy', krok, '#' + id);
   D('modal-revize', E(async () => { await __M.otevri('RE-26-0101'); showScreen('form'); openModalRevize(); await __M.w(100); }));

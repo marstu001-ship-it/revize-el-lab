@@ -65,8 +65,8 @@ function pomocnik() {
     typy: Array.from(document.querySelectorAll('#dok-dlazdice .dok-dlazdice')).map(x => x.getAttribute('data-typ')).join(),
     text: (document.querySelector('#dok-dlazdice [data-typ="rozv"]') || {}).innerText || ''
   }));
-  check('dlaždice „Rozvaděč DBO – návrh a dokumentace" s popisem ČSN EN 61439-3', dl.typy === 'pouvv,rozv' &&
-    /Rozvaděč DBO – návrh a dokumentace/i.test(dl.text) && /ČSN EN 61439-3/.test(dl.text), dl.typy + ' | ' + dl.text.replace(/\n/g, ' | '));
+  check('dlaždice „Rozvaděč DBO – návrh a dokumentace" s popisem ČSN EN IEC 61439-3', dl.typy === 'pouvv,rozv,psc' &&
+    /Rozvaděč DBO – návrh a dokumentace/i.test(dl.text) && /ČSN EN (IEC )?61439-3/.test(dl.text), dl.typy + ' | ' + dl.text.replace(/\n/g, ' | '));
   await p.click('#dok-dlazdice [data-typ="rozv"]'); await w(250);
   const sz = await p.evaluate(() => {
     const h = document.querySelector('#dok-typy .dok-hlavni-akce'), kk = document.getElementById('dok-knihovna-karta');
