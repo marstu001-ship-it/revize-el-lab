@@ -69,6 +69,10 @@ async function stahniZip(url, opts) {
   const pisma = fs.existsSync(rozbal + '/knihovny/pisma')
     ? fs.readdirSync(rozbal + '/knihovny/pisma') : [];
   check('obsahuje písma', pisma.length >= 2, pisma.join(','));
+  // vektorové PDF schématu rozvaděče (v9.127): knihovna a písmo z vektor/, bajtově shodné
+  const VEKTOR = ['svg2pdf.umd.min.js', 'RobotoCondensed-Regular.ttf', 'RobotoCondensed-Bold.ttf'];
+  check('obsahuje vektor/ (svg2pdf a písmo schématu), bajt po bajtu shodné', VEKTOR.every(f => je('vektor/' + f) &&
+    Buffer.compare(fs.readFileSync(DIR + '/../vektor/' + f), fs.readFileSync(rozbal + '/vektor/' + f)) === 0), VEKTOR.filter(f => !je('vektor/' + f)).join(','));
 
   const orig = fs.readFileSync(DIR + '/_beh/zipapp/index.html');
   check('index.html je bajt po bajtu shodný', Buffer.compare(orig, fs.readFileSync(rozbal + '/index.html')) === 0);

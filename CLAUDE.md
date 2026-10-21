@@ -200,7 +200,7 @@ Revize EL je single-page PWA (HTML + JS + service worker). Obsah se cachuje
 v prohlížeči přes `sw.js`, takže uživatel nevidí změny, dokud se neinvalidně
 cache.
 
-**Aktuální verze: v9.125 · 2026-10-16**
+**Aktuální verze: v9.128 · 2026-10-21**
 
 ## Povinné při každé změně kódu před commitem
 
@@ -370,7 +370,7 @@ a zaškrtávátka mají nativní vzhled. Obsah v rámečku s vlastním posunem
   v rozbalovátku, vzhled vlastního zaškrtávátka v Safari, dlouhý stisk prstem
   (kontextové menu), PDF z html2canvas na slabém telefonu, výřez displeje.
 
-## Nová verze se jen nabídne, po načtení stránky zpět, kde byl uživatel (2026-10-19)
+## Nová verze se jen nabídne, po načtení stránky zpět, kde byl uživatel (v9.126)
 
 Hlášení uživatele: „program sám skočí na úvod, když jsem chvíli neaktivní."
 **Příčiny byly dvě:**
@@ -432,17 +432,17 @@ nabízel „Našla se neuložená rozepsaná zpráva", i když byla uložená.
   v témže okně, vrátí se z konceptu **bez dotazu** (`tichaObnova` v
   `init()`) a zůstane „neuloženo"; v novém okně se na koncept ptá jako dřív.
   Dokument tvorby dokumentace dopisuje `dokUlozitHned` (pagehide, už dřív).
-- **Přenést i do revize-el** (je to commit `FUNKCE:`).
 
 Test: `testy/test-obnova.js` (21 kontrol — zpráva i záložka, psaní těsně
 před obnovením, pruh místo obnovení a „Načíst", dokončená zpráva, plán,
 nastavení s posunem, protokol, seznam dokumentů, rozvaděč s čerstvě
-vloženými přístroji, náhled PDF dokumentu; samočinné načtení: na úvodu ano,
+vloženými přístroji — jen když program má `DOK_TYPY.rozv`, jinak se
+tytéž kontroly dělají s protokolem vnějších vlivů —, náhled PDF dokumentu; samočinné načtení: na úvodu ano,
 s otevřeným rozvaděčem / zprávou jen pruh i po schování okna, po zavření
 ano s hláškou, dialog a kurzor v poli ho odloží, rozepsaný text zůstane;
 nové okno, první návštěva).
 
-## Zpráva od kolegy: technik a přístroje zůstanou jeho (2026-10-19)
+## Zpráva od kolegy: technik a přístroje zůstanou jeho (v9.126)
 
 Pokyn uživatele: „historicky má jít vidět, že zprávu dělal někdo jiný."
 **Zjištění (ověřeno v kódu):** `nacistData()` při KAŽDÉM otevření volal
@@ -680,9 +680,9 @@ záloha a obnova, dvě okna, rozbor seznamu prostorů a **oddělení**: protokol
 není v archivu, naposledy otevřených, plánu ani hledání a data revizí jsou
 po práci s protokoly **bajtově stejná**). Karta v Novinkách se nedělala.
 
-## Rozvaděč DBO — návrh a dokumentace (konfigurátor, `DOK_TYPY.rozv`, blok `ROZVADĚČ DBO`)
+## Rozvaděč DBO — návrh a dokumentace (v9.127; konfigurátor, `DOK_TYPY.rozv`, blok `ROZVADĚČ DBO`)
 
-Zadání uživatele 2026-10-18 (vyvíjeno v labu): technik poskládá rozvaděč
+Zadání uživatele 2026-10-18: technik poskládá rozvaděč
 z knihovny skříní a přístrojů v čelním pohledu (jako elektro-konstrukt.cz)
 a program z toho později udělá štítek, EU prohlášení o shodě, protokol
 o kusovém ověření a schéma. **Etapy:** 1) knihovna a skládání (tohle),
@@ -962,7 +962,7 @@ na telefonu pod hlavní akcí přes celou šířku) → okno `#modal-rz-zrevize`
 Test: `testy/test-rozvadec-z-revize.js` (67 kontrol, vymyšlená revize:
 RH → RS1, RS2; chránič s obvody; RCBO; 3x16A; pojistka gG; jiný řádek;
 obvod bez čitelného In; zpráva LPS a stroje se v nabídce neobjeví; vymyšlený
-„Výrobce A" s řadami R1/R2 v knihovně testu; v1.19: skládání (chránič +
+„Výrobce A" s řadami R1/R2 v knihovně testu; skládání (chránič +
 15 obvodů ve 4×18, skupiny celé, přeplnění jen co se nevejde), nabídka
 skříní, „Použít pro všechny", vlastní velikost z DIN lišt s uložením do
 knihovny, soustava, vymyšlená administrativní budova se 72 a 300 obvody,
@@ -1037,7 +1037,9 @@ a výsledky zkoušek program nikdy nevymýšlí.**
 - **Záložka Dokumenty:** jedna hlavní akce **„📄 Vygenerovat dokumentaci
   (PDF)"**, pod ní zaškrtávátka co do PDF patří (`dokVyber`: čelní pohled
   a seznam · technické údaje · prohlášení · protokol; chybí = vše),
-  **„🏷 Tisk štítku"** zvlášť, řádek **„Chybí: …"** s odkazy na pole
+  **„🏷 Tisk štítku"** zvlášť (od v9.128 spolu s „🏷 Tisk popisků přístrojů"
+  jako obrysová zelená tlačítka `.rz-dok-tisk2` — drobná čárkovaná technik
+  přehlédl; menší než hlavní akce, na telefonu přes celou šířku), řádek **„Chybí: …"** s odkazy na pole
   (`rozvDokChybi`: výrobce, adresa, výrobní číslo, typ, datum výroby, InA,
   Un). Oddíly sbalitelné: Výroba a značení · Technické údaje · Prohlášení ·
   Kusové ověření. Lištové „📄 Náhled PDF" dělá totéž co hlavní akce.
@@ -1061,7 +1063,7 @@ a výsledky zkoušek program nikdy nevymýšlí.**
   max + 1 v letošním roce, s čísly zpráv nesouvisí), předvyplní se při
   otevření Dokumentů a uloží s první změnou, ⟳ přidělí volné, jde přepsat,
   duplicitu ohlásí řádek pod polem.
-- **Štítek** (od v1.22 jako tabulka, viz oddíl níž; `rozvStitekVykreslit`, vlastní náhled v `#screen-dok-pdf`,
+- **Štítek** (jako tabulka, viz oddíl níž; `rozvStitekVykreslit`, vlastní náhled v `#screen-dok-pdf`,
   `__dokPdf.nazev`): skutečná velikost v mm na A4 (90 × 45 výchozí, 70 × 35,
   100 × 60), počet kusů, ořezové značky, pokyn „Tiskněte ve skutečné
   velikosti (100 %)" s kontrolní úsečkou 50 mm. Povinné: výrobce + kontaktní
@@ -1092,7 +1094,7 @@ a výsledky zkoušek program nikdy nevymýšlí.**
   technické údaje, prohlášení a protokol každý od nové strany na výšku se
   záhlavím „výrobce · Výrobní číslo". Prázdná první strana se jen přestaví.
 
-### Štítek jako tabulka, popisky pod přístroje, mix výrobců (v1.22, 2026-10-20)
+### Štítek jako tabulka, popisky pod přístroje, mix výrobců (v9.127)
 
 Uživatel porovnal štítek s elektro-konstrukt.cz: obsahově úplný, ale „sedm
 řádků textu s prázdnou spodní polovinou".
@@ -1143,10 +1145,10 @@ Uživatel porovnal štítek s elektro-konstrukt.cz: obsahově úplný, ale „se
 - **Přístroje různých výrobců** (`rozvVyrobciMix`): v souhrnu rozvaděče
   (vlastnosti bez výběru) jeden nenápadný řádek „Přístroje 3 výrobců: OEZ
   (12), ABB (2), Hager (1)"; klepnutí na výrobce jeho přístroje v pohledu
-  vybere (výběr víc z v1.21). Obecné vestavěné („obecný") a rezervy se
+  vybere (výběr víc přístrojů, viz níž). Obecné vestavěné („obecný") a rezervy se
   nepočítají. Jen informace — nic neblokuje a do PDF nejde.
 - Data (vše volitelné): `stitek.styl`, `stitek.logo`, `popisky.vyska`,
-  `dokVyber.popisky`. Rozvaděč z v1.20 se načte beze změny (test).
+  `dokVyber.popisky`. Rozvaděč uložený bez těchto údajů (starší podoba dat z vývoje) se načte beze změny (test).
 
 Test: `testy/test-rozvadec-dokumenty.js` (71 kontrol — k tomu: tabulka
 s popsanými políčky a hodnotami, popisky 5–7,2 pt, CE ≥ 8 mm, všechny tři
@@ -1155,7 +1157,7 @@ Icc prázdné = políčko chybí, bez rozšířené části, jednoduché rozvrž
 přeplněný štítek → hláška a nikdy pod 5 pt, logo 900 → 400 px do profilu
 a zálohy a na štítku ≤ CE, popisky byt 3+1 (3 × 210 mm, šířky políček,
 hodnoty, rezerva, dlouhý název, 9 mm), 6 × 24 rozdělené s překryvem,
-popisky v PDF dokumentace, mix výrobců, rozvaděč z v1.20). V
+popisky v PDF dokumentace, mix výrobců, rozvaděč ve starší podobě dat). V
 `test-mobil.js` stavy „…popisky pod přístroje", „…výrobní štítek,
 jednoduché rozvržení" a „…vlastnosti s přístroji různých výrobců".
 
@@ -1168,7 +1170,7 @@ stavy „rozvaděč – záložka Dokumenty…", „…kusové ověření, měř
 odporu" a „…výrobní štítek". **`test-rozvadec.js` upraven:** PDF etapy 1
 kontroluje jen čelní pohled a seznam (`dokVyber`).
 
-### Schéma zapojení — etapa 3 (v1.23, 2026-10-21, blok „SCHÉMA ZAPOJENÍ")
+### Schéma zapojení — etapa 3 (v9.127, blok „SCHÉMA ZAPOJENÍ")
 
 Zadání uživatele: výkres jako od projektanta (vzor ELMER, rozvaděč RS),
 generovaný z návrhu. **Editor má tři záložky „🧩 Návrh | ⚡ Schéma |
@@ -1255,7 +1257,16 @@ jsPDF. **Na cdnjs svg2pdf.js NENÍ** (v `cdnjs/packages` chybí), proto leží
 s písmem **v repozitáři ve složce `vektor/`** (README tam: zdroj, licence):
 `svg2pdf.umd.min.js` (z npm `svg2pdf.js@2.8.1/dist`, bez řádku sourceMappingURL)
 a **Roboto Condensed** Regular + Bold (OFL 1.1) zmenšené `pyftsubset` na
-latinku s háčky (33 kB každé). Vlastní soubor = **bez SRI** (stejný původ),
+latinku s háčky (33 kB každé). **Knihovna má přesto kontrolní otisk SRI**
+(`VEKTOR_OTISK`, pokyn uživatele při přenosu do v9.127): `vektorNacist()` ho
+nastaví skriptu jen přes http(s) — **z disku (`file://`, offline varianta ze
+ZIPu) se otisk nenastaví**, kontrolu by tam prohlížeč neprošel. Soubor je
+ověřený bajt po bajtu proti `svg2pdf.js@2.8.1` z registry.npmjs.org (otisk
+balíčku sedí s registrem). **Při výměně souboru otisk přepočítat**
+(`openssl dgst -sha384 -binary vektor/svg2pdf.umd.min.js | openssl base64 -A`),
+jinak se schéma do PDF dá jen jako obrázek. Hlídá `test-sri.js` (otisk sedí,
+o bit jiný soubor se nenačte, `file://` bez otisku) a `test-zip-kodu.js`
+(`vektor/` v ZIPu bajtově shodné). Soubory jsou
 **v `sw.js` URLS_TO_CACHE** (offline) a **v `ZIP_VLASTNI`** (záloha programu;
 `testy/servery.sh` je kopíruje i do 8904). Na obrazovce totéž písmo přes
 `@font-face RozvSchema`.
@@ -1282,7 +1293,7 @@ a „…náhled schématu (PDF)". **Upraveno ve stejném commitu:**
 ho vypíná), `test-rozvadec.js` (PDF etapy 1 bez schématu),
 `test-rozvadec-z-revize.js` (číslo obvodu).
 
-### Symetrie fází a ověření oteplení — etapa 4 (v1.24, 2026-10-21, bloky „SYMETRIE FÁZÍ" a „OVĚŘENÍ OTEPLENÍ VÝPOČTEM")
+### Symetrie fází a ověření oteplení — etapa 4 (v9.127, bloky „SYMETRIE FÁZÍ" a „OVĚŘENÍ OTEPLENÍ VÝPOČTEM")
 
 Zadání uživatele. **Normu nikdo nečetl** — podklad je rešerše sekundárních
 zdrojů (BEAMA, Hager CZ, Electrosuisse, IET, Schneider). Co z ní není ověřené
@@ -1369,9 +1380,9 @@ a „…oteplení výpočtem (Dokumenty)".
   2,3–4 px/mm (čitelnost); širší skříň se posouvá **ve svém rámečku**
   (`.rz-svg-ram`), tlačítka − / ＋ zoom (jen v paměti). Rámeček je na PC
   nejvýš `max(380px, 100vh − 150px)` vysoký a posouvá se **v obou směrech**
-  (v1.21 — vodorovný posuvník byl u vysoké skříně až pod koncem stránky);
+  (vodorovný posuvník byl u vysoké skříně až pod koncem stránky);
   na telefonu `max-height:none` (blok MOBIL), posouvá se stránka.
-- **Poloha posuvníku se překreslením NIKDY nemění** (v1.21, chyba „klik vedle
+- **Poloha posuvníku se překreslením NIKDY nemění** (chyba „klik vedle
   přístroje odroluje rámeček"): `rozvPohledVykreslit()` staví rámeček znovu
   přes `innerHTML`, takže si **před přepsáním zapamatuje `scrollLeft/Top`
   a vrátí je**; u zoomu zůstane na místě **střed rámečku** (`ram.__k` =
@@ -1387,7 +1398,7 @@ a „…oteplení výpočtem (Dokumenty)".
   `rozvZnacka`; cíl jen ve **viditelné** části rámečku). Po tažení se
   potlačí následný `click` (zachytávací posluchač), aby rychlé tlačítko
   nevložilo přístroj podruhé.
-  - **Duch** (v1.21) = přístroj nebo celý blok nakreslený **stejnou funkcí
+  - **Duch** = přístroj nebo celý blok nakreslený **stejnou funkcí
     `rozvPrvekSvg` ve stejném měřítku** (`rozvDuchSvg`, `.rz-duch`,
     poloprůhledný, u bloku štítek „5 ks", mimo skříň šedý); u přesunu je
     kurzor na stejném místě přístroje, jako kde se chytil. **Původní místo
@@ -1402,10 +1413,10 @@ a „…oteplení výpočtem (Dokumenty)".
     znovu spočítá cíl pod kurzorem.
   - **Označený text na stránce** (třeba po Shift+klik) Chrome při stisku
     myši začal táhnout jako text a tažení přístroje **zrušil `pointercancel`**
-    — tažení pak tiše nedělalo nic (našla prohlídka v1.21). Shift/Ctrl
+    — tažení pak tiše nedělalo nic (našla prohlídka). Shift/Ctrl
     v pohledu proto text neoznačuje (`mousedown` → `preventDefault`), začátek
     tažení označení zruší a `dragstart` se během tažení potlačí.
-- **Výběr víc přístrojů** (v1.21, jako v Průzkumníku): **Ctrl+klik** přidá /
+- **Výběr víc přístrojů** (jako v Průzkumníku): **Ctrl+klik** přidá /
   ubere, **Shift+klik** úsek od posledního kliknutého (`__rz.kotva`) přes
   řady zleva doprava a shora dolů (`rozvPoradi`), **obdélník** tažením
   z prázdného místa pohledu (Ctrl + obdélník přidá; `__rz.obdelnik` kreslí
@@ -1507,9 +1518,9 @@ a „…oteplení výpočtem (Dokumenty)".
 
 Test: `testy/test-rozvadec.js` (vymyšlená data; velká knihovna = ~670
 vymyšlených položek „Výrobce A" / „Výrobce B" generovaných v testu, do
-repozitáře nejdou žádná data výrobců; 166 kontrol — v1.19 i typ skříně,
+repozitáře nejdou žádná data výrobců; 166 kontrol — i typ skříně,
 nové vestavěné skříně, filtr typu, CSV s `typ_skrine` i bez, sbalení
-a samočinné sbalení pruhu; v1.21 skříň 6×24 **skutečnou myší**: Ctrl / Shift
+a samočinné sbalení pruhu; skříň 6×24 **skutečnou myší**: Ctrl / Shift
 / obdélník, tažení 5 přístrojů s pokračováním do další řady, duch ve
 stejném měřítku a zašedlé místo, Esc, automatický posun rámečku doleva,
 doprava i dolů (i z knihovny), poloha posuvníku po kliku vedle přístroje,
@@ -5514,7 +5525,7 @@ trafo, osvětlení…), sáhněte na tahle místa:
   což se musí ignorovat, jinak seznam vystřelí nahoru.
 - ✅ **PWA auto-reload po update** — network-first pro HTML,
   listener `controllerchange` → načte se sama jen v klidu, jinak pruh
-  „Načíst" (od 2026-10-19, viz oddíl „Nová verze se jen nabídne…").
+  „Načíst" (od v9.126, viz oddíl „Nová verze se jen nabídne…").
   Uživatel nemusí hard-reloadovat; cache bump v sw.js stačí.
 
 - ✅ **Knihovna textů — ukládání části a vkládání na kurzor** (2026-08-20):

@@ -33,7 +33,7 @@
 <script>
 (function() {
   'use strict';
-  var LAB_VERZE = 'v1.25 · 2026-10-21';   // bumpni spolu s CACHE_NAME v sw.js
+  var LAB_VERZE = 'v1.26 · 2026-10-21';   // bumpni spolu s CACHE_NAME v sw.js
 
   // ── klíče localStorage / sessionStorage ────────────────────────────────
   function klic(k) {
@@ -2256,7 +2256,7 @@ html.dark .rz-imp-chyby{background:#3a1f1c;border-color:#6b2c25}
 <body>
 
 <div class="topbar">
-  <div class="brand" data-action="home" style="cursor:pointer" title="Hlavní stránka">⚡ Revize <em>EL</em> <span class="ver">v9.125<span class="ver-date"> · 2026-10-16</span></span></div>
+  <div class="brand" data-action="home" style="cursor:pointer" title="Hlavní stránka">⚡ Revize <em>EL</em> <span class="ver">v9.128<span class="ver-date"> · 2026-10-21</span></span></div>
   <div class="topbar-right">
     <button class="btn btn-ghost" id="theme-toggle" data-action="toggleTheme" title="Přepnout světlý / tmavý režim">🌙</button>
     <button class="btn btn-ghost" id="view-toggle" data-action="toggleView" title="Přepnout zobrazení PC / Mobil">💻 PC</button>
@@ -2409,6 +2409,50 @@ html.dark .rz-imp-chyby{background:#3a1f1c;border-color:#6b2c25}
     <button type="button" class="nov-lupa-x" data-action="novinkyHledatZrusit" title="Zrušit hledání (Esc)">✕</button>
   </div>
   <div id="nov-hledat-info" class="nov-lupa-info"></div>
+
+  <div class="scard" data-nov-datum="2026-10-21">
+    <div class="scard-title">🗄️ Rozvaděč DBO — návrh a dokumentace <span class="nov-datum">21. 10. 2026</span></div>
+    <p style="font-size:.88rem;line-height:1.6;margin-bottom:.6rem">Na úvodu v <strong>Tvorbě dokumentace</strong> přibyla dlaždice <strong>Rozvaděč DBO – návrh a dokumentace</strong> (ČSN EN 61439-3). Rozvaděč si poskládáte v čelním pohledu ze skříní a přístrojů a program z návrhu udělá štítek, dokumenty i schéma.</p>
+    <div style="font-size:.85rem;line-height:1.7">
+      <ul style="margin:.3rem 0 0 1.4rem;padding:0">
+        <li><strong>Začněte zeleným tlačítkem ＋ Navrhnout nový rozvaděč.</strong> Vyberte skříň a přístroje do ní přetáhněte myší z knihovny vlevo (nebo klepněte na rychlé tlačítko). Vpravo se upravují vlastnosti vybraného přístroje — označení, vývod, fáze, kabel.</li>
+        <li><strong>📋 Zakreslit z revizní zprávy</strong> — rozvaděče, které už máte popsané v elektro revizi, program zakreslí sám. Revizní zprávu přitom jen čte, nic v ní nemění.</li>
+        <li>Víc přístrojů označíte <strong>Ctrl+klikem</strong>, <strong>Shift+klikem</strong> nebo tažením obdélníku. Pravý klik na přístroj nabídne kopírování, vložení a smazání, vše jde vzít <strong>ZPĚT</strong> (i Ctrl+Z).</li>
+        <li>Rozvaděče jedné stavby si dáte do <strong>objektu</strong> (jako složky) — tažením řádku nebo pravým klikem.</li>
+        <li>Záložka <strong>⚡ Schéma</strong> nakreslí schéma zapojení z návrhu, záložka <strong>📄 Dokumenty</strong> vygeneruje PDF s čelním pohledem, technickými údaji, EU prohlášením o shodě a protokolem o kusovém ověření. <strong>🏷 Tisk štítku</strong> je zvlášť.</li>
+        <li>Panel <strong>⚖ Fáze</strong> ukáže zatížení L1 / L2 / L3 a umí navrhnout přefázování (vždy nejdřív ukáže náhled). Oteplení skříně jde ověřit výpočtem.</li>
+        <li>Knihovna obsahuje obecné přístroje a skříně. Přístroje konkrétního výrobce si můžete <strong>načíst ze souboru</strong> nebo přidat ručně ve sbalené části <strong>⚙ Knihovna přístrojů a skříní</strong> pod seznamem.</li>
+      </ul>
+      <p style="font-size:.8rem;color:var(--muted);margin-top:.6rem">Rozvaděče jsou úplně oddělené od revizí — neobjeví se v archivu, plánu ani hledání. Zálohují se spolu s ostatní dokumentací. Naměřené hodnoty a výsledky zkoušek program nikdy nevymýšlí, údaje, které ještě nejsou ověřené v normě, jsou ve formuláři označené „čeká na ověření v ČSN".</p>
+    </div>
+  </div>
+
+  <div class="scard" data-nov-datum="2026-10-21">
+    <div class="scard-title">👷 Zpráva od kolegy zůstane jeho <span class="nov-datum">21. 10. 2026</span></div>
+    <p style="font-size:.88rem;line-height:1.6;margin-bottom:.6rem">Když otevřete zprávu, kterou dělal jiný technik (od kolegy, ze souboru, z balíku), <strong>zůstane v ní jeho jméno, osvědčení i jeho měřicí přístroje</strong>. Dřív je program při otevření přepsal vaším profilem — teď je z archivu vždycky vidět, kdo zprávu opravdu dělal.</p>
+    <div style="font-size:.85rem;line-height:1.7">
+      <ul style="margin:.3rem 0 0 1.4rem;padding:0">
+        <li><strong>Nová zpráva, 🔗 Navázat a ⧉ Kopírovat</strong> se vyplní z vašeho profilu jako dřív — je to vaše práce.</li>
+        <li>Je-li ve zprávě jiný technik než ve vašem profilu, pod štítkem technika je řádek <strong>„Zprávu zpracoval jiný technik"</strong>.</li>
+        <li>Tlačítko <strong>↻ Vyplnit z mého profilu</strong> u technika a u přístrojů dosadí vaše údaje — hodí se třeba po vydání nového osvědčení nebo po kalibraci přístroje u zprávy, kterou už máte rozdělanou.</li>
+        <li><strong>Vaše razítko a podpis se do cizí zprávy nevloží</strong>, panel tisku to řekne.</li>
+      </ul>
+      <p style="font-size:.8rem;color:var(--muted);margin-top:.6rem">Starší vlastní zprávy, ve kterých technik vyplněný není, dostanou údaje z profilu jako dřív. Pouhým otevřením se uložená zpráva nemění.</p>
+    </div>
+  </div>
+
+  <div class="scard" data-nov-datum="2026-10-21">
+    <div class="scard-title">🔄 Nová verze programu vás nevyruší <span class="nov-datum">21. 10. 2026</span></div>
+    <p style="font-size:.88rem;line-height:1.6;margin-bottom:.6rem">Program se dřív po stažení nové verze sám obnovil a skočil na úvod — i uprostřed práce. Teď:</p>
+    <div style="font-size:.85rem;line-height:1.7">
+      <ul style="margin:.3rem 0 0 1.4rem;padding:0">
+        <li><strong>Když máte otevřenou zprávu nebo dokument</strong>, dole se jen objeví pruh <strong>„Je k dispozici nová verze programu. Načíst"</strong>. Klepnete, až se vám to hodí — nebo nic nedělejte, nová verze se načte sama, jakmile zprávu zavřete.</li>
+        <li><strong>Na úvodu, v archivu, v nastavení nebo v plánu</strong> se nová verze načte sama, když zrovna nic neděláte, a řekne to hláškou „Program se aktualizoval na novou verzi."</li>
+        <li><strong>Po načtení stránky jste tam, kde jste byli</strong> — v téže zprávě na téže záložce, v plánu, v nastavení nebo v rozepsaném dokumentu. Platí to i tehdy, když prohlížeč kartu na pozadí uspí a pak ji načte znovu.</li>
+        <li>Co jste právě psali, se neztratí.</li>
+      </ul>
+    </div>
+  </div>
 
   <div class="scard" data-nov-datum="2026-09-24">
     <div class="scard-title">📋 Excel ↔ tabulka měření — tam i zpátky <span class="nov-datum">24. 9. 2026</span></div>
@@ -34986,6 +35030,12 @@ TD_AKCE.tdRSchPdf = async function () {
 // Načte se až při prvním PDF se schématem. Když nejde (offline bez cache,
 // starý prohlížeč), PDF se udělá jako obrázek 300 dpi — nic se neztratí.
 var __vektor = null;
+// Kontrolní otisk (SRI) knihovny svg2pdf — soubor je svg2pdf.js@2.8.1 dist/
+// z npm beze změny, jen bez řádku sourceMappingURL. PŘI VÝMĚNĚ SOUBORU
+// PŘEPOČÍTAT: openssl dgst -sha384 -binary vektor/svg2pdf.umd.min.js | openssl base64 -A
+// Z disku (file://, offline varianta ze ZIPu) se otisk nepoužije — prohlížeč
+// by kontrolu neprošel a skript nespustil (totéž pravidlo jako zipBezOtisku).
+var VEKTOR_OTISK = 'sha384-Wg+t1ZY7hXWPTSv0ZlClti85MMDYbWvSAYaPFzz6mjKZMVCoHlZMGcphmeb+jFZf';
 function vektorNacist() {
   if (__vektor) return __vektor;
   var bin = function (url) {
@@ -34997,6 +35047,7 @@ function vektorNacist() {
   };
   var skript = (window.jspdf && window.jspdf.jsPDF && window.jspdf.jsPDF.API && window.jspdf.jsPDF.API.svg) ? Promise.resolve() : new Promise(function (ok, chyba) {
     var s = document.createElement('script');
+    if (/^https?:$/.test(location.protocol)) { s.integrity = VEKTOR_OTISK; s.crossOrigin = 'anonymous'; }
     s.src = 'vektor/svg2pdf.umd.min.js'; s.onload = ok; s.onerror = function () { chyba(new Error('svg2pdf')); };
     document.head.appendChild(s);
   });

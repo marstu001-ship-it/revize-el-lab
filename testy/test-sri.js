@@ -3,7 +3,8 @@
 // s CORS hlavičkou (corsserver.py) — obyčejný http.server by fetch/SRI shodil.
 // Testuje se trojí: (1) se správnými bajty se skript NAČTE, (2) po změně
 // jediného bajtu se NENAČTE (jinak by otisk nic nehlídal), (3) offline
-// varianta z index-offline.html otisk NEMÁ (jinak by file:// nefungovalo).
+// varianta z index-offline.html otisk NEMÁ (jinak by file:// nefungovalo),
+// (4) totéž pro svg2pdf z vektor/ (v9.127).
 const { chromium } = require('./pw');
 const fs = require('fs'), cp = require('child_process'), path = require('path');
 const DIR = __dirname, SRC = path.join(__dirname, '..', 'index.html');
@@ -79,6 +80,48 @@ function priprav(dir, tamper) {
       check('offline: crossorigin u knihovny/ zmizel', !/knihovny\/jspdf[^>]*crossorigin/.test(out));
       check('offline: cizí skript zůstal nedotčený', out.indexOf('sha384-YYY') !== -1);
       check('offline: cesta na knihovnu zůstala', out.indexOf('knihovny/jspdf.umd.min.js') !== -1);
+    }
+
+    // 4) svg2pdf z vektor/ (v9.127) — načítá se až při PDF schématu rozvaděče,
+    //    se stejného původu, ale s otiskem: správné bajty projdou, o bit jiné ne,
+    //    otisk sedí se souborem a z disku (file://) se otisk nenastaví.
+    const kod = fs.readFileSync(SRC, 'utf8');
+    const otisk = (kod.match(/var VEKTOR_OTISK = '([^']+)'/) || [])[1];
+    const spoc = 'sha384-' + require('crypto').createHash('sha384').update(fs.readFileSync(path.join(DIR, '..', 'vektor', 'svg2pdf.umd.min.js'))).digest('base64');
+    check('svg2pdf: otisk v programu sedí se souborem vektor/svg2pdf.umd.min.js', otisk === spoc, otisk + ' × ' + spoc);
+    for (const [jmeno, tamper, cekamOk] of [['svg2pdf nedotčený', false, true], ['svg2pdf o 1 bit jinak', true, false]]) {
+      const dir = DIR + '/_beh/sritest';
+      fs.rmSync(dir, { recursive: true, force: true }); fs.mkdirSync(dir + '/vektor', { recursive: true });
+      fs.copyFileSync(SRC, dir + '/index.html');
+      fs.readdirSync(path.join(DIR, '..', 'vektor')).forEach(f => fs.copyFileSync(path.join(DIR, '..', 'vektor', f), dir + '/vektor/' + f));
+      if (tamper) { const f = dir + '/vektor/svg2pdf.umd.min.js', bb = fs.readFileSync(f); bb[bb.length - 2] ^= 1; fs.writeFileSync(f, bb); }
+      const a = start(8906, dir); await new Promise(r => setTimeout(r, 600));
+      const ctx = await br.newContext();
+      await ctx.addInitScript(() => { navigator.serviceWorker.register = () => new Promise(() => {}); });
+      const p = await ctx.newPage(); const chyby = [];
+      p.on('console', m => { if (m.type() === 'error') chyby.push(m.text()); });
+      // knihovny z cdnjs sandbox nepustí — jsPDF se podstrčí z testy/knihovny
+      await p.route(/cdnjs\.cloudflare\.com.*jspdf/, r => r.fulfill({ body: fs.readFileSync(path.join(DIR, 'knihovny', 'jspdf.umd.min.js')), contentType: 'text/javascript', headers: { 'Access-Control-Allow-Origin': '*' } }));
+      await p.route(/cdnjs\.cloudflare\.com.*html2canvas/, r => r.fulfill({ body: fs.readFileSync(path.join(DIR, 'knihovny', 'html2canvas.min.js')), contentType: 'text/javascript', headers: { 'Access-Control-Allow-Origin': '*' } }));
+      await p.route(/fonts\.(googleapis|gstatic)\.com/, r => r.fulfill({ body: '', contentType: 'text/css' }));
+      await p.goto('http://127.0.0.1:8906/index.html', { waitUntil: 'load' });
+      const v = await p.evaluate(async () => { const x = await vektorNacist(); const s = document.querySelector('script[src*="svg2pdf"]');
+        return { ok: !!x, integrity: s ? s.integrity : null }; });
+      check('SRI: ' + jmeno + ' → ' + (cekamOk ? 'se načte' : 'se NENAČTE (PDF schématu pak jako obrázek)'), v.ok === cekamOk && v.integrity === otisk, JSON.stringify(v));
+      if (!cekamOk) check('  …a prohlížeč řekne proč (integrity v chybě)', chyby.some(t => /integrity/i.test(t)), chyby[0] || 'žádná chyba v konzoli');
+      await ctx.close(); a.kill(); await new Promise(r => setTimeout(r, 200));
+    }
+    {
+      const dir = DIR + '/_beh/sritest';
+      const ctx = await br.newContext();
+      await ctx.addInitScript(() => { try { navigator.serviceWorker.register = () => new Promise(() => {}); } catch (e) {} });
+      const p = await ctx.newPage();
+      await p.route(/^https?:/, r => r.abort());
+      await p.goto('file://' + dir + '/index.html', { waitUntil: 'load' }).catch(() => {});
+      const v = await p.evaluate(async () => { try { await vektorNacist(); } catch (e) {} const s = document.querySelector('script[src*="svg2pdf"]');
+        return s ? s.getAttribute('integrity') : 'žádný skript'; }).catch(e => 'chyba: ' + e.message);
+      check('offline z disku (file://): svg2pdf se načítá bez otisku', v === null, String(v));
+      await ctx.close();
     }
   } finally {
     await br.close(); srv.forEach(p => { try { p.kill(); } catch (e) {} });

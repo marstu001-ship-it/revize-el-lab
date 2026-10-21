@@ -114,12 +114,21 @@ const w = ms => new Promise(r => setTimeout(r, ms));
   check('seznam dokumentů téhož typu', s.s === 'screen-dok-seznam' && d2.typ === 'pouvv' && /vnějších vlivů/.test(d2.tit), d2.tit);
 
   // ── rozvaděč: přístroj vložený těsně před obnovením ────────────────────
+  // Část s rozvaděčem běží jen, když program typ rozvaděče má (DOK_TYPY.rozv);
+  // bez něj se tytéž kontroly obrazovky dělají s protokolem vnějších vlivů.
+  const maRozv = await p.evaluate(() => !!(typeof DOK_TYPY !== 'undefined' && DOK_TYPY.rozv));
+  const dokTyp = maRozv ? 'rozv' : 'pouvv', dokNazev = maRozv ? 'rozvaděčem' : 'dokumentem';
+  if (!maRozv) {
+    await p.evaluate(async () => { await dokOtevrit(DOK.dokumenty[0].uid); });
+    await w(300);
+  } else {
   await p.evaluate(async () => { await dokNovy('rozv'); rozvSkrinNastavit(rozvKnihPolozka('v-sk-2x12-n')); await dokUlozitOtevreny();
     rozvVlozit('v-fa-1-B16', 0, 0); rozvVlozit('v-fa-1-B10', 0, 1); });
   await nacti();
   const r1 = await p.evaluate(() => ({ s: document.querySelector('.screen.active').id, typ: document.getElementById('screen-dok-form').getAttribute('data-typ'),
     r: __rz && __rz.rady[0].prvky.map(x => x.ozn).join(','), svg: !!document.querySelector('#rz-pohled .rz-svg') }));
   check('rozvaděč: editor zpátky i s přístroji vloženými těsně před obnovením', r1.s === 'screen-dok-form' && r1.typ === 'rozv' && r1.r === '-FA1,-FA2' && r1.svg, JSON.stringify(r1));
+  }
   await p.evaluate(async () => { await dokNahled(); }); await w(500); await nacti();
   s = await stav();
   check('náhled PDF dokumentu → po obnovení editor dokumentu', s.s === 'screen-dok-form', s.s);
@@ -134,19 +143,19 @@ const w = ms => new Promise(r => setTimeout(r, ms));
   const cekejNacteni = (ms) => p.waitForNavigation({ timeout: ms }).then(() => true).catch(() => false);
   const porad = () => p.evaluate(() => window.__porad === 'stejná stránka');
 
-  // rozvaděč v editoru (tam jsme po předchozí kontrole): jen pruh, ani schované okno nic
+  // rozvaděč (nebo dokument) v editoru (tam jsme po předchozí kontrole): jen pruh, ani schované okno nic
   let nav = cekejNacteni(4500);
   await novaVerze(); await w(500); await skryt(true);
   let bylo = await nav; await skryt(false);
   const rz = await p.evaluate(() => ({ s: document.querySelector('.screen.active').id, pruh: !!document.getElementById('nova-verze') }));
-  check('nová verze s otevřeným rozvaděčem: jen pruh, nic se neobnoví ani po schování okna', !bylo && await porad() && rz.s === 'screen-dok-form' && rz.pruh, JSON.stringify(rz));
+  check('nová verze s otevřeným ' + dokNazev + ': jen pruh, nic se neobnoví ani po schování okna', !bylo && await porad() && rz.s === 'screen-dok-form' && rz.pruh, JSON.stringify(rz));
   // zavření (zpět na seznam) → načte se sama, hláška, návrat na seznam
   nav = cekejNacteni(9000);
-  await p.evaluate(() => dokOtevritSeznam('rozv'));
+  await p.evaluate((t) => dokOtevritSeznam(t), dokTyp);
   bylo = await nav; await w(1400);
   const po1 = await p.evaluate(() => ({ s: document.querySelector('.screen.active').id, porad: window.__porad,
     hl: Array.from(document.querySelectorAll('.toast, #toast, [class*="toast"]')).map(e => e.textContent).join(' | '), n: DOK.dokumenty.length }));
-  check('po zavření rozvaděče se nová verze načte sama, vrátí se na seznam a ukáže hlášku', bylo && po1.porad === undefined && po1.s === 'screen-dok-seznam' &&
+  check('po zavření ' + (maRozv ? 'rozvaděče' : 'dokumentu') + ' se nová verze načte sama, vrátí se na seznam a ukáže hlášku', bylo && po1.porad === undefined && po1.s === 'screen-dok-seznam' &&
     /aktualizoval na novou verzi/.test(po1.hl), JSON.stringify(po1));
 
   // úvod: načte se sama
