@@ -21,6 +21,8 @@ function priprav() {
     fs.writeFileSync(B + '/revize-el/' + f, cp.execFileSync('git', ['-C', R, 'show', OSTRY + ':' + f], { maxBuffer: 64 << 20 }));
     fs.copyFileSync(path.join(R, f), B + '/revize-el-lab/' + f);
   }
+  // vlastní soubory labu, které sw.js ukládá při instalaci (bez nich instalace selže)
+  fs.cpSync(path.join(R, 'vektor'), B + '/revize-el-lab/vektor', { recursive: true });
   fs.writeFileSync(B + '/prazdna.html', '<!doctype html><meta charset="utf-8"><title>surový přístup</title>');
 }
 
