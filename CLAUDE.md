@@ -1074,7 +1074,7 @@ a výsledky zkoušek program nikdy nevymýšlí.**
   7 bodů a „Podepsáno za a jménem:" **doslova**; bod 5 NV 118/2016 a 117/2016
   (+ 481/2012 jen s RoHS), bod 6 normy ed. 3 / ed. 2 (+ ČSN EN IEC 63000 jen
   s RoHS) — u norem se „harmonizovaná" nepíše, jen nadpis bodu; bod 7
-  ověření návrhu, oteplení (obojí prázdné, nic se nevymýšlí) a odkaz na
+  ověření návrhu, oteplení (obojí prázdné, nic se nevymýšlí; od etapy 4 navíc odkaz na výpočet oteplení, když vyhovuje) a odkaz na
   protokol kusového ověření. Razítko a podpis z profilu, když jsou nahrané
   a zaškrtnuté.
 - **Protokol o kusovém ověření** (`ROZV_KO_POLOZKY`, `rozvPdfProtokol`):
@@ -1281,6 +1281,78 @@ a „…náhled schématu (PDF)". **Upraveno ve stejném commitu:**
 `test-rozvadec-dokumenty.js` (tři záložky, zaškrtávátko schématu, `pdfJen`
 ho vypíná), `test-rozvadec.js` (PDF etapy 1 bez schématu),
 `test-rozvadec-z-revize.js` (číslo obvodu).
+
+### Symetrie fází a ověření oteplení — etapa 4 (v1.24, 2026-10-21, bloky „SYMETRIE FÁZÍ" a „OVĚŘENÍ OTEPLENÍ VÝPOČTEM")
+
+Zadání uživatele. **Normu nikdo nečetl** — podklad je rešerše sekundárních
+zdrojů (BEAMA, Hager CZ, Electrosuisse, IET, Schneider). Co z ní není ověřené
+v ČSN, má ve formuláři `rozvCeka()` a v PDF se **neuvádí jako požadavek
+normy**. **Pv přístrojů a Penc skříně se nevymýšlejí** — jen `p.pv` (W/pól při
+In, kopie v rozvaděči), `skrin.penc`, nebo co technik zadá.
+
+**Fáze** (`rozvFazeSouhrn(rady, mapa)`):
+- Počítají se **jen vývody** (`rfVyvod` = `RS_OBVODOVE`: jistič, AFDD, RCBO,
+  pojistka) — ne QM, SPD, chrániče, rezervy, svorky. 3f (`rsTrif`) na všech
+  třech fázích. Zatížení = Ib, chybí-li, In (`rfProud`); ΣIn zvlášť.
+- **Nesymetrie = (max − min) / průměr × 100 %**, vzorec s čísly v bublině
+  (`rfNesVzorec`). **Mez z normy se nevymýšlí** — práh upozornění si technik
+  zadá (`d.faze = { prah }`, ve vlastnostech „Nastavení"); nad prahem je
+  ukazatel oranžový (`rz-faze-nad`).
+- **Ukazatel v liště** nad čelním pohledem `#rz-faze-ukaz`:
+  „L1 83 A · L2 93 A · L3 89 A · 11,3 %" (`rozvFazeUkazatel`, volá ho
+  `rozvPohledVykreslit` i `rozvSvgPrekreslit`).
+- **Panel „⚖ Fáze"** ve vlastnostech bez výběru (`rozvFazePanelHtml`): sloupce
+  grafu, „Ib nevyplněno u N přístrojů – počítá se In", „bez fáze: N vývodů,
+  X A — ukázat v pohledu" (`tdRFazeBez` je vybere), „⚖ Přefázovat…",
+  „Barvy fází" (pruh dole na přístroji L1 hnědá / L2 černá / L3 šedá, jen
+  v paměti `__rzFazeBarvy`, **do PDF ne** — `rozvSvg` jen bez `o.tisk`).
+- **Přefázovat** (`rozvPrefazovatNavrh`): hladově největší zátěž na nejméně
+  zatíženou fázi, pak doladění přesunem a výměnou dvojic. **Pod dvoupólovým
+  chráničem jde celá skupina (i chránič) na jednu fázi**, pod 4pólovým se
+  vývody rozkládají jednotlivě, RCBO/AFDD 1+N jsou samostatné. **3f a zamčené
+  (`prvek.fazeZamek`, „🔒 Zamknout fázi" ve vlastnostech) se nemění.**
+  Nepomůže-li návrh, nenavrhne nic. **Vždy nejdřív náhled** `#modal-rz-faze`
+  (před → po, změny zvýrazněné, nesymetrie před/po) → Použít přes `rozvZmena`
+  (ZPĚT, Ctrl+Z) / Zrušit nic nezmění. S výběrem víc = „⚖ Přefázovat vybrané…"
+  (ostatní pevně).
+
+**Oteplení — čl. 10.10.4.2** (`rozvOteplVypocet(d)`, oddíl Dokumentů mezi
+Technickými údaji a Prohlášením):
+- **Jen DBO a InA ≤ 630 A** (`rotInA`: tech.ina → privodIn → QM), jinak
+  stav `nelze` a řádek „platí jen pro jeden prostor do 630 A – ověřte jinak".
+- Řádky `ROT_KAT` (QM, FA, FI, FIFA, AFDD, FU, KM): Inc = ručně → Ib → In
+  (vývody × RDF); u chrániče a QM součet vývodů za ním (nejzatíženější fáze
+  u 3/4pólových), nejvýš In. **Pv při Inc = Pv/pól × póly × (Inc / In)²**,
+  „Inc ≤ 0,8 In" [ověřit]. Chybí Pv → oranžový řádek „doplňte Pv", výsledek
+  neúplné. **Pv psané v tabulce jde do kopie přístroje (`x.p.pv`), ne do
+  knihovny.**
+- Pevné ztráty (W), přirážka **50 % (odhad BEAMA) / 30 % (Schneider – jen
+  spoje) / vlastní**, RDF **bez** (výchozí) / tabulka 2–3 0,8 · 4–5 0,7 ·
+  6–9 0,6 · 10+ 0,5 [ověřit IET] / výrobce — RDF jde jako odvozená hodnota
+  do `tech.rdf`. Penc ze skříně (přepsatelné), ΔT z poznámky skříně
+  („ΔT = 30 K") nebo ručně. **Bez zaškrtnutí „Přístroje jsou určeny pro
+  teplotu okolí 55 °C" je výsledek neúplný.**
+- Výsledek: vyhovuje při ΣPv ≤ Penc s rezervou W a %, jinak „Překročeno
+  o X W – větší skříň, nižší Inc, nebo ověřit zkouškou." **Výsledek se
+  neukládá, vždy se počítá.**
+- **PDF:** stránka „Ověření oteplení výpočtem" (`rozvPdfOtepleni`, na výšku)
+  přes zaškrtávátko `dokVyber.otepleni` — výchozí (odvozené, ukládá se
+  prázdné) = přiložit jen při „vyhovuje" (`rozvOteplPriloha`). **Odkaz
+  v prohlášení (bod 7) a „Přílohy" v protokolu kusového ověření jen když
+  vyhovuje A stránka jde do PDF** (`rozvOteplOdkaz`).
+- **Data (vše volitelné, starý rozvaděč beze změny — test):** `d.faze { prah }`,
+  `prvek.fazeZamek`, `d.otepleni { inc: { uid: A }, pevne, prirazka,
+  prirazkaVlastni, rdfRezim, rdfVyrobce, penc, dt, okoli55 }` (odvozené
+  prázdné, `vysledek` se neukládá).
+
+Test: `testy/test-rozvadec-faze-otepleni.js` (40 kontrol — byt 3+1 přesně
+po fázích, 3f, Ib, bez fáze, práh, barvy jen na obrazovce; přefázování
+s 2P skupinou, zámkem, 3f, náhled + Zrušit, Použít + Ctrl+Z, jen vybrané;
+oteplení na W přesně, (Inc/In)², přirážka 30 %, RDF tabulka, ruční Inc,
+chybějící Pv / Penc / 55 °C, Pv do kopie, nevyhovuje, nad 630 A, PDF stránka
+a odkazy jen při vyhovuje, uložená data, starý rozvaděč, data revizí, telefon).
+V `test-mobil.js` stavy „rozvaděč – panel fází…", „…přefázovat, náhled změn"
+a „…oteplení výpočtem (Dokumenty)".
 
 ### Čelní pohled a skládání (část 3)
 

@@ -185,6 +185,18 @@ function pomocnik() {
     }
     return null;
   };
+  // Prvek celý mimo viditelnou část předka s vlastním posunem (položka dlouhého
+  // seznamu odrolovaná pryč) není vidět — nemůže být „nalepený" na nic.
+  const vRameci = el => {
+    const r = el.getBoundingClientRect();
+    for (let a = el.parentElement; a && a !== document.body && a !== document.documentElement; a = a.parentElement) {
+      const cs = getComputedStyle(a);
+      if (cs.overflowX === 'visible' && cs.overflowY === 'visible') continue;
+      const q = a.getBoundingClientRect();
+      if (r.bottom <= q.top || r.top >= q.bottom || r.right <= q.left || r.left >= q.right) return false;
+    }
+    return true;
+  };
   const pevnyPredek = el => {
     for (let a = el; a && a !== document.documentElement; a = a.parentElement) {
       const p = getComputedStyle(a).position;
@@ -294,7 +306,7 @@ function pomocnik() {
     // Buňky tabulky (včetně záhlaví) sousedí jako v Excelu, to vadu nedělá;
     // pevně umístěné prvky (mikrofon) se posouvají přes obsah — u nich
     // rozhoduje kontrola „zakryto", ne sousedství.
-    const seznam = Array.from(plochy.entries()).filter(([el]) => !(el.closest('td, th') && el.closest('table')) && !pevnyPredek(el));
+    const seznam = Array.from(plochy.entries()).filter(([el]) => !(el.closest('td, th') && el.closest('table')) && !pevnyPredek(el) && vRameci(el));
     for (let i = 0; i < seznam.length; i++) for (let j = i + 1; j < seznam.length; j++) {
       const [a, ra] = seznam[i], [b, rb] = seznam[j];
       if (a.contains(b) || b.contains(a)) continue;
@@ -579,6 +591,17 @@ function vsechnyStavy(zalozky) {
   add('rozvaděč – vlastnosti s přístroji různých výrobců', 'Tvorba dokumentace', E(async () => {
     await __M.rozv(); __rz.rady[1].prvky[1].p.vyrobce = 'Výrobce A'; __rz.rady[1].prvky[2].p.vyrobce = 'Výrobce B';
     __rz.vyber = null; rozvVlastnostiVykreslit(); document.getElementById('rz-vlastnosti').scrollIntoView({ block: 'start' }); await __M.w(100);
+  }));
+  add('rozvaděč – panel fází (nesymetrie, bez fáze, nastavení)', 'Tvorba dokumentace', E(async () => {
+    await __M.rozv(); __rz.rady[1].prvky[1].faze = ''; __rz.vyber = null; rozvPohledVykreslit(); rozvVlastnostiVykreslit();
+    const pf = document.querySelector('#rz-vlastnosti .rp-faze'); pf.querySelector('details').open = true; pf.scrollIntoView({ block: 'start' }); await __M.w(100);
+  }));
+  add('rozvaděč – přefázovat, náhled změn', 'Tvorba dokumentace', E(async () => {
+    await __M.rozv(); __rz.vyber = null; rozvVlastnostiVykreslit(); TD_AKCE.tdRPrefazovat(); await __M.w(150);
+  }), '#modal-rz-faze');
+  add('rozvaděč – oteplení výpočtem (Dokumenty)', 'Tvorba dokumentace', E(async () => {
+    await __M.rozv(); rozvZalozkaNastavit('dok'); const o = document.querySelector('[data-oddil="otepleni"]'); o.open = true;
+    o.scrollIntoView({ block: 'start' }); await __M.w(100);
   }));
   add('rozvaděč – náhled PDF', 'Tvorba dokumentace', E(async () => { await __M.rozv(); await dokNahled(); await __M.w(400); }));
   add('rozvaděč – přeplněná řada', 'Tvorba dokumentace', E(async () => {

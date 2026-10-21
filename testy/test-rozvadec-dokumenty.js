@@ -76,10 +76,10 @@ async function priprava(p) {
   check('záložka Dokumenty: jedna hlavní akce „📄 Vygenerovat dokumentaci (PDF)" nahoře, plné tlačítko', z1.dok && !z1.navrh && z1.akce === '📄 Vygenerovat dokumentaci (PDF)' &&
     z1.nahore && z1.plne !== 'rgba(0, 0, 0, 0)', JSON.stringify(z1));
   check('výběr do PDF: čelní pohled a seznam · technické údaje · prohlášení · protokol (vše zaškrtnuté), štítek zvlášť',
-    z1.vyber === '☑čelní pohled a seznam přístrojů|☑schéma zapojení|☑technické údaje|☑prohlášení o shodě|☑protokol o kusovém ověření|☐popisky pod přístroje' && z1.stitek === '🏷 Tisk štítku' &&
+    z1.vyber === '☑čelní pohled a seznam přístrojů|☑schéma zapojení|☑technické údaje|☑prohlášení o shodě|☑protokol o kusovém ověření|☐ověření oteplení (příloha)|☐popisky pod přístroje' && z1.stitek === '🏷 Tisk štítku' &&
     z1.popisky === '🏷 Tisk popisků přístrojů', z1.vyber);
-  check('oddíly sbalitelné: Výroba a značení (otevřený) · Technické údaje · Prohlášení · Kusové ověření', z1.oddily ===
-    '🏭 Výroba a značení+|📋 Technické údaje-|📜 Prohlášení o shodě-|🔧 Kusové ověření (čl. 11)-', z1.oddily);
+  check('oddíly sbalitelné: Výroba a značení (otevřený) · Technické údaje · Oteplení · Prohlášení · Kusové ověření', z1.oddily ===
+    '🏭 Výroba a značení+|📋 Technické údaje-|🌡 Oteplení — ověření výpočtem (čl. 10.10.4.2)-|📜 Prohlášení o shodě-|🔧 Kusové ověření (čl. 11)-', z1.oddily);
   check('na záložce Dokumenty nefungují klávesy návrhu (Delete nesmaže skrytý přístroj)', z1.aktivni === false);
   await p.screenshot({ path: BEH + '/rz-dok-zalozka.png' });
 
@@ -376,7 +376,7 @@ async function priprava(p) {
       vysl: tr.map(r => r.querySelector('select').value).join(','), metody: Array.from(met.options).map(o => o.value).join(','),
       au: document.querySelector('[data-dk="ko.a.u"]').value, auPh: document.querySelector('[data-dk="ko.a.u"]').placeholder, at: document.querySelector('[data-dk="ko.a.t"]').value,
       iso: ['l1', 'l2', 'l3', 'n'].map(k => document.querySelector('[data-dk="ko.b.' + k + '"]').value).join(''),
-      ceka: Array.from(document.querySelectorAll('#rz-pan-dok .rz-ceka')).map(c => c.closest('label, td').textContent.replace(/čeká na ověření v ČSN/, '').trim()) };
+      ceka: Array.from(document.querySelectorAll('#rz-pan-dok .rz-ceka')).map(c => c.closest('label, td, th, div').textContent.replace(/čeká na ověření v ČSN/, '').trim()) };
   });
   check('protokol: 9 položek čl. 11.2–11.10 se způsobem S / S/P / P podle podkladu', ko.radky === '11.2:S,11.3:S/P,11.4:S/P,11.5:S,11.6:S/P,11.7:S,11.8:P,11.9:P,11.10:P' &&
     ko.nazvy === 'Stupeň krytí krytu|Vzdušné vzdálenosti a povrchové cesty|Ochrana před úrazem el. proudem a celistvost ochranných obvodů|Zabudování spínacích přístrojů a komponent|Vnitřní elektrické obvody a spoje|Svorky pro vnější vodiče|Mechanická funkce|Dielektrické vlastnosti|Zapojení, provozní vlastnosti a funkce', ko.radky);
