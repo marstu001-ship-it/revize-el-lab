@@ -1793,6 +1793,13 @@ html.dark .rf-nahled tr.rf-zmena td{background:#3a3214}
 .rz-zatrh{font-size:.86rem;margin:.3rem 0}
 .rz-dok-stitek-r{display:flex;flex-wrap:wrap;align-items:center;gap:.2rem .7rem;margin:.2rem 0 .5rem}
 .rz-dok-stitek-r .add-row{margin:0}
+/* Tisk štítku a popisků — obrysová zelená tlačítka (vedlejší akce, menší než hlavní) */
+.rz-dok-tisk2{display:inline-flex;align-items:center;gap:.35rem;min-height:40px;padding:.45rem 1rem;font-family:var(--sans);font-size:.95rem;font-weight:600;
+  color:#0f7b5f;background:transparent;border:2px solid #0f7b5f;border-radius:8px;cursor:pointer}
+.rz-dok-tisk2:hover{background:#e8f5ef}
+.rz-dok-tisk2:focus-visible{outline:3px solid #7fcfae;outline-offset:2px}
+html.dark .rz-dok-tisk2{color:#7fcfae;border-color:#7fcfae}
+html.dark .rz-dok-tisk2:hover{background:#1f3b30}
 .rz-dok-stitek-r .dk-nepov{font-size:.78rem}
 .rz-dok-chybi{font-size:.84rem;margin:.3rem 0 .6rem;color:#0f7b5f}
 .rz-dok-chybi.chybi{color:#8a4b00}
@@ -2185,6 +2192,7 @@ html.dark .rz-imp-chyby{background:#3a1f1c;border-color:#6b2c25}
   .rot-tab input{width:100%;min-width:3.6rem}
   .rz-sch-ram{max-height:none}
   .rz-sch-hlava .rz-sch-tisk{width:100%}
+  .rz-dok-tisk2{flex:1 1 100%;justify-content:center;min-height:44px}
   .rz-sch-info{min-width:0}
   .rz-dok-hlava .rz-dok-generuj{display:flex;width:100%;justify-content:center}
   .rz-ko-pridat{min-height:44px;font-size:16px;width:100%}
@@ -33187,8 +33195,8 @@ function rozvDokHtml(d) {
     '<div class="rz-dok-vyber"><span class="rz-dok-vyber-t">Do PDF patří:</span>' +
       zatrh('cp', 'čelní pohled a seznam přístrojů') + zatrh('schema', 'schéma zapojení') + zatrh('tech', 'technické údaje') + zatrh('prohl', 'prohlášení o shodě') +
       zatrh('ko', 'protokol o kusovém ověření') + rozvOteplZatrh(d) + zatrh('popisky', 'popisky pod přístroje') + '</div>' +
-    '<div class="rz-dok-stitek-r"><button class="add-row rz-dok-stitek-btn" data-action="tdRStitek" title="Štítek se tiskne zvlášť, ve skutečné velikosti">🏷 Tisk štítku</button>' +
-      '<button class="add-row rz-dok-popisky-btn" data-action="tdRPopisky" title="Pásky s popisky okruhů, které se nalepí pod přístroje — ve skutečné velikosti">🏷 Tisk popisků přístrojů</button>' +
+    '<div class="rz-dok-stitek-r"><button class="rz-dok-tisk2 rz-dok-stitek-btn" data-action="tdRStitek" title="Štítek se tiskne zvlášť, ve skutečné velikosti">🏷 Tisk štítku</button>' +
+      '<button class="rz-dok-tisk2 rz-dok-popisky-btn" data-action="tdRPopisky" title="Pásky s popisky okruhů, které se nalepí pod přístroje — ve skutečné velikosti">🏷 Tisk popisků přístrojů</button>' +
       '<span class="dk-nepov">štítek a popisky se tisknou zvlášť, ve skutečné velikosti</span></div>' +
     '<div class="rz-dok-chybi" id="rz-dok-chybi"></div>' +
     '<div class="dk-pozn">Naměřené hodnoty a výsledky zkoušek vyplňujete vy — program je nikdy nedoplní. Štítek „' + ROZV_DOK_CEKA +
