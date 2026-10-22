@@ -20,13 +20,13 @@ async function stranka(b, port, init) {
   await ctx.route(/cdnjs\.cloudflare\.com\/.*\/(jspdf\.umd\.min\.js|html2canvas\.min\.js)$/, r => r.fulfill({
     path: path.join(__dirname, 'knihovny', r.request().url().split('/').pop()),
     contentType: 'application/javascript', headers: { 'Access-Control-Allow-Origin': '*' } }));
-  await ctx.addInitScript((dok) => {
-    try { navigator.serviceWorker.register = () => new Promise(() => {}); } catch (e) {}
-    if (dok && !sessionStorage.getItem('__nast')) { localStorage.setItem('revize_el_dok', dok); sessionStorage.setItem('__nast', '1'); }
-  }, init || null);
+  await ctx.addInitScript(() => { try { navigator.serviceWorker.register = () => new Promise(() => {}); } catch (e) {} });
   const p = await ctx.newPage(), err = [];
   p.on('pageerror', e => err.push(e.message)); p.on('dialog', d => d.accept());
   await p.goto('http://127.0.0.1:' + port + '/index.html'); await w(1200);
+  // uložené dokumenty až po načtení programu (přes jeho localStorage — v labu ho přesměruje
+  // labový blok, zapsané před ním by program neviděl), pak znovu načíst
+  if (init) { await p.evaluate(dok => localStorage.setItem('revize_el_dok', dok), init); await p.reload(); await w(1200); }
   await p.evaluate('window.__rozvByt = ' + require('./rozvadec-byt.js').toString());
   await p.evaluate(() => {
     STORE.technik = Object.assign({}, STORE.technik, { jmeno: 'Petr Vymyšlený', firma: 'Vymyšlená elektro s.r.o.', ico: '12345678', mesto: 'Kyjov' });
@@ -86,8 +86,8 @@ async function stranka(b, port, init) {
   check('… čelní pohled (SVG do PDF) znak po znaku stejný jako ve staré verzi', nove.out.svg === stary.out.svg);
   check('… schéma zapojení (všechny listy) stejné jako ve staré verzi', JSON.stringify(nove.out.schema) === JSON.stringify(stary.out.schema), nove.out.schema.length + ' listů');
   check('… popisky pod přístroje stejné jako ve staré verzi', nove.out.popisky === stary.out.popisky);
-  // v9.131 přidala do souhrnu fází seznam vývodů bez In (trafa, zdroje) — u bytu je prázdný
-  check('… součty fází a oteplení stejné jako ve staré verzi', nove.out.faze.replace(',"bezIn":[]', '') === stary.out.faze && nove.out.otepl === stary.out.otepl);
+  // v9.131 přidala do souhrnu fází seznam vývodů bez In (trafa, zdroje) — u bytu je prázdný (stará verze ho mít může i nemusí)
+  check('… součty fází a oteplení stejné jako ve staré verzi', nove.out.faze.replace(',"bezIn":[]', '') === stary.out.faze.replace(',"bezIn":[]', '') && nove.out.otepl === stary.out.otepl);
   check('… PDF (titul, čelní pohled, seznam) stejné jako ve staré verzi', nove.out.seznam === stary.out.seznam);
   await S.ctx.close();
 

@@ -9,6 +9,14 @@
 //  - převod PSC → DBO (odmítnutí s důvody i povolený převod),
 //  - DBO bajtově beze změny proti předchozí verzi (8902 = poslední commit),
 //  - data revizí beze změny, telefon (klepnutí na desku).
+// Etapa 5b (rozvadec-psc-hala.js — 3 pole, přívodní MCCB 400 A, sběrnice, deska
+// s MCCB / NH / odpínačem, DIN segment s chráničem a mezerou): záložky,
+// technické údaje se zrcadly a štítky [ověřit], ověření návrhu, oteplení
+// (víc polí jen volba, jedno pole do 630 A počítá), RDF PSC, KO metoda B,
+// štítek PSC, schéma (značky, sběrnice, hranice polí, odkazy listů, nic
+// nepřetéká), mezery v DIN segmentu (i skutečnou myší), celé PDF a DBO
+// (dokumenty, štítek, schéma, oteplení, fáze, PDF) znak po znaku jako v9.131
+// — spouštět se STARA=e663ab2, dokud HEAD není v9.131 sama.
 // Všechna data vymyšlená.
 const { chromium } = require('./pw');
 const PORT = process.env.PORT || 8901, URL = 'http://127.0.0.1:' + PORT + '/index.html';
@@ -42,6 +50,26 @@ function pomocnik() {
 const knihovny = ctx => ctx.route(/cdnjs\.cloudflare\.com\/.*\/(jspdf\.umd\.min\.js|html2canvas\.min\.js)$/, r => r.fulfill({
   path: path.join(__dirname, 'knihovny', r.request().url().split('/').pop()),
   contentType: 'application/javascript', headers: { 'Access-Control-Allow-Origin': '*' } }));
+
+// Prvky výkresu mimo rám a razítko nesmí přetéct vnitřní rám ani zasáhnout razítko.
+const presahy = (p, svg) => p.evaluate(svg => {
+  const box = document.createElement('div'); box.style.cssText = 'position:absolute;left:0;top:0';
+  box.innerHTML = svg; document.body.appendChild(box);
+  const s = box.querySelector('svg'), vb = s.getAttribute('viewBox').split(' ').map(Number), W = vb[2], H = vb[3];
+  s.setAttribute('width', W * 4); s.setAttribute('height', H * 4);
+  const R = s.getBoundingClientRect(), k = R.width / W, chyby = [];
+  const raz = { x0: W - 10 - 128, y0: H - 10 - 36 };
+  s.querySelectorAll('line, rect, path, circle, ellipse, text').forEach(el => {
+    if (el.closest('[data-ram],[data-razitko]') || (el.tagName === 'rect' && el.parentNode === s)) return;
+    const b = el.getBoundingClientRect(); if (!b.width && !b.height) return;
+    const x0 = (b.left - R.left) / k, y0 = (b.top - R.top) / k, x1 = (b.right - R.left) / k, y1 = (b.bottom - R.top) / k;
+    const t = (el.textContent || el.tagName).slice(0, 30);
+    if (x0 < 10 - 0.2 || y0 < 10 - 0.2 || x1 > W - 10 + 0.2 || y1 > H - 10 + 0.2) chyby.push('rám: ' + t);
+    else if (x1 > raz.x0 + 0.2 && y1 > raz.y0 + 0.2) chyby.push('razítko: ' + t);
+  });
+  box.remove();
+  return chyby;
+}, svg);
 
 (async () => {
   const b = await chromium.launch({ executablePath: '/opt/pw-browsers/chromium-1194/chrome-linux/chrome' });
@@ -319,6 +347,221 @@ const knihovny = ctx => ctx.route(/cdnjs\.cloudflare\.com\/.*\/(jspdf\.umd\.min\
   check('jednoduchý PSC (jedno pole, jen DIN segment) → DBO: stejné uid, číslo ROZ, skříň z DIN segmentu, přístroje zůstaly', doDbo.typ === 'rozv' && doDbo.uid === predDbo.uid &&
     /^ROZ-/.test(doDbo.cislo) && doDbo.rezim !== 'PSC' && /^\d+x\d+$/.test(doDbo.sk) && doDbo.oz.startsWith('-FA1,-FA2'), JSON.stringify(doDbo));
 
+  // ══ ETAPA 5b: dokumenty, schéma, oteplení a mezery PSC (ČSN EN IEC 61439-2) ══
+  // vymyšlený výrobce na štítek a do prohlášení — profil se na konci oddílu vrátí (data revizí se nesmí změnit)
+  await p.evaluate(async () => { window.__t0 = JSON.stringify(STORE.technik); STORE.technik = Object.assign({}, STORE.technik, { jmeno: 'Petr Vymyšlený', firma: 'Vymyšlená elektro s.r.o.', ico: '12345678', mesto: 'Kyjov', ulice: 'Polní 1', psc: '697 01' }); saveStore(); });
+  const H = await p.evaluate(require('./rozvadec-psc-hala.js'));
+  const h0 = await p.evaluate(() => ({ zal: Array.from(dokForm().querySelectorAll('.rz-zal')).map(b => b.getAttribute('data-z')).join(),
+    rady: __rz.rady.map(r => r.prvky.map(x => x.ozn + (x.privod ? '*' : '') + (x.mezera ? '@' + x.mezera : '')).join(',')).filter(Boolean).join(' / ') }));
+  check('5b: PSC má záložky Návrh | Schéma | Dokumenty; první MCCB je přívodní (*)', h0.zal === 'navrh,sch,dok' && /-QF1\*,-TA1,-PM1,-XN1,-XPE1/.test(h0.rady) && /-QF2,-QF3,-FU1,-QS1/.test(h0.rady), h0.zal + ' | ' + h0.rady);
+
+  // ── fáze: 3f vývody QF / QS na všechny fáze, přívodní QF1 ne ──
+  const fz = await p.evaluate(() => { const s = rozvFazeSouhrn(__rz.rady); return { L1: s.F.L1.In, L2: s.F.L2.In, L3: s.F.L3.In, n: s.vyvodu }; });
+  check('5b fáze: 3f vývody QF/QS/NH na všech fázích, přívodní MCCB se nepočítá (L1 = 250 + 160 + 160 + 160 + 16 + 32 = 778 A)',
+    fz.L1 === 778 && fz.L2 === 778 && fz.L3 === 772 && fz.n === 8, JSON.stringify(fz));
+
+  // ── záložka Dokumenty ──
+  await p.click('.rz-zal[data-z="dok"]'); await w(400);
+  await p.evaluate(() => document.querySelectorAll('#rz-pan-dok details').forEach(d => { d.open = true; }));
+  const dk = await p.evaluate(() => {
+    const f = dokForm(), t = f.querySelector('#rz-pan-dok').innerText, q = s => f.querySelector('#rz-pan-dok ' + s);
+    const lab = s => { const e = q(s); return e ? e.closest('.f').querySelector('label').innerText : ''; };
+    return { t, titul: q('.scard-title').innerText, ov: !!q('[data-dk="dokVyber.overeni"]'), popisky: !!q('[data-action="tdRPopisky"]') || !!q('[data-dk="dokVyber.popisky"]'),
+      icw: (q('[data-zrc="icw"]') || {}).value, forma: (q('[data-zrc="forma"]') || {}).value, montaz: (q('[data-zrc="provedeni"]') || {}).value,
+      ceka: ['tech.vnejsi', 'tech.pripojeni', 'tech.emc', 'tech.kp', 'tech.znec'].every(k => /čeká na ověření v ČSN/.test(lab('[data-dk="' + k + '"]'))),
+      rozm: (q('[data-dk="tech.rozmery"]') || {}).value, typ: (q('[data-dk="vyroba.typ"]') || {}).value, vel: (q('[data-dk="stitek.vel"]') || {}).value,
+      rezim: (q('[data-dk="rezim"]') || {}).value, inc: (q('.rz-psc-inc') || {}).innerText || '' };
+  });
+  check('5b Dokumenty: nadpis ČSN EN IEC 61439-2 (PSC), zaškrtávátko „ověření návrhu", bez popisků pod přístroje', /61439-2 \(PSC\)/.test(dk.titul) && dk.ov && !dk.popisky && dk.rezim === 'PSC', dk.titul);
+  check('5b technické údaje: Icw, forma a způsob montáže jsou zrcadla hlavičky (25 / 2b / volně stojící)', dk.icw === '25' && dk.forma === '2b' && dk.montaz === 'volně stojící', JSON.stringify([dk.icw, dk.forma, dk.montaz]));
+  check('5b technické údaje [ověřit]: vnější provedení, připojení F/D/W, EMC, kategorie přepětí, znečištění mají štítek „čeká na ověření v ČSN"', dk.ceka);
+  check('5b odvozené: typ „RH-hala PSC 3 pole", rozměry z polí „2000 × 2000", štítek 100 × 60 mm', dk.typ === 'RH-hala PSC 3 pole' && dk.rozm === '2000 × 2000' && dk.vel === '100x60', JSON.stringify([dk.typ, dk.rozm, dk.vel]));
+  check('5b Inc vývodů ze seznamu: -QF2 250 A, -QF3 160 A, -FU1 160 A, -QS1 160 A…', /-QF2 250 A, -QF3 160 A, -FU1 160 A, -QS1 160 A, -FA1 16 A/.test(dk.inc), dk.inc);
+  // zrcadlo: Icw v Dokumentech = pole v hlavičce
+  await p.evaluate(() => { const e = dokForm().querySelector('#rz-pan-dok [data-zrc="icw"]'); e.value = '30'; e.dispatchEvent(new Event('input', { bubbles: true })); });
+  const zr = await p.evaluate(() => dokForm().querySelector('.rz-hlavicka [data-dk="icw"]').value);
+  await p.evaluate(() => { const e = dokForm().querySelector('#rz-pan-dok [data-zrc="icw"]'); e.value = '25'; e.dispatchEvent(new Event('input', { bubbles: true })); });
+  check('5b zrcadlo Icw píše do hlavičky (žádná druhá hodnota)', zr === '30', zr);
+
+  // ── ověření návrhu ──
+  await p.evaluate(async () => {
+    const f = dokForm(), nast = (s, v) => { const e = f.querySelector(s); e.value = v; e.dispatchEvent(new Event('input', { bubbles: true })); e.dispatchEvent(new Event('change', { bubbles: true })); };
+    nast('[data-dk="ov.system"]', 'Výrobce A, řada VA-P'); nast('[data-dk="ov.dokNazev"]', 'Ověření návrhu systému VA-P'); nast('[data-dk="ov.dokCislo"]', 'VA-0815'); nast('[data-dk="ov.dokDatum"]', '2025-03-01');
+    nast('[data-dk="ov.z.ko11_2"]', 'dokumentace'); nast('[data-dk="ov.z.otepleni"]', 'odvozeni'); nast('[data-dk="ov.p.otepleni"]', 'referenční návrh VA-P, kap. 4');
+    TD_AKCE.tdROvPridat(); await __T.w(50);
+    const r = f.querySelector('.rz-ov-volny'); r.querySelector('.rz-ov-n').value = 'EMC'; r.querySelector('.rz-ov-z').value = 'zkouska';
+    r.querySelector('.rz-ov-n').dispatchEvent(new Event('input', { bubbles: true }));
+    nast('[data-dk="otepleni.overeno"]', 'odvozeni'); nast('[data-dk="otepleni.dokument"]', 'VA-0815');
+    await dokUlozitOtevreny();
+  });
+  const ov = await p.evaluate(() => { const d = dokNajit(__dokOtevreny.uid).data; return { ov: d.ov, ot: d.otepleni,
+    polozky: Array.from(dokForm().querySelectorAll('.rz-ov-tab tr[data-ov] td:first-child')).map(t => t.innerText).join(' | '),
+    vychozi: Array.from(dokForm().querySelectorAll('.rz-ov-tab select[data-dk^="ov.z."]')).filter(s => !s.value).length }; });
+  check('5b ověření návrhu: charakteristiky jen z protokolu + oteplení a zkratová odolnost, výchozí prázdné; volný řádek se uloží',
+    /Stupeň krytí krytu/.test(ov.polozky) && /Dielektrické vlastnosti/.test(ov.polozky) && /Oteplení/.test(ov.polozky) && /Zkratová odolnost/.test(ov.polozky) && !/Zapojení, provozní/.test(ov.polozky) &&
+    ov.vychozi === 8 && ov.ov.z.ko11_2 === 'dokumentace' && ov.ov.volne && ov.ov.volne[0].nazev === 'EMC' && ov.ov.volne[0].zp === 'zkouska' && ov.ov.dokCislo === 'VA-0815',
+    JSON.stringify(ov.ov).slice(0, 300));
+  await p.evaluate(() => document.querySelector('#rz-pan-dok [data-oddil="overeni"]').scrollIntoView({ block: 'start' })); await w(150);
+  await p.screenshot({ path: path.join(__dirname, '_beh', 'psc-overeni-navrhu.png') });
+
+  // ── oteplení: 3 pole → jen volba ověření ──
+  const ot = await p.evaluate(() => { const v = rozvOteplVypocet(DOK_TYPY.rozv.cist(dokForm())); return { stav: v.stav, t: (dokForm().querySelector('[data-oddil="otepleni"]') || {}).innerText || '',
+    sel: !!dokForm().querySelector('[data-dk="otepleni.overeno"]'), zatrh: !!dokForm().querySelector('[data-dk="dokVyber.otepleni"]') }; });
+  check('5b oteplení PSC se 3 poli: výpočet se nedělá, „IEC TR 60890 (čl. 10.10.4.3) program zatím neumí" + volba ověření a dokument', ot.stav === 'nelze' && /IEC TR 60890 \(čl\. 10\.10\.4\.3\) program zatím neumí/.test(ot.t) &&
+    ot.sel && !ot.zatrh, ot.t.slice(0, 160));
+
+  // ── RDF ──
+  const rdf = await p.evaluate(() => { const d = DOK_TYPY.rozv.cist(dokForm()); d.otepleni = { rdfRezim: 'tabulka' };
+    const dbo = { rady: d.rady, otepleni: { rdfRezim: 'tabulka' } }; return { psc: rotRdf(d), dbo: rotRdf(dbo) }; });
+  check('5b RDF PSC z tabulky: 8 vývodů → 0,7 (2–3 0,9 · 4–5 0,8 · 6–9 0,7 · 10+ 0,6); DBO pro stejný počet dál 0,6', rdf.psc.k === 0.7 && rdf.psc.n === 8 && rdf.dbo.k === 0.6, JSON.stringify(rdf));
+
+  // ── kusové ověření: metoda B do 630 A ──
+  const koB = await p.evaluate(async () => {
+    const opt = () => ({ b: !!dokForm().querySelector('.rz-ko-metoda option[value="B"]'), t: (dokForm().querySelector('.rz-ko-bpozn') || {}).innerText || '' });
+    const a = opt();
+    rozvZalozkaNastavit('navrh'); const q = __T.najdi('-QF1'); rozvZmena('t', () => { q.p.In = 800; }); await __T.w(100);
+    rozvZalozkaNastavit('dok'); const b = opt();
+    rozvZalozkaNastavit('navrh'); rozvZmena('t', () => { q.p.In = 400; }); await __T.w(100); rozvZalozkaNastavit('dok');
+    return { a, b };
+  });
+  check('5b KO: přívodní MCCB 400 A → metoda B (izolační odpor) jde; 800 A → B se nenabídne a hláška vysvětlí', koB.a.b && /přívodní přístroj -QF1 400 A/.test(koB.a.t) && !koB.b.b &&
+    /do 630 A/.test(koB.b.t) && /nad 630 A/.test(koB.b.t), JSON.stringify(koB));
+
+  // ── štítek PSC ──
+  await p.evaluate(async () => { await TD_AKCE.tdRStitek(); await __T.w(400); });
+  const st = await p.evaluate(() => { const s = document.querySelector('#dok-pdf-pages .rz-stitek'); return { t: s.innerText.replace(/\s+/g, ' '), vejde: rozvStitekVejde(s),
+    rozm: [s.style.width, s.style.height].join(), info: document.getElementById('dok-pdf-info').textContent }; });
+  check('5b štítek PSC: 100 × 60 mm, norma „ČSN EN IEC 61439-2 (IEC 61439-2)", InA 400 A, Icw 25 kA / 1 s, Ipk 52,5 kA, forma 2b, IP54 / IP20; vše se vejde',
+    st.rozm === '100mm,60mm' && /ČSN EN IEC 61439-2 \(IEC 61439-2\)/.test(st.t) && /400 A/.test(st.t) && /Krátkodobá výdržnost Icw 25 kA \/ 1 s/.test(st.t) && /52,5 kA/.test(st.t) &&
+    /forma 2b/.test(st.t) && /IP54 \/ IP20/.test(st.t) && !/61439-3/.test(st.t) && st.vejde, st.t);
+  await p.evaluate(() => window.scrollTo(0, 0)); await w(100);
+  await p.screenshot({ path: path.join(__dirname, '_beh', 'psc-stitek.png') });
+  const st2 = await p.evaluate(async () => {
+    const d = dokKopie(__dokOtevreny.data); d.icw = ''; d.icc = '10';
+    const a = pscStitekTabulkaHtml(d, ROZV_STITKY['100x60'], {});
+    d.stitek = Object.assign({}, d.stitek, { vel: '70x35' }); await TD_AKCE.tdPdfZpet(); await __T.w(100);
+    const x = { uid: 'x', typ: 'psc', data: d }; rozvStitekVykreslit(x); await __T.w(200);
+    const s = document.querySelector('#dok-pdf-pages .rz-stitek');
+    return { icc: /Zkratová odolnost Icc/.test(a) && /10 kA/.test(a) && !/Icw/.test(a), maly: rozvStitekVejde(s), pismo: parseFloat(getComputedStyle(document.getElementById('dok-pdf-pages')).getPropertyValue('--rz-st-pismo')) };
+  });
+  check('5b štítek bez Icw ukáže Icc; 70 × 35 mm se vejde a písmo ≥ 5 pt', st2.icc && st2.maly && st2.pismo >= 25.4 / 72 * 5 - 0.001, JSON.stringify(st2));
+  await p.evaluate(() => TD_AKCE.tdPdfZpet()); await w(200);
+
+  // ── schéma ──
+  const L = await p.evaluate(() => rozvSchemaListy(DOK_TYPY.rozv.cist(dokForm())).map(l => l.svg));
+  const sl = await p.evaluate(svg => { const b = document.createElement('div'); b.innerHTML = svg; const o = {};
+    b.querySelectorAll('[data-puid]').forEach(g => { const zn = Array.from(g.querySelectorAll('[data-znacka]')).map(z => z.getAttribute('data-znacka')).join(',');
+      const t = Array.from(g.querySelectorAll('text')).map(t => t.textContent).join(' | '); const x = __T.najdi ? null : null; o[g.getAttribute('data-puid')] = { zn, t }; });
+    return o; }, L[1]);
+  const S = await p.evaluate(() => { const o = {}; __rz.rady.forEach(r => r.prvky.forEach(x => { o[x.ozn] = x.uid; })); return o; });
+  const zn = oz => (sl[S[oz]] || {}).zn || '', tx = oz => (sl[S[oz]] || {}).t || '';
+  check('5b schéma list 1: osazení polí 5a (Pole 1 · 600 × 2000 mm) a tabulka PSC (forma, InA / Icw / Ipk)', /Osazení rozvaděče RH-hala/.test(L[0]) && /Pole 1 · 600 × 2000 mm/.test(L[0]) &&
+    /Forma vnitřního oddělení/.test(L[0]) && /InA 400 A, Icw 25 kA \/ 1 s, Ipk 52,5 kA/.test(L[0]) && /data-puid="[^"]+"/.test(L[0]), '');
+  check('5b schéma: přívodní -QF1 je MCCB se spouští na přívodu, za ním -TA1 a měřidlo -PM1', zn('-QF1') === 'mccb' && /400 A/.test(tx('-QF1')) && /-TA1/.test(L[1]) && /-PM1/.test(L[1]), JSON.stringify(sl[S['-QF1']]));
+  check('5b schéma: vývody MCCB (In, Ir/Isd z nastavení, Icu), odpínač, lištový NH (velikost, vložka)', zn('-QF2').startsWith('mccb') && /250 A Ir 0,8 In, Isd 6 Ir Icu 36 kA/.test(tx('-QF2')) &&
+    zn('-QS1').startsWith('odpinac') && zn('-FU1').startsWith('pojOdp') && /NH00 160 A vložka gG 100 A/.test(tx('-FU1')), [tx('-QF2'), zn('-QS1'), tx('-FU1')].join(' ‖ '));
+  check('5b schéma: sběrnice jako zesílené přípojnice L1, L2, L3 s popisem „Cu 3× 40×10, In 630 A, Icw 25 kA"', /Sběrnice Cu 3× 40×10, In 630 A, Icw 25 kA/.test(L[1]) && />L1, L2, L3</.test(L[1]) &&
+    (L[1].match(/stroke-width="1.1"/g) || []).length >= 2, '');
+  check('5b schéma: hranice polí čárkovaně a „Pole 2", „Pole 3" v záhlaví sloupců; přípojnice -XN1 a -XPE1', />Pole 2</.test(L[1]) && />Pole 3</.test(L[1]) && /stroke-dasharray="2 1.2"/.test(L[1]) &&
+    />-XN1</.test(L[1]) && />-XPE1</.test(L[1]), '');
+  check('5b schéma: DIN segment jako dosud — chránič -FI1 se skupinou, mezera nepřidá sloupec', zn('-FI1') === 'chranic' && zn('-FA1').startsWith('jistic') && !/<g data-puid=""/.test(L[1]) &&
+    (L[1].match(/data-znacka="jistic"/g) || []).length === 4, String((L[1].match(/data-znacka="jistic"/g) || []).length));
+  const pres = [];
+  for (const s of L) pres.push(...await presahy(p, s));
+  check('5b schéma: nic nepřetéká rám ani nezasahuje do razítka; jen jednoduché prvky', !pres.length && L.every(s => !/ class=| style=|<filter|<mask|<foreignObject|<image|<use/.test(s)), pres.slice(0, 6).join(' · '));
+  // velký: 25 dalších jističů ve skupině chrániče → zlom listu s odkazy oběma směry
+  const V = await p.evaluate(() => { const d = DOK_TYPY.rozv.cist(dokForm()), fi = __T.najdi('-FI1');
+    const r = d.rady.find(rr => rr.prvky.some(x => x.uid === fi.uid));
+    for (let i = 0; i < 25; i++) { const y = dokKopie(r.prvky[1]); y.uid = 'x' + i; y.ozn = '-FA' + (10 + i); y.nadr = fi.uid; y.faze = 'L1'; delete y.mezera; r.prvky.push(y); }
+    return rozvSchemaListy(d).map(l => l.svg); });
+  const presV = []; for (const s of V) presV.push(...await presahy(p, s));
+  check('5b velký PSC: víc listů, skupina chrániče rozdělená s odkazy „pokračuje na /3.x" a „(pokračování z /2.x)", „Pole 3 (pokračování)", nic nepřetéká',
+    V.length >= 3 && V.some(s => /-FI1 pokračuje na \/\d\.\d/.test(s)) && V.some(s => /-FI1 \(pokračování z \/\d\.\d\)/.test(s)) && V.some(s => /Pole 3 \(pokračování\)/.test(s)) && !presV.length,
+    V.length + ' listů · ' + presV.slice(0, 4).join(' · '));
+  // snímky listu 1 a 2 pro uživatele
+  for (const [i, s] of [[0, L[0]], [1, L[1]]]) {
+    await p.evaluate(svg => { const b = document.createElement('div'); b.id = '__sch'; b.style.cssText = 'position:fixed;left:0;top:0;z-index:99999;background:#fff';
+      b.innerHTML = svg.replace(/width="[\d.]+mm" height="[\d.]+mm"/, 'width="1366" height="966"'); document.body.appendChild(b); }, s);
+    await w(250); await p.screenshot({ path: path.join(__dirname, '_beh', 'psc-schema-list' + (i + 1) + '.png'), clip: { x: 0, y: 0, width: 1366, height: 900 } });
+    await p.evaluate(() => document.getElementById('__sch').remove());
+  }
+
+  // ── mezery po ½ modulu v DIN segmentu ──
+  await p.click('.rz-zal[data-z="navrh"]'); await w(300);
+  const mz = await p.evaluate(async () => {
+    const fa1 = __T.najdi('-FA1'), qf2 = __T.najdi('-QF2');
+    rozvVybrat(fa1.uid); await __T.w(100);
+    const vl = !!document.querySelector('#rz-vlastnosti .rp-mezera');
+    rozvVybrat(qf2.uid); await __T.w(100);
+    const vlD = !!document.querySelector('#rz-vlastnosti .rp-mezera');
+    rozvVybrat(fa1.uid); await __T.w(50);
+    document.querySelector('#rz-vlastnosti [data-action="tdRMezera"][data-d="0.5"]').click(); await __T.w(100);
+    const po = { m: fa1.mezera, x: pscPrvkyGeom(__rz).find(g => g.uid === fa1.uid).x, x0: pscGeo(__rz).rady.find(g => g.i === rozvNajit(fa1.uid).r).x0, i: rozvNajit(fa1.uid).i };
+    const fi = __T.najdi('-FI1'); po.fiW = rozvW(fi);
+    rozvPosun(fa1.uid, 'l'); await __T.w(100);
+    po.poL = fa1.mezera || 0;
+    rozvPosun(fa1.uid, 'p'); await __T.w(100);
+    po.poP = fa1.mezera;
+    return { vl, vlD, po };
+  });
+  check('5b mezery: „↔ Mezera vlevo" u přístroje v DIN segmentu PSC, ne na montážní desce', mz.vl && !mz.vlD, JSON.stringify(mz));
+  check('5b mezery: + ½ posune -FA1 o 8,75 mm, ◀ vrátí, ▶ o ½ do volna (sdílený kód DBO)', mz.po.m === 0.5 && Math.abs(mz.po.x - (mz.po.x0 + (mz.po.fiW + 0.5) * 17.5)) < 0.01 && mz.po.poL === 0 && mz.po.poP === 0.5, JSON.stringify(mz.po));
+  // tažení skutečnou myší do volného místa v řadě: -FA3 za -FA4 o 2 moduly dál
+  await p.evaluate(() => { const fa3 = __T.najdi('-FA3'), g = pscPrvkyGeom(__rz).find(q => q.uid === fa3.uid), ram = document.getElementById('rz-svg-ram'), k = document.querySelector('#rz-pohled .rz-svg').getScreenCTM().a;
+    ram.scrollIntoView({ block: 'start' }); window.scrollBy(0, -120); ram.scrollLeft = Math.max(0, (g.x - 60) * k); ram.scrollTop = Math.max(0, g.y * k - 300); });   // přístroj pod lištou formuláře
+  await w(200);
+  const tz = await p.evaluate(() => { const fa3 = __T.najdi('-FA3'), fa4 = __T.najdi('-FA4'), G = pscPrvkyGeom(__rz), a = G.find(q => q.uid === fa3.uid), b = G.find(q => q.uid === fa4.uid);
+    return { od: __T.bodMm(a.x + 8, a.y + 25), kam: __T.bodMm(b.x + b.w + 2 * 17.5 + 8, b.y + 25), cilX: b.x + b.w + 2 * 17.5 }; });
+  await p.evaluate(() => document.querySelectorAll('.toast').forEach(t => t.remove()));
+  await p.mouse.move(tz.od.x, tz.od.y); await p.mouse.down(); await p.mouse.move(tz.od.x + 10, tz.od.y + 3, { steps: 3 });
+  await p.mouse.move(tz.kam.x, tz.kam.y, { steps: 10 }); await w(120);
+  const obrys = await p.evaluate(() => (document.getElementById('rz-znacka-misto') || { getAttribute: () => '' }).getAttribute('visibility'));
+  await p.mouse.up(); await w(300);
+  const tz2 = await p.evaluate(() => { const fa3 = __T.najdi('-FA3'), g = pscPrvkyGeom(__rz).find(q => q.uid === fa3.uid), r = rozvNajit(fa3.uid);
+    return { x: g.x, m: fa3.mezera, posl: __rz.rady[r.r].prvky[__rz.rady[r.r].prvky.length - 1].ozn }; });
+  check('5b mezery: tažení myší do volného místa v DIN segmentu — žlutý obrys, -FA3 padne přesně tam (po ½ modulu), ostatní stojí', obrys === 'visible' && Math.abs(tz2.x - tz.cilX) < 0.01 &&
+    tz2.posl === '-FA3' && tz2.m === 2, JSON.stringify([obrys, tz2, tz.cilX]));
+  await p.keyboard.press('Control+z'); await w(150);
+  // mezera přežije uložení a nové otevření (pscUklid ji v DIN segmentu nemaže)
+  const mz2 = await p.evaluate(async () => { await dokUlozitOtevreny(); const u = __dokOtevreny.uid; showScreen('home'); await dokOtevrit(u); await __T.w(300);
+    return { fa4: __T.najdi('-FA4').mezera, fa1: __T.najdi('-FA1').mezera, svg: document.querySelector('#rz-pohled .rz-svg').innerHTML.length > 0 }; });
+  // -FA1 + ½ posunul -FA2, -FA3 doprava; -FA4 stojí, jeho mezera 1,5 M se o ½ zmenšila
+  check('5b mezery: po uložení a novém otevření zůstanou (-FA1 ½ M, -FA4 1 M)', mz2.fa4 === 1 && mz2.fa1 === 0.5, JSON.stringify(mz2));
+
+  // ── jedno pole do 630 A: oteplení výpočtem (Penc z pole, Pv celkem u MCCB) ──
+  const o1 = await p.evaluate(async () => {
+    await dokNovy('psc'); rozvSkrinNastavit(rozvKnihPolozka('v-pole-600'));
+    const g = pscGeo(__rz).rady, deska = g.find(q => q.deska).i, din = g.find(q => !q.deska).i;
+    const qf = rozvVlozit('v-qf-3-250', deska, 0), fa = rozvVlozit('v-fa-3-C32', din, 0), fa2 = rozvVlozit('v-fa-1-B16', din, 1);
+    rozvZmena('t', () => { qf.p.pv = 30; qf.p.pvCelkem = true; fa.p.pv = 3; fa2.p.pv = 2; __rz.skrin.pole[0].penc = 150; });
+    const d = DOK_TYPY.rozv.cist(dokForm()); d.tech = { ina: '250' }; d.otepleni = { okoli55: true, prirazka: '30' };
+    const v = rozvOteplVypocet(d), rq = v.radky.find(q => q.x.uid === qf.uid);
+    const d2 = dokKopie(d); d2.tech.ina = '800'; const v2 = rozvOteplVypocet(d2);
+    return { stav: v.stav, privod: qf.privod, pvIn: rq && rq.pvIn, pvInc: rq && Math.round(rq.pvInc * 1000) / 1000, inc: rq && rq.eff, penc: v.penc, celkem: Math.round(v.celkem * 100) / 100, stav2: v2.stav, rad: v.radky.length };
+  });
+  // QF přívod 250 A: Inc = nejvíc zatížená fáze = 32 + 16 = 48 A → 30 × (48/250)² = 1,106 W; FA 3P: 3×3 = 9 W; B16 1P 2 W → Σ 12,106 × 1,3 = 15,74 W
+  check('5b oteplení jedno pole do 630 A: počítá se, Penc z pole, Pv MCCB celkem (ne × póly), Inc = vývody za přívodem', o1.stav === 'vyhovuje' && o1.privod === true && o1.pvIn === 30 &&
+    o1.inc === 48 && o1.pvInc === 1.106 && o1.penc === 150 && o1.celkem === 15.74, JSON.stringify(o1));
+  check('5b oteplení PSC nad 630 A: výpočet se nedělá', o1.stav2 === 'nelze', o1.stav2);
+  await p.evaluate(async () => { const u = __dokOtevreny.uid; await dokNacist(); DOK.dokumenty = DOK.dokumenty.filter(x => x.uid !== u); await dokZapsat(); });
+
+  // ── celé PDF ──
+  await p.evaluate(async (u) => { await dokOtevrit(u); await __T.w(300); await dokNahled(); await __T.w(1200); }, H.uid);
+  const pd = await p.evaluate(() => { const A = Array.from(document.querySelectorAll('#dok-pdf-pages .a4')); return { n: A.length, sch: A.filter(a => a.classList.contains('rz-sch-strana')).length,
+    t: A.map(a => a.innerText).join('\n'), vys: A.filter(a => !a.classList.contains('rz-sch-strana')).every(a => a.scrollHeight <= a.clientHeight + 2) }; });
+  check('5b PDF: čelní pohled, schéma, technické údaje, ověření návrhu, prohlášení, kusové ověření', pd.sch >= 2 && /TECHNICKÉ ÚDAJE/i.test(pd.t) && /OVĚŘENÍ NÁVRHU/.test(pd.t) &&
+    /EU PROHLÁŠENÍ O SHODĚ/.test(pd.t) && /PROTOKOL O KUSOVÉM OVĚŘENÍ/.test(pd.t) && pd.vys, pd.n + ' stran, ' + pd.sch + ' listů schématu');
+  check('5b prohlášení: bod 4 „Výkonový rozvaděč (PSC) dle ČSN EN IEC 61439-2", bod 6 -1 ed. 3 (EN IEC 61439-1:2021) a -2 ed. 3 (EN IEC 61439-2:2021), bez -3',
+    /4\. Předmět prohlášení:\s*Výkonový rozvaděč \(PSC\) dle ČSN EN IEC 61439-2, 400\/230 V 50 Hz, 3\/N\/PE AC TN-S, InA 400 A, Icw 25 kA \/ 1 s, Ipk 52,5 kA/.test(pd.t) &&
+    /ČSN EN IEC 61439-1 ed\. 3 \(EN IEC 61439-1:2021\)/.test(pd.t) && /ČSN EN IEC 61439-2 ed\. 3 \(EN IEC 61439-2:2021\)/.test(pd.t) && !/61439-3/.test(pd.t), (pd.t.match(/4\. Předmět[^\n]*\n?[^\n]*/) || [''])[0]);
+  check('5b prohlášení bod 7: odkaz na přílohu „Ověření návrhu" a oteplení ověřené odvozením', /příloha „Ověření návrhu"/.test(pd.t) && /oteplení ověřeno odvozením od ověřeného referenčního návrhu výrobce systému \(VA-0815\)/.test(pd.t), '');
+  check('5b stránka Ověření návrhu: systém, dokument „… č. VA-0815, ze dne 1. 3. 2025", způsoby ověření a volný řádek EMC', /Výrobce A, řada VA-P/.test(pd.t) && /VA-0815, ze dne 1\. 3\. 2025/.test(pd.t) &&
+    /Stupeň krytí krytu\s+dokumentace výrobce systému/.test(pd.t) && /EMC\s+zkouška/.test(pd.t), '');
+  check('5b technické údaje a KO: Icw, Ipk, forma, normy -2 ed. 3', /Krátkodobá výdržnost Icw\s+25 kA, 1 s/.test(pd.t) && /Forma vnitřního oddělení\s+forma 2b/.test(pd.t) &&
+    /kusové ověření dle čl\. 11 ČSN EN IEC 61439-1 ed\. 3 a ČSN EN IEC 61439-2 ed\. 3/.test(pd.t), '');
+  await p.evaluate(() => TD_AKCE.tdPdfZpet()); await w(300);
+  await p.evaluate(async () => { STORE.technik = JSON.parse(window.__t0); saveStore(); await __T.w(300); });
+
   // ── 9. data revizí beze změny ──────────────────────────────────────────
   const otiskPo = await p.evaluate(() => __T.otiskRevizi());
   check('data revizí po práci s PSC bajtově stejná', otiskPred === otiskPo, '');
@@ -347,11 +590,18 @@ const knihovny = ctx => ctx.route(/cdnjs\.cloudflare\.com\/.*\/(jspdf\.umd\.min\
       const kopie = document.querySelector('#screen-dok-form .dok-wrap').cloneNode(true); kopie.querySelectorAll('.rz-knihovna').forEach(e => e.remove());
       const htmlBez = kopie.innerHTML;
       const knih = document.getElementById('rz-seznam').innerHTML;
+      // etapa 5b: dokumenty, štítek, schéma, oteplení, fáze a celé PDF DBO se nesmí změnit (stejný technik v obou verzích)
+      const t0 = STORE.technik; STORE.technik = { jmeno: 'Petr Vymyšlený', firma: 'Vymyšlená elektro s.r.o.', ico: '12345678', mesto: 'Kyjov' };
+      const dd = DOK_TYPY.rozv.cist(dokForm()); dd.vyroba = Object.assign({}, dd.vyroba, { cislo: '2026-0777' });
+      const dbo5b = { dok: rozvDokHtml(dd), stitek: rozvStitekHtml(dd, ROZV_STITKY['90x45']), schema: rozvSchemaListy(dd).map(l => l.svg).join('\n'),
+        otepl: JSON.stringify(rozvOteplVypocet(dd)), faze: JSON.stringify(rozvFazeSouhrn(dd.rady)),
+        pdfVse: JSON.stringify(DOK_TYPY.rozv.pdf(Object.assign({}, dd, { dokVyber: {} })).map(q => q.html || q.cela || '')) };
+      STORE.technik = t0;
       dokZmena(); await dokUlozitOtevreny(); await __T.w(100);
       const po = JSON.stringify(dokNajit(z.uid).data);
       await dokNahledZeSeznamu(z.uid); await __T.w(500);
       const pdf = Array.from(document.querySelectorAll('#dok-pdf-pages .a4')).map(a => a.innerHTML).join('\n');
-      return { pred, po, svg, svgT, html, htmlBez, knih, pdf };
+      return { pred, po, svg, svgT, html, htmlBez, knih, pdf, dbo5b };
     }, data);
     const A = await zkus(s), B = await zkus(p);
     check('starý DBO: otevření a uložení nezmění data (nová verze, bajtově)', B.pred === B.po, B.pred.length + ' / ' + B.po.length);
@@ -360,6 +610,8 @@ const knihovny = ctx => ctx.route(/cdnjs\.cloudflare\.com\/.*\/(jspdf\.umd\.min\
     const rozdil = (a, c) => { let i = 0; while (i < a.length && a[i] === c[i]) i++; return i + ': …' + a.slice(Math.max(0, i - 60), i + 80) + ' ⟷ …' + c.slice(Math.max(0, i - 60), i + 80); };
     check('DBO: editor (hlavička, pohled, vlastnosti) stejný jako ve předchozí verzi', A.htmlBez === B.htmlBez, A.htmlBez === B.htmlBez ? '' : rozdil(A.htmlBez, B.htmlBez));
     check('DBO: PDF návrhu stejné jako ve předchozí verzi', A.pdf === B.pdf, A.pdf === B.pdf ? '' : rozdil(A.pdf, B.pdf));
+    for (const [k, n] of [['dok', 'záložka Dokumenty'], ['stitek', 'štítek'], ['schema', 'schéma zapojení (všechny listy)'], ['otepl', 'výpočet oteplení'], ['faze', 'součty fází'], ['pdfVse', 'celé PDF dokumentace']])
+      check('DBO (etapa 5b): ' + n + ' znak po znaku stejné jako ve předchozí verzi', A.dbo5b[k] === B.dbo5b[k], A.dbo5b[k] === B.dbo5b[k] ? A.dbo5b[k].length + ' znaků' : rozdil(A.dbo5b[k], B.dbo5b[k]));
     await s.evaluate(() => TD_AKCE.tdPdfZpet && TD_AKCE.tdPdfZpet());
     await ctxS.close();
     await p.evaluate(async () => { await dokNacist(); DOK.dokumenty = DOK.dokumenty.filter(x => x.uid !== 'dbo-stejny'); await dokZapsat(); TD_AKCE.tdPdfZpet(); });
