@@ -14,6 +14,16 @@ const w = ms => new Promise(r => setTimeout(r, ms));
 function pomocnik() {
   window.__T = {
     w: ms => new Promise(r => setTimeout(r, ms)),
+    // počká, až se stránka i rámeček přestanou posouvat (program po klepnutí plynule roluje
+    // k pohledu / vlastnostem — při zátěži celé regrese to trvá déle než pevná čekací doba)
+    async klid() {
+      let last = '', same = 0;
+      for (let i = 0; i < 240 && same < 4; i++) {
+        await new Promise(r => requestAnimationFrame(r));
+        const ram = document.getElementById('rz-svg-ram'), y = scrollY + ',' + (ram ? ram.scrollLeft + ',' + ram.scrollTop : '');
+        if (y === last) same++; else { same = 0; last = y; }
+      }
+    },
     nast(sel, v) {
       const e = dokForm().querySelector(sel);
       e.value = v; e.dispatchEvent(new Event('input', { bubbles: true })); e.dispatchEvent(new Event('change', { bubbles: true }));
@@ -1128,8 +1138,10 @@ function pomocnik() {
         const q = new DOMPoint(RZG.okraj + m * RZG.M, rozvRadaY(r) + RZG.H / 2).matrixTransform(M); return { x: Math.round(q.x), y: Math.round(q.y) }; };
     });
     await w(200);
-    const tap = async (fn, arg) => { const q = await t.evaluate(fn, arg); await t.touchscreen.tap(q.x, q.y); await w(350); };
-    const vid = async sel => t.evaluate(s => { const e = document.querySelector(s); e.scrollIntoView({ block: 'center' }); const b = e.getBoundingClientRect(); return { x: b.left + 12, y: b.top + b.height / 2 }; }, sel);
+    const tap = async (fn, arg) => { await t.evaluate(() => __T.klid()); const q = await t.evaluate(fn, arg); await t.touchscreen.tap(q.x, q.y); await w(350); };
+    const vid = async sel => t.evaluate(async s => { await __T.klid(); const e = document.querySelector(s); e.scrollIntoView({ block: 'center' }); await __T.klid();
+      const b = e.getBoundingClientRect(); return { x: b.left + 12, y: b.top + b.height / 2 }; }, sel);
+    const naRam = () => t.evaluate(async () => { await __T.klid(); document.getElementById('rz-svg-ram').scrollIntoView({ block: 'center' }); await __T.klid(); });
     const lay = await t.evaluate(() => {
       const k = document.querySelector('.rz-knihovna').getBoundingClientRect(), p2 = document.getElementById('rz-pohled').getBoundingClientRect(),
             v = document.getElementById('rz-vlastnosti').getBoundingClientRect();
@@ -1139,7 +1151,7 @@ function pomocnik() {
     await t.evaluate(() => __T.filtr('q', 'Jistič 1P B16'));
     let q = await vid('#rz-seznam [data-kid="v-fa-1-B16"] .rz-p-text'); await t.touchscreen.tap(q.x, q.y); await w(500);
     const ban = await t.evaluate(() => ({ vyber: __rz.knihVyber, banner: (document.querySelector('.rz-banner') || {}).textContent || '' }));
-    await t.evaluate(() => document.getElementById('rz-svg-ram').scrollIntoView({ block: 'center' })); await w(200);
+    await naRam();
     await tap(() => __T.bod(1, 0.5));
     const vl1 = await t.evaluate(() => ({ r: __rz.rady.map(r => r.prvky.map(x => x.ozn).join(',')).join(' / '), banner: !!document.querySelector('.rz-banner') }));
     check('telefon: klepnutí na přístroj v knihovně ho vybere (banner „klepněte do řady")', ban.vyber === 'v-fa-1-B16' && /klepněte do řady/.test(ban.banner), ban.banner);
@@ -1149,16 +1161,16 @@ function pomocnik() {
     const vl2 = await t.evaluate(() => __rz.rady.map(r => r.prvky.map(x => x.ozn).join(',')).join(' / '));
     check('telefon: rychlé přidání klepnutím na konec vybrané řady', vl2 === ' / -FA1,-FI1,-FA2', vl2);
     // přesun klepnutím: vybrat -FI1, „✥ Přesunout jinam", klepnout na začátek řady 2
-    await t.evaluate(() => document.getElementById('rz-svg-ram').scrollIntoView({ block: 'center' })); await w(200);
+    await naRam();
     await tap(() => __T.bod(1, 3));
     const vyb = await t.evaluate(() => (rozvNajit(__rz.vyber) || { x: {} }).x.ozn);
     q = await vid('#rz-vlastnosti [data-action="tdRPresunKlep"]'); await t.touchscreen.tap(q.x, q.y); await w(400);
-    await t.evaluate(() => document.getElementById('rz-svg-ram').scrollIntoView({ block: 'center' })); await w(200);
+    await naRam();
     await tap(() => __T.bod(1, 0.2));
     const vl3 = await t.evaluate(() => ({ r: __rz.rady.map(r => r.prvky.map(x => x.ozn).join(',')).join(' / '), nadr: __rz.rady[1].prvky.slice(1).every(x => x.nadr === __rz.rady[1].prvky[0].uid) }));
     check('telefon: klepnutím vybraný přístroj jde „✥ Přesunout jinam" klepnutím do řady', vyb === '-FI1' && vl3.r === ' / -FI1,-FA1,-FA2' && vl3.nadr, vyb + ' → ' + vl3.r);
     const dl = await t.evaluate(async () => {
-      document.getElementById('rz-svg-ram').scrollIntoView({ block: 'center' }); await new Promise(r => setTimeout(r, 150));
+      await __T.klid(); document.getElementById('rz-svg-ram').scrollIntoView({ block: 'center' }); await __T.klid();
       const q = __T.bod(1, 0.5), el = document.elementFromPoint(q.x, q.y), o = { bubbles: true, cancelable: true, pointerType: 'touch', isPrimary: true, clientX: q.x, clientY: q.y };
       el.dispatchEvent(new PointerEvent('pointerdown', o)); await new Promise(r => setTimeout(r, 750));
       // první dlouhý stisk zapne výběr více přístrojů (v1.21), další otevře menu
@@ -1179,7 +1191,7 @@ function pomocnik() {
       dl.vyber === '-FI1' && dl.vyska >= 40, JSON.stringify(dl));
     // výběr více prstem: dlouhý stisk -FA1, klepnutí na -FA2, „✥ Přesunout jinam" v pruhu, klepnutí do řady 1
     await t.evaluate(async () => {
-      document.getElementById('rz-svg-ram').scrollIntoView({ block: 'center' }); await new Promise(r => setTimeout(r, 150));
+      await __T.klid(); document.getElementById('rz-svg-ram').scrollIntoView({ block: 'center' }); await __T.klid();
       const q = __T.bod(1, 4.5), el = document.elementFromPoint(q.x, q.y), o = { bubbles: true, cancelable: true, pointerType: 'touch', isPrimary: true, clientX: q.x, clientY: q.y };
       el.dispatchEvent(new PointerEvent('pointerdown', o)); await new Promise(r => setTimeout(r, 750)); el.dispatchEvent(new PointerEvent('pointerup', o));
       __rz.dlouhyStisk = 0;
@@ -1190,7 +1202,7 @@ function pomocnik() {
       panel: document.getElementById('rz-vlastnosti').innerText }));
     q = await vid('.rz-banner-vyber [data-action="tdRPresunKlep"]'); await t.touchscreen.tap(q.x, q.y); await w(350);
     const dv2 = await t.evaluate(() => (document.querySelector('.rz-banner') || {}).textContent || '');
-    await t.evaluate(() => document.getElementById('rz-svg-ram').scrollIntoView({ block: 'center' })); await w(200);
+    await naRam();
     await tap(() => __T.bod(0, 0.2));
     const dv3 = await t.evaluate(() => ({ r: __rz.rady.map(r => r.prvky.map(x => x.ozn).join(',')).join(' / '), rezim: !!__rz.rezimVyberu }));
     check('telefon: výběr více — dlouhý stisk a klepnutí vyberou 2 přístroje, pruh i vlastnosti to říkají', dv1.sel === '-FA1,-FA2' && /Vybráno: 2/.test(dv1.ban) &&

@@ -1888,6 +1888,12 @@ vložení, smazání, Ctrl+Z a zoomu, Shift+klik neoznačí text, klávesy, menu
 a vlastnosti výběru, přeplnění kopiemi; telefon: dlouhý stisk → výběr více
 a přesun dvou přístrojů klepnutím). **Dlouhý stisk** dřív rovnou otevřel
 menu — test upraven ve stejném commitu (první stisk = výběr, další = menu).
+**Test „telefon" klepe, až se stránka přestane hýbat** (`__T.klid()`, 2026-10-22):
+program po klepnutí na přístroj / „✥ Přesunout jinam" plynule roluje k vlastnostem
+a k pohledu (`scrollIntoView smooth`). Pod zátěží celé regrese animace trvala déle
+než pevné čekání a test klepl během ní vedle — 4 ❌ (přesun klepnutím, menu, výběr
+více, přesun bloku) jen občas, i na čisté v9.131. Program je v pořádku (technik
+klepne na tlačítko, které vidí stát); zastaralé bylo čekání v testu.
 V `test-mobil.js` stavy
 „rozvaděč – …" a v přípravě rozvaděč RH1 (byt 3+1, skříň 3×12).
 **`test-dokumentace.js` upraven ve stejném commitu:** dlaždic je víc
