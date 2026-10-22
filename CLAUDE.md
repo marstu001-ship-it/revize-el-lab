@@ -200,7 +200,7 @@ Revize EL je single-page PWA (HTML + JS + service worker). Obsah se cachuje
 v prohlížeči přes `sw.js`, takže uživatel nevidí změny, dokud se neinvalidně
 cache.
 
-**Aktuální verze: v9.128 · 2026-10-21**
+**Aktuální verze: v9.130 · 2026-10-22**
 
 ## Povinné při každé změně kódu před commitem
 
@@ -743,10 +743,11 @@ od revizí, záloha jako část `dokumentace`).
 
 `data.skrin` = **KOPIE** skříně z knihovny (`knih` = id v knihovně),
 `data.rady = [{ prvky: [...] }]`, přístroj
-`{ uid, knih, p, ozn, vyvod, faze, kabel, prurez, nadr, nadrRucne, ib, pozn }`,
+`{ uid, knih, p, ozn, vyvod, faze, kabel, prurez, nadr, nadrRucne, ib, pozn, mezera }`,
 kde **`p` je KOPIE parametrů z knihovny** — pozdější úprava knihovny hotový
-rozvaděč nezmění. Řada je **zleva doprava bez mezer** (volné místo =
-přístroj kategorie Rezerva), pořadí = poloha. Z toho jde: strom pro schéma
+rozvaděč nezmění. Řada je **zleva doprava**, pořadí = poloha; volné místo
+je buď přístroj kategorie Rezerva, nebo (od v9.130) **mezera před
+přístrojem `mezera`** v modulech (viz „Mezery mezi přístroji" níž). Z toho jde: strom pro schéma
 (přívod → QM → SPD → chrániče přes `nadr` → vývody), In / Ib po fázích
 (`faze` L1/L2/L3/3f), oteplení Σ `p.pv` × (`ib` / `p.In`)², štítek
 a prohlášení (hlavička + `skrin` + `p`). `data.model = 1`.
@@ -1456,7 +1457,13 @@ nemá. Přístroj ve sběrnicovém poli může mít `sbernice` = uid sběrnice.
   „Obsazeno X / Y mm"; **díly vyšší než užitná výška = červeně** (panel,
   pohled, hlášení přeplnění). Klepnutí na pole v pohledu ho vybere.
 - **DIN segment = řada DBO** — skládání zleva bez mezer, šířka v modulech,
-  nadřazený chránič, přeplnění, vše jako u DBO.
+  nadřazený chránič, přeplnění, vše jako u DBO. **Mezery po ½ modulu
+  (v9.130) PSC zatím nemá** — `pscCilZBodu` nevrací `poz`, ◀ ▶ u PSC jen
+  vyměňují sousedy, „↔ Mezera vlevo" se nenabízí a `pscUklid` klíč
+  `mezera` maže (`pscSvg` ho nekreslí). Doplnit, až se PSC bude přenášet.
+  Volné položení předává volající jako `poz` (moduly, DBO), místo na desce
+  jako `pos` ({x, y} mm, PSC) — `rozvVlozit / rozvPresunout /
+  rozvPresunBlok(…, idx, poz, pos)`.
 - **Montážní deska — volné umístění:** tažení myší (tentýž `rozvTahZacit`…,
   duch ve stejném měřítku), **přichycení na mřížku 5 mm a k okrajům sousedů
   do 4 mm** (`pscPrichytit`, `PSC_MRIZKA`, `PSC_PRICHYT`) se žlutým vodítkem
@@ -1625,6 +1632,62 @@ desce, vložení klepnutím, náhled PDF, okno vlastního pole).
 - Vymyšlený **byt 3+1** pro testy: `testy/rozvadec-byt.js` (skříň 3×12:
   QM, SPD, sporák B25 3P; dva chrániče 4P 40/30 s jističi; RCBO balkon).
 
+### Mezery mezi přístroji (v9.130)
+
+Pokyn uživatele 2026-10-22: „přidaný přístroj se automaticky řadí doleva,
+jenomže v praxi se tam někdy dělají mezery … nebo něco je vlevo a něco
+vpravo. Chtělo by to mít volnost kam to položit — po půlmodulové délce."
+
+- **Data:** přístroj má volitelné `x.mezera` = volné místo PŘED ním
+  v modulech (po ½). **Bez klíče = žádná mezera** — rozvaděč uložený dřív
+  se otevře i uloží bajtově stejně (test proti verzi z gitu: data, čelní
+  pohled, schéma, popisky, fáze, oteplení, PDF znak po znaku). Klíč se
+  zapisuje jen při skutečné mezeře (`rozvZPozic` ho při 0 maže).
+- **Mezera není přístroj.** Schéma, fáze, oteplení, seznam do PDF,
+  zakreslení i strom chodí po `prvky`, takže ji nevidí — **nic z nich se
+  neměnilo**. Ukazují ji jen věci, které kreslí polohu: čelní pohled
+  (prázdná DIN lišta), **osazení na listu 1 schématu** (přeškrtnutá jako
+  volné místo) a **popisky pod přístroje** (prázdné políčko přesně v šířce
+  mezery, `rz-pp-mezera`).
+- **Poloha** = součet šířek a mezer před přístrojem: `rozvPozice(rada)` →
+  `rozvZPozic(rada, poz)` (co by se překrylo, odsune se doprava). Plnost
+  řady = **konec posledního přístroje** `rozvKonec` (vkládání, přeplnění,
+  šířka SVG); „volno" v řadě = šířka skříně − součet šířek (mezery jsou
+  volné místo).
+- **Pravidla (WYSIWYG — hýbe se jen to, s čím technik hýbe):**
+  - **Puštění do volného místa** (mezi přístroji nebo za poslední; myš,
+    klepnutí z knihovny / ✥, ▲ ▼) = přístroj padne přesně tam, kam ukazuje
+    žlutý **obrys** během tažení (`#rz-znacka-misto`), po ½ modulu
+    (`rozvCilZBodu(cx, cy, o)` → `poz`, `rozvVolneMisto`, `rozvPolozitNa`).
+    **Ostatní přístroje se nehnou** — po přesunutém zůstane volné místo.
+    U klepnutí padne přístroj středem na místo klepnutí.
+  - **Na levou půlku přístroje s mezerou před ním** = těsně před něj (do
+    mezery), když se tam vejde — jinak jako dřív.
+  - **Na přístroj** = vložení do pořadí jako dřív (`rozvVlozitNa`): přisedne
+    k předchozímu, další se odsunou jen o tolik, kolik je potřeba
+    (mezeru za sebou spotřebují). „＋ Vložit", rychlé přidání, Duplikovat,
+    Ctrl+V a zakreslení dál skládají těsně.
+  - **Smazání** (`rozvOdebrat`): přístroje těsně za smazaným se přisunou
+    (jako dřív), přístroj za mezerou zůstane na místě.
+  - **◀ ▶** (i šipky): o ½ modulu, když je na té straně volno, jinak
+    výměna se sousedem jako dřív (`rozvPosun` → `rozvMezeraPosun`).
+  - **Vlastnosti přístroje: „↔ Mezera vlevo − ½ / + ½"** (`tdRMezera`);
+    + ½ odsune i přístroje těsně za ním, za kraj skříně ne (hláška).
+  - Všechno přes `rozvZmena` = ZPĚT i Ctrl+Z; `rozvRadyOtisk` počítá
+    i mezery (přesun o ½ není „na stejném místě").
+  - Výběr víc přístrojů se šipkami posouvá postaru (blok v pořadí).
+- Do Novinek se nedělalo (o kartu si uživatel neřekl).
+
+Test: `testy/test-rozvadec-mezery.js` (41 kontrol — starý rozvaděč z verze
+v gitu (STARA_PORT 8902) beze změny ve všem, tažení skutečnou myší do volna
+s obrysem, ½ modulu, na přístroj postaru, na levou půlku přístroje s mezerou,
+Ctrl+Z, ◀ ▶ po ½ a výměna, Mezera vlevo, ▼ na totéž místo, smazání ve
+skupině vpravo, vložení do pořadí i do volna, + ½ u kraje skříně, klepnutí
+z knihovny, byt 3+1 ve 3×18 s mezerami: schéma bez prázdného sloupce
+(jednopólové listy shodné s bytem bez mezer), osazení s přeškrtnutou
+mezerou, popisky 8,75 / 35 / 35 / 70 mm, fáze, oteplení a seznam beze
+změny, telefon 375 px).
+
 ### PDF (část 4)
 
 - `DOK_TYPY.rozv.pdf(d)` → bloky pro společné stránkování tvorby
@@ -1634,9 +1697,20 @@ desce, vložení klepnutím, náhled PDF, okno vlastního pole).
   číslo), hlavička ve 4 sloupcích, **„Čelní pohled"** (`rozvSvg` s
   `o.tisk`, rozměry v mm, zmenšený nejvýš na 265 × 140 mm, popisek
   „Zmenšeno na N %" / „Skutečná velikost 1 : 1", varování u přeplněné
-  řady) a **„Seznam přístrojů"** bez rezerv po 18 řádcích (záhlaví se
+  řady) a **„Seznam přístrojů"** bez rezerv, dělený podle výšky (záhlaví se
   opakuje): označení, popis vývodu, typ, In, charakteristika, póly, IΔn,
   fáze, kabel. **Neověřené přístroje mají `*`** a pod seznamem vysvětlivku.
+  **Seznam se dělí podle SKUTEČNÉ VÝŠKY, ne po pevném počtu řádků** (v9.129,
+  hlášení uživatele 2026-10-22 se snímkem: „řádek 33 a 34 zmizel"). Do v9.128
+  šel po 18 řádcích; s dvouřádkovým typem (výrobce pod ním) a zalomeným
+  popisem vývodu bylo 18 řádků vyšší než list a konec se v PDF uřízl.
+  Teď je to jedna tabulka s příznakem bloku **`delit: true`** a obecný
+  stránkovač `dokPdfVykreslit` z ní na konci strany odebírá řádky, dokud se
+  strana vejde, a zbytek dá na další stranu do kopie tabulky se záhlavím
+  (`colgroup` + první řádek). Nevejde-li se ani jeden řádek, jde celá tabulka
+  i s nadpisem (`drz`) dál. `delit` může mít kterákoli tabulka tvorby
+  dokumentace. Test: `test-rozvadec.js` — 42 přístrojů s dvouřádkovým typem,
+  žádný list vyšší než 210 mm (na v9.128 spadne: list 995 px místo 794).
   Štítek, prohlášení, kusové ověření a technické údaje viz etapa 2 výš, schéma zapojení etapa 3 výš.
 - **Čelní pohled vektorově přes svg2pdf.js NEJDE** (ověřeno 2026-10-18; listy
   **schématu** od etapy 3 vektorově jdou — viz výš, s vloženým písmem): svg2pdf 2.x

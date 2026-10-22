@@ -830,6 +830,7 @@ function pomocnik() {
       akt: document.querySelector('.screen.active').id, pocet: st.length, nasirku: st.every(s => s.classList.contains('a4-landscape') && Math.abs(s.getBoundingClientRect().width - 297 * 96 / 25.4) < 3),
       strana: /Strana 1 \/ \d/.test(vse), vse,
       tabulek: document.querySelectorAll('#dok-pdf-pages .rz-pdf-tab').length, hlavicek: document.querySelectorAll('#dok-pdf-pages .rz-pdf-tab th').length,
+      vListu: Array.from(document.querySelectorAll('#dok-pdf-pages .a4')).every(a => a.getBoundingClientRect().height <= 210 * 96 / 25.4 + 1),
       radku: radky.length, nonRez, rez: radky.some(tr => /Rezerva/.test(tr.innerText)),
       prvni: radky[0] && Array.from(radky[0].children).map(td => td.innerText.trim()).join(' | '),
       fa4: (radky.find(tr => /obývací pokoj, TV/.test(tr.innerText)) || { innerText: '' }).innerText.replace(/\s+/g, ' '),
@@ -847,8 +848,8 @@ function pomocnik() {
     /Vymyšlená elektro s\.r\.o\./.test(pdf.vse) && /IČO: 12345678/.test(pdf.vse) && /Rozvodnice 3×12 modulů, plast, zapuštěná/.test(pdf.vse), '');
   check('PDF: čelní pohled jako obrázek ve stránce (v mm, zmenšený, bez výběru a značky)', pdf.svg && pdf.svgVStrance && /mm$/.test(pdf.svgMm) && pdf.vyber && pdf.znacka &&
     /Zmenšeno na \d+ %/.test(pdf.vse), pdf.svgMm);
-  check('PDF: seznam přístrojů bez rezerv — každý přístroj jeden řádek, dlouhý seznam ve dvou tabulkách se záhlavím', pdf.radku === pdf.nonRez && !pdf.rez &&
-    pdf.tabulek === 2 && pdf.hlavicek === 18, pdf.radku + '/' + pdf.nonRez + ' · tabulek ' + pdf.tabulek);
+  check('PDF: seznam přístrojů bez rezerv — každý přístroj jeden řádek, dlouhý seznam dělený po stranách se záhlavím, nic nepřetéká', pdf.radku === pdf.nonRez && !pdf.rez &&
+    pdf.tabulek >= 2 && pdf.hlavicek === pdf.tabulek * 9 && pdf.vListu, pdf.radku + '/' + pdf.nonRez + ' · tabulek ' + pdf.tabulek);
   check('PDF: sloupce označení, popis vývodu, typ, In, charakteristika, póly, IΔn, fáze, kabel', pdf.prvni === '-QM1 |  | Hlavní vypínač 3P 40 A * | 40 A |  | 3P |  | 3f | ' &&
     /^-FA4 Zásuvky – obývací pokoj, TV Jistič 1P B16 \* 16 A B 1P L2 CYKY-O 3×2,5$/.test(pdf.fa4.trim()), pdf.prvni + ' || ' + pdf.fa4);
   check('PDF: neověřené přístroje s hvězdičkou a vysvětlivkou, ověřený vlastní bez ní', /\* Údaje přístroje nejsou ověřené/.test(pdf.vse) && pdf.overenyBezHvezdy);
@@ -880,6 +881,34 @@ function pomocnik() {
     return r;
   });
   check('PDF: zpět do editoru, „📄 PDF" i ze seznamu', zpet.akt === 'screen-dok-form' && zpet.zeSeznamu === 'screen-dok-pdf|1' && zpet.zpetNaSeznam === 'screen-dok-seznam', JSON.stringify(zpet));
+
+  // ── 5b'. seznam přístrojů s dvouřádkovými řádky (hlášení 2026-10-22) ────
+  // Pevných 18 řádků na stranu přeteklo, když měl typ druhý řádek s výrobcem
+  // a popis vývodu se zalomil — konec seznamu se v PDF uřízl.
+  const dlouhy = await p.evaluate(async () => {
+    await dokNovy('rozv'); rozvSkrinNastavit(rozvKnihPolozka('v-sk-6x24-ocel'));
+    const pop = ['Osvětlení (chodba, koupelna, WC, pokoj, technická místnost, šatna, kuchyně)', 'Zásuvky kuchyně – linka u okna a ostrůvek',
+      'Myčka nádobí a mikrovlnná trouba', 'Proudový chránič pro kuchyni, koupelnu a terasu'];
+    let n = 0;
+    __rz.rady.forEach(r => { r.prvky = []; for (let i = 0; i < 7; i++) { const x = rozvNovyPrvek(rozvKnihPolozka('v-fa-1-B16')); n++;
+      x.ozn = '-FA' + n; x.vyvod = pop[n % 4]; x.kabel = 'CYKY-J'; x.prurez = '3×2,5'; x.faze = 'L' + (1 + n % 3);
+      x.p.nazev = 'Proudový chránič s jističem 1+N B16 30 mA typ A'; x.p.vyrobce = 'Výrobce A'; x.p.rada = 'R1 řada';
+      x.p.typ = 'VA-B16-1N-030-A-' + n; r.prvky.push(x); } });
+    rozvPohledVykreslit(); await dokUlozitOtevreny();
+    window.__dokOtevreny.data.dokVyber = { cp: true, schema: false, tech: false, prohl: false, ko: false };
+    await dokNahled(); await __T.w(600);
+    const tab = Array.from(document.querySelectorAll('#dok-pdf-pages .rz-pdf-tab'));
+    const radky = tab.flatMap(t => Array.from(t.querySelectorAll('tr')).filter(tr => tr.querySelector('td')));
+    return { n, radku: radky.length, ozn: radky.map(tr => tr.cells[0].innerText.trim()).join(','), tabulek: tab.length,
+      dvoj: radky.filter(tr => tr.querySelector('small')).length, hlav: tab.every(t => t.querySelectorAll('th').length === 9),
+      vListu: tab.every(t => t.getBoundingClientRect().bottom <= t.closest('.a4').querySelector('.dok-pdf-paticka').getBoundingClientRect().top + 1),
+      vyskaListu: Math.max.apply(null, Array.from(document.querySelectorAll('#dok-pdf-pages .a4')).map(a => Math.round(a.getBoundingClientRect().height))),
+      stran: document.querySelectorAll('#dok-pdf-pages .a4').length };
+  });
+  const cekane = Array.from({ length: dlouhy.n }, (_, i) => '-FA' + (i + 1)).join(',');
+  check('PDF: seznam s dvouřádkovými řádky (výrobce pod typem) — všech 42 přístrojů, nic se neuřízne, záhlaví na každé straně',
+    dlouhy.n === 42 && dlouhy.radku === 42 && dlouhy.ozn === cekane && dlouhy.dvoj === 42 && dlouhy.hlav && dlouhy.vListu && dlouhy.vyskaListu <= Math.round(210 * 96 / 25.4) + 1 && dlouhy.tabulek >= 3,
+    JSON.stringify({ radku: dlouhy.radku, tabulek: dlouhy.tabulek, vListu: dlouhy.vListu, vyskaListu: dlouhy.vyskaListu, stran: dlouhy.stran }));
 
   // ── 5c. výběr víc přístrojů, viditelné tažení, posun široké skříně (v1.21) ──
   // Skříň 6×24 (širší než obrazovka), všechno skutečnou myší (page.mouse).
