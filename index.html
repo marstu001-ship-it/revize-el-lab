@@ -1823,6 +1823,24 @@ html.dark .rf-nahled tr.rf-zmena td{background:#3a3214}
 .rz-sch-ram svg{display:block;background:#fff;margin:0 auto}
 .rz-sch-ram [data-puid]{cursor:pointer}
 .rz-sch-ram [data-puid]:hover{opacity:.6}
+/* Pohled 3D (etapa 5c) — CSS 3D, kvádry ze šesti stěn; na prohlížení */
+.r3-lista{margin-top:.2rem}
+.r3-pohledy{display:inline-flex;flex-wrap:wrap;gap:.3rem}
+.rz-3d-hlava .r3-dvere-btn{margin:.2rem 0 .7rem}
+.r3-ram{position:relative;overflow:hidden;height:min(68vh,620px);min-height:320px;border:1px solid var(--border);border-radius:6px;margin-bottom:.6rem;
+  background:radial-gradient(ellipse at 50% 40%,#fbfbfa 0,#e2e4e6 70%,#d4d7da 100%);perspective:2600px;perspective-origin:50% 45%;touch-action:none;cursor:grab;user-select:none;-webkit-user-select:none}
+.r3-ram:active{cursor:grabbing}
+html.dark .r3-ram{background:radial-gradient(ellipse at 50% 40%,#4a4f55 0,#2d3136 75%,#24272b 100%)}
+.r3-svet{position:absolute;left:50%;top:50%;width:0;height:0;transform-style:preserve-3d}
+.r3-box{position:absolute;left:0;top:0;width:0;height:0;transform-style:preserve-3d;transform-origin:0 0}
+.r3-st{position:absolute;left:0;top:0;box-sizing:border-box;border:.5px solid rgba(0,0,0,.3);transform-origin:0 0;backface-visibility:hidden;-webkit-backface-visibility:hidden;overflow:hidden}
+.r3-st.r3-obe{backface-visibility:visible;-webkit-backface-visibility:visible}
+.r3-pruhl>.r3-st{opacity:.28}
+.r3-celo{display:block;width:100%;height:100%}
+.r3-popis{position:absolute;left:4px;top:4px;font-size:11px;color:#234}
+.r3-ram [data-puid]{cursor:pointer}
+.r3-bez-hl{color:#8a4b00}
+html.dark .r3-bez-hl{color:#f0c27a}
 .a4.rz-sch-strana{padding:0;height:210mm;min-height:210mm;overflow:hidden}
 .a4.rz-sch-strana>svg{display:block;width:297mm;height:210mm}
 .a4.rz-sch-strana.rz-sch-a3{width:420mm;height:297mm;min-height:297mm}
@@ -2229,9 +2247,13 @@ html.dark .rz-imp-chyby{background:#3a1f1c;border-color:#6b2c25}
   .rzz-z-pod{text-align:left}
   .rzz-lista select,.rzz-rada select{min-height:44px;font-size:16px}
   .rzz-skrin-volba,.rzz-vl-box{margin-left:0}
-  .rz-zal{flex:1 1 0;min-height:44px;padding:.5rem .4rem}
+  .rz-zalozky{gap:.25rem}
+  .rz-zal{flex:1 1 auto;min-height:44px;padding:.5rem .3rem;font-size:.86rem}   /* 4 záložky (i 🧊 3D) se vejdou do 360 px */
   .rot-tab input{width:100%;min-width:3.6rem}
   .rz-sch-ram{max-height:none}
+  .r3-ram{height:62vh;min-height:300px}
+  .r3-pohledy .dok-mini,.r3-lista .dok-mini{min-height:44px;min-width:44px}
+  .rz-3d-hlava .r3-dvere-btn{width:100%}
   .rz-sch-hlava .rz-sch-tisk{width:100%}
   .rz-dok-tisk2{flex:1 1 100%;justify-content:center;min-height:44px}
   .rz-sch-info{min-width:0}
@@ -31047,6 +31069,7 @@ DOK_TYPY.rozv.form = function (d) {
   return '<div class="rz-zalozky" role="tablist" aria-label="Rozvaděč">' +
       '<button type="button" class="rz-zal" role="tab" data-action="tdRZalozka" data-z="navrh">🧩 Návrh</button>' +
       '<button type="button" class="rz-zal" role="tab" data-action="tdRZalozka" data-z="sch">⚡ Schéma</button>' +
+      '<button type="button" class="rz-zal" role="tab" data-action="tdRZalozka" data-z="3d">🧊 3D</button>' +
       '<button type="button" class="rz-zal" role="tab" data-action="tdRZalozka" data-z="dok">📄 Dokumenty</button></div>' +
     '<div id="rz-pan-navrh" class="rz-pan">' + rozvHlavickaHtml(d) +
     '<div class="scard rz-sklad"><div class="scard-title">🧩 Čelní pohled — skládání z knihovny</div>' +
@@ -31056,6 +31079,7 @@ DOK_TYPY.rozv.form = function (d) {
         '<aside class="rz-vlastnosti" id="rz-vlastnosti"></aside>' +
       '</div></div></div>' +
     '<div id="rz-pan-sch" class="rz-pan" hidden></div>' +
+    '<div id="rz-pan-3d" class="rz-pan" hidden></div>' +
     '<div id="rz-pan-dok" class="rz-pan" hidden></div>';
 };
 
@@ -33697,7 +33721,7 @@ function rozvIpText(e) { return [e.ipz, e.ipo].filter(Boolean).join(' / '); }
 function rozvRokMes(ym, oddel) { var m = /^(\d{4})-(\d{2})/.exec(ym || ''); return m ? (oddel === '/' ? m[1] + '/' + m[2] : +m[2] + '/' + m[1]) : (ym || ''); }
 function rozvVyber(d) {
   var v = d.dokVyber || {};
-  return { cp: v.cp !== false, schema: v.schema !== false, overeni: v.overeni !== false && pscJe(d), tech: v.tech !== false, prohl: v.prohl !== false, ko: v.ko !== false, popisky: v.popisky === true,
+  return { cp: v.cp !== false, schema: v.schema !== false, overeni: v.overeni !== false && pscJe(d), tech: v.tech !== false, prohl: v.prohl !== false, ko: v.ko !== false, popisky: v.popisky === true, pohled3d: v.pohled3d === true,
            otepleni: v.otepleni === '' ? null : v.otepleni };
 }
 
@@ -33761,7 +33785,7 @@ function rozvDokHtml(d) {
   var h = '<div class="scard rz-dok-hlava"><div class="scard-title">📄 Dokumenty z návrhu — ' + (psc ? 'ČSN EN IEC 61439-2 (PSC)' : 'ČSN EN IEC 61439-3 (DBO)') + '</div>' +
     '<button class="btn btn-gold dok-hlavni-akce rz-dok-generuj" data-action="tdRDokPdf">📄 Vygenerovat dokumentaci (PDF)</button>' +
     '<div class="rz-dok-vyber"><span class="rz-dok-vyber-t">Do PDF patří:</span>' +
-      zatrh('cp', 'čelní pohled a seznam přístrojů') + zatrh('schema', 'schéma zapojení') + zatrh('tech', 'technické údaje') + (psc ? zatrh('overeni', 'ověření návrhu') : '') +
+      zatrh('cp', 'čelní pohled a seznam přístrojů') + zatrh('schema', 'schéma zapojení') + zatrh('pohled3d', 'pohled 3D (ilustrační)') + zatrh('tech', 'technické údaje') + (psc ? zatrh('overeni', 'ověření návrhu') : '') +
       zatrh('prohl', 'prohlášení o shodě') +
       zatrh('ko', 'protokol o kusovém ověření') + rozvOteplZatrh(d) + (psc ? '' : zatrh('popisky', 'popisky pod přístroje')) + '</div>' +
     '<div class="rz-dok-stitek-r"><button class="rz-dok-tisk2 rz-dok-stitek-btn" data-action="tdRStitek" title="Štítek se tiskne zvlášť, ve skutečné velikosti">🏷 Tisk štítku</button>' +
@@ -33951,7 +33975,7 @@ function rozvDokChybiVykreslit() {
 // ── Přepínač Návrh | Dokumenty ──
 function rozvZalozkaNastavit(z) {
   if (!__rz) return;
-  __rz.zalozka = z === 'dok' || z === 'sch' ? z : 'navrh';
+  __rz.zalozka = z === 'dok' || z === 'sch' || z === '3d' ? z : 'navrh';
   var f = dokForm(); if (!f) return;
   f.querySelectorAll('.rz-zal').forEach(function (b) {
     var a = b.getAttribute('data-z') === __rz.zalozka;
@@ -33960,7 +33984,14 @@ function rozvZalozkaNastavit(z) {
   var pn = document.getElementById('rz-pan-navrh'), pd = document.getElementById('rz-pan-dok'), ps = document.getElementById('rz-pan-sch');
   if (!pn || !pd) return;
   if (ps) ps.hidden = true;
-  if (__rz.zalozka === 'sch' && ps) {   // náhled výkresu se kreslí z aktuálního cist() (i neuložené změny návrhu)
+  var p3 = document.getElementById('rz-pan-3d'); if (p3) p3.hidden = true;
+  if (__rz.zalozka === '3d' && p3) {   // pohled 3D (etapa 5c) — jen na prohlížení, z aktuálního cist()
+    __rz.vyber = null; __rz.vic = null; __rz.rezimVyberu = false; __rz.knihVyber = null; __rz.presun = null;
+    var d3 = DOK_TYPY.rozv.cist(f);
+    p3.innerHTML = rozv3dHtml(d3);
+    pn.hidden = true; pd.hidden = true; p3.hidden = false;
+    rozv3dKreslit(d3);
+  } else if (__rz.zalozka === 'sch' && ps) {   // náhled výkresu se kreslí z aktuálního cist() (i neuložené změny návrhu)
     __rz.vyber = null; __rz.vic = null; __rz.rezimVyberu = false; __rz.knihVyber = null; __rz.presun = null;
     var otevS = Array.prototype.map.call(ps.querySelectorAll('details[open]'), function (x) { return x.getAttribute('data-oddil'); });
     ps.innerHTML = rozvSchHtml(DOK_TYPY.rozv.cist(f));
@@ -33982,7 +34013,7 @@ function rozvZalozkaNastavit(z) {
 }
 TD_AKCE.tdRZalozka = function (el) {
   var z = el.getAttribute('data-z');
-  if (__rz && z === __rz.zalozka && !document.getElementById('rz-pan-' + (z === 'dok' || z === 'sch' ? z : 'navrh')).hidden) return;
+  if (__rz && z === __rz.zalozka && !document.getElementById('rz-pan-' + (z === 'dok' || z === 'sch' || z === '3d' ? z : 'navrh')).hidden) return;
   rozvZalozkaNastavit(z);
 };
 TD_AKCE.tdRDokNaPole = function (el) {
@@ -34041,7 +34072,7 @@ document.addEventListener('input', function (e) {
 
 TD_AKCE.tdRDokPdf = async function () {
   var f = dokForm(), d = f ? DOK_TYPY.rozv.cist(f) : {}, v = rozvVyber(d);
-  if (!v.cp && !v.schema && !v.tech && !v.prohl && !v.ko && !v.overeni) {
+  if (!v.cp && !v.schema && !v.tech && !v.prohl && !v.ko && !v.overeni && !v.pohled3d) {
     if (v.popisky) { await TD_AKCE.tdRPopisky(); return; }
     showToast('Zaškrtněte, co má v PDF být.'); return;
   }
@@ -37538,6 +37569,399 @@ function pscOsazeniSvg(rz, o) {
   });
   return h;
 }
+// ═══ ROZVADĚČ — 3D NÁHLED (etapa 5c, DBO i PSC) ══════════════════════════
+// Záložka „🧊 3D" jen na prohlížení — kreslí se z aktuálního cist() při
+// přepnutí. Žádná knihovna: scéna = seznam kvádrů v mm (rozv3dScena), na
+// obrazovce CSS 3D (transform-style: preserve-3d, šest stěn), do PDF tatáž
+// scéna vlastní pravoúhlou projekcí do SVG (rozv3dSvg) — html2canvas CSS 3D
+// neumí. Souřadnice: x doprava, y dolů, z k divákovi (z = 0 zadní stěna).
+// Výška 90 mm a hloubka 70 mm modulových přístrojů jsou VÝCHOZÍ hodnoty
+// jen pro vzhled; skříň / pole ve skutečných rozměrech z dat (chybí-li
+// hloubka: DBO 100 mm, PSC 400 mm a nápis „hloubka neuvedena").
+var R3 = { modH: 90, modD: 70, deskaD: 70, mmD: 120, roztec: 125, okrajV: 40, hlDbo: 100, hlPsc: 400, lista: 35, listaD: 7.5, zadPsc: 20 };
+var R3_POHLEDY = { predni: { o: 0, s: 0 }, bok: { o: -90, s: 0 }, shora: { o: 0, s: 80 }, sikmo: { o: -28, s: 18 } };
+var R3_MED = '#c87533';
+var __r3 = null;   // kamera a stav zobrazení (jen v paměti; dveře se ukládají do d.pohled3d)
+
+function r3Barva(mat) { return /plast/i.test(mat || '') ? '#f3f3ef' : '#cbd0cc'; }   // plast bílá, oceloplech RAL 7035
+function r3Stin(hex, f) {
+  var m = /^#?([0-9a-f]{6})$/i.exec(hex || ''); if (!m) return hex;
+  var n = parseInt(m[1], 16), c = [n >> 16, (n >> 8) & 255, n & 255].map(function (v) { return Math.max(0, Math.min(255, Math.round(v * f))); });
+  return '#' + c.map(function (v) { return (v < 16 ? '0' : '') + v.toString(16); }).join('');
+}
+function r3Rozmery(t) {   // „550 × 310 × 100" (v × š × h) → čísla
+  var n = (String(t || '').match(/\d+(?:[.,]\d+)?/g) || []).map(function (x) { return +x.replace(',', '.'); });
+  return { v: n[0] || 0, s: n[1] || 0, h: n[2] || 0 };
+}
+function r3Dvere(d) { return !(d.pohled3d && d.pohled3d.dvere === 'zavrene'); }
+
+// Čelo přístroje = táž kresba jako v čelním pohledu (rozvPrvekSvg), vložená do přední stěny.
+function r3Celo(x, w, h, off, o) {
+  var g = rozvPrvekSvg(x, 0, off, Object.assign({ tisk: true }, o || {}));
+  return { w: w, h: h, svg: g };
+}
+function r3Pristroj(x, X, Y, Z, w, h, hl, celo, kab) {
+  var p = x.p || {}, b;
+  if (p.kat === 'REZ') {   // rezerva = záslepka v krytu
+    return { druh: 'pristroj', uid: x.uid, kab: kab, x: X, y: Y + h * 0.25, z: Z + hl - 3, w: w, h: h * 0.5, d: 3, barva: '#e6e6e3', celo: r3Celo(x, w, h * 0.5, (h * 0.5 - RZG.H) / 2) };
+  }
+  return { druh: 'pristroj', uid: x.uid, kab: kab, x: X, y: Y, z: Z, w: w, h: h, d: hl, barva: (rozvKat(p.kat) || {}).barva || '#ffffff', celo: celo };
+}
+// Výkon (cíl ≥ 30 snímků/s u PSC se 150 přístroji): modulové přístroje těsně
+// vedle sebe v řadě mají společné tělo (boky, horní a dolní plocha se kreslí
+// jednou za skupinu), každý přístroj má vlastní čelo s kresbou z čelního pohledu
+// (páčka, označení, hodnota). Dotýkající se boky stejně nejsou vidět.
+function r3Telo(L, pridat) {
+  var sk = null, konec = function () { if (sk && sk.n) pridat(sk.b); sk = null; };
+  L.forEach(function (b) {
+    if (b.d < 10) { konec(); return; }   // záslepka rezervy
+    b.jenCelo = true;
+    if (sk && Math.abs(b.x - (sk.b.x + sk.b.w)) < 0.05 && b.h === sk.b.h && b.d === sk.b.d) { sk.b.w = b.x + b.w - sk.b.x; sk.n++; return; }
+    konec();
+    sk = { n: 1, b: { druh: 'telo', kab: b.kab, x: b.x, y: b.y, z: b.z, w: b.w, h: b.h, d: b.d, barva: '#ecece8', steny: ['l', 'r', 'h', 'd'] } };
+  });
+  konec();
+}
+
+function rozv3dScena(d) {
+  var sc = { boxy: [], kab: [], W: 0, H: 0, D: 0, bezHloubky: false, psc: pscJe(d), dvere: r3Dvere(d) };
+  var rz = { skrin: d.skrin, rady: d.rady || [] }, M = RZG.M;
+  if (!d.skrin) return sc;
+  var pridat = function (b) { sc.boxy.push(b); return b; };
+  if (!sc.psc) {
+    var sk = d.skrin, mod = +sk.modulu || 12, n = Math.max(rz.rady.length, 1), roz = r3Rozmery(sk.rozmery);
+    var Wl = RZG.okraj * 2 + mod * M, Hl = n * R3.roztec + 2 * R3.okrajV;
+    var W = Math.max(roz.s, Wl), H = Math.max(roz.v, Hl), D = roz.h || R3.hlDbo, ox = (W - Wl) / 2, oy = (H - Hl) / 2;
+    sc.bezHloubky = !roz.h; sc.W = W; sc.H = H; sc.D = D;
+    var zL = Math.max(2, Math.min(12, D - R3.listaD - R3.modD - 6)), barva = r3Barva(sk.material);
+    sc.kab.push({ druh: 'skrin', x: 0, y: 0, z: 0, w: W, h: H, d: D, barva: barva });
+    rz.rady.forEach(function (rada, i) {
+      var cy = oy + R3.okrajV + R3.roztec * i + R3.roztec / 2, pz = rozvPozice(rada);
+      pridat({ druh: 'lista', kab: 0, x: ox + RZG.okraj - 4, y: cy - R3.lista / 2, z: zL, w: mod * M + 8, h: R3.lista, d: R3.listaD, barva: '#c9c9c9' });
+      r3Telo((rada.prvky || []).map(function (x, j) {
+        var w = rozvW(x) * M;
+        return pridat(r3Pristroj(x, ox + RZG.okraj + pz[j] * M, cy - R3.modH / 2, zL + R3.listaD, w, R3.modH, R3.modD, r3Celo(x, w, R3.modH, (R3.modH - RZG.H) / 2), 0));
+      }), pridat);
+    });
+    sc.kab[0].dvere = { x: 0, y: 0, z: D, w: W, h: H, d: 2, barva: barva };
+    return sc;
+  }
+  // PSC: pole vedle sebe, díly shora dolů (geometrie z pscGeo, posunutá do počátku)
+  var geo = pscGeo(rz), dx = PSCG.vlevo, dy = PSCG.okraj, sb = pscSbernice(d.skrin), sbY = {};
+  geo.pole.forEach(function (p) {
+    var pl = p.pl, D = +pl.hloubka || R3.hlPsc, kab = sc.kab.length, barva = r3Barva(pl.material || 'oceloplech'), zZ = R3.zadPsc;
+    if (!(+pl.hloubka)) sc.bezHloubky = true;
+    sc.kab.push({ druh: 'pole', pi: p.pi, x: p.x - dx, y: p.y - dy, z: 0, w: p.w, h: p.h, d: D, barva: barva,
+                  dvere: { x: p.x - dx, y: p.y - dy, z: D, w: p.w, h: p.h, d: 2, barva: barva } });
+    sc.W = Math.max(sc.W, p.x - dx + p.w); sc.H = Math.max(sc.H, p.y - dy + p.h); sc.D = Math.max(sc.D, D);
+    p.dily.forEach(function (g) {
+      var dl = g.dil, X = g.x - dx, Y = g.y - dy;
+      if (dl.druh === 'din') {
+        g.rady.forEach(function (r) {
+          var rada = rz.rady[r.i] || { prvky: [] }, cy = r.y - dy + RZG.H / 2, pz = rozvPozice(rada);
+          pridat({ druh: 'lista', kab: kab, x: r.x0 - dx - 4, y: cy - R3.lista / 2, z: zZ, w: r.mod * M + 8, h: R3.lista, d: R3.listaD, barva: '#c9c9c9' });
+          r3Telo((rada.prvky || []).map(function (x, j) {
+            var w = rozvW(x) * M;
+            return pridat(r3Pristroj(x, r.x0 - dx + pz[j] * M, cy - R3.modH / 2, zZ + R3.listaD, w, R3.modH, R3.modD, r3Celo(x, w, R3.modH, (R3.modH - RZG.H) / 2), kab));
+          }), pridat);
+        });
+      } else if (dl.druh === 'deska') {
+        var r2 = g.rady[0];
+        pridat({ druh: 'deska', kab: kab, x: X, y: Y, z: zZ - 3, w: g.w, h: g.h, d: 3, barva: '#d9d5c8' });
+        ((rz.rady[r2.i] || {}).prvky || []).forEach(function (x) {
+          var s = pscRozmer(x), ps = x.pos || { x: 0, y: 0 }, kat = rozvKat((x.p || {}).kat) || {};
+          var hl = +(x.p || {}).hloubkaMm || (kat.mm ? R3.mmD : R3.deskaD), c = r3Celo(x, s.w, s.h, 0, { w: s.w, h: s.h });
+          pridat(r3Pristroj(x, X + ps.x, Y + ps.y, zZ, s.w, s.h, hl, c, kab));
+        });
+      } else if (dl.druh === 'sbernice') {   // měděné pasy
+        var F = PSC_SB_FAZE[dl.faze] || PSC_SB_FAZE['3+N+PE'], rozt = g.h / (F.length + 1), tl = Math.max(3, Math.min(10, rozt * 0.45)), ys = [];
+        F.forEach(function (f, i) {
+          var yy = Y + rozt * (i + 1); ys.push(yy);
+          pridat({ druh: 'sbernice', kab: kab, x: X + 2, y: yy - tl / 2, z: zZ + 30, w: g.w - 4, h: tl, d: 10, barva: f === 'PE' ? '#b9a44a' : R3_MED });
+        });
+        sbY[dl.uid] = { x2: X + g.w - 2, ys: ys, tl: tl };
+      } else if (dl.druh === 'kabely') {
+        pridat({ druh: 'kabely', kab: kab, x: X, y: Y, z: zZ, w: g.w, h: g.h, d: Math.max(20, D - zZ - 40), barva: '#9db7d6', pruhl: true, popis: 'Kabelový prostor' });
+      } else if (dl.druh === 'zaslepka') {
+        pridat({ druh: 'zaslepka', kab: kab, x: X, y: Y, z: D - 25, w: g.w, h: g.h, d: 2, barva: r3Stin(barva, 0.92) });
+      }
+    });
+  });
+  // spojky sběrnic do dalšího pole (stejná výška pasů)
+  sb.chains.forEach(function (ch) {
+    for (var i = 0; i + 1 < ch.dily.length; i++) {
+      var a = sbY[ch.dily[i].dl.uid], nx = geo.pole[ch.dily[i + 1].pi]; if (!a || !nx) continue;
+      var x2 = nx.ux - dx + 2;
+      a.ys.forEach(function (yy) { pridat({ druh: 'sbernice', kab: ch.dily[i].pi, x: a.x2, y: yy - a.tl / 2, z: R3.zadPsc + 30, w: Math.max(1, x2 - a.x2), h: a.tl, d: 10, barva: R3_MED }); });
+    }
+  });
+  return sc;
+}
+
+// ── Obrazovka: CSS 3D ──
+function r3Px(v) { return Math.round(v * __r3.k * 100) / 100 + 'px'; }
+function r3StenaHtml(t, w, h, tr, barva, o) {
+  o = o || {};
+  return '<div class="r3-st' + (o.obe ? ' r3-obe' : '') + '" data-st="' + t + '" style="width:' + r3Px(w) + ';height:' + r3Px(h) + ';background:' + barva + ';transform:' + tr + '">' + (o.obsah || '') + '</div>';
+}
+function r3BoxHtml(b, o) {
+  o = o || {};
+  var W = r3Px(b.w), H = r3Px(b.h), Dp = r3Px(b.d), h = '', barva = b.barva, jenCelo = !!(o.jenCelo || b.jenCelo), obe = !!b.obe, st = b.steny;
+  var celo = '';
+  if (b.celo) celo = '<svg class="r3-celo" viewBox="0 0 ' + rozvZaokr(b.celo.w) + ' ' + rozvZaokr(b.celo.h) + '" preserveAspectRatio="none" font-family="DM Sans, Arial, Helvetica, sans-serif">' + b.celo.svg + '</svg>';
+  else if (b.popis) celo = '<span class="r3-popis">' + esc(b.popis) + '</span>';
+  if (!st) h += r3StenaHtml('p', b.w, b.h, 'translate3d(0,0,' + Dp + ')', barva, { obsah: celo, obe: obe });
+  if (!jenCelo) {
+    if (o.zadni) h += r3StenaHtml('z', b.w, b.h, 'translate3d(' + W + ',0,0) rotateY(180deg)', r3Stin(barva, 0.7), { obe: obe });
+    h += r3StenaHtml('l', b.d, b.h, 'rotateY(-90deg)', r3Stin(barva, 0.8), { obe: obe });
+    h += r3StenaHtml('r', b.d, b.h, 'translate3d(' + W + ',0,' + Dp + ') rotateY(90deg)', r3Stin(barva, 0.8), { obe: obe });
+    h += r3StenaHtml('h', b.w, b.d, 'rotateX(90deg)', r3Stin(barva, 0.93), { obe: obe });
+    h += r3StenaHtml('d', b.w, b.d, 'translate3d(0,' + H + ',' + Dp + ') rotateX(-90deg)', r3Stin(barva, 0.72), { obe: obe });
+  }
+  (b.deti || []).forEach(function (c) { if (!jenCelo) h += r3BoxHtml(Object.assign({}, c, { z: (c.zCela ? b.d : 0) + c.z }), {}); });
+  var tr = 'translate3d(' + r3Px(b.x) + ',' + r3Px(b.y) + ',' + r3Px(b.z) + ')' + (b.rot ? ' rotateY(' + b.rot + 'deg)' : '');
+  return '<div class="r3-box' + (b.pruhl ? ' r3-pruhl' : '') + '" data-r3="' + b.druh + '"' + (b.uid ? ' data-puid="' + esc(b.uid) + '"' : '') + (o.attr || '') +
+    ' style="transform:' + tr + '">' + h + '</div>';
+}
+function r3SkrinHtml(k) {   // skříň / pole: zadní stěna, boky, strop a dno (otevřené zepředu), viditelné z obou stran
+  var W = r3Px(k.w), H = r3Px(k.h), Dp = r3Px(k.d), b = k.barva;
+  var h = r3StenaHtml('z', k.w, k.h, 'none', r3Stin(b, 0.9), { obe: true }) +
+    r3StenaHtml('l', k.d, k.h, 'rotateY(-90deg)', r3Stin(b, 0.82), { obe: true }) +
+    r3StenaHtml('r', k.d, k.h, 'translate3d(' + W + ',0,' + Dp + ') rotateY(90deg)', r3Stin(b, 0.82), { obe: true }) +
+    r3StenaHtml('h', k.w, k.d, 'rotateX(90deg)', r3Stin(b, 0.95), { obe: true }) +
+    r3StenaHtml('d', k.w, k.d, 'translate3d(0,' + H + ',' + Dp + ') rotateX(-90deg)', r3Stin(b, 0.74), { obe: true });
+  return '<div class="r3-box" data-r3="' + k.druh + '"' + (k.pi != null ? ' data-pole="' + k.pi + '"' : '') +
+    ' style="transform:translate3d(' + r3Px(k.x) + ',' + r3Px(k.y) + ',' + r3Px(k.z) + ')">' + h + '</div>';
+}
+function r3DvereBox(k, otevrene, pruhl) {
+  var dv = Object.assign({ druh: 'dvere', obe: true }, k.dvere);
+  dv.rot = otevrene ? -100 : 0;   // pant vlevo, otevřené pootočené o 100°
+  // PSC s víc poli: otevřené dveře by zakryly sousední pole — kreslí se průhledně
+  if (otevrene && pruhl) dv.pruhl = true;
+  dv.deti = [{ druh: 'klika', x: dv.w - 28, y: dv.h / 2 - 40, z: 0, w: 12, h: 80, d: 14, barva: '#5c5c5c', zCela: true }];
+  return dv;
+}
+
+function rozv3dHtml(d) {
+  var sc = rozv3dScena(d), otevr = r3Dvere(d);
+  var rozm = !d.skrin ? '' : sc.psc ? pscPoleTvar((d.skrin.pole || []).length) + ', ' + rozvCisloText(Math.round(sc.W)) + ' × ' + rozvCisloText(Math.round(sc.H)) + ' × ' + rozvCisloText(Math.round(sc.D)) + ' mm (š × v × h)'
+    : 'skříň ' + rozvCisloText(Math.round(sc.W)) + ' × ' + rozvCisloText(Math.round(sc.H)) + ' × ' + rozvCisloText(Math.round(sc.D)) + ' mm (š × v × h)';
+  var pohled = function (k, t) { return '<button type="button" class="dok-mini r3-pohled" data-action="tdR3Pohled" data-p="' + k + '">' + t + '</button>'; };
+  return '<div class="scard rz-3d-hlava"><div class="scard-title">🧊 Pohled 3D — jen na prohlížení</div>' +
+    (d.skrin && (!sc.psc || (d.skrin.pole || []).length)
+      ? '<button class="btn btn-gold dok-hlavni-akce r3-dvere-btn" data-action="tdR3Dvere" aria-pressed="' + (otevr ? 'true' : 'false') + '">' + (otevr ? '🚪 Zavřít dveře' : '🚪 Otevřít dveře') + '</button>' +
+        '<div class="rz-sch-lista r3-lista"><span class="r3-pohledy">' + pohled('predni', 'Zepředu') + pohled('bok', 'Zboku') + pohled('shora', 'Zhora') + pohled('sikmo', 'Šikmo') + '</span>' +
+        '<span class="rz-sch-zoom"><button type="button" class="dok-mini" data-action="tdR3Zoom" data-smer="-1" title="Oddálit">−</button>' +
+        '<button type="button" class="dok-mini" data-action="tdR3Zoom" data-smer="1" title="Přiblížit">＋</button>' +
+        '<button type="button" class="dok-mini" data-action="tdR3Pohled" data-p="sikmo" title="Výchozí pohled (také dvojklik)">↺ Výchozí</button></span></div>' +
+        '<div class="dk-pozn r3-info">' + esc(rozm) + (sc.bezHloubky ? ' · <b class="r3-bez-hl">hloubka neuvedena</b> – kreslí se ' + (sc.psc ? R3.hlPsc : R3.hlDbo) + ' mm' : '') +
+          ' · ' + (rozvDotyk() ? 'tažením prstu otáčíte, dvěma prsty přiblížíte' : 'tažením myší otáčíte, kolečkem přiblížíte, pravým tlačítkem (nebo Shift) posunete, dvojklik = výchozí pohled') +
+          '. Klepnutím na přístroj ho otevřete v Návrhu.</div></div>' +
+        '<div class="r3-ram" id="r3-ram" tabindex="0" aria-label="Pohled 3D rozvaděče"><div class="r3-svet" id="r3-svet"></div></div>' +
+        '<div class="dk-pozn">Ilustrační pohled: skříň ' + (sc.psc ? 'a pole ' : '') + 've skutečných rozměrech, přístroje s výchozí výškou ' + R3.modH + ' mm a hloubkou ' + R3.modD +
+          ' mm (jen pro vzhled; na montážní desce v jejich mm). Do PDF ho přiložíte v záložce Dokumenty.</div>'
+      : '<p class="rz-bez-skrine">' + (sc.psc ? 'Nejdřív přidejte pole v Návrhu.' : 'Nejdřív vyberte skříň v Návrhu.') + '</p></div>');
+}
+
+function rozv3dKreslit(d) {
+  var ram = document.getElementById('r3-ram'), svet = document.getElementById('r3-svet'); if (!ram || !svet) return;
+  var sc = rozv3dScena(d), uid = (window.__dokOtevreny || {}).uid;
+  if (!__r3 || __r3.uid !== uid) __r3 = { uid: uid, o: R3_POHLEDY.sikmo.o, s: R3_POHLEDY.sikmo.s, zoom: 1, px: 0, py: 0 };
+  var rw = Math.max(200, ram.clientWidth), rh = Math.max(200, ram.clientHeight);
+  __r3.cx = sc.W / 2; __r3.cy = sc.H / 2; __r3.cz = sc.D / 2;
+  // měřítko: celý rozvaděč i s otevřenými dveřmi se vejde (výchozí pohled i zepředu)
+  var rohy = [];
+  sc.kab.forEach(function (k) {
+    [k, k.dvere ? r3DvereBox(k, sc.dvere) : null].forEach(function (b) {
+      if (!b) return; var f = r3Mat(b);
+      [0, b.w].forEach(function (x) { [0, b.h].forEach(function (y) { [0, b.d].forEach(function (z) { rohy.push(f([x, y, z])); }); }); });
+    });
+  });
+  var mx = 1, my = 1;
+  ['sikmo', 'predni'].forEach(function (n) {
+    var pv = R3_POHLEDY[n], ro = pv.o * Math.PI / 180, rs = -pv.s * Math.PI / 180;
+    rohy.forEach(function (q) {
+      var x = q[0] - __r3.cx, y = q[1] - __r3.cy, z = q[2] - __r3.cz, x1 = x * Math.cos(ro) + z * Math.sin(ro), z1 = -x * Math.sin(ro) + z * Math.cos(ro);
+      mx = Math.max(mx, Math.abs(x1)); my = Math.max(my, Math.abs(y * Math.cos(rs) - z1 * Math.sin(rs)));
+    });
+  });
+  __r3.k = Math.min(rw * 0.42 / mx, rh * 0.42 / my);   // rezerva na perspektivu
+  __r3.otevrene = sc.dvere; __r3.pocet = sc.boxy.length;
+  var h = '';
+  sc.kab.forEach(function (k) { h += r3SkrinHtml(k); });
+  sc.boxy.forEach(function (b) {   // za zavřenými dveřmi jen čela přístrojů (nejsou vidět, ale klik a počet sedí)
+    if (!sc.dvere && b.druh === 'telo') return;
+    h += r3BoxHtml(b, { jenCelo: !sc.dvere && b.druh === 'pristroj' });
+  });
+  sc.kab.forEach(function (k) { if (k.dvere) h += r3BoxHtml(r3DvereBox(k, sc.dvere, sc.kab.length > 1)); });
+  if (sc.psc) for (var i = 1; i < sc.kab.length; i++) {   // spojení polí (svislý spoj na čele)
+    var a = sc.kab[i - 1], c = sc.kab[i];
+    h += r3BoxHtml({ druh: 'spoj', x: c.x - 3, y: 0, z: Math.min(a.d, c.d) - 4, w: 6, h: Math.min(a.h, c.h), d: 4, barva: '#7d817e' });
+  }
+  svet.innerHTML = h;
+  r3Kamera();
+}
+function r3Kamera() {
+  var svet = document.getElementById('r3-svet'); if (!svet || !__r3) return;
+  svet.style.transform = 'translate(' + __r3.px + 'px,' + __r3.py + 'px) scale(' + __r3.zoom + ') rotateX(' + (-__r3.s) + 'deg) rotateY(' + __r3.o + 'deg) translate3d(' +
+    (-__r3.cx * __r3.k) + 'px,' + (-__r3.cy * __r3.k) + 'px,' + (-__r3.cz * __r3.k) + 'px)';
+  svet.setAttribute('data-o', Math.round(__r3.o)); svet.setAttribute('data-s', Math.round(__r3.s));
+}
+function r3Pohled(k) {
+  var p = R3_POHLEDY[k] || R3_POHLEDY.sikmo; if (!__r3) return;
+  __r3.o = p.o; __r3.s = p.s; __r3.zoom = 1; __r3.px = 0; __r3.py = 0; r3Kamera();
+}
+TD_AKCE.tdR3Pohled = function (el) { r3Pohled(el.getAttribute('data-p')); };
+TD_AKCE.tdR3Zoom = function (el) { if (!__r3) return; __r3.zoom = Math.max(0.3, Math.min(6, __r3.zoom * (+el.getAttribute('data-smer') > 0 ? 1.25 : 0.8))); r3Kamera(); };
+TD_AKCE.tdR3Dvere = function () {
+  if (!__rz) return;
+  __rz.p3dDvere = (__r3 && __r3.otevrene === false) ? 'otevrene' : 'zavrene';
+  dokZmena();
+  rozvZalozkaNastavit('3d');
+};
+
+// Myš a dotyk: tažení = otáčení (sklon ±80°), kolečko / dva prsty = přiblížení,
+// pravé tlačítko nebo Shift = posun, dvojklik = výchozí pohled, klepnutí na přístroj = Návrh.
+var __r3Tah = null;
+function r3Bod(e) { return { x: e.clientX, y: e.clientY }; }
+document.addEventListener('pointerdown', function (e) {
+  var ram = e.target && e.target.closest && e.target.closest('#r3-ram'); if (!ram || !__r3) return;
+  if (!__r3Tah) __r3Tah = { body: {}, posun: 0, start: null };
+  __r3Tah.body[e.pointerId] = r3Bod(e);
+  var n = Object.keys(__r3Tah.body).length;
+  __r3Tah.posunTah = e.button === 2 || e.shiftKey;
+  if (n === 1) { __r3Tah.start = r3Bod(e); __r3Tah.posun = 0; __r3Tah.cil = e.target; __r3Tah.dotyk = e.pointerType === 'touch'; }
+  __r3Tah.vzd = null;
+  try { ram.setPointerCapture(e.pointerId); } catch (x) {}
+  if (e.pointerType !== 'touch') e.preventDefault();
+});
+document.addEventListener('pointermove', function (e) {
+  if (!__r3Tah || !__r3Tah.body[e.pointerId] || !__r3) return;
+  var st = __r3Tah.body[e.pointerId], b = r3Bod(e), dx = b.x - st.x, dy = b.y - st.y, ids = Object.keys(__r3Tah.body);
+  __r3Tah.body[e.pointerId] = b;
+  __r3Tah.posun += Math.abs(dx) + Math.abs(dy);
+  if (ids.length >= 2) {   // dva prsty: přiblížení (a posun středem)
+    var p1 = __r3Tah.body[ids[0]], p2 = __r3Tah.body[ids[1]], v = Math.hypot(p1.x - p2.x, p1.y - p2.y);
+    if (__r3Tah.vzd) __r3.zoom = Math.max(0.3, Math.min(6, __r3.zoom * v / __r3Tah.vzd));
+    __r3Tah.vzd = v; __r3.px += dx / 2; __r3.py += dy / 2;
+  } else if (__r3Tah.posunTah || e.shiftKey) { __r3.px += dx; __r3.py += dy; }
+  else { __r3.o += dx * 0.4; __r3.s = Math.max(-80, Math.min(80, __r3.s + dy * 0.4)); }
+  if (!__r3Tah.raf) __r3Tah.raf = requestAnimationFrame(function () { if (__r3Tah) __r3Tah.raf = 0; r3Kamera(); });
+});
+function r3Konec(e) {
+  if (!__r3Tah || !__r3Tah.body[e.pointerId]) return;
+  delete __r3Tah.body[e.pointerId];
+  var zbyva = Object.keys(__r3Tah.body).length;
+  if (!zbyva) {
+    var klik = e.type === 'pointerup' && __r3Tah.posun < 6 && !__r3Tah.posunTah && e.button !== 2 && __r3Tah.cil;
+    var pr = klik && __r3Tah.cil.closest && __r3Tah.cil.closest('#r3-ram [data-puid]');
+    if (__r3Tah.raf) cancelAnimationFrame(__r3Tah.raf);
+    __r3Tah = null; r3Kamera();
+    if (pr) rozvSchVybrat(pr.getAttribute('data-puid'));   // jako ve schématu: Návrh s vybraným přístrojem
+  } else __r3Tah.vzd = null;
+}
+document.addEventListener('pointerup', r3Konec);
+document.addEventListener('pointercancel', r3Konec);
+document.addEventListener('wheel', function (e) {
+  var ram = e.target && e.target.closest && e.target.closest('#r3-ram'); if (!ram || !__r3) return;
+  e.preventDefault();
+  __r3.zoom = Math.max(0.3, Math.min(6, __r3.zoom * (e.deltaY < 0 ? 1.12 : 1 / 1.12))); r3Kamera();
+}, { passive: false });
+document.addEventListener('dblclick', function (e) { if (e.target && e.target.closest && e.target.closest('#r3-ram') && !e.target.closest('[data-puid]')) r3Pohled('sikmo'); });
+document.addEventListener('contextmenu', function (e) { if (e.target && e.target.closest && e.target.closest('#r3-ram')) e.preventDefault(); });
+
+// Dveře se ukládají jen po přepnutí (starý rozvaděč beze změny).
+var rozv3dCistPuv = DOK_TYPY.rozv.cist;
+DOK_TYPY.rozv.cist = function (koren) {
+  var d = rozv3dCistPuv.call(this, koren);
+  if (__rz && __rz.p3dDvere) d.pohled3d = Object.assign({}, d.pohled3d, { dvere: __rz.p3dDvere });
+  return d;
+};
+
+// ── PDF: tatáž scéna, vlastní pravoúhlá projekce do SVG (jen jednoduché prvky) ──
+function r3Mat(b) {   // lokální → svět: rotace kolem levé zadní svislé hrany, pak posun
+  var r = (b.rot || 0) * Math.PI / 180, c = Math.cos(r), s = Math.sin(r);
+  return function (p) { return [p[0] * c + p[2] * s + b.x, p[1] + b.y, -p[0] * s + p[2] * c + b.z]; };
+}
+function r3Steny(b, f, jen) {   // stěny kvádru ve světě: [klíč, 4 rohy]
+  var w = b.w, h = b.h, d = b.d, P = function (x, y, z) { return f([x, y, z]); };
+  var S = { p: [P(0, 0, d), P(w, 0, d), P(w, h, d), P(0, h, d)], z: [P(w, 0, 0), P(0, 0, 0), P(0, h, 0), P(w, h, 0)],
+            l: [P(0, 0, 0), P(0, 0, d), P(0, h, d), P(0, h, 0)], r: [P(w, 0, d), P(w, 0, 0), P(w, h, 0), P(w, h, d)],
+            h: [P(0, 0, 0), P(w, 0, 0), P(w, 0, d), P(0, 0, d)], d: [P(0, h, d), P(w, h, d), P(w, h, 0), P(0, h, 0)] };
+  return (jen || ['p', 'z', 'l', 'r', 'h', 'd']).map(function (k) { return [k, S[k]]; });
+}
+var R3_STIN = { p: 1, z: 0.7, l: 0.8, r: 0.8, h: 0.93, d: 0.72 };
+function rozv3dSvg(d, o) {
+  o = o || {};
+  var sc = rozv3dScena(d), pv = R3_POHLEDY[o.pohled || 'sikmo'], ro = pv.o * Math.PI / 180, rs = -pv.s * Math.PI / 180;
+  var co = Math.cos(ro), so = Math.sin(ro), cs = Math.cos(rs), ss = Math.sin(rs);
+  var kam = function (p) {   // rotateX(-s)·rotateY(o) jako na obrazovce
+    var x = p[0] - sc.W / 2, y = p[1] - sc.H / 2, z = p[2] - sc.D / 2;
+    var x1 = x * co + z * so, z1 = -x * so + z * co;
+    return [x1, y * cs - z1 * ss, y * ss + z1 * cs];
+  };
+  var Z = rozvZaokr, poly = [], minX = 1e9, minY = 1e9, maxX = -1e9, maxY = -1e9;
+  var stred = function (pts) { var s = [0, 0, 0]; pts.forEach(function (q) { s[0] += q[0]; s[1] += q[1]; s[2] += q[2]; }); return s.map(function (v) { return v / pts.length; }); };
+  var normala = function (pts, bc) {   // ven z kvádru, v souřadnicích kamery
+    var a = pts[0], b = pts[1], c = pts[3], u = [b[0] - a[0], b[1] - a[1], b[2] - a[2]], v = [c[0] - a[0], c[1] - a[1], c[2] - a[2]];
+    var n = [u[1] * v[2] - u[2] * v[1], u[2] * v[0] - u[0] * v[2], u[0] * v[1] - u[1] * v[0]], fc = stred(pts);
+    if ((fc[0] - bc[0]) * n[0] + (fc[1] - bc[1]) * n[1] + (fc[2] - bc[2]) * n[2] < 0) n = n.map(function (q) { return -q; });
+    return n;
+  };
+  // jeden kvádr → mnohoúhelníky (jen přivrácené stěny); skříň → stěny zevnitř / zvenku
+  var kvadr = function (b, f, o2) {
+    o2 = o2 || {};
+    var bc = kam(f([b.w / 2, b.h / 2, b.d / 2])), L = [];
+    r3Steny(b, f, o2.jen).forEach(function (s) {
+      var pts = s[1].map(kam), n = normala(pts, bc), ven = n[2] > 0;
+      if (!ven && !o2.obe) return;
+      var barva = r3Stin(b.barva, (o2.kab ? { z: 0.9, l: 0.82, r: 0.82, h: 0.95, d: 0.74 }[s[0]] : R3_STIN[s[0]]) || 1);
+      L.push({ pts: pts, z: stred(pts)[2], barva: barva, ven: ven, k: s[0], b: b, op: b.pruhl ? 0.3 : 1 });
+    });
+    return L;
+  };
+  var vse = function (b) { var f = r3Mat(b), L = kvadr(b, f, { obe: b.obe, jen: b.steny || (b.jenCelo ? ['p'] : null) }); (b.deti || []).forEach(function (c) { L = L.concat(kvadr(c, function (p) { return f([p[0] + c.x, p[1] + c.y, p[2] + c.z + (c.zCela ? b.d : 0)]); })); }); return L; };
+  var vrstvy = [];
+  sc.kab.forEach(function (k, ki) {
+    var f = r3Mat(k), steny = kvadr(k, f, { jen: ['z', 'l', 'r', 'h', 'd'], obe: true, kab: true });
+    var obsah = []; sc.boxy.forEach(function (b) { if ((b.kab || 0) === ki) obsah = obsah.concat(vse(b)); });
+    obsah.sort(function (a, b) { return a.z - b.z; });
+    var zav = []; if (k.dvere && !sc.dvere) zav = vse(r3DvereBox(k, false));
+    vrstvy.push({ z: kam(f([k.w / 2, k.h / 2, k.d / 2]))[2], L: steny.filter(function (s) { return !s.ven; }).concat(obsah, steny.filter(function (s) { return s.ven; }), zav) });
+  });
+  vrstvy.sort(function (a, b) { return a.z - b.z; });
+  vrstvy.forEach(function (v) { poly = poly.concat(v.L); });
+  if (sc.dvere) { var dv = []; sc.kab.forEach(function (k) { if (k.dvere) dv = dv.concat(vse(r3DvereBox(k, true, sc.kab.length > 1))); }); dv.sort(function (a, b) { return a.z - b.z; }); poly = poly.concat(dv); }
+  poly.forEach(function (q) { q.pts.forEach(function (p) { minX = Math.min(minX, p[0]); maxX = Math.max(maxX, p[0]); minY = Math.min(minY, p[1]); maxY = Math.max(maxY, p[1]); }); });
+  if (!poly.length) return { svg: '', w: 0, h: 0 };
+  var W = maxX - minX + 4, H = maxY - minY + 4, k2 = Math.min(1, (o.maxW || 265) / W, (o.maxH || 150) / H);
+  var tx = function (p) { return Z(p[0] - minX + 2) + ',' + Z(p[1] - minY + 2); };
+  var h = '';
+  poly.forEach(function (q) {
+    h += '<polygon points="' + q.pts.map(tx).join(' ') + '" fill="' + q.barva + '"' + (q.op < 1 ? ' fill-opacity="' + q.op + '"' : '') + ' stroke="#555" stroke-width="0.25" stroke-linejoin="round"/>';
+    if (q.k === 'p' && q.ven && q.b.celo) {   // čelo přístroje: afinní obraz kresby z čelního pohledu
+      var A = q.pts[0], B = q.pts[1], C = q.pts[3], ww = q.b.celo.w, hh = q.b.celo.h;
+      h += '<g transform="matrix(' + [Z((B[0] - A[0]) / ww * 1000) / 1000, Z((B[1] - A[1]) / ww * 1000) / 1000, Z((C[0] - A[0]) / hh * 1000) / 1000, Z((C[1] - A[1]) / hh * 1000) / 1000,
+        Z(A[0] - minX + 2), Z(A[1] - minY + 2)].join(' ') + ')">' + q.b.celo.svg + '</g>';
+    }
+  });
+  return { svg: '<svg xmlns="http://www.w3.org/2000/svg" class="r3-pdf-svg" viewBox="0 0 ' + Z(W) + ' ' + Z(H) + '" width="' + Z(W * k2) + 'mm" height="' + Z(H * k2) + 'mm" font-family="DM Sans, Arial, Helvetica, sans-serif">' + h + '</svg>',
+           w: W * k2, h: H * k2, sc: sc };
+}
+function rozvPdf3d(d) {
+  var r = rozv3dSvg(d, { maxW: 265, maxH: 150 }); if (!r.svg) return [];
+  return [{ strana: 'sirka', html: '<div class="dok-pdf-h">Pohled 3D (ilustrační)</div><div class="rz-pdf-pohled r3-pdf">' + r.svg + '</div>' +
+    '<div class="rz-pdf-meritko">Ilustrační pohled — skříň ve skutečných rozměrech' + (r.sc.bezHloubky ? ' (hloubka neuvedena, kreslí se ' + (r.sc.psc ? R3.hlPsc : R3.hlDbo) + ' mm)' : '') +
+    ', přístroje s výchozí výškou ' + R3.modH + ' mm a hloubkou ' + R3.modD + ' mm jen pro vzhled.</div>' }];
+}
+var rozv3dPdfPuv = DOK_TYPY.rozv.pdf;
+DOK_TYPY.rozv.pdf = function (d) {
+  var B = rozv3dPdfPuv(d), v = rozvVyber(d);
+  if (!v.pohled3d) return B;
+  var cp = v.cp || (!v.tech && !v.prohl && !v.ko && !v.schema) ? rozvPdfNavrh(d).length : 0;   // hned za čelní pohled a seznam
+  Array.prototype.splice.apply(B, [cp, 0].concat(rozvPdf3d(d)));
+  return B;
+};
 // ═══ /TVORBA DOKUMENTACE ═══
 
 // Init wrapnutý — kdyby v něm něco selhalo (např. IDB v Safari iOS PWA),

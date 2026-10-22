@@ -92,7 +92,7 @@ const presahy = (p, svg) => p.evaluate(svg => {
 
   // ── 1. záložky a záložka Schéma ───────────────────────────────────────
   const z0 = await p.evaluate(() => Array.from(document.querySelectorAll('.rz-zal')).map(b => b.textContent + (b.classList.contains('akt') ? '*' : '')).join('|'));
-  check('editor: záložky „🧩 Návrh | ⚡ Schéma | 📄 Dokumenty", otevřený Návrh', z0 === '🧩 Návrh*|⚡ Schéma|📄 Dokumenty', z0);
+  check('editor: záložky „🧩 Návrh | ⚡ Schéma | 🧊 3D | 📄 Dokumenty", otevřený Návrh', z0 === '🧩 Návrh*|⚡ Schéma|🧊 3D|📄 Dokumenty', z0);
   await p.click('.rz-zal[data-z="sch"]'); await w(500);
   const z1 = await p.evaluate(() => {
     const g = document.querySelector('#rz-pan-sch .rz-sch-tisk'), pan = document.getElementById('rz-pan-sch').getBoundingClientRect();
@@ -235,7 +235,7 @@ const presahy = (p, svg) => p.evaluate(svg => {
   await p.evaluate(() => TD_AKCE.tdPdfZpet()); await w(300);
   await p.evaluate(() => rozvZalozkaNastavit('dok')); await w(300);
   const vyb = await p.evaluate(() => Array.from(document.querySelectorAll('.rz-dok-vyber input')).map(i => (i.checked ? '☑' : '☐') + i.parentNode.textContent.trim()).join('|'));
-  check('Dokumenty: zaškrtávátko „schéma zapojení" (výchozí zapnuté) za čelním pohledem', vyb === '☑čelní pohled a seznam přístrojů|☑schéma zapojení|☑technické údaje|☑prohlášení o shodě|☑protokol o kusovém ověření|☐ověření oteplení (příloha)|☐popisky pod přístroje', vyb);
+  check('Dokumenty: zaškrtávátko „schéma zapojení" (výchozí zapnuté) za čelním pohledem', vyb === '☑čelní pohled a seznam přístrojů|☑schéma zapojení|☐pohled 3D (ilustrační)|☑technické údaje|☑prohlášení o shodě|☑protokol o kusovém ověření|☐ověření oteplení (příloha)|☐popisky pod přístroje', vyb);
   await p.evaluate(async () => { await TD_AKCE.tdRDokPdf(); }); await w(600);
   const sou = await p.evaluate(() => dokPdfStranky().map(s => s.classList.contains('rz-sch-strana') ? 'S' + (s.classList.contains('rz-sch-a3') ? '3' : '4') : (s.classList.contains('a4-landscape') ? 'L' : 'P')).join(''));
   check('souhrnné PDF: čelní pohled (na šířku), pak 2 listy schématu A3, pak strany na výšku', /^L+S3S3P+$/.test(sou), sou);

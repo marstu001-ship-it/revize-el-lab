@@ -1658,6 +1658,75 @@ Dokumenty…", „…záložka Schéma, jednopólový list" a „…výrobní š
 **`test-rozvadec-mezery.js` upraven:** v labu zapisuje uložený rozvaděč až
 po načtení stránky (labový blok jinak klíč `revize_el_dok` neuvidí).
 
+### Pohled 3D — etapa 5c (DBO i PSC; blok „ROZVADĚČ — 3D NÁHLED")
+
+Zadání uživatele 2026-10-22. Editor má čtyři záložky **„🧩 Návrh | ⚡ Schéma |
+🧊 3D | 📄 Dokumenty"** (u DBO i PSC). **V 3D se nic needituje**; kreslí se
+z aktuálního `cist()` při každém přepnutí (`rozvZalozkaNastavit('3d')` →
+`rozv3dHtml` + `rozv3dKreslit`). **Žádná knihovna, žádné CDN** (offline, bez
+otisku SRI).
+
+- **Jeden zdroj: `rozv3dScena(d)`** = seznam kvádrů v mm (`x, y, z, w, h, d`,
+  x doprava, y dolů, z k divákovi, z = 0 zadní stěna) + skříně / pole
+  (`sc.kab`, každé s dveřmi). Na obrazovce **CSS 3D** (`transform-style:
+  preserve-3d`, stěny `r3StenaHtml`, kamera `r3Kamera` = jediný `transform`
+  na `#r3-svet`), do PDF **tatáž scéna vlastní pravoúhlou projekcí do SVG**
+  (`rozv3dSvg` — html2canvas CSS 3D nevykreslí; jen `polygon` a kresba čela
+  přes `matrix()`, malíř: vnitřní stěny skříně → obsah podle hloubky →
+  vnější stěny → otevřené dveře).
+- **Rozměry:** DBO — vodorovně přesně jako čelní pohled (`RZG.okraj` + moduly
+  × 17,5 mm), řady po **125 mm** (`R3.roztec`), skříň = větší z rozvržení
+  a `skrin.rozmery` („v × š × h"); chybí-li hloubka, **100 mm**. PSC — pole
+  z `pscGeo` (skutečné mm), hloubka `pl.hloubka`, chybí-li, **400 mm**.
+  Bez hloubky se v pruhu nad pohledem i pod obrázkem v PDF píše „hloubka
+  neuvedena – kreslí se … mm".
+- **Výchozí hodnoty jen pro vzhled** (`R3`): modulový přístroj **výška 90 mm,
+  hloubka 70 mm** na liště TS35 (35 × 7,5 mm); na montážní desce přístroj
+  ve svých mm (`pscRozmer`), hloubka `p.hloubkaMm`, jinak 120 mm u QF / QS
+  a 70 mm u ostatních. **Nikde se netvrdí, že jsou to údaje výrobce.**
+- **Čelo přístroje = táž kresba jako čelní pohled** (`rozvPrvekSvg`, barva,
+  označení, hodnota, páčka) vložená do přední stěny; rezerva = záslepka.
+  Barva skříně: plast **#f3f3ef**, oceloplech **RAL 7035 (#cbd0cc)**.
+  Montážní deska, **sběrnice jako měděné pasy** (i spojky do dalšího pole),
+  kabelový prostor průhledně, záslepka, mezery po ½ modulu (podle
+  `rozvPozice`), u PSC pole vedle sebe se svislým spojem.
+- **Dveře** na pantu vlevo, otevřené **pootočené o 100°**; „🚪 Zavřít /
+  Otevřít dveře" je hlavní akce záložky. **U PSC s víc poli se otevřené dveře
+  kreslí průhledně** — při 100° by zakryly sousední pole. Ukládá se jen po
+  přepnutí jako **`d.pohled3d = { dvere: 'otevrene' | 'zavrene' }`**
+  (`__rz.p3dDvere`, obal `DOK_TYPY.rozv.cist`) — starý rozvaděč beze změny.
+- **Ovládání:** tažení = otáčení (sklon ±80°), kolečko / − ＋ = přiblížení,
+  pravé tlačítko nebo Shift + tažení = posun, dvojklik = výchozí pohled;
+  tlačítka **Zepředu · Zboku · Zhora · Šikmo**, ↺ Výchozí; dotyk: jeden prst
+  otáčí, dva přibližují. **Klepnutí na přístroj = Návrh s ním vybraným**
+  (`rozvSchVybrat`, jako ve schématu). Kamera jen v paměti (`__r3`).
+  Výchozí měřítko spočítá promítnuté rohy skříně i otevřených dveří, ať je
+  celý rozvaděč vidět i na telefonu.
+- **Výkon** (cíl ≥ 30 snímků/s u PSC se 150 přístroji): modulové přístroje
+  těsně vedle sebe mají **společné tělo** (boky, horní a dolní plocha jednou
+  za skupinu, `r3Telo`), přístroj má vlastní čelo; 3D páčka se nekreslí
+  (je v kresbě čela); za zavřenými dveřmi jen čela; stěny mají tenký okraj
+  místo stínu. PSC se 150 přístroji = ~340 stěn; v headless Chromiu bez
+  GPU 25–36 snímků/s (test bere nejlepší z pěti měření).
+- **PDF:** zaškrtávátko **„pohled 3D (ilustrační)"** v Dokumentech
+  (`dokVyber.pohled3d`, výchozí vypnuto, `rozvVyber().pohled3d`) → strana na
+  šířku „Pohled 3D (ilustrační)" hned za čelním pohledem a seznamem
+  (`rozvPdf3d`, šikmý pohled se stavem dveří, vejde se 265 × 150 mm).
+- DBO se kromě záložky 3D, zaškrtávátka a CSS záložek na telefonu
+  (4 záložky, blok MOBIL) nezměnil — `test-rozvadec-psc.js` porovnává
+  s v9.131 bez těchto dvou prvků.
+
+Test: `testy/test-rozvadec-3d.js` (40 kontrol — byt 3+1 a hala PSC: kvádrů
+= přístroje + skříň / pole + lišty, šířky a polohy čel zepředu úměrné
+čelnímu pohledu (bez perspektivy), otáčení skutečnou myší, sklon ±80°,
+pohledy, posun, kolečko, dvojklik, dveře (uložení, jen čela za zavřenými),
+klik na přístroj, PDF strana a html2canvas, starý rozvaděč bajtově, sběrnice
+a desky PSC, výkon 150 přístrojů, telefon 390 px — prst, dva prsty, klepnutí).
+V `test-mobil.js` stavy „rozvaděč – záložka 3D…" a „rozvaděč PSC – záložka 3D".
+**Upraveno:** `test-rozvadec-psc.js` (záložky PSC, DBO porovnání bez 3D
+záložky a zaškrtávátka), `test-rozvadec-dokumenty.js` a
+`test-rozvadec-schema.js` (seznam záložek a zaškrtávátek v Dokumentech).
+
 ### Čelní pohled a skládání (část 3)
 
 - **SVG v milimetrech, modul 17,5 mm** (`RZG`: okraj 14, výška přístroje 50,

@@ -353,7 +353,7 @@ const presahy = (p, svg) => p.evaluate(svg => {
   const H = await p.evaluate(require('./rozvadec-psc-hala.js'));
   const h0 = await p.evaluate(() => ({ zal: Array.from(dokForm().querySelectorAll('.rz-zal')).map(b => b.getAttribute('data-z')).join(),
     rady: __rz.rady.map(r => r.prvky.map(x => x.ozn + (x.privod ? '*' : '') + (x.mezera ? '@' + x.mezera : '')).join(',')).filter(Boolean).join(' / ') }));
-  check('5b: PSC má záložky Návrh | Schéma | Dokumenty; první MCCB je přívodní (*)', h0.zal === 'navrh,sch,dok' && /-QF1\*,-TA1,-PM1,-XN1,-XPE1/.test(h0.rady) && /-QF2,-QF3,-FU1,-QS1/.test(h0.rady), h0.zal + ' | ' + h0.rady);
+  check('5b: PSC má záložky Návrh | Schéma | 3D | Dokumenty (3D od etapy 5c); první MCCB je přívodní (*)', h0.zal === 'navrh,sch,3d,dok' && /-QF1\*,-TA1,-PM1,-XN1,-XPE1/.test(h0.rady) && /-QF2,-QF3,-FU1,-QS1/.test(h0.rady), h0.zal + ' | ' + h0.rady);
 
   // ── fáze: 3f vývody QF / QS na všechny fáze, přívodní QF1 ne ──
   const fz = await p.evaluate(() => { const s = rozvFazeSouhrn(__rz.rady); return { L1: s.F.L1.In, L2: s.F.L2.In, L3: s.F.L3.In, n: s.vyvodu }; });
@@ -587,13 +587,15 @@ const presahy = (p, svg) => p.evaluate(svg => {
       const svg = rozvSvg(__rz, { k: 3 }), svgT = rozvSvg(__rz, { tisk: true, k: 0.5 });
       const html = document.querySelector('#screen-dok-form .dok-wrap').innerHTML;
       // knihovna se od 2026-10-22 záměrně liší (kategorie Trafa a zdroje, nové obecné položky) — editor bez ní musí být stejný
-      const kopie = document.querySelector('#screen-dok-form .dok-wrap').cloneNode(true); kopie.querySelectorAll('.rz-knihovna').forEach(e => e.remove());
+      // etapa 5c: záložka „🧊 3D" (tlačítko a prázdný panel) přibyla záměrně
+      const kopie = document.querySelector('#screen-dok-form .dok-wrap').cloneNode(true); kopie.querySelectorAll('.rz-knihovna, .rz-zal[data-z="3d"], #rz-pan-3d').forEach(e => e.remove());
       const htmlBez = kopie.innerHTML;
       const knih = document.getElementById('rz-seznam').innerHTML;
       // etapa 5b: dokumenty, štítek, schéma, oteplení, fáze a celé PDF DBO se nesmí změnit (stejný technik v obou verzích)
       const t0 = STORE.technik; STORE.technik = { jmeno: 'Petr Vymyšlený', firma: 'Vymyšlená elektro s.r.o.', ico: '12345678', mesto: 'Kyjov' };
       const dd = DOK_TYPY.rozv.cist(dokForm()); dd.vyroba = Object.assign({}, dd.vyroba, { cislo: '2026-0777' });
-      const dbo5b = { dok: rozvDokHtml(dd), stitek: rozvStitekHtml(dd, ROZV_STITKY['90x45']), schema: rozvSchemaListy(dd).map(l => l.svg).join('\n'),
+      // etapa 5c: v Dokumentech přibylo zaškrtávátko „pohled 3D (ilustrační)" (výchozí vypnuté, PDF beze změny)
+      const dbo5b = { dok: rozvDokHtml(dd).replace(/<label class="teren-radek rz-zatrh"><input type="checkbox" data-dk="dokVyber\.pohled3d"[^>]*> pohled 3D \(ilustrační\)<\/label>/, ''), stitek: rozvStitekHtml(dd, ROZV_STITKY['90x45']), schema: rozvSchemaListy(dd).map(l => l.svg).join('\n'),
         otepl: JSON.stringify(rozvOteplVypocet(dd)), faze: JSON.stringify(rozvFazeSouhrn(dd.rady)),
         pdfVse: JSON.stringify(DOK_TYPY.rozv.pdf(Object.assign({}, dd, { dokVyber: {} })).map(q => q.html || q.cela || '')) };
       STORE.technik = t0;

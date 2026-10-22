@@ -61,7 +61,7 @@ async function priprava(p) {
   // ── 1. přepínač Návrh | Dokumenty ─────────────────────────────────────
   const z0 = await p.evaluate(() => ({ tl: Array.from(document.querySelectorAll('.rz-zal')).map(b => b.textContent + (b.classList.contains('akt') ? '*' : '')).join('|'),
     navrh: !document.getElementById('rz-pan-navrh').hidden, dok: !document.getElementById('rz-pan-dok').hidden }));
-  check('editor: nahoře přepínač „🧩 Návrh | ⚡ Schéma | 📄 Dokumenty", otevřený Návrh', z0.tl === '🧩 Návrh*|⚡ Schéma|📄 Dokumenty' && z0.navrh && !z0.dok, JSON.stringify(z0));
+  check('editor: nahoře přepínač „🧩 Návrh | ⚡ Schéma | 🧊 3D | 📄 Dokumenty", otevřený Návrh', z0.tl === '🧩 Návrh*|⚡ Schéma|🧊 3D|📄 Dokumenty' && z0.navrh && !z0.dok, JSON.stringify(z0));
   await p.click('.rz-zal[data-z="dok"]'); await w(200);
   const z1 = await p.evaluate(() => {
     const g = document.querySelector('#rz-pan-dok .rz-dok-generuj'), hl = document.querySelector('#rz-pan-dok').getBoundingClientRect();
@@ -76,7 +76,7 @@ async function priprava(p) {
   check('záložka Dokumenty: jedna hlavní akce „📄 Vygenerovat dokumentaci (PDF)" nahoře, plné tlačítko', z1.dok && !z1.navrh && z1.akce === '📄 Vygenerovat dokumentaci (PDF)' &&
     z1.nahore && z1.plne !== 'rgba(0, 0, 0, 0)', JSON.stringify(z1));
   check('výběr do PDF: čelní pohled a seznam · technické údaje · prohlášení · protokol (vše zaškrtnuté), štítek zvlášť',
-    z1.vyber === '☑čelní pohled a seznam přístrojů|☑schéma zapojení|☑technické údaje|☑prohlášení o shodě|☑protokol o kusovém ověření|☐ověření oteplení (příloha)|☐popisky pod přístroje' && z1.stitek === '🏷 Tisk štítku' &&
+    z1.vyber === '☑čelní pohled a seznam přístrojů|☑schéma zapojení|☐pohled 3D (ilustrační)|☑technické údaje|☑prohlášení o shodě|☑protokol o kusovém ověření|☐ověření oteplení (příloha)|☐popisky pod přístroje' && z1.stitek === '🏷 Tisk štítku' &&
     z1.popisky === '🏷 Tisk popisků přístrojů', z1.vyber);
   check('oddíly sbalitelné: Výroba a značení (otevřený) · Technické údaje · Oteplení · Prohlášení · Kusové ověření', z1.oddily ===
     '🏭 Výroba a značení+|📋 Technické údaje-|🌡 Oteplení — ověření výpočtem (čl. 10.10.4.2)-|📜 Prohlášení o shodě-|🔧 Kusové ověření (čl. 11)-', z1.oddily);
