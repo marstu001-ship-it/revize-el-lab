@@ -106,7 +106,7 @@ function pomocnik() {
   check('vestavěné: jen výrobce „obecný", nic ověřeného', vest.vyrobci === 'obecný' && vest.overene === 0, vest.vyrobci + ' / ověřeno ' + vest.overene);
   check('vestavěné: Pv, Icn, Icu, Ics, InA ani Penc nevymyšlené (prázdné)', vest.pv === 0 && vest.skrineInA === 0, vest.pv + ' / ' + vest.skrineInA);
   check('vestavěné: každý přístroj má šířku v modulech, i ½ modulu', vest.sirky === 0 && vest.polmodul);
-  check('vestavěné: všech 15 kategorií', vest.kat === 15, String(vest.kat));
+  check('vestavěné: všech 18 kategorií (i transformátor, zdroj, zásuvka na lištu)', vest.kat === 18, String(vest.kat));
   check('vestavěné: jistič, chránič, RCBO, SPD, hlavní vypínač v zadaném tvaru', vest.jistic && vest.chranic && vest.rcbo && vest.spd && vest.qm);
   check('vestavěné skříně: 1–4×12, 2–4×18 plast nástěnné i zapuštěné, 3–4×24 oceloplech, 5–8×24 oceloplech nástěnné, 10 a 12×24 stojanové',
     vest.skrine === '1x12pn,1x12pz,2x12pn,2x12pz,3x12pn,3x12pz,4x12pn,4x12pz,2x18pn,2x18pz,3x18pn,3x18pz,4x18pn,4x18pz,3x24on,4x24on,5x24on,6x24on,7x24on,8x24on,10x24os,12x24os', vest.skrine);
@@ -181,14 +181,14 @@ function pomocnik() {
   check('filtr typu: průmyslové 6 (u položky „průmyslová"), historické zatím nic, domovní 16', f.prum.n === 6 && f.prum.akt === 'Průmyslové' && /průmyslová/.test(f.prum.meta) &&
     /Nic neodpovídá/.test(f.hist) && f.dom === 16, JSON.stringify(f.prum) + ' / ' + f.dom);
   check('karta Skříně: tlačítko „📐 Vlastní velikost skříně"', /📐 Vlastní velikost skříně/.test(f.velBtn), f.velBtn);
-  check('přístroje: kategorie jako řada tlačítek a výrobce, póly, In, charakteristika vždy vidět', f.viditelne.skupiny === 'Vše·Jističe·Chrániče·RCBO·AFDD·SPD·Hl. vypínače·Pojistky·Ostatní' &&
+  check('přístroje: kategorie jako řada tlačítek a výrobce, póly, In, charakteristika vždy vidět', f.viditelne.skupiny === 'Vše·Jističe·Chrániče·RCBO·AFDD·SPD·Hl. vypínače·Pojistky·Trafa a zdroje·Ostatní' &&
     f.viditelne.sel === 'vyrobce,poly,In,char', JSON.stringify(f.viditelne));
   check('sbalené „Další filtry" jen IΔn, typ chrániče, jen ověřené, jen oblíbené', f.viditelne.sbalene && /^Další filtry/.test(f.viditelne.souhrn), f.viditelne.souhrn);
   check('kategorie Jističe (tlačítko se zvýrazní), počítadlo „Zobrazeno 50 z 80"', /^Zobrazeno 50 z 80 \(v knihovně \d+\)/.test(f.fa) && f.faAkt === 'Jističe', f.fa + ' · ' + f.vse);
   check('filtr: póly + charakteristika + In → právě Jistič 1P B16; „Zrušit filtry" vše vrátí', f.b16 === 'Jistič 1P B16' && /Zrušit filtry/.test(f.pocetB16) &&
     /^Zobrazeno 50 z \d+$/.test(f.poZruseni.pocet) && f.poZruseni.akt === 'Vše', f.b16 + ' · ' + f.pocetB16 + ' · ' + JSON.stringify(f.poZruseni));
   check('filtr IΔn 300 mA u chráničů (v Dalších filtrech, souhrn řekne kolik zapnuto)', f.fi300 === 2 && /1 zapnuto/.test(f.pocetFiltru), f.fi300 + ' ' + f.pocetFiltru);
-  check('„Ostatní" = stykače, relé, hodiny, elektroměry, signálky, ovladače, svorky, rezervy', f.jine === 'HL,KA,KM,KT,PJ,REZ,SF,X', f.jine);
+  check('„Ostatní" = stykače, relé, hodiny, elektroměry, signálky, ovladače, svorky, zásuvka na lištu, rezervy', f.jine === 'HL,KA,KM,KT,PJ,REZ,SF,X,XS', f.jine);
   check('fulltext bez háčků a velikosti písmen, víc slov', f.q === 'RCBO 1+N C16 / 30 mA typ A', f.q);
   check('fulltext bez výsledku řekne „Nic neodpovídá"', /Nic neodpovídá/.test(f.qNic));
   check('„jen ověřené" — vestavěné ověřené nejsou', f.over === 0, String(f.over));
@@ -1205,6 +1205,115 @@ function pomocnik() {
     check('telefon: žádná chyba na stránce', err2.length === 0, err2.join(' | '));
     await c2.close();
   }
+
+  // ── transformátory, zdroje, zásuvka, ostatní (2026-10-22) ─────────────
+  const tz = await p.evaluate(async () => {
+    const r = {};
+    r.kat = ['TR', 'ZD', 'XS', 'JINE'].map(k => { const x = rozvKat(k); return x ? x.k + x.ozn : '-'; }).join();
+    r.oznKolize = ['TR', 'ZD', 'XS', 'JINE'].map(k => rozvKat(k).ozn).filter(o => ROZV_KAT.filter(k => k.ozn === o).length > 1).join();
+    r.vest = ['v-tr-zvon-8', 'v-tr-zvon-16', 'v-tr-bezp-25', 'v-tr-bezp-63', 'v-zd-24-30', 'v-zd-24-60', 'v-zd-12-15', 'v-xs-16'].map(id => {
+      const x = rozvKnihPolozka(id); return x ? [x.kat, rozvCisloText(x.sirka), x.vykon === undefined ? '' : x.vykon, x.pv, x.overeno, x.vyrobce].join('|') : 'CHYBÍ ' + id; }).join(' ; ');
+    r.stareKlice = ['v-fa-1-B16', 'v-fi-4-40-30-A', 'v-sk-3x12-n'].some(id => ['vykon', 'uVstup', 'uVystup', 'iVystup', 'ozn'].some(k => k in rozvKnihPolozka(id)));
+    // knihovna: tlačítko „Trafa a zdroje"
+    await dokNovy('rozv'); rozvSkrinNastavit(rozvKnihPolozka('v-sk-3x12-n'));
+    TD_AKCE.tdRTab(document.querySelector('.rz-tab[data-tab="pristroje"]'));
+    document.querySelector('#rz-filtry-hlavni .rz-skup[data-k="TRZD"]').click();
+    r.trzd = Array.from(new Set(Array.from(document.querySelectorAll('#rz-seznam .rz-ikona')).map(x => x.textContent))).sort().join() + '|' + __T.nalezeno();
+    TD_AKCE.tdRFiltrZrusit();
+    // vložení: označení, čelo, popisky, PDF
+    const fa = rozvVlozit('v-fa-1-B6'), t = rozvVlozit('v-tr-zvon-16'), g = rozvVlozit('v-zd-24-60'), xs = rozvVlozit('v-xs-16');
+    r.ozn = [fa, t, g, xs].map(x => x.ozn).join();
+    r.celo = [t, g, xs].map(x => rozvCelo(x.p).filter(Boolean).join(' ')).join(' ; ');
+    r.svg = /230\/8\/12 V/.test(document.querySelector('#rz-pohled .rz-svg').innerHTML) && /60 W/.test(document.querySelector('#rz-pohled .rz-svg').innerHTML);
+    r.pop = [t, g, xs].map(x => rozvPopiskaHodnota(x.p)).join(' ; ');
+    r.nadr = rozvNazev(rozvPolozkaNorm({ kat: 'TR', uVstup: '230', uVystup: '12', vykon: 16 })) + ' / ' + rozvNazev(rozvPolozkaNorm({ kat: 'ZD', uVystup: '24 DC', vykon: 60 }));
+    const pdf = DOK_TYPY.rozv.pdf(DOK_TYPY.rozv.cist(dokForm())).map(x => x.html || '').join('').replace(/<[^>]+>/g, ' ').replace(/\s+/g, ' ');
+    r.pdf = /-T1 Zvonkový transformátor 8\/12 V 16 VA 230\/8\/12 V 16 VA/.test(pdf) && /-G1 Napájecí zdroj 24 V DC 60 W/.test(pdf) && /-XS1 Zásuvka na DIN lištu 16 A/.test(pdf);
+    // vlastní „Ostatní přístroj" s předponou
+    TD_AKCE.tdRVlastniPristroj();
+    const o = document.getElementById('modal-rz-polozka'), q = k => o.querySelector('[data-rp="' + k + '"]');
+    r.volby = Array.from(q('kat').options).map(x => x.value).filter(v => ['TR', 'ZD', 'XS', 'JINE'].indexOf(v) !== -1).join();
+    q('kat').value = 'ZD'; q('kat').dispatchEvent(new Event('change', { bubbles: true }));
+    r.poleZD = Array.from(o.querySelectorAll('[data-rp]')).map(e => e.getAttribute('data-rp')).filter(k => /vykon|uV|iV|pv/.test(k)).join() + '|' +
+      Array.from(o.querySelectorAll('label')).map(l => l.textContent).filter(t => /^Výkon|Pv/.test(t)).join('|');
+    q('kat').value = 'JINE'; q('kat').dispatchEvent(new Event('change', { bubbles: true }));
+    r.poleJ = Array.from(o.querySelectorAll('[data-rp]')).map(e => e.getAttribute('data-rp')).join();
+    q('ozn').value = '-RE'; q('sirka').value = '1';
+    await TD_AKCE.tdRPolUlozit();
+    r.chybaNazev = document.getElementById('rz-pol-chyby').textContent;
+    q('nazev').value = 'Stmívač'; q('ozn').value = '-RE 1';
+    await TD_AKCE.tdRPolUlozit();
+    r.chybaPred = document.getElementById('rz-pol-chyby').textContent;
+    q('ozn').value = '-RE'; q('pv').value = '1,2';
+    await TD_AKCE.tdRPolUlozit(); await __T.w(100);
+    r.zavren = !o.classList.contains('open');
+    const jn = DOK.rozvKnihovna.filter(x => x.kat === 'JINE')[0];
+    r.jine = jn ? [jn.nazev, jn.ozn, jn.sirka, jn.pv, jn.zdroj].join('|') : 'neuloženo';
+    const j1 = rozvVlozit(jn.id), j2 = rozvVlozit(jn.id);
+    r.oznJ = j1.ozn + ',' + j2.ozn;
+    j1.ozn = 'xx'; t.ozn = 'yy';
+    rozvPrecislovat();
+    r.precisl = __rz.rady[0].prvky.map(x => x.ozn).join();
+    // stará položka bez nových klíčů zůstane stejná
+    r.normStary = JSON.stringify(rozvPolozkaNorm({ kat: 'FA', In: 16, sirka: 1 })) === JSON.stringify(Object.assign(rozvPolozkaNorm({ kat: 'FA', In: 16, sirka: 1 }), {}))
+      && !('vykon' in rozvPolozkaNorm({ kat: 'FA', In: 16, sirka: 1 })) && !('ozn' in rozvPolozkaNorm({ kat: 'FA', ozn: '-X', sirka: 1 }));
+    // import CSV s novými sloupci i bez nich
+    const csv1 = 'druh;kategorie;nazev;in;sirka_moduly;vykon;u_vstup;u_vystup;i_vystup\r\n' +
+      'pristroj;trafo;;;2;16 VA;230;12;\r\n' +
+      'pristroj;napájecí zdroj;LED zdroj;;3;60 W;230;24 DC;2,5\r\n' +
+      'pristroj;zásuvka;;16;3;;;;\r\n' +
+      'pristroj;ostatní;Domácí telefon;;2;;;;\r\n' +
+      'pristroj;ostatní;;;1;;;;\r\n';
+    const i1 = rozvImportRozebrat(csv1, 'trafa.csv');
+    r.imp1 = i1.polozky.map(x => [x.polozka.kat, x.polozka.vykon === undefined ? '' : x.polozka.vykon, x.polozka.uVstup || '', x.polozka.uVystup || '',
+      x.polozka.iVystup === undefined ? '' : x.polozka.iVystup, x.polozka.In].join('|')).join(' ; ');
+    r.imp1chyby = i1.chyby.map(c => c.radek + ':' + c.text).join(' ; ');
+    const i2 = rozvImportRozebrat('kategorie;typ;sirka_moduly\nKA;VV-KA-77;1\n', 'stare.csv');
+    r.imp2 = i2.polozky.length === 1 && !i2.chyby.length && !['vykon', 'uVstup', 'uVystup', 'iVystup', 'ozn'].some(k => k in i2.polozky[0].polozka);
+    window.ulozitSoubor = (blob, name) => { window.__ul = { blob, name }; return Promise.resolve(true); };
+    TD_AKCE.tdRSablona();
+    r.sablona = await window.__ul.blob.text();
+    // zakreslení z revizní zprávy: jen návrh, jistič zůstane jističem
+    const z = { uid: 'zz-tr', ev_cislo: 'RE-26-0999', data: { misto: 'Vymyšlený dům', rozvadece: [{ uid: 'r-tr', nazev: 'RH', mereni: [
+      { rowtype: 'obvod', c: '1', n: 'Zvonek', a: '6', ch: 'B' }, { rowtype: 'obvod', c: '2', n: 'LED pásek kuchyň', a: '10', ch: 'B' },
+      { rowtype: 'obvod', c: '3', n: 'Lednice', a: '16', ch: 'B' }, { rowtype: 'obvod', c: '4', n: 'Zásuvky', a: '16', ch: 'B' }] }] } };
+    const rb = rzzRozbor(z.data.rozvadece[0], rzzVyrobceZnamy(), rozvKnihovnaVse());
+    r.navrhy = rb.prvky.map(a => a.navrh ? a.navrh.kat : '-').join();
+    __rzZR = { navrhy: {} };
+    const nh = rzzNavrhyHtml('r-tr', rb.prvky.filter(a => a.navrh));
+    r.navrhHtml = (nh.match(/data-rzz-navrh/g) || []).length + '|' + / checked/.test(nh) + '|' + /Obvod „Zvonek": přidat za jistič transformátor/.test(nh);
+    const kat = v => v.docs[0].data.rady.map(rr => rr.prvky.map(x => x.p.kat).join(',')).join('/');
+    r.bez = kat(rzzPrevod(z, ['r-tr'], { rady: {}, objekt: '' }));
+    const s2 = rzzPrevod(z, ['r-tr'], { rady: {}, objekt: '', navrhy: { 'r-tr|0': true, 'r-tr|1': true } });
+    r.s = kat(s2);
+    const prv = []; s2.docs[0].data.rady.forEach(rr => rr.prvky.forEach(x => prv.push(x)));
+    const tr = prv.filter(x => x.p.kat === 'TR')[0];
+    r.tr = tr ? [tr.vyvod, (tr.upoz || []).join(), tr.ozn].join('|') : '';
+    __rzZR = null;
+    return r;
+  });
+  check('nové kategorie TR -T, ZD -G, XS -XS, Ostatní -A a žádná předpona se neopakuje', tz.kat === 'TR-T,ZD-G,XS-XS,JINE-A' && !tz.oznKolize, tz.kat + ' / ' + tz.oznKolize);
+  check('vestavěné: zvonkový 8/16 VA (2 M), bezpečnostní 25/63 VA (3 M), zdroje 30 W 2 M / 60 W 3 M / 15 W 1 M, zásuvka 16 A 3 M — obecné, Pv prázdné, neověřené',
+    tz.vest === 'TR|2|8||false|obecný ; TR|2|16||false|obecný ; TR|3|25||false|obecný ; TR|3|63||false|obecný ; ZD|2|30||false|obecný ; ZD|3|60||false|obecný ; ZD|1|15||false|obecný ; XS|3|||false|obecný', tz.vest);
+  check('staré vestavěné položky nové klíče nedostaly (beze změny)', !tz.stareKlice && tz.normStary);
+  check('knihovna: tlačítko „Trafa a zdroje" ukáže transformátory a zdroje (7)', tz.trzd === 'TR,ZD|7', tz.trzd);
+  check('vložení: označení -FA1, -T1, -G1, -XS1', tz.ozn === '-FA1,-T1,-G1,-XS1', tz.ozn);
+  check('čelo: transformátor „230/8/12 V 16 VA", zdroj „24 V 60 W", zásuvka 16 A (i v čelním pohledu)', tz.celo === '230/8/12 V 16 VA ; 24 V 60 W ; zás. 16 A' && tz.svg, tz.celo);
+  check('popisky pod přístroje: „8/12 V 16 VA", „24 V 60 W", „16 A"; název z údajů „Transformátor 230/12 V 16 VA"',
+    tz.pop === '8/12 V 16 VA ; 24 V 60 W ; 16 A' && tz.nadr === 'Transformátor 230/12 V 16 VA / Napájecí zdroj 24 V DC 60 W', tz.pop + ' / ' + tz.nadr);
+  check('seznam v PDF: transformátor s napětím a výkonem, zdroj, zásuvka', tz.pdf);
+  check('vlastní přístroj nabízí transformátor, zdroj, zásuvku i ostatní; u zdroje výkon ve W, Pv celkem', tz.volby === 'TR,ZD,XS,JINE' &&
+    /vykon,uVstup,uVystup,iVystup/.test(tz.poleZD) && /Výkon \(W\)/.test(tz.poleZD) && /Pv \(W celkem za přístroj\)/.test(tz.poleZD), tz.volby + ' / ' + tz.poleZD);
+  check('„Ostatní": předpona označení, bez názvu se neuloží, předpona s mezerou/číslicí neprojde, pak uloženo',
+    /,ozn,/.test(tz.poleJ) && /povinný název/.test(tz.chybaNazev) && /předpona označení/.test(tz.chybaPred) && tz.zavren && tz.jine === 'Stmívač|-RE|1|1.2|vlastni', tz.chybaNazev + ' / ' + tz.chybaPred + ' / ' + tz.jine);
+  check('„Ostatní" s předponou -RE: označení -RE1, -RE2 a přečíslování předponu respektuje', tz.oznJ === '-RE1,-RE2' && tz.precisl === '-FA1,-T1,-G1,-XS1,-RE1,-RE2', tz.oznJ + ' / ' + tz.precisl);
+  check('import CSV: trafo, napájecí zdroj, zásuvka, ostatní (výkon s VA/W, napětí jako text); ostatní bez názvu = chyba řádku',
+    tz.imp1 === 'TR|16|230|12|| ; ZD|60|230|24 DC|2.5| ; XS|||||16 ; JINE|||||' && /6:.*povinný název/.test(tz.imp1chyby), tz.imp1 + ' / ' + tz.imp1chyby);
+  check('import CSV bez nových sloupců projde beze změny; šablona má vykon;u_vstup;u_vystup;i_vystup za ue', tz.imp2 && /;ue;vykon;u_vstup;u_vystup;i_vystup;nastaveni;/.test(tz.sablona), tz.sablona.trim());
+  check('zakreslení: „Zvonek" → návrh transformátoru, „LED pásek" → zdroj, „Lednice" ani „Zásuvky" ne; nabídka nezaškrtnutá',
+    tz.navrhy === 'TR,ZD,-,-' && tz.navrhHtml === '2|false|true', tz.navrhy + ' / ' + tz.navrhHtml);
+  check('zakreslení: bez potvrzení jen jističe; po potvrzení jistič zůstane a za ním transformátor / zdroj s upozorněním',
+    tz.bez === 'FA,FA,FA,FA' && tz.s === 'FA,TR,FA,ZD,FA,FA' && /^Zvonek\|navrženo podle názvu obvodu/.test(tz.tr), tz.bez + ' → ' + tz.s + ' / ' + tz.tr);
 
   // ── oddělení od revizí ────────────────────────────────────────────────
   const odd = await p.evaluate(async () => {

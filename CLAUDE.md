@@ -710,7 +710,8 @@ od revizí, záloha jako část `dokumentace`).
   filtry technik nenašel a s importem výrobců jsou stovky položek). Karta
   Přístroje: pod hledáním **kategorie jako řada tlačítek**
   (`ROZV_KAT_SKUPINY`: Vše · Jističe · Chrániče · RCBO · AFDD · SPD ·
-  Hl. vypínače · Pojistky · Ostatní = KM, KT, KA, PJ, HL, SF, X, REZ)
+  Hl. vypínače · Pojistky · Trafa a zdroje = TR, ZD · Ostatní = KM, KT, KA,
+  PJ, HL, SF, X, XS, JINE, REZ)
   a vždy **výrobce, póly, In, charakteristika**; sbalené „Další filtry" jen
   IΔn, typ chrániče, jen ověřené, jen oblíbené. Karta Skříně vždy: **typ
   skříně jako řada tlačítek** (Vše · Domovní · Průmyslové · Historické,
@@ -758,7 +759,9 @@ a prohlášení (hlavička + `skrin` + `p`). `data.model = 1`.
   `etim`, `pole` = parametry, které u ní dávají smysl): QM -QM, FA -FA,
   FI -FI, FIFA -FI/FA (RCBO), AFDD (-FA, sdílí řadu s jističi), SPD (bez
   pomlčky „SPD1"), FU -FU, KM -KM, KT -KT, KA -KA, PJ -PJ, HL -HL, SF -SF,
-  X -X, REZ (bez označení).
+  X -X, REZ (bez označení); od 2026-10-22 TR -T (transformátor), ZD -G
+  (napájecí zdroj), XS -XS (zásuvka na lištu), JINE „Ostatní přístroj"
+  s vlastní předponou (viz oddíl „Transformátory, zdroje…" níž).
 - **ETIM 10:** u kategorií jen známé třídy — MCB EC000042, RCD EC000003,
   RCBO EC000905, SPD EC000941, skříň EC000214 (`ROZV_SKRIN_ETIM`). U polí
   (`ROZV_POLE`) je v komentáři název vlastnosti ETIM; **kódy vlastností (EF…)
@@ -779,7 +782,8 @@ a prohlášení (hlavička + `skrin` + `p`). `data.model = 1`.
   „obecný", `overeno = false`): jističe 1P/1+N/3P/3+N × B/C × 6–63 A,
   chrániče 2P/4P 25/40/63 A 30 mA A/AC (+ 4P 40/63 A 300 mA), RCBO 1+N,
   AFDD, SPD T1+T2 / T2, hlavní vypínače, pojistkové odpínače 10×38, stykače,
-  relé, hodiny, elektroměry, signálky, ovladače, svorka ½ modulu, rezervy
+  relé, hodiny, elektroměry, signálky, ovladače, transformátory, zdroje,
+  zásuvka na lištu (2026-10-22), svorka ½ modulu, rezervy
   ½–3 moduly; skříně plast 1–4×12 a 2–4×18 nástěnné i zapuštěné, oceloplech
   3–4×24 (domovní), **oceloplech nástěnné 5–8×24 a stojanové 10×24, 12×24
   (průmyslové)**. Historické vestavěné nejsou — data pošle uživatel. **Pv, Icn, Icu, Ics, InA a Penc jsou prázdné — nic se nevymýšlí;
@@ -813,6 +817,66 @@ a prohlášení (hlavička + `skrin` + `p`). `data.model = 1`.
   snímek pro ZPĚT (zapíše se do společného zásobníku `zpetZapsat`, takže
   funguje **Ctrl+Z**), přepočet nadřazených chráničů, překreslení, uložení.
   Otevření rozvaděče zásobník vyprázdní.
+
+### Transformátory, zdroje, zásuvka na lištu a ostatní přístroje (2026-10-22)
+
+Hlášení uživatele: do rozvaděče nešel přidat transformátor ani napájecí zdroj
+(zvonek, LED pásky, domácí telefon) — v knihovně ta kategorie nebyla a
+**„＋ Vlastní přístroj" nabízel jen pevné kategorie** (`ROZV_KAT`), mezi
+kterými nic takového nebylo. To byla celá příčina; další překážka se
+našla jen jedna — kontrola čísel neznala jednotku „VA" (`16 VA` hlásilo
+„není číslo"). In povinné nebylo u žádné kategorie. Platí pro DBO i PSC.
+
+- **Nové kategorie** (`ROZV_KAT`): **TR** Transformátor (zvonkový,
+  bezpečnostní, ovládací) **-T**, **ZD** Napájecí zdroj (spínaný – LED,
+  elektronika) **-G**, **XS** Zásuvka na DIN lištu **-XS**, **JINE** Ostatní
+  přístroj — **předponu si nese v přístroji (`p.ozn`, výchozí -A)**,
+  `rozvPredpona(p)`; `rozvDalsiOzn` i přečíslování ji respektují. Žádná
+  předpona nekoliduje (regex `^-T(\d+)$` nechytí -TA1, `^-X(\d+)$` -XS1).
+- **Parametry** (`ROZV_POLE`, vše volitelné kromě šířky): `vykon` (VA, u zdroje
+  W — `ROZV_KAT[].vykonW`), `uVstup`, `uVystup` (text: „230", „8/12",
+  „24 DC"), `iVystup` (A), u JINE `ozn`; In a póly u zásuvky a ostatních.
+  **Ukládají se jen vyplněné** (`ROZV_PRISTROJ_NAVIC`, jako PSC klíče) —
+  staré položky a rozvaděče zůstávají bajt po bajtu stejné. JINE: název
+  povinný, předpona bez mezery a nesmí končit číslicí.
+- **Vestavěné obecné** (neověřené, Pv prázdné, šířky běžné modulové):
+  zvonkový transformátor 8/12 V 8 a 16 VA (2 M), bezpečnostní 230/24 V 25
+  a 63 VA (3 M), zdroj 24 V DC 30 W (2 M) a 60 W (3 M), 12 V DC 15 W (1 M),
+  zásuvka na lištu 16 A 1+N (3 M). Knihovna: tlačítko **„Trafa a zdroje"**
+  (TR, ZD), XS a JINE jsou v „Ostatní".
+- **Hodnota na čele** (`rozvCelo`): TR „230/8/12 V · 16 VA", ZD „24 V · 60 W",
+  XS „zás. 16 A", JINE zkrácený název; popisky pod přístroje „12 V 16 VA",
+  „24 V 60 W"; v seznamu PDF napětí a výkon pod názvem, když v něm nejsou
+  (`rozvTrZdText`, `rozvNapeti`).
+- **Schéma**: `RS_VYSTUPNI` = TR, ZD, XS, JINE mají vlastní sloupec
+  (`RS_SLOUPCE`), značky `trafo` (dvě kružnice), `zdroj` (obdélník s ~ a =),
+  `zasuvka`, `ostatni` (obdélník s názvem). TR a ZD: napájení z fáze
+  (`z L1`), výstup jako vývod s napětím dole, bez N a PE (malé napětí);
+  zásuvka sloupec končí. Pod chráničem jako jeho vývody — **nadřazený
+  chránič automaticky** (`ROZV_NADR_AUTO`). Chybějící fáze se hlásí,
+  chybějící kabel jen u jističů/pojistek.
+- **Symetrie fází**: jsou to vývody (`rfVyvod` = `RS_SLOUPCE`); **bez In
+  i bez Ib se proud nevymýšlí** — do součtu nejdou a panel řekne „bez In:
+  N přístrojů – zatížení zadejte jako Ib"; vyplněné Ib se počítá.
+- **Oteplení**: XS jako ostatní (Pv/pól × (Inc/In)²), **TR, ZD, JINE Pv
+  celkem za přístroj, nepřepočítává se** (`ROT_KONST`, řádek „celkem");
+  chybí-li Pv, „doplňte Pv" a výsledek neúplný.
+- **Zakreslení z revizní zprávy**: obvod (jistič, RCBO, AFDD, pojistka)
+  s názvem „trafo", „transformátor", „zvon…", „zdroj" nebo „LED" dostane
+  v kroku 2 **nezaškrtnutý návrh** „💡 Obvod „Zvonek": přidat za jistič
+  transformátor" (`rzzNavrh`, `rzzNavrhyHtml`, `__rzZR.navrhy`). Jen po
+  potvrzení se za jistič přidá obecný transformátor / zdroj s upozorněním
+  „ověřte typ, napětí a výkon"; jistič zůstane jističem.
+- Novinky se nedělaly.
+
+Testy: `test-rozvadec.js` (+16: kategorie, vestavěné, tlačítko knihovny,
+čelo, popisky, PDF, vlastní „Ostatní" s předponou, přečíslování, import CSV
+s novými sloupci i bez, šablona, návrh při zakreslení),
+`test-rozvadec-schema.js` (+5: značky, výstup s napětím, „L?", skupina pod
+chráničem), `test-rozvadec-faze-otepleni.js` (+4: bez In se nesčítá, Ib,
+Pv celkem). **Upraveno:** `test-rozvadec.js` (seznam skupin, „Ostatní",
+18 kategorií), `test-rozvadec-psc.js` (šablona 43 sloupců, editor DBO se
+porovnává bez knihovny).
 
 ### Objekty (složky) v seznamu rozvaděčů (2026-10-19)
 
@@ -991,20 +1055,25 @@ informační pruh, karta Skříně".
 - **Formát CSV** (šablona „⬇ Prázdná šablona CSV" = jen hlavička, UTF-8
   s BOM, středníky): sloupce `druh;kategorie;nazev;vyrobce;rada;typ;poly;in;
   charakteristika;icn;icu;ics;icw;idn;typ_chranice;trida_spd;up;sirka_moduly;
-  sirka_mm;vyska_mm;hloubka_mm;uzitna_sirka_mm;uzitna_vyska_mm;pv;ue;nastaveni;
+  sirka_mm;vyska_mm;hloubka_mm;uzitna_sirka_mm;uzitna_vyska_mm;pv;ue;vykon;
+  u_vstup;u_vystup;i_vystup;nastaveni;
   provedeni;material;typ_skrine;rady;moduly_v_rade;ip;ik;ina;penc;rozmery;
   trida_ochrany;overeno;poznamka` (sloupce `icw`, `*_mm` a `nastaveni` přibyly
-  s PSC v etapě 5a — staré CSV bez nich se načte beze změny). Pořadí ani všechny sloupce nejsou
+  s PSC v etapě 5a, `vykon;u_vstup;u_vystup;i_vystup` 2026-10-22 —
+  staré CSV bez nich se načte beze změny). Pořadí ani všechny sloupce nejsou
   povinné, hlavička se porovnává bez háčků a velikosti písmen (`ROZV_CSV`).
   Oddělovač `;`, `,` nebo tabulátor se pozná sám, uvozovky podle CSV,
   kódování UTF-8, jinak windows-1250 (CSV z českého Excelu).
   - `druh` = `pristroj` / `skrin` (prázdné: skříň, když má řady a nemá
     kategorii), `kategorie` = kód (QM, FA, FI, FI/FA nebo RCBO, AFDD, SPD,
-    FU, KM, KT, KA, PJ, HL, SF, X, REZ; i s pomlčkou) nebo české slovo
-    (jistič, chránič, svodič přepětí, stykač…), `poly` = 1, 1+N, 2, 3, 3+N,
+    FU, KM, KT, KA, PJ, HL, SF, X, REZ, TR, ZD, XS, JINE; i s pomlčkou) nebo
+    české slovo (jistič, chránič, svodič přepětí, stykač, transformátor,
+    trafo, zdroj, napájecí zdroj, zásuvka, ostatní…), `poly` = 1, 1+N, 2, 3, 3+N,
     4 (projde i „1P", „3P+N"), `in` A, `icn/icu/ics` kA, `idn` mA, `up` kV,
-    `pv` W/pól při In, `ue` V — **čísla s čárkou i tečkou, jednotka za
-    číslem se toleruje** („16 A"), `charakteristika` B/C/D/K/Z,
+    `pv` W/pól při In (u TR, ZD, JINE celkem za přístroj), `ue` V,
+    `vykon` VA u transformátoru / W u zdroje, `u_vstup` a `u_vystup` text
+    („230", „8/12", „24 DC"), `i_vystup` A — **čísla s čárkou i tečkou,
+    jednotka za číslem se toleruje** („16 A", „16 VA"), `charakteristika` B/C/D/K/Z,
     `typ_chranice` AC/A/F/B, `trida_spd` T1, T2, T3 nebo kombinace (T1+T2),
     `sirka_moduly` povinná u přístroje (desetinná), u skříně povinné `rady`
     a `moduly_v_rade`, `provedeni` nástěnná/zapuštěná/polozapuštěná/dutá
@@ -1381,7 +1450,8 @@ Zadání uživatele 2026-10-21. **Třetí dlaždice** v Tvorbě dokumentace
 `__rz.rezim === 'PSC'` / `pscJe(rz)`, nové klíče knihovny se ukládají jen
 neprázdné a výstraha nad 250 A se do DOM vkládá jen, když je důvod.
 `test-rozvadec-psc.js` porovnává **s předchozí verzí (8902 = poslední commit)**
-celý editor DBO (innerHTML), čelní pohled na obrazovce i v tisku, PDF návrhu
+editor DBO (innerHTML bez knihovny — ta se 2026-10-22 záměrně rozšířila
+o transformátory a zdroje), čelní pohled na obrazovce i v tisku, PDF návrhu
 a data po otevření a uložení — **znak po znaku**. Nový kód PSC tedy musí
 projít i touhle kontrolou.
 

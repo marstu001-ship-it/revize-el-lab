@@ -281,6 +281,35 @@ const presahy = (p, svg) => p.evaluate(svg => {
   const pres = []; for (const s of V.svg) pres.push(...(await presahy(p, s)));
   check('velká skříň: nic nepřetéká rám ani razítko na žádném listu', !pres.length, pres.slice(0, 6).join(' · '));
 
+  // ── 9b. transformátor, zdroj, zásuvka, ostatní (2026-10-22) ──────────
+  const tz = await p.evaluate(async () => {
+    await dokNovy('rozv');
+    __T.dk('[data-dk="oznaceni"]', 'RT1'); __T.dk('[data-dk="soustava"]', '1NPE ~230 V');
+    rozvSkrinNastavit(rozvKnihPolozka('v-sk-2x12-n'));
+    const fi = rozvVlozit('v-fi-2-40-30-A'), fa = rozvVlozit('v-fa-1-B6'), t = rozvVlozit('v-tr-zvon-8'), g = rozvVlozit('v-zd-24-30'), xs = rozvVlozit('v-xs-16');
+    const it = rozvPolozkaNorm({ kat: 'JINE', nazev: 'Stmívač', ozn: '-RE', sirka: 1 }, 'pristroj'); it.id = 'u-jine-test';
+    await dokNacist(); DOK.rozvKnihovna.push(it);
+    const j = rozvVlozit('u-jine-test');
+    Object.assign(t, { faze: 'L1', vyvod: 'Zvonek' }); Object.assign(g, { faze: 'L1', vyvod: 'LED pásek' }); Object.assign(xs, { faze: 'L1' });
+    rozvNadrazeneAuto(); dokZmena(); await dokUlozitOtevreny();
+    const d = __T.cist(), L = rozvSchemaListy(d), svg = L.map(l => l.svg).join('');
+    const box = document.createElement('div'); box.innerHTML = L[1].svg; document.body.appendChild(box);
+    const zn = uid => { const e = box.querySelector('[data-puid="' + uid + '"] [data-znacka]'); return e ? e.getAttribute('data-znacka') : ''; };
+    const txt = uid => Array.from(box.querySelectorAll('[data-puid="' + uid + '"] text')).map(e => e.textContent).join('|');
+    const r = { zn: [t, g, xs, j].map(x => zn(x.uid)).join(), tTxt: txt(t.uid), gTxt: txt(g.uid), jTxt: txt(j.uid), xsTxt: txt(xs.uid),
+      ozn: [t, g, xs, j].map(x => x.ozn).join(), nadr: [t, g, xs, j].every(x => x.nadr === fi.uid),
+      skupina: rsModel(d).jedn.filter(u => u.fi).map(u => u.sloupce.map(x => x.p.kat).join(',')).join(' / '),
+      chybi: rsChybi(d).faze.map(x => x.ozn).join(), sloupcu: L[1].svg.split('data-puid=').length - 1 };
+    box.remove(); r.jednoduche = !/<(foreignObject|image|filter|mask)\b|class=|style=/.test(svg);
+    return r;
+  });
+  check('schéma: transformátor = dvě kružnice, zdroj = obdélník ~/=, zásuvka, ostatní = obdélník s názvem', tz.zn === 'trafo,zdroj,zasuvka,ostatni', tz.zn);
+  check('schéma: transformátor a zdroj — z fáze L1, výstup jako vývod s napětím (8/12 V, 24 V DC) a hodnotou', /8\/12 V 8 VA/.test(tz.tTxt) && /z L1/.test(tz.tTxt) &&
+    /Zvonek/.test(tz.tTxt) && /8\/12 V/.test(tz.tTxt) && /24 V DC/.test(tz.gTxt) && /30 W/.test(tz.gTxt), tz.tTxt + ' ‖ ' + tz.gTxt);
+  check('schéma: „ostatní" má v obdélníku název, bez fáze je u něj „L?"', /Stmívač/.test(tz.jTxt) && /L\?/.test(tz.jTxt) && /(^|,)-RE1($|,)/.test(tz.chybi) && !/-T1|-G1|-XS1/.test(tz.chybi), tz.jTxt + ' / chybí fáze: ' + tz.chybi);
+  check('schéma: nové přístroje pod chráničem jako jeho vývody (nadřazený chránič automaticky)', tz.nadr && tz.skupina === 'FI,FA,TR,ZD,XS,JINE', tz.skupina);
+  check('schéma s novými značkami: jen jednoduché prvky', tz.jednoduche);
+
   // ── 10. starý rozvaděč beze změny ─────────────────────────────────────
   const stary = await p.evaluate(async () => {
     const x = DOK.dokumenty.filter(z => z.typ === 'rozv' && z.data.oznaceni === 'RS1')[0];

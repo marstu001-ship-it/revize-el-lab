@@ -242,6 +242,40 @@ const w = ms => new Promise(r => setTimeout(r, ms));
   check('v datech oteplení jen zadané hodnoty (pevné 3, Penc 10, 55 °C), přirážka/RDF/výsledek ne',
     ul && ul.pevne === '3' && ul.penc === '10' && ul.okoli55 === true && !ul.prirazka && !ul.rdfRezim && !('vysledek' in ul) && !ul.inc, JSON.stringify(ul));
 
+  // ── 3b. transformátor, zdroj, zásuvka (2026-10-22): bez In se nesčítá, Pv jen z dat ──
+  const tz = await p.evaluate(async () => {
+    await dokNovy('rozv');
+    __T.dk('[data-dk="oznaceni"]', 'RT1'); __T.dk('[data-dk="soustava"]', '3NPE ~400/230 V TN-S'); __T.dk('[data-dk="privodIn"]', '25');
+    rozvSkrinNastavit(rozvKnihPolozka('v-sk-2x12-n'));
+    const fa = rozvVlozit('v-fa-1-B16'), t = rozvVlozit('v-tr-zvon-8'), g = rozvVlozit('v-zd-24-60'), xs = rozvVlozit('v-xs-16');
+    Object.assign(fa, { faze: 'L1' }); Object.assign(t, { faze: 'L1' }); Object.assign(g, { faze: 'L2' }); Object.assign(xs, { faze: 'L3' });
+    rozvNadrazeneAuto(); dokZmena(); __rz.vyber = null; rozvVlastnostiVykreslit(); rozvPohledVykreslit();
+    const s1 = rozvFazeSouhrn(__rz.rady), pan1 = document.querySelector('#rz-vlastnosti .rp-faze').innerText;
+    g.ib = '0,3'; dokZmena(); rozvVlastnostiVykreslit();
+    const s2 = rozvFazeSouhrn(__rz.rady), pan2 = document.querySelector('#rz-vlastnosti .rp-faze').innerText;
+    const d = __T.cist(); d.otepleni = { okoli55: true, penc: '20' };
+    const v1 = rozvOteplVypocet(d);
+    const rad = q => [q.x.ozn, q.konst ? 'konst' : 'In', q.chybi || ''].join(':');
+    const r = { s1: [s1.F.L1.zatez, s1.F.L2.zatez, s1.F.L3.zatez, s1.F.L1.In + s1.F.L2.In + s1.F.L3.In, s1.bezIn.length, s1.bezIb, s1.vyvodu].join(','),
+      pan1: pan1.split('\n').filter(x => /bez In|Ib nevyplněno/.test(x)).join(' | '),
+      s2: [s2.F.L1.zatez, s2.F.L2.zatez, s2.F.L3.zatez, s2.bezIn.length].join(','), pan2: pan2.split('\n').filter(x => /bez In/.test(x)).join(' | '),
+      ot1: v1.radky.map(rad).join(' '), stav1: v1.stav, chybi1: v1.chybi.join('; ') };
+    [fa, t, g, xs].forEach((x, i) => { x.p.pv = ['2', '1,5', '4', '0,5'][i]; });
+    const d2 = __T.cist(); d2.otepleni = { okoli55: true, penc: '20' };
+    const v2 = rozvOteplVypocet(d2), q = o => v2.radky.filter(y => y.x.ozn === o)[0];
+    r.ot2 = ['-T1', '-G1'].map(o => q(o).pvInc).join(',') + '|' + v2.stav;
+    r.sumPv = Math.round(v2.sumPv * 1000) / 1000;
+    // In 16 A, Ib/In: jistič (16/16)² × 2 = 2, zásuvka (16/16)² × 0,5 × 2 póly (1+N) = 1, trafo 1,5 a zdroj 4 celkem = 8,5 W
+    await dokUlozitOtevreny();
+    return r;
+  });
+  check('fáze: transformátor a zdroj bez In se do součtu nepočítají (L1 16 A jen jistič), zásuvka 16 A ano; „bez In: 2 přístroje"',
+    tz.s1 === '16,0,16,32,2,2,4' && /bez In: 2 přístroje/.test(tz.pan1) && /Ib nevyplněno u 2 přístrojů/.test(tz.pan1), tz.s1 + ' / ' + tz.pan1);
+  check('fáze: s vyplněným Ib se zdroj počítá z Ib (L2 0,3 A) a z „bez In" zmizí', tz.s2 === '16,0.3,16,1' && /bez In: 1 přístroj/.test(tz.pan2), tz.s2 + ' / ' + tz.pan2);
+  check('oteplení: transformátor a zdroj jako řádky „Pv celkem", bez Pv „doplňte Pv" a výsledek neúplný',
+    /-T1:konst:doplňte Pv/.test(tz.ot1) && /-G1:konst:doplňte Pv/.test(tz.ot1) && /-XS1:In:doplňte Pv/.test(tz.ot1) && tz.stav1 === 'neuplne', tz.ot1 + ' / ' + tz.stav1);
+  check('oteplení: Pv transformátoru a zdroje se nepřepočítává proudem (1,5 W a 4 W), ΣPv 8,5 W', tz.ot2 === '1.5,4|vyhovuje' && tz.sumPv === 8.5, tz.ot2 + ' / ' + tz.sumPv);
+
   // ── 4. starý rozvaděč, data revizí, telefon ───────────────────────────
   const st = await p.evaluate(async () => {
     const x = DOK.dokumenty.filter(z => z.uid === window.__stary)[0], pred = JSON.stringify(x.data);
