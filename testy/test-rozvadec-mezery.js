@@ -86,7 +86,8 @@ async function stranka(b, port, init) {
   check('… čelní pohled (SVG do PDF) znak po znaku stejný jako ve staré verzi', nove.out.svg === stary.out.svg);
   check('… schéma zapojení (všechny listy) stejné jako ve staré verzi', JSON.stringify(nove.out.schema) === JSON.stringify(stary.out.schema), nove.out.schema.length + ' listů');
   check('… popisky pod přístroje stejné jako ve staré verzi', nove.out.popisky === stary.out.popisky);
-  check('… součty fází a oteplení stejné jako ve staré verzi', nove.out.faze === stary.out.faze && nove.out.otepl === stary.out.otepl);
+  // v9.131 přidala do souhrnu fází seznam vývodů bez In (trafa, zdroje) — u bytu je prázdný
+  check('… součty fází a oteplení stejné jako ve staré verzi', nove.out.faze.replace(',"bezIn":[]', '') === stary.out.faze && nove.out.otepl === stary.out.otepl);
   check('… PDF (titul, čelní pohled, seznam) stejné jako ve staré verzi', nove.out.seznam === stary.out.seznam);
   await S.ctx.close();
 

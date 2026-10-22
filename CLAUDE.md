@@ -200,7 +200,7 @@ Revize EL je single-page PWA (HTML + JS + service worker). Obsah se cachuje
 v prohlížeči přes `sw.js`, takže uživatel nevidí změny, dokud se neinvalidně
 cache.
 
-**Aktuální verze: v9.130 · 2026-10-22**
+**Aktuální verze: v9.131 · 2026-10-22**
 
 ## Povinné při každé změně kódu před commitem
 
@@ -818,7 +818,7 @@ a prohlášení (hlavička + `skrin` + `p`). `data.model = 1`.
   funguje **Ctrl+Z**), přepočet nadřazených chráničů, překreslení, uložení.
   Otevření rozvaděče zásobník vyprázdní.
 
-### Transformátory, zdroje, zásuvka na lištu a ostatní přístroje (2026-10-22)
+### Transformátory, zdroje, zásuvka na lištu a ostatní přístroje (v9.131, 2026-10-22)
 
 Hlášení uživatele: do rozvaděče nešel přidat transformátor ani napájecí zdroj
 (zvonek, LED pásky, domácí telefon) — v knihovně ta kategorie nebyla a
@@ -1437,7 +1437,7 @@ a odkazy jen při vyhovuje, uložená data, starý rozvaděč, data revizí, tel
 V `test-mobil.js` stavy „rozvaděč – panel fází…", „…přefázovat, náhled změn"
 a „…oteplení výpočtem (Dokumenty)".
 
-### Výkonový rozvaděč PSC — etapa 5a (pole, montážní deska, sběrnice; blok „ROZVADĚČ PSC")
+### Výkonový rozvaděč PSC — etapa 5a (v9.131; pole, montážní deska, sběrnice; blok „ROZVADĚČ PSC")
 
 Zadání uživatele 2026-10-21. **Třetí dlaždice** v Tvorbě dokumentace
 „Rozvaděč PSC – návrh a dokumentace" (ČSN EN IEC 61439-2), číslování
@@ -1530,7 +1530,7 @@ nemá. Přístroj ve sběrnicovém poli může mít `sbernice` = uid sběrnice.
   nadřazený chránič, přeplnění, vše jako u DBO. **Mezery po ½ modulu
   (v9.130) PSC zatím nemá** — `pscCilZBodu` nevrací `poz`, ◀ ▶ u PSC jen
   vyměňují sousedy, „↔ Mezera vlevo" se nenabízí a `pscUklid` klíč
-  `mezera` maže (`pscSvg` ho nekreslí). Doplnit, až se PSC bude přenášet.
+  `mezera` maže (`pscSvg` ho nekreslí). Doplní se v některé další etapě PSC.
   Volné položení předává volající jako `poz` (moduly, DBO), místo na desce
   jako `pos` ({x, y} mm, PSC) — `rozvVlozit / rozvPresunout /
   rozvPresunBlok(…, idx, poz, pos)`.
