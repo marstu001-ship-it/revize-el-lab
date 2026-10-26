@@ -230,6 +230,23 @@ async function snimek(p) {
     check('rozvaděče: objekty (dok_rozvObjekty) jen v revize-lab-db a revize_lab_dok, ostrý program beze změny',
       /LAB-OBJEKT/.test(kn.objLab) && /LAB-OBJEKT/.test(kn.lsLab || '') && !/LAB-OBJEKT/.test(kn.objOstra) && !/LAB-OBJEKT/.test(kn.lsOstry || ''),
       kn.objLab + ' | ' + kn.objOstra);
+    // předloha z fotky (IndexedDB dok_rzPredlohy) a volba čísel pozic (localStorage revize_el_rz_cisla)
+    await lab.evaluate(async () => {
+      await rzpNacist(); __rzpVse['lab-uid'] = { 0: { src: 'data:image/jpeg;base64,TEFCLUZPVEtB', w: 1, h: 1 } }; await rzpZapsat();
+      localStorage.setItem('revize_el_rz_cisla', 'rada');
+    });
+    await lab.waitForTimeout(300);
+    const fo = await surova.evaluate(async () => {
+      const cti = (name, key) => new Promise(res => {
+        const r = indexedDB.open(name);
+        r.onsuccess = () => { const db = r.result; if (!db.objectStoreNames.contains('kv')) { db.close(); return res('null'); }
+          const g = db.transaction('kv').objectStore('kv').get(key); g.onsuccess = () => { db.close(); res(JSON.stringify(g.result || null)); }; };
+      });
+      return { lab: await cti('revize-lab-db', 'dok_rzPredlohy'), ostra: await cti('revize-el-db', 'dok_rzPredlohy'),
+               cLab: localStorage.getItem('revize_lab_rz_cisla'), cOstry: localStorage.getItem('revize_el_rz_cisla') };
+    });
+    check('rozvaděče: předloha z fotky jen v revize-lab-db, volba čísel pozic jen revize_lab_rz_cisla',
+      /lab-uid/.test(fo.lab) && fo.ostra === 'null' && fo.cLab === 'rada' && fo.cOstry === null, JSON.stringify(fo).slice(0, 160));
     // sbalení informačního pruhu v knihovně rozvaděčů (localStorage revize_el_rz_info)
     await surova.evaluate(() => localStorage.setItem('revize_el_rz_info', 'rozbaleno'));
     const pr = await lab.evaluate(() => { TD_AKCE.tdRInfoPrepni(); return { cte: localStorage.getItem('revize_el_rz_info') }; });
