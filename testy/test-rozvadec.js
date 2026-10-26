@@ -1328,6 +1328,14 @@ function pomocnik() {
     tz.bez === 'FA,FA,FA,FA' && tz.s === 'FA,TR,FA,ZD,FA,FA' && /^Zvonek\|navrženo podle názvu obvodu/.test(tz.tr), tz.bez + ' → ' + tz.s + ' / ' + tz.tr);
 
   // ── orientace podle fotky: pruh výrobce, čísla pozic, předloha (2026-10-26) ──
+  const fotkaCesta = require('path').join(__dirname, '_beh', 'rz-fotka.png');
+  require('fs').mkdirSync(require('path').dirname(fotkaCesta), { recursive: true });
+  require('fs').writeFileSync(fotkaCesta, Buffer.from(await p.evaluate(() => {   // vymyšlená „fotka" řady: 12 modulů po 60 px od x = 140
+    const c = document.createElement('canvas'); c.width = 1000; c.height = 700; const g = c.getContext('2d');
+    g.fillStyle = '#777'; g.fillRect(0, 0, 1000, 700); g.fillStyle = '#ddd'; g.fillRect(140, 330, 720, 40);
+    for (let m = 0; m < 12; m++) { if (m === 5 || m === 6) continue; g.fillStyle = m < 3 ? '#e44' : '#fff'; g.fillRect(140 + m * 60 + 2, 250, 56, 200); }
+    return c.toDataURL('image/png').split(',')[1];
+  }), 'base64'));
   const ori = await p.evaluate(async () => {
     try { localStorage.removeItem('revize_el_rz_cisla'); } catch (e) {}
     await dokNovy('rozv'); rozvSkrinNastavit(rozvKnihPolozka('v-sk-3x12-n'));
@@ -1381,14 +1389,6 @@ function pomocnik() {
     'číslo ' + cil.n + ' · pod ním ' + cil.pod + ' · ' + JSON.stringify(poKliku) + ' / ' + cil.sl);
   await p.evaluate(async () => { __rz.zoom = 1; rozvPohledVykreslit(); await dokUlozitOtevreny(); });
 
-  const fotkaCesta = require('path').join(__dirname, '_beh', 'rz-fotka.png');
-  require('fs').mkdirSync(require('path').dirname(fotkaCesta), { recursive: true });
-  require('fs').writeFileSync(fotkaCesta, Buffer.from(await p.evaluate(() => {   // vymyšlená „fotka" řady: 12 modulů po 60 px od x = 140
-    const c = document.createElement('canvas'); c.width = 1000; c.height = 700; const g = c.getContext('2d');
-    g.fillStyle = '#777'; g.fillRect(0, 0, 1000, 700); g.fillStyle = '#ddd'; g.fillRect(140, 330, 720, 40);
-    for (let m = 0; m < 12; m++) { if (m === 5 || m === 6) continue; g.fillStyle = m < 3 ? '#e44' : '#fff'; g.fillRect(140 + m * 60 + 2, 250, 56, 200); }
-    return c.toDataURL('image/png').split(',')[1];
-  }), 'base64'));
   // předloha z fotky: nahrání, ořez rohy skutečnou myší, použití
   await p.click('[data-action="tdRzpOtevrit"]'); await w(200);
   await p.selectOption('#rzp-rada', '0');
@@ -1485,6 +1485,15 @@ function pomocnik() {
     return { bez, idb: !!(v && v[window.__dokOtevreny.uid]) };
   });
   check('předloha: 🗑 Smazat ji odebere z pohledu i z úložiště', sm.bez && !sm.idb, JSON.stringify(sm));
+  // pole kabelu jde přepsat vlastním textem (připomínka uživatele 2026-10-26)
+  await p.evaluate(async () => { const x = __rz.rady[0].prvky[0]; x.kabel = 'CYKY-J'; __rz.vyber = x.uid; rozvVlastnostiVykreslit(); await __T.w(100); });
+  await p.click('#rz-vlastnosti [data-rp2="kabel"]'); await w(100);
+  const kab1 = await p.$eval('#rz-vlastnosti [data-rp2="kabel"]', e => ({ v: e.value, oz: e.selectionEnd - e.selectionStart }));
+  await p.keyboard.type('rezerva'); await w(150);
+  const kab2 = await p.evaluate(() => __rz.rady[0].prvky[0].kabel);
+  check('vývodový kabel: klepnutím se pole nevyprázdní (jen označí) a jde přepsat vlastním textem „rezerva"', kab1.v === 'CYKY-J' && kab1.oz === 6 && kab2 === 'rezerva',
+    JSON.stringify(kab1) + ' → ' + kab2);
+
   // ── oddělení od revizí ────────────────────────────────────────────────
   const odd = await p.evaluate(async () => {
     showScreen('home'); renderArchiv();

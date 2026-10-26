@@ -2015,6 +2015,19 @@ fotek a se zaškrtnutím s nimi, obnova po načtení stránky, plné úložišt�
 smazání). V `test-mobil.js` stavy „rozvaděč – předloha z fotky, ořez (okno)"
 a „…předloha nad řadou, nastavení čelního pohledu".
 
+#### Pole s nabídkou v editoru rozvaděče jdou přepsat (2026-10-26)
+
+- **Pole s nabídkou jdou přepsat** (připomínka uživatele
+  2026-10-26 se snímkem „Vývodový kabel / Průřez" — „musím vybrat jen něco ze
+  seznamu, chci tam napsat, že není vývod, jen rezerva"). Obecný trik
+  s datalistem (`focusin` pole s hodnotou z nabídky vyprázdní, ať je vidět celá
+  nabídka) dělal z pole na pohled výběr ze seznamu. V `#screen-dok-form`
+  rozvaděče (DBO i PSC) se pole **nevyprazdňuje, jen se označí** — psaní
+  hodnotu přepíše. Pod kabelem řádek „Do polí jde napsat i vlastní text
+  (např. „rezerva")…", v nabídce kabelu volba „bez kabelu – rezerva".
+
+Test: `test-rozvadec.js` (klepnutí do kabelu „CYKY-J" hodnotu nechá a označí, „rezerva" se zapíše).
+
 ### PDF (část 4)
 
 - `DOK_TYPY.rozv.pdf(d)` → bloky pro společné stránkování tvorby

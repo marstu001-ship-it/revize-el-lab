@@ -4863,7 +4863,7 @@ html.dark .rz-imp-chyby{background:#3a1f1c;border-color:#6b2c25}
   </div>
   <div class="dok-wrap" id="dok-form-obsah"></div>
   <datalist id="dk-osoby-list"></datalist>
-  <datalist id="rz-kabel-typ"><option value="CYKY-J"><option value="CYKY-O"><option value="CXKH-R-J"><option value="NYM-J"><option value="H07V-K"><option value="H07RN-F"></datalist>
+  <datalist id="rz-kabel-typ"><option value="CYKY-J"><option value="CYKY-O"><option value="CXKH-R-J"><option value="NYM-J"><option value="H07V-K"><option value="H07RN-F"><option value="bez kabelu – rezerva"></datalist>
   <datalist id="rz-kabel-prurez"><option value="3×1,5"><option value="3×2,5"><option value="5×1,5"><option value="5×2,5"><option value="5×4"><option value="5×6"><option value="5×10"><option value="5×16"><option value="5×25"><option value="1×6"><option value="1×10"><option value="1×16"></datalist>
 </div>
 
@@ -28447,6 +28447,13 @@ document.addEventListener('focusin', function(e) {
   if (window.__navFocus) { window.__navFocus = false; return; }
   if (!(el && el.tagName === 'INPUT' && el.hasAttribute('list'))) return;
   if (el.readOnly) return; // zamčená zpráva — hodnoty se nesmí ani dočasně mazat
+  // Rozvaděč (vlastnosti přístroje, hlavička): pole se NEVYPRAZDŇUJE, jen se
+  // označí — prázdné pole s nabídkou vypadalo jako výběr ze seznamu a technik
+  // nevěděl, že může napsat vlastní text (např. „rezerva", pokyn uživatele 2026-10-26).
+  if (el.closest && el.closest('#screen-dok-form[data-typ="rozv"], #screen-dok-form[data-typ="psc"]')) {
+    try { el.select(); } catch (e2) {}
+    return;
+  }
   el.dataset.dlPrev = el.value;
   el.dataset.dlTouched = '0';
   // Vyprázdnit jen pokud je hodnota přesně z datalistu (uživatel ji „vybral")
@@ -32858,7 +32865,8 @@ function rozvVlastnostiVykreslit() {
         (rfVyvod(x) && !rsTrif(p) ? '<label class="teren-radek rp-zamek"><input type="checkbox" class="rp-pole" data-rp2="fazeZamek"' + (x.fazeZamek ? ' checked' : '') +
           '> 🔒 Zamknout fázi (Přefázovat ji nezmění)</label>' : '') + '</div>' +
       '<div class="g2 rp-kabel">' + pole('kabel', 'Vývodový kabel – typ', x.kabel, { list: 'rz-kabel-typ', ph: 'CYKY-J' }) +
-        pole('prurez', 'Průřez', x.prurez, { list: 'rz-kabel-prurez', ph: '3×2,5' }) + '</div>';
+        pole('prurez', 'Průřez', x.prurez, { list: 'rz-kabel-prurez', ph: '3×2,5' }) + '</div>' +
+      '<div class="dk-pozn rp-volny-text">Do polí jde napsat i vlastní text (např. „rezerva") — nabídka je jen pro rychlost.</div>';
     if (RS_OBVODOVE.indexOf(p.kat) !== -1 || (rfVyvod(x) && RS_PSC_VYVODY.indexOf(p.kat) !== -1)) {   // schéma zapojení (etapa 3; PSC: i QF, QS)
       var pr = rsSpotrPredikce(x.vyvod);
       h += '<div class="g2 rp-schema"><div class="f"><label>Spotřebič ve schématu</label><select class="rp-pole" data-rp2="spotr">' +
