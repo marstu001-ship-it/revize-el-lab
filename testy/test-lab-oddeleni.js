@@ -39,8 +39,13 @@ async function snimek(p) {
         const db = r.result;
         if (!db.objectStoreNames.contains('kv')) { db.close(); return res({}); }
         const out = {}, tx = db.transaction('kv'), st = tx.objectStore('kv');
-        const c = st.openCursor();
-        c.onsuccess = () => { const x = c.result; if (x) { out[x.key] = JSON.stringify(x.value); x.continue(); } };
+        // Odkaz na složku (FileSystemDirectoryHandle) se nečte — novější Chromium při jeho
+        // načtení kurzorem ze stránky bez oprávnění spadne celý; stačí vědět, že tam je.
+        const c = st.openKeyCursor();
+        c.onsuccess = () => { const x = c.result; if (!x) return; const k = x.key;
+          if (k === 'backup_dir_handle') out[k] = '(odkaz na složku)';
+          else { const g = st.get(k); g.onsuccess = () => { out[k] = JSON.stringify(g.result); }; }
+          x.continue(); };
         tx.oncomplete = () => { db.close(); res(out); };
       };
     });
