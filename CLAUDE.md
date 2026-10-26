@@ -1939,6 +1939,40 @@ z knihovny, byt 3+1 ve 3×18 s mezerami: schéma bez prázdného sloupce
 mezerou, popisky 8,75 / 35 / 35 / 70 mm, fáze, oteplení a seznam beze
 změny, telefon 375 px).
 
+### Orientace při překreslování podle fotky — pruh výrobce a čísla pozic (2026-10-26)
+
+Hlášení uživatele: skládá v čelním pohledu existující rozvaděč podle fotky
+a ztrácí se — přístroje vypadají všechny stejně a musí počítat místa od kraje.
+
+- **Pruh se značkou a řadou výrobce** nahoře na každém přístroji
+  (`rozvVyrZnacka(p)`, kreslí `rozvPrvekSvg` — tedy obrazovka, PDF, duch při
+  tažení, PSC i čela ve 3D): „hager MY", „OEZ LSN", „Eaton PLS6". **Barva podle
+  výrobce** (`ROZV_ZNACKY`, pevná tabulka, tmavé tóny s bílým textem —
+  kontrast ≥ 4,5 : 1 hlídá test; kategorii dál rozlišuje barva těla a hodnota).
+  Výrobce se hledá po slovech bez háčků (`moeller` = Eaton, `schneider
+  electric` = Schneider). **Neznámý výrobce = šedá se jménem, obecný
+  (vestavěné položky) = šedý pruh bez textu**, rezerva pruh nemá. Text se
+  **zkracuje, písmo se nezmenšuje** (`rozvZnackaText`: celé → zkratka značky +
+  řada, „SE iC60N", „SIE 5SL6" → značka → „…"); celý název v bublině.
+  Označení, hodnota a páčka jsou o pruh níž, svislý vývod má nejvýš 12 znaků.
+  V PDF pruh zůstává (je to užitečný údaj) — černobíle je to tmavý pruh
+  s bílým textem. „DŘÍVE VYRÁBĚNÝ" v pohledu nic navíc nemá.
+- **Čísla pozic nad řadou** (`rozvCislaPozicSvg`) — drobná šedá čísla modulů
+  jako vylisovaná na skříni. **Jen obrazovka**: kreslí se jen bez `o.tisk`,
+  osazení ve schématu je samostatná větev, takže do PDF, tisku, schématu ani
+  3D nejdou; data rozvaděče ani označení nemění; `pointer-events="none"` —
+  klik na číslo je klik do prázdna. Volba v panelu Vlastnosti (bez výběru)
+  **„⚙ Nastavení čelního pohledu"**: průběžně přes řady (výchozí, 2. řada
+  13–24 u 12 modulů) / každá řada od 1 / nečíslovat — jen v prohlížeči,
+  localStorage `revize_el_rz_cisla`. Písmo aspoň 9 px na obrazovce; když se
+  čísla do modulu nevejdou (oddálení), jen každé druhé. Čísla jsou na mřížce
+  modulů, ne přístrojů (i u šířky 1,5 M). Jen DBO (PSC má pole v mm).
+
+Test: `test-rozvadec.js` (pruh u 1modulového přístroje čitelný a podle
+výrobce, kontrast, neznámý / obecný, 36 čísel průběžně, přepínač od 1,
+data beze změny, každé druhé při oddálení, **klik na číslo skutečnou myší
+nezmění výběr ani scrollLeft**). Novinky se nedělaly.
+
 ### PDF (část 4)
 
 - `DOK_TYPY.rozv.pdf(d)` → bloky pro společné stránkování tvorby

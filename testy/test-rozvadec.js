@@ -1327,6 +1327,60 @@ function pomocnik() {
   check('zakreslení: bez potvrzení jen jističe; po potvrzení jistič zůstane a za ním transformátor / zdroj s upozorněním',
     tz.bez === 'FA,FA,FA,FA' && tz.s === 'FA,TR,FA,ZD,FA,FA' && /^Zvonek\|navrženo podle názvu obvodu/.test(tz.tr), tz.bez + ' → ' + tz.s + ' / ' + tz.tr);
 
+  // ── orientace podle fotky: pruh výrobce, čísla pozic, předloha (2026-10-26) ──
+  const ori = await p.evaluate(async () => {
+    try { localStorage.removeItem('revize_el_rz_cisla'); } catch (e) {}
+    await dokNovy('rozv'); rozvSkrinNastavit(rozvKnihPolozka('v-sk-3x12-n'));
+    const V = (kid, vyr, rada, r) => { const x = rozvVlozit(kid, r, __rz.rady[r].prvky.length); x.p.vyrobce = vyr; x.p.rada = rada; return x; };
+    V('v-fa-1-B16', 'Hager', 'MY', 0); V('v-fa-1-B10', 'Hager', 'NF', 0); V('v-fa-1-B16', 'OEZ', 'LSN', 0); V('v-fa-1-C16', 'Eaton', 'PLS6', 0);
+    V('v-fa-1-B16', 'Výrobce A', 'R1', 0); V('v-fa-1-B16', 'obecný', '', 0);
+    rozvZmena('test', () => {}); __rz.vyber = null; rozvPohledVykreslit(); rozvVlastnostiVykreslit(); await __T.w(150);
+    const gs = Array.from(document.querySelectorAll('#rz-svg-ram .rz-pr')).map(g => {
+      const pr = g.querySelector('.rz-znacka-pruh'), t = g.querySelector('.rz-znacka-text');
+      return { fill: pr && pr.getAttribute('fill'), t: t ? t.textContent : '', fs: t ? +t.getAttribute('font-size') : 0,
+               tw: t ? t.getBBox().width : 0, pw: pr ? +pr.getAttribute('width') : 0, tit: (g.querySelector('title') || {}).textContent || '' };
+    });
+    // kontrast bílého textu na všech barvách tabulky
+    const L = h => { const c = [1, 3, 5].map(i => parseInt(h.substr(i, 2), 16) / 255).map(v => v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4)); return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2]; };
+    const kon = Object.values(ROZV_ZNACKY).map(z => z.b).concat([ROZV_ZNACKA_SEDA]).map(b => 1.05 / (L(b) + 0.05));
+    const ram = document.getElementById('rz-svg-ram'), cisla = Array.from(ram.querySelectorAll('.rz-cislo'));
+    const r = { gs, konMin: Math.min.apply(null, kon), pocet: cisla.length, prvni2: cisla[12] && cisla[12].textContent,
+                peCisla: getComputedStyle(ram.querySelector('.rz-cisla')).pointerEvents, data1: JSON.stringify([__rz.rady, __rz.skrin]) };
+    // přepínač od 1 / průběžně
+    const nast = document.querySelector('.rz-nast-pohledu'); r.nast = !!nast;
+    const radio = nast.querySelector('input[value="rada"]'); radio.checked = true; radio.dispatchEvent(new Event('change', { bubbles: true })); await __T.w(100);
+    r.prvni2rada = document.querySelectorAll('#rz-svg-ram .rz-cislo')[12].textContent; r.ls = localStorage.getItem('revize_el_rz_cisla');
+    r.data2 = JSON.stringify([__rz.rady, __rz.skrin]); r.dd = r.data1 === r.data2 ? '' : r.data1.slice(0, 300) + ' ≠ ' + r.data2.slice(0, 300);
+    const r2 = document.querySelector('.rz-nast-pohledu input[value="prubezne"]'); r2.checked = true; r2.dispatchEvent(new Event('change', { bubbles: true })); await __T.w(100);
+    // úzký pohled (oddálení): každé druhé číslo
+    r.malo = (rozvCislaPozicSvg(0, 12, 12, 0.6).match(/rz-cislo/g) || []).length; r.dost = (rozvCislaPozicSvg(0, 12, 12, 2.3).match(/rz-cislo/g) || []).length;
+    return r;
+  });
+  const hg = ori.gs[0], oez = ori.gs[2];
+  check('pruh výrobce: 1modulový Hager MY nese „hager MY" na modré, text se vejde do pruhu a písmo ≥ 2,6 mm (čitelné)',
+    hg.t === 'hager MY' && hg.fill === '#1f5e99' && hg.tw > 0 && hg.tw <= hg.pw && hg.fs >= 2.6, JSON.stringify(hg));
+  check('pruh výrobce: Hager NF, OEZ LSN (červená), Eaton PLS6 — každý výrobce svou barvou, řada v textu',
+    ori.gs[1].t === 'hager NF' && oez.t === 'OEZ LSN' && oez.fill === '#9b2c2c' && ori.gs[3].t === 'Eaton PLS6' && ori.gs[3].fill !== hg.fill && ori.gs[3].tw <= ori.gs[3].pw,
+    ori.gs.map(g => g.t + ' ' + g.fill).join(' | '));
+  check('pruh výrobce: neznámý výrobce šedě se jménem, obecný šedě bez textu; celý název v bublině',
+    ori.gs[4].fill === '#6e6e6e' && /^Výrobce A/.test(ori.gs[4].t) && /Výrobce A R1/.test(ori.gs[4].tit) && ori.gs[5].fill === '#6e6e6e' && ori.gs[5].t === '' && /Hager MY/.test(hg.tit), ori.gs[4].t + ' / ' + hg.tit);
+  check('pruh výrobce: bílý text má na každé barvě kontrast ≥ 4,5 : 1', ori.konMin >= 4.5, ori.konMin.toFixed(2));
+  check('čísla pozic: 36 čísel nad třemi řadami, průběžně (2. řada od 13), klik propadne (pointer-events none)',
+    ori.pocet === 36 && ori.prvni2 === '13' && ori.peCisla === 'none', ori.pocet + ' / ' + ori.prvni2 + ' / ' + ori.peCisla);
+  check('čísla pozic: volba „každou řadu od 1" (2. řada od 1), pamatuje se jen v prohlížeči, data rozvaděče beze změny a nic k uložení',
+    ori.nast && ori.prvni2rada === '1' && ori.ls === 'rada' && ori.data1 === ori.data2, ori.prvni2rada + ' / ' + ori.ls + ' ' + ori.dd);
+  check('čísla pozic: při malém měřítku jen každé druhé (6 z 12), jinak všechna', ori.malo === 6 && ori.dost === 12, ori.malo + ' / ' + ori.dost);
+  // klik na číslo skutečnou myší: nic nevybere, rámeček se neposune
+  await p.evaluate(async () => { __rz.zoom = 2.5; rozvPohledVykreslit(); await __T.w(100); const r = document.getElementById('rz-svg-ram'); r.scrollLeft = 120; await __T.w(50); });
+  const cil = await p.evaluate(() => { const t = Array.from(document.querySelectorAll('#rz-svg-ram .rz-cislo')).filter(e => { const b = e.getBoundingClientRect(), rb = document.getElementById('rz-svg-ram').getBoundingClientRect(); return b.left > rb.left && b.right < rb.right && b.top > rb.top; })[2];
+    const b = t.getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2, sl: document.getElementById('rz-svg-ram').scrollLeft, n: t.textContent,
+      pod: (document.elementFromPoint(b.left + b.width / 2, b.top + b.height / 2) || {}).className.baseVal || '' }; });
+  await p.mouse.click(cil.x, cil.y); await w(200);
+  const poKliku = await p.evaluate(() => ({ vyber: __rz.vyber, vic: (__rz.vic || []).length, sl: document.getElementById('rz-svg-ram').scrollLeft }));
+  check('klik na číslo pozice: nevybere přístroj a scrollLeft rámečku se nezmění', !poKliku.vyber && !poKliku.vic && poKliku.sl === cil.sl && !/rz-cislo/.test(cil.pod),
+    'číslo ' + cil.n + ' · pod ním ' + cil.pod + ' · ' + JSON.stringify(poKliku) + ' / ' + cil.sl);
+  await p.evaluate(async () => { __rz.zoom = 1; rozvPohledVykreslit(); await dokUlozitOtevreny(); });
+
   // ── oddělení od revizí ────────────────────────────────────────────────
   const odd = await p.evaluate(async () => {
     showScreen('home'); renderArchiv();
