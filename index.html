@@ -2319,7 +2319,7 @@ html.dark .rz-imp-chyby{background:#3a1f1c;border-color:#6b2c25}
 <body>
 
 <div class="topbar">
-  <div class="brand" data-action="home" style="cursor:pointer" title="Hlavní stránka">⚡ Revize <em>EL</em> <span class="ver">v9.131<span class="ver-date"> · 2026-10-22</span></span></div>
+  <div class="brand" data-action="home" style="cursor:pointer" title="Hlavní stránka">⚡ Revize <em>EL</em> <span class="ver">v9.134<span class="ver-date"> · 2026-10-25</span></span></div>
   <div class="topbar-right">
     <button class="btn btn-ghost" id="theme-toggle" data-action="toggleTheme" title="Přepnout světlý / tmavý režim">🌙</button>
     <button class="btn btn-ghost" id="view-toggle" data-action="toggleView" title="Přepnout zobrazení PC / Mobil">💻 PC</button>
@@ -4840,6 +4840,7 @@ html.dark .rz-imp-chyby{background:#3a1f1c;border-color:#6b2c25}
     <span class="dok-stav" id="dok-stav"></span>
     <span class="dok-lista-akce">
       <button class="dok-mini" data-action="tdUlozit" title="Uložit (Ctrl+S) — ukládá se i samo při psaní">💾 Uložit</button>
+      <button class="dok-mini" data-action="tdSouborKolegovi" title="Uloží tento dokument do souboru .json — kolega ho otevře tlačítkem 📂 Načíst nebo přetažením do okna">📤 Soubor pro kolegu</button>
       <button class="btn btn-gold" data-action="tdNahled" title="Náhled PDF, tisk a uložení (Ctrl+P)">📄 Náhled PDF</button>
     </span>
   </div>
@@ -6760,6 +6761,169 @@ function vlozitPodlePoradi(sirka, od) {
   return mapa;
 }
 
+// ── Chrániče při vložení z Excelu (v9.133) ─────────────────────────────
+// Hlášení kolegy: tabulka převedená ze schématu se vložila dobře, jen
+// chrániče skončily jako obyčejné jističe. Každý řádek proto dostane DRUH:
+//   obvod   — jistič, pojistka… (jako dosud),
+//   chranic — vloží se jako hlavička chrániče (jako „+ Přidat chránič"),
+//   rcbo    — jistič s chráničem; vloží se jako OBVOD (Zs mez ho umí).
+// Rozpoznání je jen návrh — v náhledu ho technik u každého řádku přepne.
+// Řádky za chráničem se vkládají pod něj; pořadí v tabulce = příslušnost,
+// přesně jako u ručně přidaného chrániče. Nic se nepřeskupuje.
+var VLOZIT_NAHLED_MAX = 300;
+var VLOZIT_DRUHY = [
+  { k: 'obvod',   popis: 'obvod' },
+  { k: 'chranic', popis: '🛡 chránič' },
+  { k: 'rcbo',    popis: 'obvod – jistič s chráničem' }
+];
+// Typ chrániče v Ch./Typ: AC, A, F, B+, A-S, „typ A", „A SI"… (bez čísla a lomítka)
+var VLOZIT_TYP_RCD = /^(?:TYP\s*)?(AC|A|F|B)(\+)?(?:\s*[-\s]\s*(?:S|SI|G|KV|R|EV))?$/;
+
+// Malá písmena, bez háčků, mezery zůstanou (pro hledání slov).
+function vlozitText(s) {
+  return String(s == null ? '' : s).toLowerCase()
+    .normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ');
+}
+
+// Hodnoty řádku podle klíčů TEREN_KOLONKY (jen přiřazené sloupce).
+function vlozitRadekHodnoty(radek, mapa) {
+  var o = {};
+  (mapa || []).forEach(function (cil, si) {
+    if (cil === null || cil === undefined) return;
+    var k = TEREN_KOLONKY[cil].klic;
+    var x = String(radek[si] == null ? '' : radek[si]).trim();
+    if (!o[k]) o[k] = x;
+  });
+  return o;
+}
+
+// Text buněk, ve kterých se smí hledat „chránič" nebo „30 mA" — ne v naměřených
+// sloupcích (vybavovací proud „18 mA" není citlivost chrániče).
+function vlozitTextRadku(radek, mapa) {
+  return radek.filter(function (x, si) {
+    var cil = mapa ? mapa[si] : null;
+    return cil === null || cil === undefined || !TEREN_KOLONKY[cil].merene;
+  }).map(function (x) { return String(x == null ? '' : x); }).join('   ');
+}
+
+// Citlivost z textu „30 mA", „0,03 A", „0,03A" → číslo v A, jinak null.
+function vlozitIdnZTextu(s) {
+  var t = String(s == null ? '' : s);
+  var m = t.match(/(\d+(?:[.,]\d+)?)\s*mA\b/i);
+  if (m) return parseFloat(m[1].replace(',', '.')) / 1000;
+  m = t.match(/(?:^|[^\d.,])(0[.,]\d+)\s*A\b/i);
+  if (m) return parseFloat(m[1].replace(',', '.'));
+  return null;
+}
+// Hodnota sloupce IΔn → A (jednotka sloupce v programu, „0,03"). Holé číslo
+// ≥ 1 je v mA (30 → 0,03).
+function vlozitIdnA(s) {
+  var x = vlozitIdnZTextu(s);
+  if (x !== null) return x;
+  var t = String(s == null ? '' : s).trim().replace(',', '.');
+  if (!/^\d+(?:\.\d+)?$/.test(t)) return null;
+  var n = parseFloat(t);
+  return n >= 1 ? n / 1000 : n;
+}
+function vlozitCisloCz(x) {
+  return String(Math.round(x * 10000) / 10000).replace('.', ',');
+}
+// Typ chrániče z Ch./Typ, jinak z textu řádku („typ A") → 'AC' | 'A' | 'F' | 'B' | ''.
+function vlozitTypChranice(ch, text) {
+  var m = String(ch || '').toUpperCase().trim().match(VLOZIT_TYP_RCD);
+  if (m) return m[1];
+  m = vlozitText(text).match(/\btyp\s*(ac|a|f|b)\b/);
+  return m ? m[1].toUpperCase() : '';
+}
+
+// Druh řádku: 'obvod' | 'chranic' | 'rcbo'. Pravidla jistič s chráničem
+// (RCBO) se vyhodnocují JAKO PRVNÍ — jinak by B/A vypadal jako chránič.
+function vlozitJeChranic(radek, mapa) {
+  mapa = mapa || (__vlozeni && __vlozeni.mapa) || [];
+  if (!radek || radek.every(function (x) { return !String(x == null ? '' : x).trim(); })) return 'obvod';
+  var h = vlozitRadekHodnoty(radek, mapa);
+  var ch = String(h.ch || '').trim(), chU = ch.toUpperCase();
+  var text = vlozitTextRadku(radek, mapa), t = vlozitText(text);
+  var chLomitko = /[A-Z0-9]\s*\/\s*(AC|A|F|B)\b/.test(chU);
+  var chRcbo = /^[BCDKZ]\s*\d+(?:[.,]\d+)?\s+(AC|A|F|B)$/.test(chU);           // „B16 A"
+  var rcboText = /\brcbo\b|\bfi\s*\/\s*(ls|fa)\b|\bls\s*\/\s*fi\b|jistic\w*\s+s\s+chranic|chranic\w*\s+s\s+jistic|\bs\s+nadproudov/.test(t);
+  if (chLomitko || chRcbo || rcboText) return 'rcbo';
+  var chChar = /^[BCDKZ]\s*(\d+(?:[.,]\d+)?\s*A?)?$/.test(chU);                 // B, C16, B16A
+  var hasIdn = (h.idn && vlozitIdnA(h.idn) !== null) || vlozitIdnZTextu(text) !== null;
+  var slovo = /chranic|\brcd\b|(^|[^a-z0-9])-?fi\s*-?\d/.test(t);
+  if (VLOZIT_TYP_RCD.test(chU) && chU !== 'B') return 'chranic';             // AC, A, F, B+, A-S…
+  if (slovo && (!chChar || /^B\+?$/.test(chU))) return 'chranic';            // „chránič typ B"
+  if (hasIdn && chChar) return 'rcbo';                                       // B + 30 mA
+  if (hasIdn) return 'chranic';
+  return 'obvod';
+}
+
+// Druhy všech datových řádků — automatické, přebité ruční volbou v náhledu.
+function vlozitDruhy(v) {
+  v = v || __vlozeni;
+  if (!v || !v.radky) return [];
+  var data = v.hlavicka ? v.radky.slice(1) : v.radky;
+  v.druhRucne = v.druhRucne || {};
+  v.druhy = data.map(function (r, ri) {
+    return v.druhRucne[ri] || vlozitJeChranic(r, v.mapa);
+  });
+  return v.druhy;
+}
+
+// Chrániče a obvody pod nimi (pořadí = příslušnost, do dalšího chrániče).
+function vlozitStruktura(druhy) {
+  var chranice = [], pod = [], akt = null;
+  druhy.forEach(function (d, ri) {
+    if (d === 'chranic') { akt = { ri: ri, obvodu: 0 }; chranice.push(akt); pod.push(false); return; }
+    pod.push(!!akt);
+    if (akt) akt.obvodu++;
+  });
+  return { chranice: chranice, pod: pod };
+}
+
+// „s 1 obvodem", „se 14 obvody", „s 5 obvody"
+function vlozitSObvody(n) {
+  var se = function (x) {
+    if (x >= 100) return true;
+    if (x >= 20) return [2, 3, 4, 6, 7].indexOf(Math.floor(x / 10)) >= 0;
+    return [2, 3, 4, 6, 7, 12, 13, 14, 16, 17].indexOf(x) >= 0;
+  };
+  if (!n) return 'bez obvodů';
+  return (se(n) ? 'se ' : 's ') + n + (n === 1 ? ' obvodem' : ' obvody');
+}
+
+function vlozitChranicPopis(v, ri) {
+  var data = v.hlavicka ? v.radky.slice(1) : v.radky;
+  var h = vlozitRadekHodnoty(data[ri] || [], v.mapa);
+  return h.c && !/^\d+$/.test(h.c) ? h.c : (h.n || 'chránič');
+}
+
+// Přebarví řádky náhledu podle druhu — bez překreslení (nabídky zůstanou).
+function vlozitDruhyObnovit() {
+  var v = __vlozeni, tab = document.getElementById('vm-tabulka');
+  if (!v || !tab) return;
+  var druhy = vlozitDruhy(v), s = vlozitStruktura(druhy);
+  Array.prototype.forEach.call(tab.querySelectorAll('tbody tr[data-ri]'), function (tr) {
+    var ri = parseInt(tr.dataset.ri, 10), d = druhy[ri];
+    var sel = tr.querySelector('.vm-druh');
+    if (sel && sel.value !== d) sel.value = d;
+    tr.dataset.druh = d;
+    tr.style.background = d === 'chranic' ? 'rgba(43,87,154,.16)' : '';
+    tr.style.fontWeight = d === 'chranic' ? '600' : '';
+    var prvni = tr.children[1];
+    if (prvni) prvni.style.paddingLeft = s.pod[ri] ? '1.3rem' : '';
+  });
+}
+
+function vlozitDruhZmena(sel) {
+  var v = __vlozeni;
+  if (!v) return;
+  v.druhRucne = v.druhRucne || {};
+  v.druhRucne[parseInt(sel.dataset.ri, 10)] = sel.value;
+  vlozitDruhyObnovit();
+  vlozitMereniHlasky();
+}
+
 function vlozitMereniOtevrit(o) {
   o = o || {};
   __vlozeni = { tbody: o.tbody || null, od: o.od || 0, startTr: o.startTr || null };
@@ -6804,6 +6968,7 @@ function vlozitMereniRozebrat() {
   if (!mapa) mapa = vlozitPodlePoradi((radky[0] || []).length, (__vlozeni && __vlozeni.od) || 1);
   __vlozeni = __vlozeni || {};
   __vlozeni.radky = radky;
+  __vlozeni.druhRucne = {};
   __vlozeni.hlavicka = hlavicka;
   __vlozeni.mapa = mapa;
   __vlozeni.zXlsx = false;
@@ -6824,6 +6989,24 @@ function vlozitMereniHlasky() {
     (v.hlavicka ? ' — první řádek se bere jako <strong>hlavička</strong> a sloupce se podle ní spárovaly samy.'
                 : ' — hlavička nenalezena, sloupce se mapují podle pořadí. Zkontrolujte je.') + '</div>';
   if (!mapovano) h += '<div class="warn-box">Žádný sloupec není přiřazený — nic by se nevložilo.</div>';
+  // Chrániče — jeden nenápadný řádek, co program poznal (přepne se u řádku).
+  var druhy = vlozitDruhy(v), st = vlozitStruktura(druhy);
+  var rcbo = druhy.filter(function (d) { return d === 'rcbo'; }).length;
+  if (st.chranice.length || rcbo) {
+    var txt = '';
+    if (st.chranice.length === 1) {
+      txt = 'Poznáno 1 chránič (' + esc(vlozitChranicPopis(v, st.chranice[0].ri)) + ') ' + vlozitSObvody(st.chranice[0].obvodu) + '.';
+    } else if (st.chranice.length) {
+      var n = st.chranice.length;
+      txt = 'Poznány ' + n + ' ' + (n <= 4 ? 'chrániče' : 'chráničů') + ': ' + st.chranice.map(function (c) {
+        return esc(vlozitChranicPopis(v, c.ri)) + ' ' + vlozitSObvody(c.obvodu);
+      }).join(', ') + '.';
+      if (n > 4) txt = txt.replace('Poznány', 'Poznáno');
+    }
+    if (rcbo) txt += (txt ? ' ' : '') + 'Jistič s chráničem: ' + rcbo + ' (vloží se jako obvod).';
+    h += '<div id="vm-chranice" style="font-size:.75rem;color:var(--muted);margin:.2rem 0 .4rem">🛡 ' + txt +
+      ' Co je špatně, přepněte v prvním sloupci.</div>';
+  }
   // Sloupec Č. přepíše automatické číslování — ať to není překvapení.
   if (v.mapa.indexOf(0) >= 0 && vlozitCilovyTbody() &&
       typeof autoCislovaniProTbody === 'function' && autoCislovaniProTbody(vlozitCilovyTbody())) {
@@ -6846,7 +7029,9 @@ function vlozitMereniNahled() {
     '<div style="max-height:260px;overflow:auto;border:1px solid var(--border);border-radius:4px">' +
     '<table id="vm-tabulka" style="width:100%;min-width:max-content;border-collapse:collapse;' +
     'font-size:.72rem;font-family:var(--sans)">' +
-    '<thead><tr style="background:#1F497D;color:#fff">';
+    '<thead><tr style="background:#1F497D;color:#fff">' +
+    '<th style="padding:.25rem .3rem;text-align:left;font-weight:500;white-space:nowrap">Druh řádku</th>';
+  vlozitDruhy(v);
   v.mapa.forEach(function (cil, i) {
     h += '<th style="padding:.25rem .3rem;text-align:left;font-weight:500">' +
       '<select class="vm-mapa" data-i="' + i + '" autocomplete="off" ' +
@@ -6857,23 +7042,31 @@ function vlozitMereniNahled() {
       }).join('') + '</select></th>';
   });
   h += '</tr></thead><tbody>';
-  data.slice(0, 12).forEach(function (r) {
-    h += '<tr style="border-bottom:1px solid var(--border)">';
+  // Všechny řádky (dřív prvních 12) — u každého jde přepnout druh.
+  data.slice(0, VLOZIT_NAHLED_MAX).forEach(function (r, ri) {
+    h += '<tr data-ri="' + ri + '" style="border-bottom:1px solid var(--border)">' +
+      '<td style="padding:.15rem .3rem"><select class="vm-druh" data-ri="' + ri + '" autocomplete="off" ' +
+      'title="Jak se řádek vloží" style="font-size:.7rem;padding:.1rem;width:auto;min-width:0;max-width:11rem">' +
+      VLOZIT_DRUHY.map(function (d) {
+        return '<option value="' + d.k + '"' + (v.druhy[ri] === d.k ? ' selected' : '') + '>' + esc(d.popis) + '</option>';
+      }).join('') + '</select></td>';
     v.mapa.forEach(function (cil, i) {
       h += '<td style="padding:.2rem .3rem' + (cil === null ? ';color:var(--muted);text-decoration:line-through' : '') +
         '">' + esc(r[i] || '') + '</td>';
     });
     h += '</tr>';
   });
-  if (data.length > 12) h += '<tr><td colspan="' + v.mapa.length + '" style="padding:.25rem .4rem;color:var(--muted)">… a dalších ' + vlozitPocetRadku(data.length - 12) + '</td></tr>';
+  if (data.length > VLOZIT_NAHLED_MAX) h += '<tr><td colspan="' + (v.mapa.length + 1) + '" style="padding:.25rem .4rem;color:var(--muted)">… a dalších ' + vlozitPocetRadku(data.length - VLOZIT_NAHLED_MAX) + '</td></tr>';
   h += '</tbody></table></div>';
   nahled.innerHTML = h;
+  vlozitDruhyObnovit();
   vlozitMereniHlasky();
 }
 
 function vlozitMereniHlavicka() {
   if (!__vlozeni || !__vlozeni.radky) return;
   __vlozeni.hlavicka = document.getElementById('vm-hlavicka').checked;
+  __vlozeni.druhRucne = {};          // datové řádky se posunuly
   // Zapnutím hlavičky se sloupce spárují podle ní, vypnutím podle pořadí.
   var podle = __vlozeni.hlavicka ? vlozitPodleHlavicky(__vlozeni.radky[0] || []) : null;
   __vlozeni.mapa = podle || vlozitPodlePoradi((__vlozeni.radky[0] || []).length, __vlozeni.od || 1);
@@ -6891,12 +7084,13 @@ function vlozitMereniMapa(sel) {
   var tab = document.getElementById('vm-tabulka');
   if (tab) {
     Array.prototype.forEach.call(tab.querySelectorAll('tbody tr'), function (tr) {
-      var td = tr.children[i];
+      var td = tr.children[i + 1];        // první sloupec je druh řádku
       if (!td || td.colSpan > 1) return;
       td.style.color = vypnuty ? 'var(--muted)' : '';
       td.style.textDecoration = vypnuty ? 'line-through' : '';
     });
   }
+  vlozitDruhyObnovit();      // jiný sloupec může změnit, co je chránič
   vlozitMereniHlasky();
 }
 
@@ -6929,6 +7123,95 @@ function vlozitCiloveRadky(tbody) {
   });
 }
 
+// Nový řádek obvodu, nebo hlavička chrániče i s podřádky (jako „+ Přidat
+// chránič"). Bez `pred` na konec tabulky, jinak před daný řádek.
+function vlozitNovyRadek(tbody, hlava, pred) {
+  var rows;
+  if (hlava) {
+    var karta = tbody.closest('[data-rozvadec-id]');
+    var dummy = document.createElement('button');
+    dummy.dataset.rozvadec = karta ? karta.getAttribute('data-rozvadec-id') : '';
+    var pocet = tbody.children.length;
+    addRcdRow(dummy);
+    rows = Array.prototype.slice.call(tbody.children, pocet);
+  } else {
+    addMereniRowTo(tbody);
+    rows = [tbody.lastElementChild];
+  }
+  if (pred && pred.parentNode === tbody) rows.forEach(function (x) { tbody.insertBefore(x, pred); });
+  return { tr: rows[0], rows: rows };
+}
+
+// Vyjme prázdný řádek (u chrániče i jeho podřádky) a zapamatuje si místo pro ZPĚT.
+function vlozitOdebratRadek(tr) {
+  var tbody = tr.parentNode, rows = [tr];
+  if (tr.dataset.rowtype === 'rcd-header' && tr.dataset.rcdGroup) {
+    var x = tr.nextElementSibling;
+    while (x && x.dataset.rowtype === 'rcd-mereni' && x.dataset.rcdGroup === tr.dataset.rcdGroup) { rows.push(x); x = x.nextElementSibling; }
+  }
+  var dalsi = rows[rows.length - 1].nextElementSibling;
+  rows.forEach(function (r) { tbody.removeChild(r); });
+  return { tbody: tbody, rows: rows, dalsi: dalsi };
+}
+
+// Zapíše jeden řádek z Excelu. Obvod jako dosud (beze změny), chránič do
+// hlavičky chrániče: typ do rozbalovátka, IΔn v A („0,03"), „0,03A" ze
+// sloupce A se vezme jako IΔn. U jističe s chráničem (B + 30 mA) Ch. „B/A".
+function vlozitZapsatRadek(tr, r, v, druh, zmeny) {
+  var zapsat = function (inp, hodnota) {
+    if (!inp || !hodnota) return;
+    // Vlastní měřicí list tiskne minulé hodnoty v závorce jako vodítko.
+    // Vrátit je zpátky jako naměřené by byla cizí čísla ve zprávě.
+    if (v.zXlsx && /^\(.*\)$/.test(hodnota)) return;
+    zmeny.push({ inp: inp, stara: inp.value });
+    inp.value = hodnota;
+    inp.dispatchEvent(new Event('input', { bubbles: true }));
+  };
+  var h = vlozitRadekHodnoty(r, v.mapa);
+  var text = vlozitTextRadku(r, v.mapa);
+  var idnA = null, chZapis = null, aJeIdn = false;
+  if (druh === 'chranic') {
+    aJeIdn = vlozitIdnZTextu(h.a) !== null;
+    idnA = h.idn ? vlozitIdnA(h.idn) : null;
+    if (idnA === null) idnA = vlozitIdnZTextu(text);
+  } else if (druh === 'rcbo' && /^[BCDKZ]\s*(\d+(?:[.,]\d+)?\s*A?)?$/i.test(String(h.ch || '').trim())) {
+    idnA = h.idn ? vlozitIdnA(h.idn) : null;
+    if (idnA === null) idnA = vlozitIdnZTextu(text);
+    if (idnA !== null) {
+      var bez = r.filter(function (x, si) { return !(v.mapa[si] !== null && TEREN_KOLONKY[v.mapa[si]].klic === 'ch'); });
+      var typ = vlozitTypChranice('', bez.join(' '));
+      if (!typ) bez.some(function (x) { var m = String(x || '').trim().toUpperCase().match(VLOZIT_TYP_RCD); if (m && m[0] !== 'B') typ = m[1]; return !!typ; });
+      chZapis = String(h.ch).trim().replace(/\s*A$/i, '') + (typ ? '/' + typ : '');
+    }
+  }
+  v.mapa.forEach(function (cil, si) {
+    if (cil === null) return;
+    var k = TEREN_KOLONKY[cil].klic;
+    // Prázdná buňka z Excelu NEMAŽE, co už v řádku je — kdo vkládá
+    // rozpis bez naměřených hodnot, nepřijde o to, co naměřil.
+    var hodnota = String(r[si] == null ? '' : r[si]).trim();
+    if (druh === 'chranic' && (k === 'ch' || k === 'idn' || (k === 'a' && aJeIdn))) return;
+    if (idnA !== null && k === 'idn') return;
+    if (chZapis !== null && k === 'ch') return;
+    zapsat(fillCilovyInput(tr, cil), hodnota);
+  });
+  if (idnA !== null) zapsat(fillCilovyInput(tr, 5), vlozitCisloCz(idnA));
+  if (chZapis !== null) zapsat(fillCilovyInput(tr, 3), chZapis);
+  if (druh === 'chranic') {
+    var sel = tr.querySelector('select');
+    var typR = vlozitTypChranice(h.ch, text);
+    if (sel && typR && sel.value !== typR) {
+      zmeny.push({ sel: sel, stara: sel.value });
+      sel.value = typR;
+      rcdTypZmenen(sel);
+    }
+    // Označení chrániče („FI20") ve sloupci Č. přepíše číslování — když
+    // název chybí, zůstane aspoň v názvu.
+    var nazev = fillCilovyInput(tr, 1);
+    if (nazev && !nazev.value && h.c && !/^\d+$/.test(h.c)) zapsat(nazev, h.c);
+  }
+}
+
 function vlozitMereniPotvrdit() {
   var v = __vlozeni;
   if (!v || !v.radky || !v.radky.length) return;
@@ -6952,41 +7235,53 @@ function vlozitMereniPotvrdit() {
     while (od > 0 && vlozitPrazdnyRadek(cile[od - 1])) od--;
   }
 
-  var zmeny = [], nove = [];
+  var zmeny = [], nove = [], odebrane = [];
+  var druhy = vlozitDruhy(v);
+  var ci = od, novych = 0, chranicu = 0;
   data.forEach(function (r, ri) {
-    var tr = cile[od + ri];
-    if (!tr) {
-      addMereniRowTo(tbody);
-      tr = tbody.lastElementChild;
-      nove.push(tr);
+    var druh = druhy[ri] || 'obvod';
+    var chceHlavu = druh === 'chranic';
+    var tr = cile[ci];
+    if (tr) {
+      // Cílový řádek jiného druhu (obvod × chránič): prázdný se nahradí,
+      // vyplněný zůstane a nový řádek se vloží před něj.
+      if ((tr.dataset.rowtype === 'rcd-header') !== chceHlavu) {
+        var nahrada = vlozitNovyRadek(tbody, chceHlavu, tr);
+        nove = nove.concat(nahrada.rows);
+        novych++;
+        if (vlozitPrazdnyRadek(tr)) { odebrane.push(vlozitOdebratRadek(tr)); ci++; }
+        tr = nahrada.tr;
+      } else ci++;
+    } else {
+      var n = vlozitNovyRadek(tbody, chceHlavu, null);
+      nove = nove.concat(n.rows);
+      novych++;
+      tr = n.tr;
     }
-    v.mapa.forEach(function (cil, si) {
-      if (cil === null) return;
-      var hodnota = String(r[si] == null ? '' : r[si]).trim();
-      var inp = fillCilovyInput(tr, cil);
-      if (!inp) return;
-      // Prázdná buňka z Excelu NEMAŽE, co už v řádku je — kdo vkládá
-      // rozpis bez naměřených hodnot, nepřijde o to, co naměřil.
-      if (!hodnota) return;
-      // Vlastní měřicí list tiskne minulé hodnoty v závorce jako vodítko.
-      // Vrátit je zpátky jako naměřené by byla cizí čísla ve zprávě.
-      if (v.zXlsx && /^\(.*\)$/.test(hodnota)) return;
-      zmeny.push({ inp: inp, stara: inp.value });
-      inp.value = hodnota;
-      inp.dispatchEvent(new Event('input', { bubbles: true }));
-    });
+    if (chceHlavu) chranicu++;
+    vlozitZapsatRadek(tr, r, v, druh, zmeny);
   });
   renumberRows(tbody);
   if (typeof stromZajistitTlacitka === 'function') stromZajistitTlacitka();
   window.__formDirty = true;
   if (typeof updateUlozitStav === 'function') updateUlozitStav();
   vlozitMereniZavrit();
-  showToast('📋 Vloženo ' + vlozitPocetRadku(data.length) + (nove.length ? ', z toho ' + nove.length + ' nových' : '') + '.', {
+  showToast('📋 Vloženo ' + vlozitPocetRadku(data.length) + (novych ? ', z toho ' + novych + ' nových' : '') +
+    (chranicu ? ' (' + chranicu + ' ' + (chranicu === 1 ? 'chránič' : chranicu <= 4 ? 'chrániče' : 'chráničů') + ')' : '') + '.', {
     timeout: 9000,
     actionLabel: '↩ ZPĚT',
     action: function () {
-      zmeny.forEach(function (z) { z.inp.value = z.stara; });
+      zmeny.slice().reverse().forEach(function (z) {
+        if (z.sel) { z.sel.value = z.stara; rcdTypZmenen(z.sel); }
+        else z.inp.value = z.stara;
+      });
       nove.forEach(function (tr) { if (tr.parentNode) tr.parentNode.removeChild(tr); });
+      odebrane.slice().reverse().forEach(function (o) {
+        o.rows.forEach(function (x) {
+          if (o.dalsi && o.dalsi.parentNode === o.tbody) o.tbody.insertBefore(x, o.dalsi);
+          else o.tbody.appendChild(x);
+        });
+      });
       renumberRows(tbody);
       if (typeof stromZajistitTlacitka === 'function') stromZajistitTlacitka();
       showToast('Vložení vzato zpět');
@@ -7012,6 +7307,7 @@ function vlozitCilovyTbody() {
 document.addEventListener('change', function (e) {
   if (!e.target) return;
   if (e.target.classList && e.target.classList.contains('vm-mapa')) vlozitMereniMapa(e.target);
+  if (e.target.classList && e.target.classList.contains('vm-druh')) vlozitDruhZmena(e.target);
   if (e.target.id === 'vm-rozvadec') vlozitMereniHlasky();
   if (e.target.id === 'vm-soubor') vlozitSouborZmena(e.target);
   if (e.target.id === 'vm-list') vlozitListVybrat(parseInt(e.target.value, 10) || 0);
@@ -7258,6 +7554,7 @@ function vlozitListVybrat(i) {
   v.hlavicka = true;
   v.mapa = vlozitPodleHlavicky(v.radky[0]);
   v.zXlsx = true;
+  v.druhRucne = {};
   document.getElementById('vm-hlavicka').checked = true;
   document.getElementById('vm-text').value = '';
   // List se jmenuje jako rozváděč, ze kterého vznikl — spárovat je.
@@ -8337,6 +8634,8 @@ window.addEventListener('drop', function(e) {
       var data = JSON.parse(ev.target.result);
       if (data && data._format === 'revize-el-plan') {
         planNacistData(data);
+      } else if (jeSouborDokumentu(data)) {
+        dokSouborNacist(data);
       } else if (jeBalikZprav(data)) {
         zpravyImportBalik(data);
       } else if (data && (data._format === 'revize-el-backup' || (Array.isArray(data.archiv) && !data.ev_cislo))) {
@@ -19906,6 +20205,8 @@ function zpracovatZpravuData(D) {
   if (D && D._format === 'revize-el-plan') { planNacistData(D); return; }
   // Balík zpráv (v9.87) — jinak by propadl až do nacistData() jako jedna zpráva.
   if (jeBalikZprav(D)) { zpravyImportBalik(D); return; }
+  // Dokument z Tvorby dokumentace (v9.134) — jde do DOK, ne do archivu revizí.
+  if (jeSouborDokumentu(D)) { dokSouborNacist(D); return; }
   var looksLikeBackup =
     Array.isArray(D.archiv) ||
     Array.isArray(D.odberatele) ||
@@ -20983,6 +21284,7 @@ function importDatabaze() {
       try {
         var nactene = JSON.parse(ev.target.result);
         if (nactene && nactene._format === 'revize-el-plan') planNacistData(nactene);
+        else if (jeSouborDokumentu(nactene)) dokSouborNacist(nactene);
         else obnovZeZalohy(nactene);
       } catch (err) {
         alert('Chyba při čtení zálohy: ' + err.message);
@@ -23965,12 +24267,17 @@ function importSouboryZprav(files) {
     return;
   }
   var polozky = [], chybne = 0, hotovo = 0;
+  var dokSoubory = { _format: DOK_SOUBOR_FORMAT, dokumenty: [], objekty: [] };
   seznam.forEach(function (f) {
     var r = new FileReader();
     r.onload = function (ev) {
       try {
         var d = JSON.parse(ev.target.result);
-        if (jeBalikZprav(d)) (d.zpravy || []).forEach(function (x) {
+        if (jeSouborDokumentu(d)) {
+          dokSoubory.dokumenty = dokSoubory.dokumenty.concat(d.dokumenty || []);
+          dokSoubory.objekty = dokSoubory.objekty.concat(d.objekty || []);
+        }
+        else if (jeBalikZprav(d)) (d.zpravy || []).forEach(function (x) {
           var p = zpravaPolozka(x); if (p) polozky.push(p);
         });
         else {
@@ -23986,7 +24293,8 @@ function importSouboryZprav(files) {
   function dokonci() {
     if (chybne) showToast(chybne + ' ze souborů nešlo přečíst jako zprávu — přeskočeny.');
     if (polozky.length) zpravyImportDavka(polozky, seznam.length + ' souborů');
-    else alert('Ani jeden z vybraných souborů neobsahuje zprávu.');
+    if (dokSoubory.dokumenty.length) dokSouborNacist(dokSoubory);
+    if (!polozky.length && !dokSoubory.dokumenty.length) alert('Ani jeden z vybraných souborů neobsahuje zprávu.');
   }
 }
 
@@ -28722,6 +29030,113 @@ async function dokKopirovat(uid) {
     actionLabel: 'Otevřít', action: function () { if (typeof dokOtevrit === 'function') dokOtevrit(n.uid); } });
 }
 
+// ── Soubor pro kolegu (v9.134) ──────────────────────────────────────────
+// Jako „📤 Soubor pro kolegu" u revizí: dokument se uloží do .json a kolega
+// ho načte tlačítkem 📂 Načíst nebo přetažením do okna. Jde rovnou do
+// úložiště tvorby dokumentace (DOK), **ne do archivu revizí**. Rozvaděč si
+// s sebou veze svůj objekt (složku), aby u kolegy nespadl do „Bez objektu".
+var DOK_SOUBOR_FORMAT = 'revize-el-dokumenty';
+
+function jeSouborDokumentu(d) {
+  return !!(d && d._format === DOK_SOUBOR_FORMAT && Array.isArray(d.dokumenty));
+}
+
+function dokSouborNazev(x) {
+  var c = String(x.cislo || '').trim() || 'dokument';
+  return c.replace(/[^\w.-]+/g, '_') + '_' + new Date().toISOString().slice(0, 10) + '.json';
+}
+
+// Soubor se skládá HNED z formuláře, ne až po uložení: čekání na IndexedDB
+// by prohlížeči sebralo „klepnutí uživatele" a druhé stažení by Chrome
+// zablokoval jako „automatické stahování více souborů". Uložení běží vedle.
+function dokSouborKolegovi() {
+  var o = window.__dokOtevreny; if (!o) return;
+  var data = DOK_TYPY[o.typ].cist(dokForm()), ted = new Date().toISOString();
+  var x = { uid: o.uid, typ: o.typ, cislo: String(data.cislo || '').trim(), vytvoreno: o.vytvoreno || ted, upraveno: ted, data: data };
+  dokUlozitOtevreny();
+  var objekty = [];
+  var oid = x.data && x.data.objekt;
+  if (oid) { var ob = dokObjNajit(oid); if (ob) objekty.push(dokKopie(ob)); }
+  var soubor = {
+    _format: DOK_SOUBOR_FORMAT,
+    verze: 1,
+    vytvoreno: new Date().toISOString(),
+    odesilatel: ((STORE.technik || {}).jmeno || ''),
+    dokumenty: [dokKopie(x)],
+    objekty: objekty
+  };
+  var blob = new Blob([JSON.stringify(soubor, null, 2)], { type: 'application/json' });
+  Promise.resolve(ulozitSoubor(blob, dokSouborNazev(x))).then(function (ok) {
+    if (ok === false) return;
+    showToast('Uloženo: ' + (x.cislo || 'dokument') + ' (' + Math.max(1, Math.round(blob.size / 1024)) +
+      ' kB). Kolega ho otevře tlačítkem 📂 Načíst nebo přetažením do okna.', { timeout: 8000 });
+  });
+}
+
+async function dokSouborNacist(data) {
+  await dokNacist();
+  var polozky = (data.dokumenty || []).filter(function (x) {
+    return x && typeof x === 'object' && DOK_TYPY[x.typ] && x.data && typeof x.data === 'object';
+  }).map(dokKopie);
+  if (!polozky.length) { alert('V souboru není žádný dokument, který by šel načíst.'); return; }
+  // Za otevřený se bere jen dokument v editoru, který je právě na obrazovce
+  // (__dokOtevreny po odchodu z editoru v paměti zůstává).
+  var edit = document.getElementById('screen-dok-form');
+  var otevreny = (window.__dokOtevreny && edit && edit.classList.contains('active')) ? window.__dokOtevreny.uid : '';
+  var nove = [], prepsat = [], vynech = 0;
+  polozky.forEach(function (x) {
+    if (!x.uid) x.uid = dokUid();
+    // Otevřený dokument přepsat nejde — formulář ho drží v paměti a další
+    // uložení by verzi ze souboru přepsalo (totéž pravidlo jako u revizí).
+    if (x.uid === otevreny) { vynech++; return; }
+    var i = -1;
+    DOK.dokumenty.forEach(function (y, j) { if (y.uid === x.uid) i = j; });
+    if (i >= 0) prepsat.push({ x: x, i: i }); else nove.push(x);
+  });
+  if (!nove.length && !prepsat.length) {
+    alert('Soubor obsahuje jen dokument, který máte právě otevřený — přepsat ho nejde.\nZavřete ho nejdřív (← Seznam dokumentů).');
+    return;
+  }
+  var popis = polozky.map(function (x) { return (x.cislo || '(bez čísla)') + ' – ' + DOK_TYPY[x.typ].nazev; }).join('\n• ');
+  if (!confirm('Načíst do Tvorby dokumentace?' + (data.odesilatel ? '\n(od: ' + data.odesilatel + ')' : '') +
+      '\n\n• ' + popis + '\n\n' +
+      'Nových: ' + nove.length + (prepsat.length ? '\nUž ho máte (tentýž dokument): ' + prepsat.length : '') +
+      (vynech ? '\nVynechá se: ' + vynech + ' — máte ho otevřený' : ''))) return;
+  var prepisovat = false;
+  if (prepsat.length) {
+    prepisovat = confirm('Tentýž dokument už máte uložený.\n\nOK = PŘEPSAT ho verzí ze souboru\nZrušit = NECHAT svůj' +
+      (nove.length ? ' a přidat jen nové' : ' — nenačte se nic'));
+    if (!prepisovat && !nove.length) return;
+  }
+  var zaloha = dokKopie({ dokumenty: DOK.dokumenty, rozvObjekty: DOK.rozvObjekty || [] });
+  // Objekty (složky) rozvaděčů: chybějící se přidá, existující se nemění.
+  (data.objekty || []).forEach(function (ob) {
+    if (ob && ob.id && !dokObjNajit(ob.id)) dokObjekty().push(dokKopie(ob));
+  });
+  if (prepisovat) prepsat.forEach(function (t) { DOK.dokumenty[t.i] = t.x; });
+  for (var k = nove.length - 1; k >= 0; k--) DOK.dokumenty.unshift(nove[k]);
+  await dokZapsat();
+  var typ = (nove[0] || prepsat[0].x).typ;
+  // Z rozepsané zprávy nebo dokumentu se neodchází — seznam se jen nabídne.
+  var akt = document.querySelector('.screen.active'), aktId = akt ? akt.id : '';
+  var prace = aktId === 'screen-form' || aktId === 'screen-dok-form';
+  if (!prace) dokOtevritSeznam(typ);
+  var kolik = nove.length + (prepisovat ? prepsat.length : 0);
+  if (prace) showToast('Načteno do Tvorby dokumentace: ' + kolik + (kolik === 1 ? ' dokument' : (kolik < 5 ? ' dokumenty' : ' dokumentů')) +
+    '. Najdete ho v seznamu „' + DOK_TYPY[typ].nazev + '".', { timeout: 10000 });
+  else showToast('Načteno do Tvorby dokumentace: ' + kolik + (kolik === 1 ? ' dokument' : (kolik < 5 ? ' dokumenty' : ' dokumentů')) + '.', {
+    actionLabel: 'ZPĚT', timeout: 10000,
+    action: async function () {
+      await dokNacist();
+      DOK.dokumenty = zaloha.dokumenty;
+      DOK.rozvObjekty = zaloha.rozvObjekty;
+      await dokZapsat();
+      dokPoNacteniZJinehoOkna();
+      showToast('Načtení vzato zpět.');
+    }
+  });
+}
+
 // ── Objekty (složky) v seznamu — rozvaděče jedné stavby pohromadě ───────
 // Jako složky v Plánu revizí a v Průzkumníku: 🏠 objekt, pod ním jeho
 // rozvaděče (podle stromu napájení — hlavní nahoře, podružné odsazené),
@@ -29911,6 +30326,7 @@ TD_AKCE.tdZpetNaSeznam = function () {
   var typ = window.__dokOtevreny ? window.__dokOtevreny.typ : __dokTyp;
   dokDopsat().then(function () { dokOtevritSeznam(typ); });
 };
+TD_AKCE.tdSouborKolegovi = function () { dokSouborKolegovi(); };
 TD_AKCE.tdUlozit = function () { dokUlozitOtevreny().then(function () { showToast('💾 Dokument uložen ✓'); }); };
 TD_AKCE.tdNahled = function () { if (typeof dokNahled === 'function') dokNahled(); };
 TD_AKCE.tdCisloDalsi = function () {

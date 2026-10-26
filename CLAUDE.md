@@ -200,7 +200,7 @@ Revize EL je single-page PWA (HTML + JS + service worker). Obsah se cachuje
 v prohlížeči přes `sw.js`, takže uživatel nevidí změny, dokud se neinvalidně
 cache.
 
-**Aktuální verze: v9.131 · 2026-10-22**
+**Aktuální verze: v9.134 · 2026-10-25**
 
 ## Povinné při každé změně kódu před commitem
 
@@ -679,6 +679,34 @@ ruční kód, restart, číslování, kopie, vlastní vzor, PDF bez vysvětlivek
 záloha a obnova, dvě okna, rozbor seznamu prostorů a **oddělení**: protokol
 není v archivu, naposledy otevřených, plánu ani hledání a data revizí jsou
 po práci s protokoly **bajtově stejná**). Karta v Novinkách se nedělala.
+
+## Tvorba dokumentace: „📤 Soubor pro kolegu" (v9.134)
+
+Pokyn uživatele 2026-10-25: „ve tvorbě dokumentace vedle tlačítek uložit
+i tlačítko soubor pro kolegu, jako máme i u revizí." V liště editoru
+dokumentu (`#screen-dok-form .dok-lista-akce`) hned za 💾 Uložit —
+platí pro všechny typy (protokol vnějších vlivů, DBO, PSC).
+
+- **Formát `revize-el-dokumenty`** (`DOK_SOUBOR_FORMAT`, `jeSouborDokumentu`):
+  `{ _format, verze: 1, vytvoreno, odesilatel, dokumenty: [celá položka DOK],
+  objekty: [objekt rozvaděče, je-li v nějakém] }`. Název `POUVV-0001_RRRR-MM-DD.json`.
+- **Soubor se skládá HNED z formuláře** (`cist(dokForm())`), uložení běží
+  vedle — čekání na IndexedDB před stažením by sebralo klepnutí uživatele.
+  (Pozor v testech: `ulozitSoubor` má pojistku 1,5 s proti dvojímu stažení.)
+- **Načtení** (`dokSouborNacist`) poznají všechny cesty importu: přetažení
+  (i víc souborů naráz — `importSouboryZprav`), hlavní 📂 Načíst
+  (`zpracovatZpravuData`) i obnova zálohy (`importDatabaze`). Jde **do DOK,
+  nikdy do archivu revizí** (test: data revizí bajtově stejná).
+- Identita = `uid`: nový se přidá, tentýž se zeptá **přepsat × nechat svůj**;
+  **dokument otevřený v editoru na obrazovce** se nepřepíše; chybějící objekt
+  se založí, existující se nemění; **ZPĚT / Ctrl+Z** vrátí dokumenty i objekty.
+  Po načtení se otevře seznam typu — **z rozepsané zprávy nebo dokumentu se
+  neodchází**, jen hláška.
+- Do Novinek se nedělalo.
+
+Test: `testy/test-dok-soubor.js` (23 kontrol — dva prohlížeče, protokol
+i rozvaděč s objektem, přetažení i Načíst, přepsat / nechat, ZPĚT,
+otevřený dokument, rozepsaná zpráva, dva soubory naráz, data revizí).
 
 ## Rozvaděč DBO — návrh a dokumentace (v9.127; konfigurátor, `DOK_TYPY.rozv`, blok `ROZVADĚČ DBO`)
 
@@ -1571,13 +1599,13 @@ desce, vložení klepnutím, náhled PDF, okno vlastního pole).
 **Upraveno ve stejném commitu:** `test-rozvadec.js` (tři dlaždice a text
 „ČSN EN IEC 61439-3").
 
-### Výkonový rozvaděč PSC — etapa 5b (dokumenty, schéma, oteplení, mezery; bloky „ROZVADĚČ PSC — etapa 5b")
+### Výkonový rozvaděč PSC — etapa 5b (v9.132; dokumenty, schéma, oteplení, mezery; bloky „ROZVADĚČ PSC — etapa 5b")
 
 Zadání uživatele 2026-10-22. **Všechno přes existující kód DBO** (Dokumenty
-etapy 2, štítek v1.22, schéma etapy 3, fáze a oteplení etapy 4) — PSC má teď
+etapy 2, štítek jako tabulka v9.127, schéma etapy 3, fáze a oteplení etapy 4) — PSC má teď
 tytéž záložky **„🧩 Návrh | ⚡ Schéma | 📄 Dokumenty"** a liší se jen tím, co
 je tady. **DBO se nezměnil** — `test-rozvadec-psc.js` porovnává s v9.131
-(`STARA=e663ab2`) záložku Dokumenty, štítek, všechny listy schématu, výpočet
+(8902 = předchozí verze) záložku Dokumenty, štítek, všechny listy schématu, výpočet
 oteplení, fáze a celé PDF znak po znaku. Normu nikdo nečetl, podklad je
 rešerše: [ověřit] = `rozvCeka()` ve formuláři, do PDF ne jako požadavek normy.
 
@@ -1655,10 +1683,11 @@ Test: `testy/test-rozvadec-psc.js` (+33 kontrol, vymyšlená hala
 přes tři pole, deska s MCCB 250 / 160 A, NH00, odpínačem, DIN segment s
 chráničem a mezerou). V `test-mobil.js` stavy „rozvaděč PSC – záložka
 Dokumenty…", „…záložka Schéma, jednopólový list" a „…výrobní štítek".
-**`test-rozvadec-mezery.js` upraven:** v labu zapisuje uložený rozvaděč až
-po načtení stránky (labový blok jinak klíč `revize_el_dok` neuvidí).
+**`test-rozvadec-mezery.js` upraven:** uložený rozvaděč zapisuje až po načtení
+stránky (přes `localStorage` programu) a stránku znovu načte; součet fází
+porovnává bez prázdného `bezIn` u obou verzí.
 
-### Pohled 3D — etapa 5c (DBO i PSC; blok „ROZVADĚČ — 3D NÁHLED")
+### Pohled 3D — etapa 5c (v9.132; DBO i PSC; blok „ROZVADĚČ — 3D NÁHLED")
 
 Zadání uživatele 2026-10-22. Editor má čtyři záložky **„🧩 Návrh | ⚡ Schéma |
 🧊 3D | 📄 Dokumenty"** (u DBO i PSC). **V 3D se nic needituje**; kreslí se
@@ -2862,7 +2891,59 @@ Test: `test-vlozit-excel.js` (27 kontrol — hlavička i mapování podle pořad
 IΔn proti A, jedna buňka propadne prohlížeči, ruční přemapování a „nevkládat",
 prázdná buňka nepřepíše naměřené, využití prázdných řádků, delší blok, ZPĚT,
 zamčená zpráva, výběr rozváděče, varování u sloupce Č., buňka s odřádkováním
-v uvozovkách).
+v uvozovkách; od v9.133 chrániče — celkem 56 kontrol).
+
+### Chrániče se vloží jako chrániče (v9.133)
+
+Hlášení kolegy 2026-10-23: tabulka převedená ze schématu (výkres RH01,
+Gemini → Excel) se vložila dobře, **jen chrániče skončily jako obyčejné
+jističe**. Každý datový řádek teď má **druh** (`vlozitJeChranic(radek, mapa)`
+→ `obvod` | `chranic` | `rcbo`, `vlozitDruhy`). Platí i pro načtení `.xlsx`
+(v9.93 — táž cesta).
+
+- **Jistič s chráničem (RCBO) se vyhodnocuje JAKO PRVNÍ** a vkládá se jako
+  **obvod** (Zs mez ho umí): Ch./Typ s lomítkem (`B/A`, `C16/A`), `B16 A`,
+  text „RCBO", „FI/LS", „jistič s chráničem", „s nadproudovou…", nebo
+  **charakteristika B/C/D + IΔn v témž řádku**. Pak se do obvodu zapíše
+  Ch. „B/A" (je-li typ chrániče v řádku uveden — „typ A", buňka „A"), jinak
+  „B", a IΔn převedené (viz níž). Ostatní RCBO se zapíšou beze změny.
+- **Chránič:** Ch./Typ je typ chrániče bez čísla a lomítka (`AC`, `A`, `F`,
+  `B+`, `A-S`, `typ A`, `A SI` — `VLOZIT_TYP_RCD`; **samotné `B` ne**, to je
+  charakteristika jističe), nebo IΔn (sloupec, nebo „30 mA" / „0,03 A" /
+  „0,03A" v nenaměřených buňkách) **bez charakteristiky jističe**, nebo slovo
+  „chránič", „RCD", „FI" + číslo v řádku (`FI20`, `-FI1`, poznámka CHRÁNIČ)
+  bez charakteristiky — **výjimka: „B" + slovo chránič = chránič typu B**.
+- **Vloží se jako hlavička chrániče** (`vlozitNovyRadek` → `addRcdRow`, i
+  s podřádky): typ do rozbalovátka (`vlozitTypChranice`; když v řádku není,
+  zůstane výchozí „A" jako u „+ Přidat chránič"), **IΔn v jednotkách sloupce
+  programu, tedy v A** („30 mA" / „30" → „0,03", `vlozitIdnA`) — zadání
+  chtělo mA, ale sloupec IΔn, `dl_idn` i ručně přidaný chránič mají „0,03";
+  „0,03A" ve sloupci A se vezme jako IΔn (In zůstane prázdné), „FI20" ze
+  sloupce Č. jde do názvu, když je prázdný (číslo přepíše auto-číslování).
+  Naměřené hodnoty prázdné. Řádky za chráničem jdou pod něj — pořadí
+  = příslušnost, nic se nepřeskupuje.
+- **Cílový řádek jiného druhu** (prázdný obvod pro chránič a naopak):
+  prázdný se nahradí (`vlozitOdebratRadek`), vyplněný zůstane a nový se vloží
+  před něj. **ZPĚT vrátí i odebrané prázdné řádky** (test: `getData()` po ZPĚT
+  bajtově jako před vložením).
+- **Náhled:** první sloupec **„Druh řádku"** s přepínačem
+  obvod / 🛡 chránič / obvod – jistič s chráničem (`.vm-druh`,
+  `v.druhRucne` — ruční volba přebije rozpoznání, přepnutí náhled
+  nepřekresluje, jen přebarví — `vlozitDruhyObnovit`); chránič je tučně
+  podbarvený, obvody pod ním odsazené. Nad tabulkou jeden řádek
+  `#vm-chranice`: „Poznáno 1 chránič (FI20) se 14 obvody." (`vlozitSObvody`
+  skloňuje s/se). Náhled ukazuje všechny řádky (`VLOZIT_NAHLED_MAX` = 300,
+  dřív 12) — u každého jde přepnout druh. Mapování sloupce posouvá buňky
+  o jedno (`children[i + 1]`).
+- **Bez chrániče se vkládá přesně jako dosud** — test vkládá tentýž blok
+  (B, B/A, 3x16A, B16 A, gG) do předchozí verze (8902) a porovná `getData()`.
+
+Test: `test-vlozit-excel.js` (+26: RH01 se 14 obvody, souhrn, náhled,
+hlavička chrániče a getData, ZPĚT, 11 tvarů Ch./Typ a IΔn, typ v
+rozbalovátku, převod IΔn, RCBO „B"/„C/A", přepínač v náhledu, Zs mez
+nevyhodnotí chránič a RCBO ano, `.xlsx` s chráničem, bez chrániče jako
+v9.132). V `test-mobil.js` stav „modal-vlozit-mereni (chránič)". Novinky
+se nedělaly.
 
 ## Chytrá lupa v Novinkách (v9.100)
 

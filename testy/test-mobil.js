@@ -672,6 +672,11 @@ function vsechnyStavy(zalozky) {
     await __M.otevri('RE-26-0101'); showScreen('form'); switchTab('mereni', aktivniTabBar().querySelector('[data-tab="mereni"]'));
     vlozitMereniOtevrit({ od: 1, text: 'Pračka\tABB\tB\t16\t\t\t3,00\nMyčka\tABB\tB\t16\t\t\t0,90' }); await __M.w(150);
   }));
+  D('modal-vlozit-mereni (chránič)', E(async () => {
+    await __M.otevri('RE-26-0101'); showScreen('form'); switchTab('mereni', aktivniTabBar().querySelector('[data-tab="mereni"]'));
+    vlozitMereniOtevrit({ od: 1, text: 'Č.\tNázev obvodu\tCh./Typ\tA\tIΔn\tPoznámka\nFI20\t\t\t40\t0,03A\tCHRÁNIČ\n21\tZásuvky\tB\t16\t\t\n22\tSvětla\tB\t10\t\t' }); await __M.w(150);
+  }));
+  S[S.length - 1].koren = '#modal-vlozit-mereni';
   D('modal-sp-pristroje', E(async () => { await __M.otevri('RSP-26-0001'); showScreen('form'); spotrPristrojeOtevrit(); await __M.w(100); }));
   D('modal-vnorit', E(async () => { showScreen('home'); otevritVnoritModal(0); await __M.w(100); }));
   D('modal-dok-vzor', E(async () => { await __M.dok(); TD_AKCE.tdVzorZeSkupiny(document.querySelector('.dk-skupina [data-action="tdVzorZeSkupiny"]')); await __M.w(100); }));
