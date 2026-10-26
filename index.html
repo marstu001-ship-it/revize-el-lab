@@ -1979,6 +1979,22 @@ html.dark .rz-polozka.vybrana{background:#3d3410}
 html.dark .rz-banner{background:#3d3410;color:#f0d78a}
 .rz-chyba{background:#fdecea;border:1px solid #e6a59d;color:#9b2c1f;padding:.45rem .7rem;margin-bottom:.5rem;font-size:.84rem;border-radius:3px;font-weight:600}
 html.dark .rz-chyba{background:#3a1f1c;color:#f3b0a6;border-color:#6b2c25}
+.rz-predlohy{display:flex;flex-direction:column;gap:3px;margin:0 0 5px}
+.rz-predloha-r{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem;font-size:.75rem;padding:3px 6px;background:var(--bg);border:1px solid var(--border);border-radius:3px}
+.rzp-op-l{display:inline-flex;align-items:center;gap:.3rem}
+.rzp-op-l input{width:110px}
+.rzp-vyber{text-align:center;padding:1.4rem .8rem;border:2px dashed var(--border);border-radius:4px;margin:.4rem 0}
+.rzp-editor{position:relative;margin:.5rem auto;max-width:100%;touch-action:none;user-select:none}
+.rzp-editor canvas{display:block;max-width:100%}
+.rzp-ram{position:absolute;border:2px solid #e08a00;outline:1px solid rgba(0,0,0,.5);background-color:rgba(224,138,0,.06);cursor:move;touch-action:none;
+  background-image:linear-gradient(to right,rgba(255,200,0,.9) 1px,transparent 1px);background-repeat:repeat-x}
+.rzp-zac,.rzp-kon{position:absolute;top:2px;font-size:.7rem;font-weight:700;color:#fff;background:#e08a00;padding:0 4px;border-radius:2px;white-space:nowrap;pointer-events:none}
+.rzp-zac{left:2px}.rzp-kon{right:2px}
+.rzp-h{position:absolute;width:22px;height:22px;background:#fff;border:3px solid #e08a00;border-radius:50%;touch-action:none}
+.rzp-h[data-roh="tl"]{left:-12px;top:-12px;cursor:nwse-resize}.rzp-h[data-roh="tr"]{right:-12px;top:-12px;cursor:nesw-resize}
+.rzp-h[data-roh="bl"]{left:-12px;bottom:-12px;cursor:nesw-resize}.rzp-h[data-roh="br"]{right:-12px;bottom:-12px;cursor:nwse-resize}
+.rzp-ovl{display:flex;flex-wrap:wrap;gap:.6rem;align-items:center;justify-content:center;font-size:.8rem}
+.rzp-uhel-l{display:inline-flex;align-items:center;gap:.35rem}
 .rz-svg-ram{overflow:auto;max-height:max(380px,calc(100vh - 150px));background:#e9e8e4;border:1px solid var(--border);padding:6px;border-radius:3px}
 html.dark .rz-svg-ram{background:#2a2925}
 .rz-svg{display:block;margin:0 auto;user-select:none;-webkit-user-select:none}
@@ -2445,6 +2461,7 @@ html.dark .rz-imp-chyby{background:#3a1f1c;border-color:#6b2c25}
       <button class="btn btn-gold" data-action="exportDatabaze">⬇️ Stáhnout zálohu (.json)</button>
       <button class="btn btn-ghost" style="background:var(--bg);color:var(--text);border:1px solid var(--border)" data-action="importDatabaze">⬆️ Obnovit ze zálohy</button>
     </div>
+    <label class="teren-radek zaloha-predlohy-r"><input type="checkbox" id="zaloha-predlohy"> Přiložit i fotky předloh rozvaděčů (soubor bude větší)</label>
     <input type="file" id="import-input" accept=".json,application/json" style="display:none">
   </div>
   <div id="zaloha-banner" style="display:none"></div>
@@ -4905,6 +4922,32 @@ html.dark .rz-imp-chyby{background:#3a1f1c;border-color:#6b2c25}
     <div class="modal-actions">
       <button class="btn btn-ghost" style="background:var(--bg);color:var(--text);border:1px solid var(--border)" data-action="tdRVelikostZavrit">Zrušit</button>
       <button class="btn btn-gold" data-action="tdRVelikostPouzit">✓ Použít skříň</button>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="modal-rz-predloha">
+  <div class="modal rzp-modal" style="max-width:820px">
+    <div class="modal-title">📷 Předloha z fotky <span class="dk-nepov">(pokusná funkce)</span></div>
+    <div class="f rzp-rada-f"><label>Pro řadu</label><select id="rzp-rada"></select></div>
+    <div id="rzp-vyber" class="rzp-vyber">
+      <button class="btn btn-gold rzp-vybrat" data-action="tdRzpVybrat">📂 Vybrat nebo vyfotit fotku…</button>
+      <div class="dk-pozn">nebo fotku přetáhněte sem. Fotka zůstane jen v tomto prohlížeči — do PDF, tisku ani do souboru rozvaděče nejde.</div>
+      <input type="file" id="rzp-soubor" accept="image/*" style="display:none">
+    </div>
+    <div id="rzp-uprava" hidden>
+      <div class="dk-pozn rzp-navod">Posuňte <b>rohy obdélníku</b> tak, aby <b>levá hrana</b> byla na začátku prvního a <b>pravá hrana</b> na konci posledního modulu řady. <span id="rzp-mod-info"></span></div>
+      <div class="rzp-editor" id="rzp-editor"><canvas id="rzp-canvas"></canvas>
+        <div class="rzp-ram" id="rzp-ram"><span class="rzp-zac">◀ začátek řady</span><span class="rzp-kon">konec řady ▶</span>
+          <i class="rzp-h" data-roh="tl"></i><i class="rzp-h" data-roh="tr"></i><i class="rzp-h" data-roh="bl"></i><i class="rzp-h" data-roh="br"></i></div></div>
+      <div class="rzp-ovl">
+        <button class="dok-mini" data-action="tdRzpOtocit90">⟲ Otočit o 90°</button>
+        <label class="rzp-uhel-l">Narovnat <input type="range" id="rzp-uhel" min="-10" max="10" step="0.5" value="0"> <span id="rzp-uhel-t">0°</span></label>
+        <button class="dok-mini" data-action="tdRzpJina">📂 Jiná fotka</button>
+      </div>
+    </div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" style="background:var(--bg);color:var(--text);border:1px solid var(--border)" data-action="tdRzpZavrit">Zrušit</button>
+      <button class="btn btn-gold" id="rzp-pouzit" data-action="tdRzpPouzit" disabled>✓ Použít předlohu</button>
     </div>
   </div>
 </div>
@@ -20461,7 +20504,7 @@ function ulozitJakoOdberatele() {
 }
 
 // ═══ ZÁLOHA / OBNOVENÍ CELÉ DATABÁZE ═══════════════════════════════════
-function buildZalohaBlob() {
+function buildZalohaBlob(navic) {
   var data = {
     _format: 'revize-el-backup',
     _version: 1,
@@ -20482,6 +20525,7 @@ function buildZalohaBlob() {
     // Tvorba dokumentace — samostatná část, oddělená od zpráv
     dokumentace: dokZalohaData()
   };
+  if (navic) Object.assign(data, navic);   // např. fotky předloh rozvaděčů — jen na vyžádání
   return new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
 }
 
@@ -20494,6 +20538,15 @@ function zalohaFilename() {
 }
 
 async function exportDatabaze() {
+  // Fotky předloh rozvaděčů jen na vyžádání (zaškrtávátko, výchozí ne — velikost)
+  var sFotkami = document.getElementById('zaloha-predlohy');
+  if (sFotkami && sFotkami.checked) {
+    ulozitSoubor(buildZalohaBlob({ rzPredlohy: await rzpZalohaData() }), zalohaFilename());
+    STORE.last_backup_at = new Date().toISOString();
+    STORE.archiv_count_at_last_backup = (STORE.archiv || []).length;
+    saveStore(); renderZalohaStatus();
+    return;
+  }
   // Pokud je nastavená složka pro zálohy, ulož rovnou do ní — bez dialogu
   if (backupDirHandle && await autoZalohaPermission(true)) {
     if (await autoZaloha(true)) {
@@ -21261,6 +21314,7 @@ function obnovZeZalohy(data) {
   if (data.auto_cislovani !== undefined) STORE.auto_cislovani = (data.auto_cislovani !== false);
   // Tvorba dokumentace — starší záloha část nemá, pak se dokumenty nechají být
   if (data.dokumentace) dokObnovitZeZalohy(data.dokumentace);
+  if (data.rzPredlohy) rzpObnovitZeZalohy(data.rzPredlohy);   // jen záloha s přiloženými fotkami předloh
   archiv = STORE.archiv;
   odberatele = STORE.odberatele;
   saveStore();
@@ -32079,6 +32133,7 @@ function rozvSvg(rz, o) {
                                    barvy: !o.tisk && __rzFazeBarvy });
       x += w;
     });
+    if (!o.tisk) h += rzpObrazekSvg(i, y, mod);   // předloha z fotky přes řadu (jen obrazovka)
     var ty = y + g.H + 6.5, tx = g.okraj + mod * M;
     if (pres > 0) h += '<text x="' + rozvZaokr(tx) + '" y="' + ty + '" font-size="3.3" font-weight="700" text-anchor="end" fill="#c0392b">Řada ' + (i + 1) + ': přeplněno o ' + esc(rozvModuly(pres)) + '</text>';
     else h += '<text x="' + rozvZaokr(tx) + '" y="' + ty + '" font-size="3" text-anchor="end" fill="#777">volno ' + esc(rozvCisloText(rozvZaokr(mod - obs))) + ' / ' + mod + ' M</text>';
@@ -32131,6 +32186,247 @@ document.addEventListener('change', function (e) {
   try { localStorage.setItem(ROZV_CISLA_KLIC, t.value); } catch (er) {}
   rozvSvgPrekreslit();
 });
+
+// ═══ PŘEDLOHA Z FOTKY (pokusná funkce, lab 2026-10-26) ═══════════════════
+// Oříznutý pruh fotky jedné řady se kreslí PŘES řadu v čelním pohledu, ve
+// stejné šířce jako řada (levá hrana ořezu = začátek prvního modulu, pravá =
+// konec posledního). Jen na obrazovce: nikdy do PDF, tisku, schématu ani 3D.
+// Ukládá se MIMO data rozvaděče — jeden klíč IndexedDB `dok_rzPredlohy`
+// (stejná databáze jako tvorba dokumentace, ale NENÍ v DOK_IDB, takže nejde
+// do localStorage kopie DOK, do souboru dokumentu ani do automatické zálohy).
+// Bez IndexedDB (iOS) localStorage `revize_el_rz_predlohy`. Do ruční zálohy jen
+// na vyžádání (zaškrtávátko u „Stáhnout zálohu").
+// Tvar: { uidDokumentu: { indexŘady: { src: dataURL JPEG, w, h, op: 0–1, skryto, t } } }
+var RZP_IDB = 'dok_rzPredlohy', RZP_LS = 'revize_el_rz_predlohy', RZP_MAX_W = 1600, RZP_JPEG = 0.7;
+var __rzpVse = null, __rzpNacitani = null, __rzpUrl = {};
+function rzpUid() { return window.__dokOtevreny ? window.__dokOtevreny.uid : ''; }
+function rzpPro(uid) { return (__rzpVse && __rzpVse[uid]) || null; }
+function rzpUrl(rec) {   // blob: místo dlouhého data: (SVG se při tažení překresluje často)
+  if (!rec || !rec.src) return '';
+  if (__rzpUrl[rec.src]) return __rzpUrl[rec.src];
+  try {
+    var b = atob(rec.src.split(',')[1]), u = new Uint8Array(b.length);
+    for (var i = 0; i < b.length; i++) u[i] = b.charCodeAt(i);
+    return (__rzpUrl[rec.src] = URL.createObjectURL(new Blob([u], { type: 'image/jpeg' })));
+  } catch (e) { return rec.src; }
+}
+function rzpNacist() {
+  if (__rzpVse) return Promise.resolve(__rzpVse);
+  if (__rzpNacitani) return __rzpNacitani;
+  __rzpNacitani = (async function () {
+    var v = null;
+    try { v = idb ? await idbGet(RZP_IDB) : JSON.parse(localStorage.getItem(RZP_LS) || 'null'); } catch (e) { v = null; }
+    __rzpVse = v && typeof v === 'object' ? v : {};
+    // předlohy smazaných rozvaděčů se uklidí (otevřený nový, ještě neuložený zůstane)
+    var ziv = {}; (DOK.dokumenty || []).forEach(function (x) { ziv[x.uid] = 1; }); ziv[rzpUid()] = 1;
+    var smaz = Object.keys(__rzpVse).filter(function (u) { return !ziv[u]; });
+    if (smaz.length && (DOK.dokumenty || []).length) { smaz.forEach(function (u) { delete __rzpVse[u]; }); rzpZapsat(); }
+    __rzpNacitani = null;
+    return __rzpVse;
+  })();
+  return __rzpNacitani;
+}
+// Zápis — vrátí false, když se do úložiště nevešel (nic nespadne).
+function rzpZapsat() {
+  var data = __rzpVse || {};
+  if (!idb) {
+    try { localStorage.setItem(RZP_LS, JSON.stringify(data)); return Promise.resolve(true); } catch (e) { return Promise.resolve(false); }
+  }
+  return new Promise(function (res) {
+    try {
+      var tx = idb.transaction(IDB_STORE, 'readwrite');
+      tx.objectStore(IDB_STORE).put(data, RZP_IDB);
+      tx.oncomplete = function () { res(true); };
+      tx.onerror = function () { res(false); };
+      tx.onabort = function () { res(false); };
+    } catch (e) { res(false); }
+  });
+}
+function rzpObrazekSvg(i, y, mod) {
+  var rr = rzpPro(rzpUid()), rec = rr && rr[i];
+  if (!rec || rec.skryto || !mod) return '';
+  return '<image class="rz-predloha" data-rzp="' + i + '" href="' + esc(rzpUrl(rec)) + '" x="' + RZG.okraj + '" y="' + (y - 0.5) + '" width="' + rozvZaokr(mod * RZG.M) +
+    '" height="' + (RZG.H + 3) + '" preserveAspectRatio="none" opacity="' + (rec.op != null ? rec.op : 0.5) + '" pointer-events="none"/>';
+}
+function rzpListaHtml() {
+  if (!__rz || __rz.rezim === 'PSC') return '';
+  if (!__rzpVse) { rzpNacist().then(function () { if (__rz && rzpPro(rzpUid())) rozvPohledVykreslit(); }); return ''; }
+  var rr = rzpPro(rzpUid()); if (!rr) return '';
+  var h = Object.keys(rr).sort(function (a, b) { return a - b; }).filter(function (i) { return +i < __rz.rady.length; }).map(function (i) {
+    var rec = rr[i], pr = Math.round((1 - (rec.op != null ? rec.op : 0.5)) * 100);
+    return '<div class="rz-predloha-r" data-dk-mimo data-r="' + i + '"><b>📷 Předloha řady ' + (+i + 1) + '</b>' +
+      '<label class="rzp-op-l">Průhlednost <input type="range" class="rzp-op" data-r="' + i + '" min="10" max="90" step="5" value="' + pr + '" aria-label="Průhlednost předlohy řady ' + (+i + 1) + '"></label>' +
+      '<button class="dok-mini" data-action="tdRzpSkryt" data-r="' + i + '">' + (rec.skryto ? '👁 Ukázat' : '🙈 Skrýt') + '</button>' +
+      '<button class="dok-mini" data-action="tdRzpUpravit" data-r="' + i + '" title="Znovu oříznout a zarovnat">✂ Upravit</button>' +
+      '<button class="dok-mini" data-action="tdRzpSmazat" data-r="' + i + '">🗑 Smazat</button></div>';
+  }).join('');
+  return h ? '<div class="rz-predlohy">' + h + '</div>' : '';
+}
+document.addEventListener('input', function (e) {
+  var t = e.target; if (!t || !t.classList || !t.classList.contains('rzp-op')) return;
+  var rr = rzpPro(rzpUid()), i = t.getAttribute('data-r'); if (!rr || !rr[i]) return;
+  rr[i].op = rozvZaokr(1 - (+t.value) / 100);
+  var im = document.querySelector('#rz-svg-ram image[data-rzp="' + i + '"]'); if (im) im.setAttribute('opacity', rr[i].op);
+  clearTimeout(rzpListaHtml.__t); rzpListaHtml.__t = setTimeout(rzpZapsat, 400);
+});
+TD_AKCE.tdRzpSkryt = function (el) {
+  var rr = rzpPro(rzpUid()), i = el.getAttribute('data-r'); if (!rr || !rr[i]) return;
+  rr[i].skryto = !rr[i].skryto; rzpZapsat(); rozvPohledVykreslit();
+};
+TD_AKCE.tdRzpSmazat = function (el) {
+  var uid = rzpUid(), rr = rzpPro(uid), i = el.getAttribute('data-r'); if (!rr || !rr[i]) return;
+  var byla = rr[i]; delete rr[i]; if (!Object.keys(rr).length) delete __rzpVse[uid];
+  rzpZapsat(); rozvPohledVykreslit();
+  showToast('Předloha řady ' + (+i + 1) + ' smazána', { timeout: 8000, actionLabel: '↩ ZPĚT', action: function () {
+    (__rzpVse[uid] = __rzpVse[uid] || {})[i] = byla; rzpZapsat(); if (rzpUid() === uid) rozvPohledVykreslit();
+  } });
+};
+TD_AKCE.tdRzpUpravit = function (el) {
+  var rr = rzpPro(rzpUid()), i = +el.getAttribute('data-r'); if (!rr || !rr[i]) return;
+  rzpOtevrit(i, rr[i].src);
+};
+TD_AKCE.tdRzpOtevrit = function () { if (__rz && __rz.skrin) rzpOtevrit(Math.min(__rz.aktRada || 0, __rz.rady.length - 1)); else showToast('Nejdřív vyberte skříň.'); };
+
+// ── Okno: výběr fotky, ořez, otočení, narovnání ──
+var __rzp = null;   // { rada, img (zmenšený zdroj), rot90, uhel, rc (otočené plátno), f: {x,y,w,h} zlomky }
+function rzpOtevrit(rada, src) {
+  __rzp = { rada: rada, img: null, rot90: 0, uhel: 0, rc: null, f: null };
+  var sel = document.getElementById('rzp-rada');
+  sel.innerHTML = __rz.rady.map(function (r, i) { return '<option value="' + i + '"' + (i === rada ? ' selected' : '') + '>Řada ' + (i + 1) + '</option>'; }).join('');
+  document.getElementById('rzp-uhel').value = 0; rzpUhelText();
+  rzpKrok(false);
+  document.getElementById('modal-rz-predloha').classList.add('open');
+  if (src) rzpNactiObrazek(src, true);
+}
+function rzpKrok(mam) {
+  document.getElementById('rzp-vyber').hidden = !!mam;
+  document.getElementById('rzp-uprava').hidden = !mam;
+  document.getElementById('rzp-pouzit').disabled = !mam;
+}
+function rzpUhelText() { var u = +document.getElementById('rzp-uhel').value; document.getElementById('rzp-uhel-t').textContent = (u > 0 ? '+' : '') + rozvCisloText(u) + '°'; }
+function rzpSoubor(f) {
+  if (!f || !/^image\//.test(f.type || 'image/')) { showToast('Tohle není obrázek — vyberte fotku (JPG, PNG…).'); return; }
+  var rd = new FileReader();
+  rd.onload = function () { rzpNactiObrazek(rd.result, false); };
+  rd.onerror = function () { showToast('Fotku se nepodařilo načíst.'); };
+  rd.readAsDataURL(f);
+}
+function rzpNactiObrazek(src, cely) {
+  var im = new Image();
+  im.onload = function () {
+    var k = Math.min(1, 2400 / Math.max(im.naturalWidth, im.naturalHeight));   // zdroj zmenšený, ať se otáčení nezadýchá
+    var c = document.createElement('canvas'); c.width = Math.max(1, Math.round(im.naturalWidth * k)); c.height = Math.max(1, Math.round(im.naturalHeight * k));
+    c.getContext('2d').drawImage(im, 0, 0, c.width, c.height);
+    __rzp.img = c; __rzp.rot90 = 0; __rzp.uhel = 0; document.getElementById('rzp-uhel').value = 0; rzpUhelText();
+    __rzp.f = cely ? { x: 0, y: 0, w: 1, h: 1 } : { x: 0.05, y: 0.35, w: 0.9, h: 0.3 };
+    rzpKrok(true); rzpOtocit(); 
+  };
+  im.onerror = function () { showToast('Fotku se nepodařilo otevřít.'); };
+  im.src = src;
+}
+function rzpOtocit() {   // otočené plátno podle rot90 + narovnání
+  var z = __rzp.img; if (!z) return;
+  var a = (__rzp.rot90 * 90 + __rzp.uhel) * Math.PI / 180, cs = Math.abs(Math.cos(a)), sn = Math.abs(Math.sin(a));
+  var c = document.createElement('canvas'); c.width = Math.round(z.width * cs + z.height * sn); c.height = Math.round(z.width * sn + z.height * cs);
+  var g = c.getContext('2d'); g.fillStyle = '#fff'; g.fillRect(0, 0, c.width, c.height);
+  g.translate(c.width / 2, c.height / 2); g.rotate(a); g.drawImage(z, -z.width / 2, -z.height / 2);
+  __rzp.rc = c; rzpKreslit();
+}
+function rzpKreslit() {
+  var c = __rzp.rc, cv = document.getElementById('rzp-canvas'), box = document.getElementById('rzp-editor'); if (!c || !cv) return;
+  var maxW = Math.max(200, (box.parentNode && box.parentNode.clientWidth) || 600), maxH = Math.max(200, window.innerHeight * 0.5);
+  var k = Math.min(maxW / c.width, maxH / c.height, 1.5);
+  cv.width = Math.round(c.width * k); cv.height = Math.round(c.height * k);
+  cv.getContext('2d').drawImage(c, 0, 0, cv.width, cv.height);
+  box.style.height = cv.height + 'px'; box.style.width = cv.width + 'px';
+  rzpRamUmistit();
+}
+function rzpRamUmistit() {
+  var r = document.getElementById('rzp-ram'), cv = document.getElementById('rzp-canvas'), f = __rzp.f; if (!r || !f) return;
+  var mod = +(__rz.skrin && __rz.skrin.modulu) || 12;
+  r.style.left = f.x * cv.width + 'px'; r.style.top = f.y * cv.height + 'px';
+  r.style.width = f.w * cv.width + 'px'; r.style.height = f.h * cv.height + 'px';
+  r.style.backgroundSize = (100 / mod) + '% 100%';
+  var n = document.getElementById('rzp-mod-info'); if (n) n.textContent = mod + ' modulů — svislé čárky mají sedět na hrany přístrojů na fotce.';
+}
+// tažení rohů a celého obdélníku (myš i prst)
+document.addEventListener('pointerdown', function (e) {
+  var r = e.target && e.target.closest && e.target.closest('#rzp-ram'); if (!r || !__rzp || !__rzp.f) return;
+  e.preventDefault();
+  var cv = document.getElementById('rzp-canvas'), roh = e.target.getAttribute('data-roh') || 'stred';
+  var st = { x: e.clientX, y: e.clientY, f: Object.assign({}, __rzp.f), W: cv.width, H: cv.height, roh: roh, id: e.pointerId };
+  try { r.setPointerCapture(e.pointerId); } catch (er) {}
+  var pohyb = function (ev) {
+    if (ev.pointerId !== st.id) return;
+    var dx = (ev.clientX - st.x) / st.W, dy = (ev.clientY - st.y) / st.H, f = Object.assign({}, st.f), MIN = 0.03;
+    if (roh === 'stred') { f.x = Math.max(0, Math.min(1 - f.w, f.x + dx)); f.y = Math.max(0, Math.min(1 - f.h, f.y + dy)); }
+    else {
+      var x1 = f.x, y1 = f.y, x2 = f.x + f.w, y2 = f.y + f.h;
+      if (/l/.test(roh)) x1 = Math.max(0, Math.min(x2 - MIN, x1 + dx));
+      if (/r/.test(roh)) x2 = Math.min(1, Math.max(x1 + MIN, x2 + dx));
+      if (/t/.test(roh)) y1 = Math.max(0, Math.min(y2 - MIN, y1 + dy));
+      if (/b/.test(roh)) y2 = Math.min(1, Math.max(y1 + MIN, y2 + dy));
+      f = { x: x1, y: y1, w: x2 - x1, h: y2 - y1 };
+    }
+    __rzp.f = f; rzpRamUmistit();
+  };
+  var konec = function (ev) { if (ev.pointerId !== st.id) return; r.removeEventListener('pointermove', pohyb); r.removeEventListener('pointerup', konec); r.removeEventListener('pointercancel', konec); };
+  r.addEventListener('pointermove', pohyb); r.addEventListener('pointerup', konec); r.addEventListener('pointercancel', konec);
+});
+document.addEventListener('change', function (e) {
+  var t = e.target; if (!t) return;
+  if (t.id === 'rzp-soubor') { rzpSoubor(t.files && t.files[0]); t.value = ''; }
+  else if (t.id === 'rzp-rada' && __rzp) __rzp.rada = +t.value;
+});
+document.addEventListener('input', function (e) {
+  if (!e.target || e.target.id !== 'rzp-uhel' || !__rzp) return;
+  __rzp.uhel = +e.target.value; rzpUhelText();
+  clearTimeout(rzpOtocit.__t); rzpOtocit.__t = setTimeout(rzpOtocit, 60);
+});
+['dragover', 'drop'].forEach(function (typ) {
+  document.addEventListener(typ, function (e) {
+    var m = e.target && e.target.closest && e.target.closest('#modal-rz-predloha'); if (!m) return;
+    e.preventDefault(); e.stopPropagation();
+    if (typ === 'drop' && e.dataTransfer && e.dataTransfer.files && e.dataTransfer.files[0]) rzpSoubor(e.dataTransfer.files[0]);
+  }, true);
+});
+TD_AKCE.tdRzpVybrat = function () { document.getElementById('rzp-soubor').click(); };
+TD_AKCE.tdRzpJina = function () { rzpKrok(false); };
+TD_AKCE.tdRzpOtocit90 = function () { if (!__rzp || !__rzp.img) return; __rzp.rot90 = (__rzp.rot90 + 1) % 4; __rzp.f = { x: 0.05, y: 0.35, w: 0.9, h: 0.3 }; rzpOtocit(); };
+TD_AKCE.tdRzpZavrit = function () { closeModal('modal-rz-predloha'); __rzp = null; };
+// Výřez jako pruh JPEG (nejvýš 1600 px na šířku) → uložit u rozvaděče.
+function rzpVyrez() {
+  var c = __rzp.rc, f = __rzp.f, sx = f.x * c.width, sy = f.y * c.height, sw = Math.max(1, f.w * c.width), sh = Math.max(1, f.h * c.height);
+  var k = Math.min(1, RZP_MAX_W / sw), o = document.createElement('canvas');
+  o.width = Math.max(1, Math.round(sw * k)); o.height = Math.max(1, Math.round(sh * k));
+  o.getContext('2d').drawImage(c, sx, sy, sw, sh, 0, 0, o.width, o.height);
+  return { src: o.toDataURL('image/jpeg', RZP_JPEG), w: o.width, h: o.height };
+}
+TD_AKCE.tdRzpPouzit = async function () {
+  if (!__rzp || !__rzp.rc || !__rz) return;
+  await rzpNacist();
+  var uid = rzpUid(), i = __rzp.rada, v = rzpVyrez();
+  var rr = __rzpVse[uid] = __rzpVse[uid] || {}, byla = rr[i];
+  rr[i] = { src: v.src, w: v.w, h: v.h, op: byla && byla.op != null ? byla.op : 0.5, skryto: false, t: new Date().toISOString() };
+  if (!(await rzpZapsat())) {
+    if (byla) rr[i] = byla; else delete rr[i];
+    if (!Object.keys(rr).length) delete __rzpVse[uid];
+    alert('Fotka se do úložiště prohlížeče nevešla.\n\nSmažte některou starší předlohu (tlačítko 🗑 u předlohy), nebo uvolněte místo v prohlížeči. Rozvaděč se nezměnil.');
+    return;
+  }
+  closeModal('modal-rz-predloha'); __rzp = null;
+  __rz.aktRada = i;
+  rozvPohledVykreslit();
+  showToast('Předloha řady ' + (i + 1) + ' je nad lištou. Přístroje teď jen obkreslete — fotka do PDF ani do tisku nejde.', { timeout: 7000 });
+};
+// Všechny předlohy pro ruční zálohu (jen na vyžádání) a obnova z ní.
+async function rzpZalohaData() { await rzpNacist(); return dokKopie(__rzpVse || {}); }
+async function rzpObnovitZeZalohy(z) {
+  if (!z || typeof z !== 'object') return;
+  await rzpNacist();
+  Object.keys(z).forEach(function (u) { __rzpVse[u] = Object.assign({}, __rzpVse[u] || {}, z[u]); });
+  if (!(await rzpZapsat())) showToast('Fotky předloh rozvaděčů se do úložiště prohlížeče nevešly — ostatní data se obnovila.', { timeout: 8000 });
+}
 
 // Kam by padl přístroj: řada a pořadí podle bodu na obrazovce.
 // S `o` ({ w: šířka bloku v modulech, off: mm od levé hrany bloku k ukazateli,
@@ -32211,13 +32507,14 @@ function rozvPohledVykreslit() {
       '<span class="rz-skrin-n" title="' + esc(rozvNazev(sk)) + '">🗄 ' + esc(rozvNazev(sk)) + '</span>' +
       '<span class="rz-volno">' + (__rz.rezim === 'PSC' ? 'Volné místo na lištách' : 'Volné místo') + ': <b>' + esc(rozvCisloText(Math.max(0, v.volno))) + ' / ' + v.celkem + ' modulů</b></span>' +
       '<span class="rz-faze-ukaz" id="rz-faze-ukaz" hidden></span>' +
-      '<span class="rz-zoom">' + (__rz.rezim === 'PSC' ? '<button class="dok-mini rz-koty-btn' + (__rz.koty ? ' akt' : '') + '" data-action="tdPscKoty" aria-pressed="' + (__rz.koty ? 'true' : 'false') + '" title="Kóty šířky a výšky polí zapnout / vypnout">📏 Kóty</button>' : '') +
+      '<span class="rz-zoom">' + (__rz.rezim !== 'PSC' ? '<button class="dok-mini rz-predloha-btn" data-action="tdRzpOtevrit" title="Fotka skutečné řady přímo nad lištou ve stejném měřítku — přístroje pak jen obkreslíte (pokusná funkce)">📷 Předloha z fotky</button>' : '') +
+        (__rz.rezim === 'PSC' ? '<button class="dok-mini rz-koty-btn' + (__rz.koty ? ' akt' : '') + '" data-action="tdPscKoty" aria-pressed="' + (__rz.koty ? 'true' : 'false') + '" title="Kóty šířky a výšky polí zapnout / vypnout">📏 Kóty</button>' : '') +
         '<button class="dok-mini" data-action="tdRZoom" data-z="-" title="Zmenšit">－</button>' +
         '<button class="dok-mini" data-action="tdRZoom" data-z="+" title="Zvětšit">＋</button>' +
         // Přečíslování natrvalo vedle zoomu (pokyn uživatele 2026-10-19 — ve
         // vlastnostech bez výběru ho starší technik nenašel)
         '<button class="dok-mini rz-precislovat" data-action="tdRPrecislovat" title="Označení podle pořadí v řadách zleva doprava: -QM1, -FA1, -FA2… (jde vzít zpět)">🔢 Přečíslovat označení</button></span>' +
-    '</div>';
+    '</div>' + rzpListaHtml();
   if (vybrany || presun || (presunVic && presunVic.length)) {
     // PSC: výkonový přístroj (bez modulů) se klepnutím dává na montážní desku
     var kam = __rz.rezim !== 'PSC' ? 'do řady' : vybrany && ((rozvKat(vybrany.kat) || {}).mm || !(+vybrany.sirka > 0)) ? 'na montážní desku' : 'do řady nebo na montážní desku';

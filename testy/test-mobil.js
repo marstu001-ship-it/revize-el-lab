@@ -557,6 +557,18 @@ function vsechnyStavy(zalozky) {
   add('rozvaděč – čelní pohled', 'Tvorba dokumentace', E(async () => {
     await __M.rozv(); document.getElementById('rz-pohled').scrollIntoView({ block: 'start' }); await __M.w(100);
   }));
+  // předloha z fotky: vymyšlená „fotka" řady nakreslená na plátno, jen v paměti
+  const fotka = `(() => { const c = document.createElement('canvas'); c.width = 900; c.height = 600; const g = c.getContext('2d');
+    g.fillStyle = '#777'; g.fillRect(0, 0, 900, 600); for (let m = 0; m < 12; m++) { g.fillStyle = '#fff'; g.fillRect(90 + m * 60 + 2, 220, 56, 180); }
+    return c.toDataURL('image/jpeg', 0.7); })()`;
+  add('rozvaděč – předloha z fotky, ořez (okno)', 'Tvorba dokumentace', E(async F => {
+    await __M.rozv(); document.getElementById('toast-wrap').innerHTML = ''; rzpOtevrit(0, eval(F)); await __M.w(400);
+  }, fotka), '#modal-rz-predloha');
+  add('rozvaděč – předloha nad řadou, nastavení čelního pohledu', 'Tvorba dokumentace', E(async F => {
+    await __M.rozv(); await rzpNacist(); __rzpVse[rzpUid()] = { 0: { src: eval(F), w: 900, h: 600, op: 0.5 } };
+    rozvPohledVykreslit(); rozvVlastnostiVykreslit(); const d = document.querySelector('.rz-nast-pohledu'); if (d) d.open = true;
+    document.getElementById('rz-pohled').scrollIntoView({ block: 'start' }); await __M.w(150);
+  }, fotka));
   add('rozvaděč – vybraný přístroj a vlastnosti', 'Tvorba dokumentace', E(async () => {
     await __M.rozv(); __rz.vyber = __rz.rady[1].prvky[3].uid; rozvPohledVykreslit(); rozvVlastnostiVykreslit();
     document.getElementById('rz-vlastnosti').scrollIntoView({ block: 'start' }); await __M.w(100);

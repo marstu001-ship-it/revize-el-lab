@@ -1381,6 +1381,110 @@ function pomocnik() {
     'číslo ' + cil.n + ' · pod ním ' + cil.pod + ' · ' + JSON.stringify(poKliku) + ' / ' + cil.sl);
   await p.evaluate(async () => { __rz.zoom = 1; rozvPohledVykreslit(); await dokUlozitOtevreny(); });
 
+  const fotkaCesta = require('path').join(__dirname, '_beh', 'rz-fotka.png');
+  require('fs').mkdirSync(require('path').dirname(fotkaCesta), { recursive: true });
+  require('fs').writeFileSync(fotkaCesta, Buffer.from(await p.evaluate(() => {   // vymyšlená „fotka" řady: 12 modulů po 60 px od x = 140
+    const c = document.createElement('canvas'); c.width = 1000; c.height = 700; const g = c.getContext('2d');
+    g.fillStyle = '#777'; g.fillRect(0, 0, 1000, 700); g.fillStyle = '#ddd'; g.fillRect(140, 330, 720, 40);
+    for (let m = 0; m < 12; m++) { if (m === 5 || m === 6) continue; g.fillStyle = m < 3 ? '#e44' : '#fff'; g.fillRect(140 + m * 60 + 2, 250, 56, 200); }
+    return c.toDataURL('image/png').split(',')[1];
+  }), 'base64'));
+  // předloha z fotky: nahrání, ořez rohy skutečnou myší, použití
+  await p.click('[data-action="tdRzpOtevrit"]'); await w(200);
+  await p.selectOption('#rzp-rada', '0');
+  await p.setInputFiles('#rzp-soubor', fotkaCesta); await w(600);
+  const cv = await p.$eval('#rzp-canvas', c => { const r = c.getBoundingClientRect(); return { x: r.left, y: r.top, k: r.width / 1000 }; });
+  const roh = async (sel, fx, fy) => {
+    const h = await p.$eval(sel, e => { const r = e.getBoundingClientRect(); return { x: r.left + r.width / 2, y: r.top + r.height / 2 }; });
+    const c = { x: cv.x + fx * cv.k, y: cv.y + fy * cv.k };
+    await p.mouse.move(h.x, h.y); await p.mouse.down(); await p.mouse.move((h.x + c.x) / 2, (h.y + c.y) / 2, { steps: 4 }); await p.mouse.move(c.x, c.y, { steps: 4 }); await p.mouse.up();
+  };
+  await roh('.rzp-h[data-roh="tl"]', 140, 240); await roh('.rzp-h[data-roh="br"]', 860, 460);
+  const orez = await p.evaluate(() => ({ f: __rzp.f, mrizka: document.getElementById('rzp-ram').style.backgroundSize, zac: !!document.querySelector('.rzp-zac'), kon: !!document.querySelector('.rzp-kon') }));
+  check('předloha: fotka se načte, rohy obdélníku jdou táhnout myší na začátek a konec řady, uvnitř mřížka 12 modulů',
+    Math.abs(orez.f.x - 0.14) < 0.01 && Math.abs(orez.f.x + orez.f.w - 0.86) < 0.01 && Math.abs(orez.f.y - 240 / 700) < 0.02 && /8\.33/.test(orez.mrizka) && orez.zac && orez.kon, JSON.stringify(orez));
+  // otočení a narovnání se dá použít a zase vrátit
+  await p.evaluate(async () => {
+    const u = document.getElementById('rzp-uhel'); u.value = 4; u.dispatchEvent(new Event('input', { bubbles: true })); await __T.w(150);
+    window.__rotW = __rzp.rc.width; u.value = 0; u.dispatchEvent(new Event('input', { bubbles: true })); await __T.w(150);
+  });
+  const rot = await p.evaluate(() => ({ s4: window.__rotW, s0: __rzp.rc.width }));
+  check('předloha: narovnání (±10°) otočí plátno, návrat na 0° vrátí rozměr', rot.s4 > rot.s0 && rot.s0 === 1000, JSON.stringify(rot));
+  await p.click('#rzp-pouzit'); await w(700);
+  const pre = await p.evaluate(async () => {
+    const im = document.querySelector('#rz-svg-ram image.rz-predloha'), v = await idbGet('dok_rzPredlohy'), uid = window.__dokOtevreny.uid, rec = v && v[uid] && v[uid][0];
+    const dok = JSON.stringify(dokNajit(uid) || {}), ls = localStorage.getItem(DOK_LS) || '';
+    return { im: im && [im.getAttribute('x'), im.getAttribute('width'), im.getAttribute('opacity'), im.getAttribute('pointer-events')].join(), modal: document.getElementById('modal-rz-predloha').classList.contains('open'),
+             rec: rec && { jpeg: /^data:image\/jpeg/.test(rec.src), w: rec.w, h: rec.h }, vDok: /data:image/.test(dok) || /rzPredloh/.test(dok), vLs: /data:image/.test(ls), lista: !!document.querySelector('.rz-predloha-r') };
+  });
+  check('předloha: přes řadu 1 ve stejné šířce jako řada (x = 14 mm, 12 × 17,5 mm), poloprůhledná, klik propadá',
+    pre.im === '14,210,0.5,none' && !pre.modal && pre.lista, pre.im);
+  check('předloha: uložená JPEG ≤ 1600 px v IndexedDB (dok_rzPredlohy), NE v datech rozvaděče ani v localStorage kopii',
+    pre.rec && pre.rec.jpeg && pre.rec.w <= 1600 && pre.rec.w > 300 && !pre.vDok && !pre.vLs, JSON.stringify(pre));
+  // přístroje jdou dál vybírat klepnutím přes předlohu
+  const prKlik = await p.evaluate(() => { const g = document.querySelector('#rz-svg-ram .rz-pr[data-puid]'), b = g.getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height * 0.7, uid: g.getAttribute('data-puid') }; });
+  await p.mouse.click(prKlik.x, prKlik.y); await w(200);
+  check('předloha: přístroj pod fotkou jde dál vybrat myší', await p.evaluate(u => __rz.vyber === u, prKlik.uid));
+  // průhlednost, skrýt
+  const ovl = await p.evaluate(async () => {
+    const r = document.querySelector('.rzp-op'); r.value = 80; r.dispatchEvent(new Event('input', { bubbles: true })); await __T.w(500);
+    const op = document.querySelector('#rz-svg-ram image.rz-predloha').getAttribute('opacity');
+    TD_AKCE.tdRzpSkryt(document.querySelector('[data-action="tdRzpSkryt"]')); await __T.w(100);
+    const skr = !document.querySelector('#rz-svg-ram image.rz-predloha');
+    TD_AKCE.tdRzpSkryt(document.querySelector('[data-action="tdRzpSkryt"]')); await __T.w(100);
+    return { op, skr, zpet: !!document.querySelector('#rz-svg-ram image.rz-predloha') };
+  });
+  check('předloha: posuvník průhlednosti (80 % → opacity 0,2), Skrýt / Ukázat', ovl.op === '0.2' && ovl.skr && ovl.zpet, JSON.stringify(ovl));
+  // PDF a tisk: bez čísel a bez fotky, pruh výrobce ano
+  const pdfOri = await p.evaluate(async () => {
+    window.__dokOtevreny.data.dokVyber = { cp: true, schema: true, tech: false, prohl: false, ko: false };
+    await dokNahled(); await __T.w(700);
+    const h = document.getElementById('dok-pdf-pages').innerHTML;
+    const sch = rozvSchemaListy(DOK_TYPY.rozv.cist(dokForm())).map(l => l.svg).join('');
+    const r = { cislo: /rz-cislo/.test(h), foto: /<image|rz-predloha|blob:|data:image\/jpeg/.test(h), pruh: /hager MY/.test(h), schCislo: /rz-cislo|<image/.test(sch) };
+    TD_AKCE.tdPdfZpet(); await __T.w(200);
+    return r;
+  });
+  check('PDF a tisk: čelní pohled bez čísel pozic a bez fotky předlohy, pruh se značkou ano; schéma bez čísel i fotky',
+    !pdfOri.cislo && !pdfOri.foto && pdfOri.pruh && !pdfOri.schCislo, JSON.stringify(pdfOri));
+  // záloha: výchozí bez fotek, se zaškrtnutím s nimi
+  const zal = await p.evaluate(async () => {
+    const bez = await buildZalohaBlob().text();
+    const stary = { a: STORE.last_backup_at, b: STORE.archiv_count_at_last_backup };   // export zapíše čas zálohy — po testu vrátit
+    let s = null; const puv = window.ulozitSoubor; window.ulozitSoubor = async b => { s = await b.text(); };
+    const ch = document.getElementById('zaloha-predlohy'); ch.checked = true; await exportDatabaze(); await __T.w(300); ch.checked = false; window.ulozitSoubor = puv;
+    if (stary.a === undefined) delete STORE.last_backup_at; else STORE.last_backup_at = stary.a;
+    if (stary.b === undefined) delete STORE.archiv_count_at_last_backup; else STORE.archiv_count_at_last_backup = stary.b;
+    saveStore(); renderZalohaStatus();
+    const j = JSON.parse(s);
+    return { bez: /rzPredlohy|data:image\/jpeg/.test(bez), s: !!(j.rzPredlohy && j.rzPredlohy[window.__dokOtevreny.uid]), vychozi: document.getElementById('zaloha-predlohy').defaultChecked };
+  });
+  check('záloha: výchozí bez fotek předloh; zaškrtnutím „Přiložit i fotky předloh" jdou do souboru', !zal.bez && zal.s && !zal.vychozi, JSON.stringify(zal));
+  // obnovení po znovunačtení
+  const uidPre = await p.evaluate(() => window.__dokOtevreny.uid);
+  await p.reload(); await w(1300); await p.evaluate(pomocnik);
+  const obn = await p.evaluate(async u => { await dokOtevrit(u); await __T.w(600); const im = document.querySelector('#rz-svg-ram image.rz-predloha');
+    return { im: !!im, op: im && im.getAttribute('opacity'), pruh: !!document.querySelector('.rz-znacka-text') }; }, uidPre);
+  check('předloha: po znovunačtení stránky se obnoví i s průhledností', obn.im && obn.op === '0.2' && obn.pruh, JSON.stringify(obn));
+  // úložiště plné: srozumitelná hláška, nic nespadne, předloha se nepřidá
+  const plno = await p.evaluate(async () => {
+    const rr0 = rzpPro(window.__dokOtevreny.uid); if (!rr0 || !rr0[0]) return { hl: 'CHYBÍ předloha: ' + JSON.stringify(rr0 && Object.keys(rr0)) };
+    const puv = idb; let hl = '';
+    const puvAlert = window.alert; window.alert = m => { hl = m; };
+    idb = { transaction() { throw new DOMException('plno', 'QuotaExceededError'); } };
+    rzpOtevrit(1, rr0[0].src);
+    await __T.w(500); await TD_AKCE.tdRzpPouzit(); idb = puv; window.alert = puvAlert;
+    const r = { hl, rada2: !!(__rzpVse[window.__dokOtevreny.uid] || {})[1], otevreno: document.getElementById('modal-rz-predloha').classList.contains('open') };
+    TD_AKCE.tdRzpZavrit(); return r;
+  });
+  check('předloha: když se do úložiště nevejde — hláška „nevešla", nic nespadne a předloha se nepřidá', /nevešla/.test(plno.hl) && !plno.rada2 && plno.otevreno, JSON.stringify(plno));
+  // smazání se ZPĚT
+  const sm = await p.evaluate(async () => {
+    TD_AKCE.tdRzpSmazat(document.querySelector('[data-action="tdRzpSmazat"]')); await __T.w(200);
+    const bez = !document.querySelector('#rz-svg-ram image.rz-predloha'), v = await idbGet('dok_rzPredlohy');
+    return { bez, idb: !!(v && v[window.__dokOtevreny.uid]) };
+  });
+  check('předloha: 🗑 Smazat ji odebere z pohledu i z úložiště', sm.bez && !sm.idb, JSON.stringify(sm));
   // ── oddělení od revizí ────────────────────────────────────────────────
   const odd = await p.evaluate(async () => {
     showScreen('home'); renderArchiv();

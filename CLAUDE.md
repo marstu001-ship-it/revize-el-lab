@@ -1973,6 +1973,48 @@ výrobce, kontrast, neznámý / obecný, 36 čísel průběžně, přepínač od
 data beze změny, každé druhé při oddálení, **klik na číslo skutečnou myší
 nezmění výběr ani scrollLeft**). Novinky se nedělaly.
 
+#### Předloha z fotky nad řadou (POKUSNÁ funkce, 2026-10-26, blok „PŘEDLOHA Z FOTKY")
+
+Cíl: technik nepřebíhá očima mezi fotkou a programem — fotka řady je přímo
+v řadě ve stejném měřítku a přístroje jen „obkresluje".
+
+- **„📷 Předloha z fotky"** v liště nad čelním pohledem (DBO) → okno
+  `#modal-rz-predloha`: řada (předvolená vybraná), „📂 Vybrat nebo vyfotit
+  fotku…" (`accept="image/*"` — telefon nabídne fotoaparát) nebo přetažení.
+  **Ořez a zarovnání jsou jedno a totéž:** obdélník s rohy (myš i prst),
+  **levá hrana = „◀ začátek řady", pravá = „konec řady ▶"**, uvnitř žluté
+  čárky po modulech (podle skříně) — mají sedět na hrany přístrojů na fotce.
+  ⟲ Otočit o 90°, posuvník „Narovnat" ±10° po ½°. Zdroj se nejdřív zmenší
+  na 2400 px (otáčení), výřez se uloží jako **JPEG 0,7, nejvýš 1600 px**.
+- Výřez se kreslí `<image>` **přes** řadu (`rzpObrazekSvg`, roztažený na
+  `modulu × 17,5 mm` a výšku řady, `preserveAspectRatio="none"`, výchozí
+  průhlednost 50 %, `pointer-events="none"` — přístroje jdou dál táhnout
+  a vybírat). Odkaz `blob:` místo `data:` (SVG se při tažení překresluje).
+  Pod lištou řádek na každou předlohu: posuvník **Průhlednost**, 🙈 Skrýt /
+  👁 Ukázat, ✂ Upravit (znovu ořez z uloženého pruhu), 🗑 Smazat (ZPĚT).
+- **Úložiště — mimo data rozvaděče:** jeden klíč IndexedDB
+  **`dok_rzPredlohy`** v téže databázi (`revize-el-db`, v labu přesměrovaná),
+  tvar `{ uidRozvaděče: { indexŘady: { src, w, h, op, skryto, t } } }`.
+  **NENÍ v `DOK_IDB`** → nejde do localStorage kopie DOK, do souboru dokumentu
+  ani do automatické zálohy. Bez IndexedDB (iOS) localStorage
+  `revize_el_rz_predlohy`. Načítá se poprvé při kreslení editoru
+  (`rzpNacist`), předlohy smazaných rozvaděčů se přitom uklidí.
+  **Nevejde-li se** (`rzpZapsat` vrátí false — tx.onabort / výjimka / plný
+  localStorage): hláška „Fotka se do úložiště prohlížeče nevešla…",
+  předloha se nepřidá, nic nespadne.
+- **Nikdy do PDF, tisku, schématu ani 3D** (jen bez `o.tisk` v `rozvSvg`).
+  **Do ruční zálohy jen na vyžádání:** zaškrtávátko v Nastavení u „Stáhnout
+  zálohu" — „Přiložit i fotky předloh rozvaděčů (soubor bude větší)", výchozí
+  ne; záloha pak nese `rzPredlohy` (`buildZalohaBlob(navic)`), obnova je
+  vrátí (`rzpObnovitZeZalohy`). Na GitHub nic.
+
+Test: `test-rozvadec.js` (nahrání souboru, tažení rohů myší, mřížka,
+narovnání, použití — šířka řady, IndexedDB, ne v datech ani localStorage,
+výběr přístroje přes fotku, průhlednost a skrýt, PDF bez fotky, záloha bez
+fotek a se zaškrtnutím s nimi, obnova po načtení stránky, plné úložiště,
+smazání). V `test-mobil.js` stavy „rozvaděč – předloha z fotky, ořez (okno)"
+a „…předloha nad řadou, nastavení čelního pohledu".
+
 ### PDF (část 4)
 
 - `DOK_TYPY.rozv.pdf(d)` → bloky pro společné stránkování tvorby
