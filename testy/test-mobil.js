@@ -568,6 +568,7 @@ function vsechnyStavy(zalozky) {
     await __M.rozv(); await rzpNacist(); __rzpVse[rzpUid()] = { 0: { src: eval(F), w: 900, h: 600, op: 0.5 } };
     rozvPohledVykreslit(); rozvVlastnostiVykreslit(); const d = document.querySelector('.rz-nast-pohledu'); if (d) d.open = true;
     document.getElementById('rz-pohled').scrollIntoView({ block: 'start' }); await __M.w(150);
+    setTimeout(() => { __rzpVse = {}; }, 3000);   // ať předloha (jen v paměti) nezůstane v dalších stavech
   }, fotka));
   add('rozvaděč – vybraný přístroj a vlastnosti', 'Tvorba dokumentace', E(async () => {
     await __M.rozv(); __rz.vyber = __rz.rady[1].prvky[3].uid; rozvPohledVykreslit(); rozvVlastnostiVykreslit();

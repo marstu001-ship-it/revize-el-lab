@@ -2013,7 +2013,8 @@ narovnání, použití — šířka řady, IndexedDB, ne v datech ani localStora
 výběr přístroje přes fotku, průhlednost a skrýt, PDF bez fotky, záloha bez
 fotek a se zaškrtnutím s nimi, obnova po načtení stránky, plné úložiště,
 smazání). V `test-mobil.js` stavy „rozvaděč – předloha z fotky, ořez (okno)"
-a „…předloha nad řadou, nastavení čelního pohledu".
+a „…předloha nad řadou, nastavení čelního pohledu". Posuvníky průhlednosti a narovnání mají na telefonu 44 px
+(blok MOBIL).
 
 #### Pole s nabídkou v editoru rozvaděče jdou přepsat (2026-10-26)
 
