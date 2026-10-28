@@ -2085,8 +2085,9 @@ klíč dat zůstal `x.spotr`, `RS_SPOTR`): zásuvky / světla / spotřebič / mo
 jiný, první volba „podle názvu (…)" = odhad z názvu vývodu
 (`rsSpotrPredikce`: „zás…", „zásuv…" → zásuvky, „světl…", „osvětl…" →
 světla) — **odhad se neukládá**, do dat jde jen ruční volba. Schéma:
-zásuvky → značka zásuvky ČSN EN 60617-11 (`RS_ZNACKY.zasuvka`, půlkruh pod
-příčkou), trojfázová navíc text **„3/N/PE"** pod značkou (počet vodičů dál
+zásuvky → značka zásuvky ČSN EN 60617-11 (`RS_ZNACKY.zasuvka`, stopka do
+vrcholu oblouku otevřeného dolů, bez příčky — podle značky, kterou uživatel
+zná z výkresů, 2026-10-28), trojfázová navíc text **„3/N/PE"** pod značkou (počet vodičů dál
 lomítky na vývodu), světla → svítidlo ⊗, spotřebič a jiný → obdélník,
 motor → M. Vektorové PDF beze změny cesty. Typ obvodu použije i odhad Pi
 (níž).
