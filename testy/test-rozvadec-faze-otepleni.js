@@ -166,7 +166,7 @@ const w = ms => new Promise(r => setTimeout(r, ms));
   check('bez Pv: 3 oranžové řádky „doplňte Pv", výsledek neúplné', o0.radky === 3 && o0.chybi === 3 && /Neúplné – chybí: Pv u 3 přístrojů,/.test(o0.vys), o0.vys);
   check('podmínky, 0,8 In a RDF mají štítek „čeká na ověření v ČSN"', o0.ceka >= 3, o0.ceka);
   const pvVyp = async (sel, v) => { await p.fill(sel, v); await w(80); };
-  const uids = await p.evaluate(() => ['-QM1', '-FA1', '-FA2'].map(o => __T.naj(o).uid));
+  const uids = await p.evaluate(() => ['-QH1', '-FA1', '-FA2'].map(o => __T.naj(o).uid));
   await pvVyp('.rot-pv[data-uid="' + uids[0] + '"]', '1,5');
   await pvVyp('.rot-pv[data-uid="' + uids[1] + '"]', '2');
   await pvVyp('.rot-pv[data-uid="' + uids[2] + '"]', '2'); await w(200);

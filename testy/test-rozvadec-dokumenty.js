@@ -98,7 +98,7 @@ async function priprava(p) {
     pv.un === '400/230 V' && pv.fn === '50 Hz' && pv.sit === '3/N/PE AC TN-S' && pv.icc === '6' && pv.ipz === 'IP40' && pv.vyr === 'Vymyšlená elektro s.r.o.', '');
   check('čísla dokumentů z výrobního čísla: PS-' + ROK + '-0001, KO-' + ROK + '-0001; podepisuje technik z profilu', pv.ps === 'PS-' + ROK + '-0001' && pv.ko === 'KO-' + ROK + '-0001' && pv.pj === 'Petr Vymyšlený', pv.ps + ' ' + pv.ko);
   check('poznámky protokolu z návrhu (krytí, přístroje, spoje, chrániče) — výsledky ne', /deklarované krytí IP40 \/ IP20 \(zavřeno\/otevřeno\)/.test(pv.p112) &&
-    /^osazení a značení dle seznamu přístrojů \(\d+ ks: -QM1, SPD1, -FA1/.test(pv.p115) && pv.p116 === 'namátkově zkontrolováno __ spojů, utahovací moment dle výrobce přístroje' &&
+    /^osazení a značení dle seznamu přístrojů \(\d+ ks: -QH1, SPD1, -FA1/.test(pv.p115) && pv.p116 === 'namátkově zkontrolováno __ spojů, utahovací moment dle výrobce přístroje' &&
     /tlačítkem T \(-FI1, -FI2, -FI\/FA1\)$/.test(pv.p1110), pv.p115 + ' | ' + pv.p1110);
   check('InA a stupeň znečištění se nevymýšlí (prázdné, InA s nápovědou podle přívodu)', pv.ina === '' && /přívod v hlavičce: 40 A/.test(pv.inaPh) && pv.znec === '', pv.inaPh);
   check('řádek „Chybí:" s odkazem na InA', /^Chybí: .*InA/.test(pv.chybi) && !/výrobní číslo/.test(pv.chybi), pv.chybi);

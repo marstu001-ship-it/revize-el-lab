@@ -113,7 +113,7 @@ const presahy = (p, svg) => p.evaluate(svg => {
   const t1 = txt(L[0].svg), t2 = txt(L[1].svg);
   check('výkres bytu: 2 listy A4 297 × 210 (osazení + jednopólové schéma)', L.length === 2 && L.every(l => l.W === 297 && l.H === 210 && l.fmt === 'A4'), L.length);
   check('list 1: nadpis „Osazení rozvaděče RH1" a „Rozvodnice 3×12 modulů, IP40 / IP20"', t1.includes('Osazení rozvaděče RH1') && t1.includes('Rozvodnice 3×12 modulů, IP40 / IP20'), t1.slice(0, 4).join(' | '));
-  const osaz = ['-QM1', 'SPD1', '-FA1', '-FI1', '-FA9', '-FI2', '-FI/FA1', '-FA14'].every(o => t1.includes(o));
+  const osaz = ['-QH1', 'SPD1', '-FA1', '-FI1', '-FA9', '-FI2', '-FI/FA1', '-FA14'].every(o => t1.includes(o));
   check('list 1: osazení ze čelního pohledu (svislé označení přístrojů)', osaz && /rotate\(-90/.test(L[0].svg), t1.filter(x => /^-|SPD/.test(x)).join(' '));
   const rad = ['Rozvaděč', 'Rozvodná soustava', 'Ochrana před nebezpečným dotykem', 'Typ', 'Provedení', 'Přívod / vývody', 'Rozměr', 'Krytí', 'Vnější vlivy', 'Pi [kW]', 'Pm [kW]', 'Hmotnost'];
   check('list 1: tabulka údajů má všech 12 řádků v pořadí', rad.every((r, i) => t1.indexOf(r) !== -1 && (i === 0 || t1.indexOf(r) > t1.indexOf(rad[i - 1]))), rad.filter(r => !t1.includes(r)).join(','));
@@ -139,7 +139,7 @@ const presahy = (p, svg) => p.evaluate(svg => {
     });
     return o;
   }, L[1].svg);
-  check('hlavní vypínač -QM1 na přívodu (značka vypínače, 40 A)', sl['-QM1'] && sl['-QM1'].zn === 'vypinac' && /40 A/.test(sl['-QM1'].t), JSON.stringify(sl['-QM1']));
+  check('hlavní vypínač -QH1 na přívodu (značka vypínače, 40 A)', sl['-QH1'] && sl['-QH1'].zn === 'vypinac' && /40 A/.test(sl['-QH1'].t), JSON.stringify(sl['-QH1']));
   check('SPD1 se svodičem a uzemněním (T1+T2), bez vývodu', sl['SPD1'] && sl['SPD1'].zn === 'spd' && /T1\+T2/.test(sl['SPD1'].t), JSON.stringify(sl['SPD1']));
   check('sporák -FA1: jistič B25, 3f „L1 L2 L3 · CYKY-J 5×2,5", spotřebič „jiné"', sl['-FA1'] && /^jistic,jine$/.test(sl['-FA1'].zn) && /B25/.test(sl['-FA1'].t) &&
     /L1 L2 L3 · CYKY-J 5×2,5/.test(sl['-FA1'].t) && /Sporák/.test(sl['-FA1'].t), JSON.stringify(sl['-FA1']));

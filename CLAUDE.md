@@ -2054,6 +2054,30 @@ v „ⓘ" vedle přepínače (na telefonu pod ním). Do PDF jde právě zapnutý
 Test: `test-rozvadec.js` (všech 14 barev, 13 A písková, 3 A a SPD šedé,
 bílá s rámečkem, legenda, PDF v obou režimech).
 
+#### Vypínače: -QH hlavní, -Q ostatní
+
+Konvence uživatele (2026-10-27): **-QH** = hlavní vypínač (víc hlavních →
+-QH1, -QH2…), **-Q** = ostatní vypínače a odpínače. Kategorie `QM` zůstává
+(teď „Vypínač / odpínač", skupina knihovny „Vypínače"); předpona se bere
+podle role (`rozvPredponaPrvku`, `rozvHlavniVypinace`): hlavní = výslovně
+zaškrtnuté **„Hlavní vypínač"** ve vlastnostech (`x.hlavni = true`), jinak
+první vypínač v pořadí řad (na přívodu), který nemá `x.hlavni = false`.
+Zaškrtnutí dalšího ponechá i dosavadní hlavní (QH1 + QH2); automatické
+označení -QH/-Q se při změně role přejmenuje samo, ručně napsané ne. Kopie
+hlavní není. **-QM (motorový spouštěč, kategorie `MS`) patří ke zvláštnímu
+zadání ovládacích obvodů — tady se nedělal.**
+
+**Starý rozvaděč s -QM1 se při otevření nepřeznačí** (data se otevřením
+nemění); nad pohledem jeden nenápadný řádek „Rozvaděč používá starší značení
+vypínačů (QM). Přečíslovat na QH/Q?" (`rozvQmUpozHtml`) — „🔢 Přečíslovat
+vypínače" (jen vypínače, se ZPĚT) nebo „Nechat" (localStorage
+`revize_el_rz_qm_nechat`, seznam uid). Schéma, seznam, popisky a dokumenty
+berou `x.ozn`, takže se nové značení promítne samo.
+
+**Upraveno ve stejném commitu:** `test-rozvadec.js`, `-dokumenty`,
+`-faze-otepleni`, `-schema` čekaly -QM1 u nově vloženého vypínače (teď -QH1)
+a skupinu „Hl. vypínače".
+
 ### PDF (část 4)
 
 - `DOK_TYPY.rozv.pdf(d)` → bloky pro společné stránkování tvorby

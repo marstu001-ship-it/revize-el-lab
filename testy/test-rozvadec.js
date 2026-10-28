@@ -191,7 +191,7 @@ function pomocnik() {
   check('filtr typu: průmyslové 6 (u položky „průmyslová"), historické zatím nic, domovní 16', f.prum.n === 6 && f.prum.akt === 'Průmyslové' && /průmyslová/.test(f.prum.meta) &&
     /Nic neodpovídá/.test(f.hist) && f.dom === 16, JSON.stringify(f.prum) + ' / ' + f.dom);
   check('karta Skříně: tlačítko „📐 Vlastní velikost skříně"', /📐 Vlastní velikost skříně/.test(f.velBtn), f.velBtn);
-  check('přístroje: kategorie jako řada tlačítek a výrobce, póly, In, charakteristika vždy vidět', f.viditelne.skupiny === 'Vše·Jističe·Chrániče·RCBO·AFDD·SPD·Hl. vypínače·Pojistky·Trafa a zdroje·Ostatní' &&
+  check('přístroje: kategorie jako řada tlačítek a výrobce, póly, In, charakteristika vždy vidět', f.viditelne.skupiny === 'Vše·Jističe·Chrániče·RCBO·AFDD·SPD·Vypínače·Pojistky·Trafa a zdroje·Ostatní' &&
     f.viditelne.sel === 'vyrobce,poly,In,char', JSON.stringify(f.viditelne));
   check('sbalené „Další filtry" jen IΔn, typ chrániče, jen ověřené, jen oblíbené', f.viditelne.sbalene && /^Další filtry/.test(f.viditelne.souhrn), f.viditelne.souhrn);
   check('kategorie Jističe (tlačítko se zvýrazní), počítadlo „Zobrazeno 50 z 80"', /^Zobrazeno 50 z 80 \(v knihovně \d+\)/.test(f.fa) && f.faAkt === 'Jističe', f.fa + ' · ' + f.vse);
@@ -599,8 +599,8 @@ function pomocnik() {
   const t1 = await p.evaluate(() => ({ r0: __T.rada(0), vyber: __rz.vyber === (__rz.rady[0].prvky[0] || {}).uid,
     kopie: JSON.stringify(__rz.rady[0].prvky[0] && __rz.rady[0].prvky[0].p), knih: (__rz.rady[0].prvky[0] || {}).knih,
     vlastnosti: document.getElementById('rz-vlastnosti').innerText, duch: !!document.querySelector('.rz-duch') }));
-  check('tažení myší z knihovny do řady: přístroj je v řadě 1, vybraný, s označením -QM1', t1.r0 === '-QM1' && t1.vyber && !t1.duch &&
-    /Vlastnosti přístroje/i.test(t1.vlastnosti) && /-QM1/.test(t1.vlastnosti), t1.r0);
+  check('tažení myší z knihovny do řady: přístroj je v řadě 1, vybraný, s označením -QH1', t1.r0 === '-QH1' && t1.vyber && !t1.duch &&
+    /Vlastnosti přístroje/i.test(t1.vlastnosti) && /-QH1/.test(t1.vlastnosti), t1.r0);
   check('přístroj nese KOPII parametrů z knihovny (i odkaz knih)', t1.knih === 'v-qm-3-40' && /"In":40/.test(t1.kopie) && /"sirka":3/.test(t1.kopie) && !/"id"/.test(t1.kopie), t1.kopie);
 
   // celý byt 3+1 (zbytek přes vkládání), pak kontroly
@@ -614,8 +614,8 @@ function pomocnik() {
     nadrNe: __rz.rady[0].prvky[2].nadr === '' && __rz.rady[2].prvky[5].nadr === '' && __rz.rady[2].prvky[0].nadr === '',
     svgText: document.querySelector('#rz-pohled .rz-svg').textContent
   }));
-  check('byt 3+1: označení podle kategorie a pořadí (-QM1, SPD1, -FA1…, -FI1, -FI/FA1)',
-    byt.r[0] === '-QM1,SPD1,-FA1,REZ' && byt.r[1] === '-FI1,-FA2,-FA3,-FA4,-FA5,-FA6,-FA7,-FA8,-FA9' && byt.r[2] === '-FI2,-FA10,-FA11,-FA12,-FA13,-FI/FA1,REZ', byt.r.join(' / '));
+  check('byt 3+1: označení podle kategorie a pořadí (-QH1, SPD1, -FA1…, -FI1, -FI/FA1)',
+    byt.r[0] === '-QH1,SPD1,-FA1,REZ' && byt.r[1] === '-FI1,-FA2,-FA3,-FA4,-FA5,-FA6,-FA7,-FA8,-FA9' && byt.r[2] === '-FI2,-FA10,-FA11,-FA12,-FA13,-FI/FA1,REZ', byt.r.join(' / '));
   check('byt 3+1: volné místo 0 / 36 modulů, nic přeplněné', /Volné místo: 0 \/ 36 modulů/.test(byt.volno) && !byt.chyba, byt.volno);
   check('nadřazený chránič: jističe automaticky pod chráničem vlevo ve stejné řadě', byt.nadr && byt.nadrNe);
   check('na čele přístroje: označení, In/charakteristika a vývod', /-FA4/.test(byt.svgText) && /B16/.test(byt.svgText) && /Zásuvky – obý/.test(byt.svgText) && /40A/.test(byt.svgText), '');
@@ -685,7 +685,7 @@ function pomocnik() {
   const k5 = await p.evaluate(() => [0, 1, 2].map(__T.rada).join(' / '));
   check('Delete smaže vybraný přístroj, Ctrl+Z ho vrátí na místo', k1 === '-FI1,-FA2,-FA4,-FA5,-FA6,-FA7,-FA8,-FA9' && k2 === '-FI1,-FA2,-FA3,-FA4,-FA5,-FA6,-FA7,-FA8,-FA9', k1 + ' → ' + k2);
   check('šipka → posune v řadě, Ctrl+D duplikuje s dalším volným označením', k3 === '-FI1,-FA2,-FA4,-FA3,-FA5,-FA6,-FA7,-FA8,-FA9' && k4 === '-FI1,-FA2,-FA4,-FA3,-FA16,-FA5,-FA6,-FA7,-FA8,-FA9', k3 + ' | ' + k4);
-  const PREC = '-QM1,SPD1,-FA1,-FA2 / -FI1,-FA3,-FA4,-FA5,-FA6,-FA7,-FA8,-FA9,-FA10 / -FI2,-FA11,-FA12,-FA13,-FA14,-FI/FA1,-FA15';
+  const PREC = '-QH1,SPD1,-FA1,-FA2 / -FI1,-FA3,-FA4,-FA5,-FA6,-FA7,-FA8,-FA9,-FA10 / -FI2,-FA11,-FA12,-FA13,-FA14,-FI/FA1,-FA15';
   check('Přečíslovat: podle pořadí v řadách zleva doprava', k5 === PREC, k5);
   // tlačítka posunu a rychlé přidání
   const tl = await p.evaluate(() => {
@@ -697,9 +697,9 @@ function pomocnik() {
     r.rychle = __T.rada(0);
     return r;
   });
-  check('▼ / ▲ přesune do sousední řady na podobné místo a zpět', /^-QM1,SPD1,-FA2 \/ -FI1,-FA3,-FA4,-FA5,-FA1,-FA6,/.test(tl.posun) && tl.zpet === '-QM1,SPD1,-FA1,-FA2', tl.posun + ' | ' + tl.zpet);
+  check('▼ / ▲ přesune do sousední řady na podobné místo a zpět', /^-QH1,SPD1,-FA2 \/ -FI1,-FA3,-FA4,-FA5,-FA1,-FA6,/.test(tl.posun) && tl.zpet === '-QH1,SPD1,-FA1,-FA2', tl.posun + ' | ' + tl.zpet);
   const tl2 = await p.evaluate(() => { __rz.aktRada = 1; TD_AKCE.tdRRychle(document.querySelector('#rz-rychle [data-kid="v-rez-1"]')); return __T.rada(2); });
-  check('rychlé přidání: plná vybraná řada → na konec první řady, kde je místo', tl.rychle === '-QM1,SPD1,-FA1,-FA2' && tl2 === '-FI2,-FA11,-FA12,-FA13,-FA14,-FI/FA1,-FA15,REZ' &&
+  check('rychlé přidání: plná vybraná řada → na konec první řady, kde je místo', tl.rychle === '-QH1,SPD1,-FA1,-FA2' && tl2 === '-FI2,-FA11,-FA12,-FA13,-FA14,-FI/FA1,-FA15,REZ' &&
     await p.evaluate(() => __rz.aktRada === 2), tl.rychle + ' | ' + tl2);
   await p.evaluate(() => rozvSmazat(__rz.rady[2].prvky[7].uid));
 
@@ -860,7 +860,7 @@ function pomocnik() {
     /Zmenšeno na \d+ %/.test(pdf.vse), pdf.svgMm);
   check('PDF: seznam přístrojů bez rezerv — každý přístroj jeden řádek, dlouhý seznam dělený po stranách se záhlavím, nic nepřetéká', pdf.radku === pdf.nonRez && !pdf.rez &&
     pdf.tabulek >= 2 && pdf.hlavicek === pdf.tabulek * 9 && pdf.vListu, pdf.radku + '/' + pdf.nonRez + ' · tabulek ' + pdf.tabulek);
-  check('PDF: sloupce označení, popis vývodu, typ, In, charakteristika, póly, IΔn, fáze, kabel', pdf.prvni === '-QM1 |  | Hlavní vypínač 3P 40 A * | 40 A |  | 3P |  | 3f | ' &&
+  check('PDF: sloupce označení, popis vývodu, typ, In, charakteristika, póly, IΔn, fáze, kabel', pdf.prvni === '-QH1 |  | Hlavní vypínač 3P 40 A * | 40 A |  | 3P |  | 3f | ' &&
     /^-FA4 Zásuvky – obývací pokoj, TV Jistič 1P B16 \* 16 A B 1P L2 CYKY-O 3×2,5$/.test(pdf.fa4.trim()), pdf.prvni + ' || ' + pdf.fa4);
   check('PDF: neověřené přístroje s hvězdičkou a vysvětlivkou, ověřený vlastní bez ní', /\* Údaje přístroje nejsou ověřené/.test(pdf.vse) && pdf.overenyBezHvezdy);
   const obr = await p.evaluate(async () => {
@@ -1563,6 +1563,45 @@ function pomocnik() {
   check('barvy podle In: 3 A (bez kódu) šedá s textem, SPD bez In šedá bez textu; legenda ⓘ má všechny barvy',
     A(14).nazev === 'bez barevného kódu' && A(14).t === '3 A' && A(15).nazev === 'bez In' && A(15).t === '' && amp.leg === 18, JSON.stringify([A(14), A(15), amp.leg]));
   check('barvy: do PDF jde právě zapnutý režim (ampéráž → písková 13 A, výrobce → OEZ LSN)', amp.pdfProud && amp.pdfVyrobce);
+
+  // ── vypínače: -QH hlavní, -Q ostatní (2026-10-27) ──────────────────────
+  const qh = await p.evaluate(async () => {
+    const r = {};
+    await dokNovy('rozv'); rozvSkrinNastavit(rozvKnihPolozka('v-sk-3x12-n'));
+    const a = rozvVlozit('v-qm-3-63', 0, 0), b = rozvVlozit('v-qm-1-32', 1, 0), c = rozvVlozit('v-qm-1-32', 1, 1);
+    r.auto = [a.ozn, b.ozn, c.ozn].join(); r.hl = rozvJeHlavni(rozvNajit(a.uid).x);
+    __rz.vyber = b.uid; rozvVlastnostiVykreslit();
+    const ch = document.querySelector('#rz-vlastnosti [data-rp2="hlavni"]'); r.chVid = !!ch && !ch.checked;
+    ch.checked = true; ch.dispatchEvent(new Event('input', { bubbles: true })); await __T.w(100);
+    r.dva = __rz.rady.map(rr => rr.prvky.map(x => x.ozn).join(',')).join(' / ');
+    TD_AKCE.tdRPrecislovat(); await __T.w(100);
+    r.prec = __rz.rady.map(rr => rr.prvky.map(x => x.ozn).join(',')).join(' / ');
+    // starý rozvaděč s -QM1: otevření ho nezmění, nabídne se přečíslování
+    await dokUlozitOtevreny();
+    const uid = window.__dokOtevreny.uid, dok = dokNajit(uid);
+    dok.data.rady[0].prvky[0].ozn = '-QM1'; dok.data.rady[1].prvky.forEach((x, i) => { x.ozn = '-QM' + (i + 2); delete x.hlavni; }); delete dok.data.rady[0].prvky[0].hlavni;
+    await dokZapsat(); const pred = JSON.stringify(dokNajit(uid).data);
+    await dokOtevrit(uid); await __T.w(300);
+    r.stare = __rz.rady.map(rr => rr.prvky.map(x => x.ozn).join(',')).join(' / ');
+    r.upoz = (document.querySelector('.rz-qm-upoz') || {}).innerText || '';
+    await dokUlozitOtevreny(); await __T.w(100);
+    r.beze = JSON.stringify(dokNajit(uid).data) === pred && window.__dokOtevreny.ulozen !== false;
+    TD_AKCE.tdRQmPrecislovat(); await __T.w(100);
+    r.qmPrec = __rz.rady.map(rr => rr.prvky.map(x => x.ozn).join(',')).join(' / ');
+    r.upozPo = !!document.querySelector('.rz-qm-upoz');
+    // „Nechat" schová nabídku natrvalo pro tento rozvaděč
+    __rz.rady[0].prvky[0].ozn = '-QM1'; rozvPohledVykreslit();
+    TD_AKCE.tdRQmNechat(); r.nechat = !document.querySelector('.rz-qm-upoz');
+    r.kat = rozvKat('QM').nazev;
+    return r;
+  });
+  check('vypínače: první je automaticky hlavní -QH1, další vypínače -Q1, -Q2', qh.auto === '-QH1,-Q1,-Q2' && qh.hl, qh.auto);
+  check('vypínače: zaškrtávátko „Hlavní vypínač" ve vlastnostech → dva hlavní -QH1, -QH2 (ostatní -Q zůstane)', qh.chVid && qh.dva === '-QH1 / -QH2,-Q2 / ', qh.dva);
+  check('vypínače: „Přečíslovat označení" čísluje podle role', qh.prec === '-QH1 / -QH2,-Q1 / ', qh.prec);
+  check('vypínače: starý rozvaděč s -QM1 se otevřením nezmění a nabídne „Přečíslovat na QH/Q?"',
+    qh.stare === '-QM1 / -QM2,-QM3 / ' && qh.beze && /starší značení vypínačů \(QM\)/.test(qh.upoz), qh.stare + ' | ' + qh.upoz);
+  check('vypínače: „Přečíslovat vypínače" → hlavní -QH, ostatní -Q, nabídka zmizí; „Nechat" ji schová; kategorie „Vypínač / odpínač"',
+    qh.qmPrec === '-QH1 / -Q1,-Q2 / ' && !qh.upozPo && qh.nechat && qh.kat === 'Vypínač / odpínač', qh.qmPrec);
 
   // ── oddělení od revizí ────────────────────────────────────────────────
   const odd = await p.evaluate(async () => {

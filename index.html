@@ -1980,6 +1980,7 @@ html.dark .rz-polozka.vybrana{background:#3d3410}
 html.dark .rz-banner{background:#3d3410;color:#f0d78a}
 .rz-chyba{background:#fdecea;border:1px solid #e6a59d;color:#9b2c1f;padding:.45rem .7rem;margin-bottom:.5rem;font-size:.84rem;border-radius:3px;font-weight:600}
 html.dark .rz-chyba{background:#3a1f1c;color:#f3b0a6;border-color:#6b2c25}
+.rz-qm-upoz{font-size:.78rem;color:var(--muted);margin:0 0 .4rem;display:flex;flex-wrap:wrap;align-items:center;gap:.3rem}
 .rz-barvy{display:inline-flex;align-items:center;gap:.25rem;font-size:.78rem;position:relative}
 .rz-barvy-b.akt{background:#e8f1fb;border-color:var(--accent2)}
 html.dark .rz-barvy-b.akt{background:#253043}
@@ -30802,7 +30803,7 @@ DOK_TYPY.rozv = {
 // třída ETIM 10 (jen tam, kde je známá — pro pozdější import dat výrobců),
 // `pole` = parametry, které u kategorie dávají smysl (formulář, import).
 var ROZV_KAT = [
-  { k: 'QM',   nazev: 'Hlavní vypínač / odpínač',        ozn: '-QM',    barva: '#f6d6d1', etim: '',         pole: ['In', 'icu', 'ics', 'ue'] },
+  { k: 'QM',   nazev: 'Vypínač / odpínač',              ozn: '-QM',    barva: '#f6d6d1', etim: '',         pole: ['In', 'icu', 'ics', 'ue'] },
   { k: 'FA',   nazev: 'Jistič',                          ozn: '-FA',    barva: '#ffffff', etim: 'EC000042', pole: ['In', 'char', 'icn', 'icu', 'ics', 'ue'] },
   { k: 'FI',   nazev: 'Proudový chránič',                ozn: '-FI',    barva: '#d9e7f7', etim: 'EC000003', pole: ['In', 'idn', 'rcdTyp', 'ue'] },
   { k: 'FIFA', nazev: 'Chránič s jističem (RCBO)',       ozn: '-FI/FA', barva: '#e4eefa', etim: 'EC000905', pole: ['In', 'char', 'icn', 'idn', 'rcdTyp', 'ue'] },
@@ -31113,7 +31114,7 @@ var ROZV_STRANKA = 50;
 var ROZV_KAT_SKUPINY = [
   { k: '', nazev: 'Vše' }, { k: 'FA', nazev: 'Jističe', kat: ['FA'] }, { k: 'FI', nazev: 'Chrániče', kat: ['FI'] },
   { k: 'FIFA', nazev: 'RCBO', kat: ['FIFA'] }, { k: 'AFDD', nazev: 'AFDD', kat: ['AFDD'] }, { k: 'SPD', nazev: 'SPD', kat: ['SPD'] },
-  { k: 'QM', nazev: 'Hl. vypínače', kat: ['QM'] }, { k: 'FU', nazev: 'Pojistky', kat: ['FU'] },
+  { k: 'QM', nazev: 'Vypínače', kat: ['QM'] }, { k: 'FU', nazev: 'Pojistky', kat: ['FU'] },
   { k: 'TRZD', nazev: 'Trafa a zdroje', kat: ['TR', 'ZD'] },
   { k: 'jine', nazev: 'Ostatní', kat: ['KM', 'KT', 'KA', 'PJ', 'HL', 'SF', 'X', 'XS', 'JINE', 'REZ'] },
   { k: 'QF', nazev: 'Výkonové jističe', kat: ['QF'], psc: true }, { k: 'QS', nazev: 'Odpínače', kat: ['QS'], psc: true },
@@ -31889,7 +31890,7 @@ function rozvPresunBlok(uidy, r, idx, poz, pos) {
 }
 
 function rozvKopiePrvku(x) {
-  var y = dokKopie(x); y.uid = rozvUid(); y.ozn = ''; y.nadrRucne = false; delete y.napaji; delete y.pos;   // kopie nenapájí cizí rozvaděč
+  var y = dokKopie(x); y.uid = rozvUid(); y.ozn = ''; y.nadrRucne = false; delete y.napaji; delete y.pos; delete y.hlavni;   // kopie nenapájí cizí rozvaděč a není hlavní vypínač
   return y;
 }
 // Vložení kopií (duplikát, schránka) za místo (r, idx) — se stejným
@@ -32593,9 +32594,9 @@ function rozvPohledVykreslit() {
         '<button class="dok-mini" data-action="tdRZoom" data-z="+" title="Zvětšit">＋</button>' +
         // Přečíslování natrvalo vedle zoomu (pokyn uživatele 2026-10-19 — ve
         // vlastnostech bez výběru ho starší technik nenašel)
-        '<button class="dok-mini rz-precislovat" data-action="tdRPrecislovat" title="Označení podle pořadí v řadách zleva doprava: -QM1, -FA1, -FA2… (jde vzít zpět)">🔢 Přečíslovat označení</button>' +
+        '<button class="dok-mini rz-precislovat" data-action="tdRPrecislovat" title="Označení podle pořadí v řadách zleva doprava: -QH1, -FA1, -FA2… (jde vzít zpět)">🔢 Přečíslovat označení</button>' +
         rozvBarvyPrepinacHtml() + '</span>' +
-    '</div>' + rzpListaHtml();
+    '</div>' + rozvQmUpozHtml() + rzpListaHtml();
   if (vybrany || presun || (presunVic && presunVic.length)) {
     // PSC: výkonový přístroj (bez modulů) se klepnutím dává na montážní desku
     var kam = __rz.rezim !== 'PSC' ? 'do řady' : vybrany && ((rozvKat(vybrany.kat) || {}).mm || !(+vybrany.sirka > 0)) ? 'na montážní desku' : 'do řady nebo na montážní desku';
@@ -32699,15 +32700,73 @@ function rozvPredpona(p) {
   if (k.predpona) return String(p.ozn || '').trim() || k.ozn;
   return k.ozn;
 }
+// Vypínače (kategorie QM, 2026-10-27): -QH = hlavní vypínač (QH1, QH2…),
+// -Q = ostatní vypínače a odpínače. Hlavní = výslovně zaškrtnutý
+// („Hlavní vypínač" ve vlastnostech, x.hlavni = true); když žádný není,
+// první vypínač v pořadí řad (na přívodu), který nemá x.hlavni = false.
+// Staré rozvaděče s -QM1 se při otevření NEPŘEZNAČUJÍ (data se otevřením
+// nemění) — nabídne se přečíslování (rozvQmUpozHtml).
+function rozvHlavniVypinace(rady, bez) {
+  var qm = []; (rady || []).forEach(function (r) { (r.prvky || []).forEach(function (x) { if (x.p && x.p.kat === 'QM' && x.uid !== bez) qm.push(x); }); });
+  var vyslovne = qm.filter(function (x) { return x.hlavni === true; });
+  if (vyslovne.length) return vyslovne.map(function (x) { return x.uid; });
+  var prvni = qm.filter(function (x) { return x.hlavni !== false; })[0];
+  return prvni ? [prvni.uid] : [];
+}
+function rozvJeHlavni(x) { return !!(__rz && x && x.p && x.p.kat === 'QM' && rozvHlavniVypinace(__rz.rady).indexOf(x.uid) !== -1); }
+function rozvPredponaPrvku(x) {
+  if (x && x.p && x.p.kat === 'QM') return rozvJeHlavni(x) ? '-QH' : '-Q';
+  return rozvPredpona(x && x.p);
+}
 // `a` = kategorie (text) nebo parametry přístroje (kvůli vlastní předponě).
 function rozvDalsiOzn(a, mimoUid) {
-  var pred = rozvPredpona(typeof a === 'string' ? { kat: a } : a); if (!pred) return '';
+  var pa = typeof a === 'string' ? { kat: a } : a;
+  var pred = pa && pa.kat === 'QM' ? (__rz && rozvHlavniVypinace(__rz.rady, mimoUid).length ? '-Q' : '-QH') : rozvPredpona(pa); if (!pred) return '';
   var re = new RegExp('^' + rozvReEsc(pred) + '(\\d+)$'), max = 0;
   __rz.rady.forEach(function (r) { r.prvky.forEach(function (x) {
     var m = x.uid !== mimoUid && re.exec(String(x.ozn || '').trim()); if (m) max = Math.max(max, +m[1]);
   }); });
   return pred + (max + 1);
 }
+
+// Další volné označení pro přístroj, který už v řadách je (vypínač podle role).
+function rozvDalsiOznRole(x) {
+  var pred = rozvPredponaPrvku(x); if (!pred) return '';
+  var re = new RegExp('^' + rozvReEsc(pred) + '(\\d+)$'), max = 0;
+  __rz.rady.forEach(function (r) { r.prvky.forEach(function (y) { var m = y.uid !== x.uid && re.exec(String(y.ozn || '').trim()); if (m) max = Math.max(max, +m[1]); }); });
+  return pred + (max + 1);
+}
+// Starší značení vypínačů (-QM1) → jednou nenápadně nabídnout přečíslování.
+var RZ_QM_NECHAT = 'revize_el_rz_qm_nechat';
+function rozvQmStare() {
+  return !!__rz && __rz.rady.some(function (r) { return r.prvky.some(function (x) { return x.p.kat === 'QM' && /^-QM\d+$/.test(String(x.ozn || '').trim()); }); });
+}
+function rozvQmNechano() {
+  var u = rzpUid(), a = []; try { a = JSON.parse(localStorage.getItem(RZ_QM_NECHAT) || '[]'); } catch (e) {}
+  return Array.isArray(a) && a.indexOf(u) !== -1;
+}
+function rozvQmUpozHtml() {
+  if (!rozvQmStare() || rozvQmNechano()) return '';
+  return '<div class="rz-qm-upoz">Rozvaděč používá starší značení vypínačů (QM). Přečíslovat na QH/Q? ' +
+    '<button class="dok-mini" data-action="tdRQmPrecislovat" title="Hlavní vypínač dostane -QH1, ostatní vypínače -Q1, -Q2…; jiná označení se nemění (jde vzít zpět)">🔢 Přečíslovat vypínače</button> ' +
+    '<button class="dok-mini" data-action="tdRQmNechat">Nechat</button></div>';
+}
+TD_AKCE.tdRQmPrecislovat = function () {
+  if (!__rz) return;
+  rozvZmena('Přečíslování vypínačů na QH/Q', function () {
+    var cit = {};
+    __rz.rady.forEach(function (r) { r.prvky.forEach(function (x) {
+      if (x.p.kat !== 'QM') return;
+      var pred = rozvPredponaPrvku(x); cit[pred] = (cit[pred] || 0) + 1; x.ozn = pred + cit[pred];
+    }); });
+  }, { toast: '🔢 Vypínače přečíslovány: hlavní -QH, ostatní -Q' });
+};
+TD_AKCE.tdRQmNechat = function () {
+  var a = []; try { a = JSON.parse(localStorage.getItem(RZ_QM_NECHAT) || '[]'); } catch (e) {}
+  if (!Array.isArray(a)) a = []; a.push(rzpUid());
+  try { localStorage.setItem(RZ_QM_NECHAT, JSON.stringify(a.slice(-200))); } catch (e) {}
+  rozvPohledVykreslit();
+};
 
 function rozvNovyPrvek(it) {
   var p = dokKopie(it); delete p.id;
@@ -32864,7 +32923,7 @@ function rozvPrecislovat() {
   rozvZmena('Přečíslování označení', function () {
     var cit = {};
     __rz.rady.forEach(function (r) { r.prvky.forEach(function (x) {
-      var pred = rozvPredpona(x.p); if (!pred) return;
+      var pred = rozvPredponaPrvku(x); if (!pred) return;
       cit[pred] = (cit[pred] || 0) + 1;
       x.ozn = pred + cit[pred];
     }); });
@@ -32942,7 +33001,9 @@ function rozvVlastnostiVykreslit() {
       '<b>' + esc(rozvMez(x) ? rozvModuly(rozvMez(x)) : 'žádná') + '</b>' +
       '<button class="dok-mini" data-action="tdRMezera" data-d="0.5" title="Zvětšit mezeru o ½ modulu (přístroj a ty těsně za ním se posunou doprava)">+ ½</button></div>');
   if (p.kat !== 'REZ') {
-    h += pole('ozn', 'Označení', x.ozn, { ph: rozvPredpona(p) ? rozvPredpona(p) + '1' : '' }) +
+    h += pole('ozn', 'Označení', x.ozn, { ph: rozvPredponaPrvku(x) ? rozvPredponaPrvku(x) + '1' : '' }) +
+      (p.kat === 'QM' ? '<label class="teren-radek rp-hlavni"><input type="checkbox" class="rp-pole" data-rp2="hlavni"' + (rozvJeHlavni(x) ? ' checked' : '') +
+        '> Hlavní vypínač <span class="dk-nepov">(označení -QH; ostatní vypínače -Q)</span></label>' : '') +
       pole('vyvod', 'Název vývodu', x.vyvod, { list: 'dl_nazev_obvodu', ph: 'Kuchyň – zásuvky' }) +
       '<div class="f"><label>Fáze</label><select class="rp-pole" data-rp2="faze"><option value="">—</option>' +
         ROZV_FAZE.map(function (f) { return '<option' + (x.faze === f ? ' selected' : '') + '>' + f + '</option>'; }).join('') + '</select>' +
@@ -33068,6 +33129,23 @@ function rozvVlastnostZmena(el) {
     rozvNadrazeneAuto();
     rozvVlastnostiVykreslit();
   } else if (k === 'fazeZamek') { if (el.checked) z.x.fazeZamek = true; else delete z.x.fazeZamek; }
+  else if (k === 'hlavni') {   // hlavní vypínač -QH / ostatní -Q; automatické označení se přejmenuje podle nové role
+    rozvZmena(el.checked ? 'Hlavní vypínač' : 'Vypínač není hlavní', function () {
+      if (el.checked) {   // další hlavní vypínač: dosud automaticky hlavní zůstane hlavní taky (QH1, QH2…)
+        var vysl = __rz.rady.some(function (r) { return r.prvky.some(function (y) { return y.hlavni === true; }); });
+        if (!vysl) rozvHlavniVypinace(__rz.rady).forEach(function (u) { var q = rozvNajit(u); if (q) q.x.hlavni = true; });
+        z.x.hlavni = true;
+      } else z.x.hlavni = false;
+      __rz.rady.forEach(function (r) { r.prvky.forEach(function (y) {
+        var o = String(y.ozn || '').trim();
+        if (y.p.kat !== 'QM' || !/^-(QH|Q)\d+$/.test(o)) return;
+        var chci = rozvPredponaPrvku(y);
+        if (new RegExp('^' + chci + '\\d+$').test(o)) return;
+        y.ozn = rozvDalsiOznRole(y);
+      }); });
+    });
+    return;
+  }
   else if (k === 'privod') {   // PSC: jen jeden přívodní přístroj
     rozvZmena('Přívodní přístroj', function () {
       __rz.rady.forEach(function (r) { r.prvky.forEach(function (y) { delete y.privod; }); });
