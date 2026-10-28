@@ -1981,6 +1981,17 @@ html.dark .rz-banner{background:#3d3410;color:#f0d78a}
 .rz-chyba{background:#fdecea;border:1px solid #e6a59d;color:#9b2c1f;padding:.45rem .7rem;margin-bottom:.5rem;font-size:.84rem;border-radius:3px;font-weight:600}
 html.dark .rz-chyba{background:#3a1f1c;color:#f3b0a6;border-color:#6b2c25}
 .rz-qm-upoz{font-size:.78rem;color:var(--muted);margin:0 0 .4rem;display:flex;flex-wrap:wrap;align-items:center;gap:.3rem}
+.rp-pi-radek{display:flex;gap:.4rem;align-items:center}.rp-pi-radek input{flex:1;min-width:0}.rp-pi-radek span{color:var(--muted);font-size:.85rem}
+.rz-pi-odhad{display:inline-block;font-size:.68rem;font-weight:600;letter-spacing:0;text-transform:none;padding:0 .35rem;border-radius:3px;background:#fff3d6;color:#7a4b00;border:1px solid #e0b75a;vertical-align:1px}
+.rz-pi-odhad[hidden]{display:none}
+html.dark .rz-pi-odhad{background:#3a2c0e;color:#f3c76b;border-color:#7a5c1c}
+.rz-pi-volby{display:flex;flex-wrap:wrap;gap:.3rem;margin:.2rem 0 .6rem}
+.rz-pi-volba.rz-pi-akt{background:var(--accent2);color:#fff;border-color:var(--accent2)}
+.rz-pi-vysl{margin:.5rem 0;padding:.45rem .6rem;border-radius:4px;background:var(--bg);font-size:.95rem}
+.rz-pi-rucne{margin:.3rem 0 .5rem;font-size:.85rem;color:#8a4b00}
+html.dark .rz-pi-rucne{color:#f0a35e}
+.rz-pi-nastaveni .rz-pi-nr{display:flex;align-items:center;gap:.4rem;font-size:.85rem;margin:.2rem 0;text-transform:none;letter-spacing:0;font-family:inherit}
+.rz-pi-nastaveni .rz-pi-nr input{width:5.5rem!important;flex:0 0 auto;margin-left:auto}
 .rz-otepl-ukaz{font:inherit;font-size:.8rem;border:1px solid var(--border);border-radius:3px;padding:.1rem .45rem;cursor:pointer;background:var(--surface);color:var(--muted)}
 .rz-otepl-zelena{background:#e3f4ea;border-color:#7cc49a;color:#0f5f3f}
 .rz-otepl-oranzova{background:#fdf0d8;border-color:#e0a800;color:#7a4d00}
@@ -4950,6 +4961,16 @@ html.dark .rz-imp-chyby{background:#3a1f1c;border-color:#6b2c25}
     <div class="modal-actions">
       <button class="btn btn-ghost" style="background:var(--bg);color:var(--text);border:1px solid var(--border)" data-action="tdRVelikostZavrit">Zrušit</button>
       <button class="btn btn-gold" data-action="tdRVelikostPouzit">✓ Použít skříň</button>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="modal-rz-pi">
+  <div class="modal" style="max-width:560px">
+    <div class="modal-title">🧮 Odhad instalovaného příkonu Pi</div>
+    <div id="rz-pi-obsah"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" style="background:var(--bg);color:var(--text);border:1px solid var(--border)" data-action="tdRPiZavrit">Zrušit</button>
+      <button class="btn btn-gold" id="rz-pi-pouzit" data-action="tdRPiPouzit">✓ Použít odhad</button>
     </div>
   </div>
 </div>
@@ -32279,6 +32300,146 @@ document.addEventListener('change', function (e) {
   rozvSvgPrekreslit();
 });
 
+// ═══ ODHAD INSTALOVANÉHO PŘÍKONU Pi (2026-10-27) ═════════════════════════
+// Pomocník k poli Pi u vývodu: počet × příkon podle typu obvodu. Výchozí
+// příkony jsou volba technika (Nastavení konfigurátoru, jen v prohlížeči —
+// localStorage `revize_el_rz_pi`), ne údaj z normy. Odhad se zapíše do Pi se
+// štítkem „odhad" (x.piOdhad = popis výpočtu); ruční přepsání štítek zruší
+// a ručně zadanou hodnotu odhad nikdy nepřepíše. Na soudobost ani součty
+// nesahá — Pi je dál jen údaj do tabulky pod schématem.
+var ROZV_PI_KLIC = 'revize_el_rz_pi';
+var ROZV_PI_SPOTR = [['bojler', 'Bojler', 2], ['sporak', 'Sporák', 9], ['deska', 'Varná deska', 7.4], ['trouba', 'Trouba', 3.5],
+  ['mycka', 'Myčka', 2.2], ['pracka', 'Pračka', 2.2], ['susicka', 'Sušička', 2.5], ['klima', 'Klimatizace', 1.5],
+  ['ev', 'Nabíječka EV', 11], ['tc', 'Tepelné čerpadlo', null], ['jiny', 'Jiný spotřebič', null]];
+var ROZV_PI_VYCHOZI = { zasuvka: 0.2, svetlo: 0.03 };
+ROZV_PI_SPOTR.forEach(function (q) { if (q[2] != null) ROZV_PI_VYCHOZI[q[0]] = q[2]; });
+function rozvPiHodnoty() {
+  var o = {}, u = null;
+  try { u = JSON.parse(localStorage.getItem(ROZV_PI_KLIC) || 'null'); } catch (e) {}
+  Object.keys(ROZV_PI_VYCHOZI).forEach(function (k) { o[k] = u && isFinite(+u[k]) && +u[k] > 0 ? +u[k] : ROZV_PI_VYCHOZI[k]; });
+  return o;
+}
+function rozvPiCislo(v) { var n = +String(v == null ? '' : v).replace(',', '.').replace(/[^\d.]/g, ''); return isFinite(n) ? n : 0; }
+function rozvPiText(n) { return rozvCisloText(Math.round(n * 1000) / 1000); }
+function rozvPiNastaveniHtml(panel) {
+  var h = rozvPiHodnoty();
+  var r = function (k, t, j) {
+    return '<label class="rz-pi-nr">' + esc(t) + ' <input type="text" class="rz-pi-nast" data-pin="' + k + '" value="' + esc(rozvCisloText(h[k])) + '" inputmode="decimal" autocomplete="off"> ' + j + '</label>';
+  };
+  return '<details class="rp-dalsi rz-pi-nastaveni" data-dk-mimo><summary>⚙ Nastavení konfigurátoru' + (panel ? ' – odhad Pi' : '') + '</summary>' +
+    '<div class="dk-pozn">Výchozí příkony pro „🧮 Odhadnout…" u Pi. Platí jen v tomto prohlížeči, do rozvaděče se neukládají.</div>' +
+    r('zasuvka', 'Zásuvka', 'kW/ks') + r('svetlo', 'Svítidlo (LED)', 'kW/ks') +
+    ROZV_PI_SPOTR.filter(function (q) { return q[2] != null; }).map(function (q) { return r(q[0], q[1], 'kW'); }).join('') +
+    '<button class="dok-mini" data-action="tdRPiVychozi" title="Vrátit výchozí hodnoty programu">↺ Výchozí hodnoty</button></details>';
+}
+var __rzPi = null;   // otevřený dialog: { uid, typ, n, prikon, volba }
+function rozvPiVychoziPrikon(typ, volba) {
+  var h = rozvPiHodnoty();
+  if (typ === 'zasuvka' || typ === 'svetlo') return h[typ];
+  if (typ === 'spotrebic' && volba && h[volba] != null) return h[volba];
+  return '';
+}
+function rozvPiVysledek() {
+  var q = __rzPi; if (!q) return null;
+  var n = q.typ === 'zasuvka' || q.typ === 'svetlo' || q.typ === 'spotrebic' ? rozvPiCislo(q.n) : 1;
+  var p = rozvPiCislo(q.prikon);
+  if (!(n > 0) || !(p > 0)) return null;
+  var nazev = { zasuvka: ['zásuvka', 'zásuvky', 'zásuvek'], svetlo: ['svítidlo', 'svítidla', 'svítidel'] }[q.typ];
+  var sp = ROZV_PI_SPOTR.filter(function (v) { return v[0] === q.volba; })[0];
+  var popis = nazev ? dokPocetTvar(n, nazev) + ' × ' + rozvPiText(p) + ' kW'
+    : q.typ === 'motor' ? 'Pn motoru ' + rozvPiText(p) + ' kW'
+    : (sp ? sp[1] : 'spotřebič') + (n !== 1 ? ' ' + rozvPiText(n) + ' × ' : ' ') + rozvPiText(p) + ' kW';
+  return { pi: rozvPiText(n * p), popis: popis };
+}
+function rozvPiDialogHtml() {
+  var q = __rzPi, z = rozvNajit(q.uid), x = z ? z.x : {};
+  var rucne = String(x.pi || '').trim() && !x.piOdhad;
+  var typy = RS_SPOTR.map(function (v) { return '<option value="' + v[0] + '"' + (q.typ === v[0] ? ' selected' : '') + '>' + esc(v[1]) + '</option>'; }).join('');
+  var pole = function (k, t, v, j) {
+    return '<div class="f"><label>' + esc(t) + '</label><div class="rp-pi-radek"><input type="text" class="rz-pi-in" data-pi="' + k + '" value="' + esc(v) + '" inputmode="decimal" autocomplete="off"><span>' + j + '</span></div></div>';
+  };
+  var h = '<div class="dk-pozn">Vývod <b>' + esc((x.ozn || '') + (x.vyvod ? ' ' + x.vyvod : '')) + '</b>. Odhad se zapíše do pole Pi se štítkem „odhad" — kdykoli ho můžete přepsat.</div>' +
+    '<div class="f"><label>Typ obvodu</label><select class="rz-pi-in" data-pi="typ">' + typy + '</select></div>';
+  if (q.typ === 'zasuvka') h += '<div class="g2">' + pole('n', 'Počet zásuvek', q.n, 'ks') + pole('prikon', 'Příkon na zásuvku', q.prikon, 'kW') + '</div>';
+  else if (q.typ === 'svetlo') h += '<div class="g2">' + pole('n', 'Počet svítidel', q.n, 'ks') + pole('prikon', 'Příkon svítidla', q.prikon, 'kW') + '</div>';
+  else if (q.typ === 'spotrebic') {
+    h += '<div class="rz-pi-volby" role="group" aria-label="Spotřebič">' + ROZV_PI_SPOTR.map(function (v) {
+      var hv = rozvPiHodnoty()[v[0]];
+      return '<button class="dok-mini rz-pi-volba' + (q.volba === v[0] ? ' rz-pi-akt' : '') + '" data-action="tdRPiVolba" data-v="' + v[0] + '" aria-pressed="' + (q.volba === v[0]) + '">' +
+        esc(v[1]) + (hv != null ? ' ' + esc(rozvCisloText(hv)) + ' kW' : ' – zadat') + '</button>';
+    }).join('') + '</div>' +
+      '<div class="g2">' + pole('n', 'Počet', q.n, 'ks') + pole('prikon', 'Příkon', q.prikon, 'kW') + '</div>';
+  } else if (q.typ === 'motor') h += pole('prikon', 'Jmenovitý výkon Pn ze štítku motoru', q.prikon, 'kW');
+  else h += pole('prikon', 'Příkon', q.prikon, 'kW');
+  var v = rozvPiVysledek();
+  h += '<div class="rz-pi-vysl" id="rz-pi-vysl">' + (v ? 'Pi ≈ <b>' + esc(v.pi) + ' kW</b> <span class="dk-nepov">(' + esc(v.popis) + ')</span>' : 'Doplňte počet a příkon.') + '</div>';
+  if (rucne) h += '<div class="rz-pi-rucne">V poli Pi je ručně zadaná hodnota <b>' + esc(x.pi) + ' kW</b> — odhad ji nepřepíše. Chcete-li použít odhad, pole Pi nejdřív vymažte.</div>';
+  h += rozvPiNastaveniHtml(false);
+  return h;
+}
+function rozvPiPrekreslit() {
+  var box = document.getElementById('rz-pi-obsah'); if (!box || !__rzPi) return;
+  var o = box.querySelector('.rz-pi-nastaveni'), otevreno = o && o.open;
+  box.innerHTML = rozvPiDialogHtml();
+  if (otevreno) box.querySelector('.rz-pi-nastaveni').open = true;
+  rozvPiTlacitko();
+}
+function rozvPiTlacitko() {
+  var z = __rzPi && rozvNajit(__rzPi.uid), b = document.getElementById('rz-pi-pouzit'); if (!b) return;
+  var rucne = z && String(z.x.pi || '').trim() && !z.x.piOdhad;
+  b.disabled = !!rucne || !rozvPiVysledek();
+}
+TD_AKCE.tdRPiOdhad = function () {
+  var z = __rz && __rz.vyber && rozvNajit(__rz.vyber); if (!z) return;
+  var x = z.x, typ = rsSpotr(x);
+  __rzPi = { uid: x.uid, typ: typ, n: typ === 'spotrebic' ? '1' : '', volba: '', prikon: '' };
+  __rzPi.prikon = rozvCisloText(rozvPiVychoziPrikon(typ, '')) || '';
+  rozvPiPrekreslit();
+  document.getElementById('modal-rz-pi').classList.add('open');
+  var prvni = document.querySelector('#rz-pi-obsah input.rz-pi-in'); if (prvni) prvni.focus();
+};
+TD_AKCE.tdRPiZavrit = function () { closeModal('modal-rz-pi'); __rzPi = null; };
+TD_AKCE.tdRPiVolba = function (el) {
+  if (!__rzPi) return;
+  __rzPi.volba = el.dataset.v;
+  __rzPi.prikon = rozvCisloText(rozvPiVychoziPrikon('spotrebic', el.dataset.v)) || '';
+  rozvPiPrekreslit();
+  var pr = document.querySelector('#rz-pi-obsah [data-pi="prikon"]'); if (pr && !pr.value) pr.focus();
+};
+TD_AKCE.tdRPiPouzit = function () {
+  var q = __rzPi, z = q && rozvNajit(q.uid), v = rozvPiVysledek(); if (!z || !v) return;
+  if (String(z.x.pi || '').trim() && !z.x.piOdhad) { rozvPiTlacitko(); return; }   // ruční hodnota se nepřepisuje
+  closeModal('modal-rz-pi'); __rzPi = null;
+  rozvZmena('Odhad Pi', function () { var y = rozvNajit(z.x.uid); if (y) { y.x.pi = v.pi; y.x.piOdhad = v.popis; } });
+  showToast('Pi ≈ ' + v.pi + ' kW (odhad: ' + v.popis + ')');
+};
+TD_AKCE.tdRPiVychozi = function () {
+  try { localStorage.removeItem(ROZV_PI_KLIC); } catch (e) {}
+  document.querySelectorAll('.rz-pi-nast').forEach(function (i) { i.value = rozvCisloText(ROZV_PI_VYCHOZI[i.dataset.pin]); });
+  if (__rzPi) { __rzPi.prikon = rozvCisloText(rozvPiVychoziPrikon(__rzPi.typ, __rzPi.volba)) || __rzPi.prikon; rozvPiPrekreslit(); }
+};
+document.addEventListener('input', function (e) {
+  var t = e.target; if (!t || !t.classList) return;
+  if (t.classList.contains('rz-pi-in') && t.tagName !== 'SELECT' && __rzPi) {   // psaní: jen výsledek, pole zůstane
+    __rzPi[t.dataset.pi] = t.value;
+    var v = rozvPiVysledek(), el = document.getElementById('rz-pi-vysl');
+    if (el) el.innerHTML = v ? 'Pi ≈ <b>' + esc(v.pi) + ' kW</b> <span class="dk-nepov">(' + esc(v.popis) + ')</span>' : 'Doplňte počet a příkon.';
+    rozvPiTlacitko();
+  } else if (t.classList.contains('rz-pi-nast')) {
+    var u = {}; try { u = JSON.parse(localStorage.getItem(ROZV_PI_KLIC) || '{}') || {}; } catch (er) { u = {}; }
+    var n = rozvPiCislo(t.value);
+    if (n > 0) u[t.dataset.pin] = n; else delete u[t.dataset.pin];
+    try { localStorage.setItem(ROZV_PI_KLIC, JSON.stringify(u)); } catch (er) {}
+  }
+});
+document.addEventListener('change', function (e) {
+  var t = e.target; if (!t || !t.classList || !t.classList.contains('rz-pi-in') || t.tagName !== 'SELECT' || !__rzPi) return;
+  __rzPi.typ = t.value; __rzPi.volba = '';
+  __rzPi.n = t.value === 'spotrebic' ? '1' : (t.value === 'zasuvka' || t.value === 'svetlo' ? __rzPi.n : '');
+  __rzPi.prikon = rozvCisloText(rozvPiVychoziPrikon(t.value, '')) || '';
+  rozvPiPrekreslit();
+});
+
 // ═══ PŘEDLOHA Z FOTKY (pokusná funkce, lab 2026-10-26) ═══════════════════
 // Oříznutý pruh fotky jedné řady se kreslí PŘES řadu v čelním pohledu, ve
 // stejné šířce jako řada (levá hrana ořezu = začátek prvního modulu, pravá =
@@ -33027,7 +33188,7 @@ function rozvVlastnostiVykreslit() {
     var v = __rz.skrin ? rozvVolnoCelkem(__rz) : null;
     box.innerHTML = '<div class="rp-t">Vlastnosti</div>' +
       (__rz.skrin ? '<div class="rp-souhrn">🗄 <b>' + esc(rozvNazev(__rz.skrin)) + '</b><br>' + __rz.rady.length + ' × ' + __rz.skrin.modulu + ' modulů · přístrojů ' + pocet +
-        ' · volno ' + esc(rozvCisloText(Math.max(0, v.volno))) + ' M</div>' : '') + rozvMixHtml() + rozvFazePanelHtml() + rozvNastaveniPohleduHtml() +
+        ' · volno ' + esc(rozvCisloText(Math.max(0, v.volno))) + ' M</div>' : '') + rozvMixHtml() + rozvFazePanelHtml() + rozvNastaveniPohleduHtml() + rozvPiNastaveniHtml(true) +
       '<div class="dk-pozn">Klepněte na přístroj v čelním pohledu — tady pak vyplníte název vývodu, fázi a kabel. ' +
         (rozvDotyk() ? 'Víc přístrojů vyberete delším podržením prstu na přístroji.' : 'Víc přístrojů vyberete s Ctrl nebo Shift, nebo tažením rámečku v prázdném místě pohledu.') + '</div>' +
       (__rz.skrin ? '<button class="add-row" data-action="tdRSkrinVymenit">🗄 Vyměnit skříň</button>' : '');
@@ -33081,7 +33242,11 @@ function rozvVlastnostiVykreslit() {
       h += '<div class="g2 rp-schema"><div class="f"><label title="Podle typu se ve schématu kreslí značka (zásuvka, svítidlo, motor) a nabízí odhad Pi">Typ obvodu</label><select class="rp-pole" data-rp2="spotr">' +
           '<option value=""' + (!x.spotr ? ' selected' : '') + '>podle názvu (' + esc(rsSpotrNazev(pr || 'jine')) + ')</option>' +
           RS_SPOTR.map(function (v) { return '<option value="' + v[0] + '"' + (x.spotr === v[0] ? ' selected' : '') + '>' + esc(v[1]) + '</option>'; }).join('') + '</select></div>' +
-        pole('obvod', 'Obvod č.', x.obvod || '', { nepov: true, ph: '1' }) + '</div>';
+        pole('obvod', 'Obvod č.', x.obvod || '', { nepov: true, ph: '1' }) + '</div>' +
+        '<div class="f rp-pi"><label>Instalovaný příkon Pi (kW) <span class="dk-nepov">(nepovinné)</span>' +
+          ' <span class="rz-pi-odhad"' + (x.piOdhad ? ' title="' + esc('odhad: ' + x.piOdhad) + '"' : ' hidden') + '>odhad</span></label>' +
+          '<div class="rp-pi-radek"><input type="text" class="rp-pole" data-rp2="pi" value="' + esc(x.pi || '') + '" placeholder="do tabulky pod schématem" inputmode="decimal" autocomplete="off">' +
+          '<button class="dok-mini" data-action="tdRPiOdhad" title="Spočítat Pi z počtu zásuvek, svítidel nebo z příkonu spotřebiče">🧮 Odhadnout…</button></div></div>';
     }
     if (ROZV_NADR_BEZ.indexOf(p.kat) === -1) {
       var fi = [];
@@ -33094,9 +33259,8 @@ function rozvVlastnostiVykreslit() {
         fi.map(function (f) { return '<option value="' + esc(f[0]) + '"' + ((x.nadrRucne || !auto) && x.nadr === f[0] ? ' selected' : '') + '>' + esc(f[1]) + '</option>'; }).join('') +
         '</select></div>';
     }
-    h += '<details class="rp-dalsi"' + (x.ib || x.pozn || x.pi ? ' open' : '') + '><summary>Další údaje</summary>' +
+    h += '<details class="rp-dalsi"' + (x.ib || x.pozn ? ' open' : '') + '><summary>Další údaje</summary>' +
       pole('ib', 'Provozní proud Ib (A)', x.ib, { nepov: true, dec: true, ph: 'pro výpočet oteplení' }) +
-      (RS_OBVODOVE.indexOf(p.kat) !== -1 || (rfVyvod(x) && RS_PSC_VYVODY.indexOf(p.kat) !== -1) ? pole('pi', 'Instalovaný příkon Pi (kW)', x.pi || '', { nepov: true, dec: true, ph: 'do tabulky pod schématem' }) : '') +
       pole('pozn', 'Poznámka', x.pozn, { nepov: true }) + '</details>';
   }
   h += '<div class="rp-akce"><button class="dok-mini" data-action="tdRDuplikovat" title="Kopie hned vedle (Ctrl+D)">⧉ Duplikovat</button>' +
@@ -33218,6 +33382,10 @@ function rozvVlastnostZmena(el) {
     return;
   }
   else z.x[k] = k === 'ib' || k === 'pi' || k === 'obvod' ? v.trim() : v;
+  if (k === 'pi' && z.x.piOdhad) {   // ručně přepsaný odhad už odhadem není
+    delete z.x.piOdhad;
+    var st = el.closest('.rp-pi'); st = st && st.querySelector('.rz-pi-odhad'); if (st) st.hidden = true;
+  }
   if (k === 'spotr' && !v) delete z.x.spotr;   // předpověď z názvu se neukládá
   if (k === 'sbernice' && !v) delete z.x.sbernice;
   if (k === 'vyvod') {   // „podle názvu (…)" se mění s názvem
@@ -36539,8 +36707,10 @@ function rsListSchema(d, list, idx, listy, c, model) {
       if (i) h += rsCara(cx - RS_SL / 2, y, cx - RS_SL / 2, y + 9, { w: RS_TENKA });
       if (RS_OBVODOVE.indexOf(x.p.kat) === -1 && !(c.psc && RS_PSC_VYVODY.indexOf(x.p.kat) !== -1)) return;
       h += rsText(cx, y + 3.3, rsVejit(x.obvod || '', RS_SL - 1, 2.1), { fs: 2.1, zar: 'middle' }) +
-        rsText(cx, y + 7.8, rsVejit(String(x.pi || '').trim() || '–', RS_SL - 1, 2.1), { fs: 2.1, zar: 'middle' });
+        rsText(cx, y + 7.8, rsVejit((x.piOdhad && String(x.pi || '').trim() ? '≈' : '') + (String(x.pi || '').trim() || '–'), RS_SL - 1, 2.1), { fs: 2.1, zar: 'middle' });
     });
+    if (list.sloupce.some(function (x) { return x.piOdhad && String(x.pi || '').trim(); }))
+      h += rsText(tx0 + 1, y + 12.2, '≈ = odhad instalovaného příkonu', { fs: 1.8 });
   }
   // MET
   if (g.xMet) {

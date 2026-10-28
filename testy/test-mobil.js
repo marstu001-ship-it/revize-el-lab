@@ -570,6 +570,25 @@ function vsechnyStavy(zalozky) {
     document.getElementById('rz-pohled').scrollIntoView({ block: 'start' }); await __M.w(150);
     setTimeout(() => { __rzpVse = {}; }, 3000);   // ať předloha (jen v paměti) nezůstane v dalších stavech
   }, fotka));
+  add('rozvaděč – barvy podle ampéráže s legendou, ukazatel oteplení', 'Tvorba dokumentace', E(async () => {
+    await __M.rozv(); localStorage.setItem('revize_el_rz_barvy', 'proud'); __rz.skrin.penc = 20;
+    __rz.rady.forEach(r => r.prvky.forEach(x => { if (x.p.kat === 'FA') x.p.pv = 2; }));
+    rozvPohledVykreslit(); await __M.w(150); const l = document.querySelector('.rz-barvy-leg'); if (l) l.open = true;
+    document.querySelector('.rz-lista').scrollIntoView({ block: 'start' }); await __M.w(100);
+    setTimeout(() => { localStorage.removeItem('revize_el_rz_barvy'); }, 3000);
+  }));
+  add('rozvaděč – odhad instalovaného příkonu Pi (okno)', 'Tvorba dokumentace', E(async () => {
+    await __M.rozv(); document.getElementById('toast-wrap').innerHTML = '';
+    const x = __rz.rady[1].prvky[3]; x.spotr = 'spotrebic'; __rz.vyber = x.uid; rozvVlastnostiVykreslit();
+    TD_AKCE.tdRPiOdhad(); await __M.w(100); document.querySelector('.rz-pi-volba[data-v="sporak"]').click();
+    document.querySelector('#rz-pi-obsah .rz-pi-nastaveni').open = true;
+    if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); await __M.w(100);
+  }), '#modal-rz-pi');
+  add('rozvaděč – vývod s odhadem Pi ve vlastnostech', 'Tvorba dokumentace', E(async () => {
+    await __M.rozv(); const x = __rz.rady[1].prvky[3]; x.pi = '1,6'; x.piOdhad = '8 zásuvek × 0,2 kW';
+    __rz.vyber = x.uid; rozvPohledVykreslit(); rozvVlastnostiVykreslit();
+    document.querySelector('#rz-vlastnosti .rp-pi').scrollIntoView({ block: 'start' }); await __M.w(100);
+  }));
   add('rozvaděč – vybraný přístroj a vlastnosti', 'Tvorba dokumentace', E(async () => {
     await __M.rozv(); __rz.vyber = __rz.rady[1].prvky[3].uid; rozvPohledVykreslit(); rozvVlastnostiVykreslit();
     document.getElementById('rz-vlastnosti').scrollIntoView({ block: 'start' }); await __M.w(100);

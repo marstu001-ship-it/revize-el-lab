@@ -1664,6 +1664,84 @@ function pomocnik() {
   check('oteplení v liště se přepočítá při smazání přístroje; do PDF nejde', /≈ 11 \//.test(ot.poSmazani.t) && !ot.pdf, ot.poSmazani.t);
   check('knihovna skříní: u skříně s Penc odhad „≈ 53 %" (s vloženými přístroji)', ot.knih === '≈ 53 %', ot.knih);
 
+  // ── odhad instalovaného příkonu Pi (2026-10-27) ───────────────────────
+  const pi = await p.evaluate(async () => {
+    const r = {}, inp = (sel, v) => { const e = document.querySelector(sel); e.value = v; e.dispatchEvent(new Event('input', { bubbles: true })); };
+    const vysl = () => (document.getElementById('rz-pi-vysl') || {}).textContent || '';
+    const tl = () => document.getElementById('rz-pi-pouzit');
+    const otevri = async uid => { __rz.vyber = uid; rozvVlastnostiVykreslit(); document.querySelector('#rz-vlastnosti [data-action="tdRPiOdhad"]').click(); await __T.w(100); };
+    try { localStorage.removeItem('revize_el_rz_pi'); } catch (e) {}
+    await dokNovy('rozv'); rozvSkrinNastavit(rozvKnihPolozka('v-sk-3x12-n'));
+    const V = (kid, vyvod) => { const x = rozvVlozit(kid, 0, __rz.rady[0].prvky.length); x.vyvod = vyvod; x.faze = 'L1'; return x; };
+    const a = V('v-fa-1-B16', 'Zásuvky kuchyň'), b = V('v-fa-1-B16', 'Kuchyň – sporák'), m = V('v-fa-3-B16', 'Kompresor'), c = V('v-fa-1-B10', 'Osvětlení');
+    rozvZmena('t', () => {}); await __T.w(100);
+    // zásuvky: 8 × 0,2 kW = 1,6 kW
+    await otevri(a.uid);
+    r.typ = document.querySelector('#rz-pi-obsah [data-pi="typ"]').value; r.prikon = document.querySelector('#rz-pi-obsah [data-pi="prikon"]').value;
+    r.tlPred = tl().disabled;
+    inp('#rz-pi-obsah [data-pi="n"]', '8'); r.vysl = vysl(); r.tlPo = tl().disabled;
+    tl().click(); await __T.w(150);
+    let y = rozvNajit(a.uid).x; r.pi = y.pi; r.odhad = y.piOdhad;
+    __rz.vyber = a.uid; rozvVlastnostiVykreslit();
+    let st = document.querySelector('#rz-vlastnosti .rz-pi-odhad'); r.stitek = !st.hidden && st.textContent === 'odhad' && st.title;
+    r.pole = document.querySelector('#rz-vlastnosti [data-rp2="pi"]').value;
+    r.cist = (DOK_TYPY.rozv.cist(dokForm()).rady[0].prvky.filter(q => q.uid === a.uid)[0] || {}).piOdhad;
+    // schéma: ≈ u odhadu a vysvětlivka
+    let svg = rozvSchemaListy(DOK_TYPY.rozv.cist(dokForm())).map(l => l.svg).join('');
+    r.schOdhad = />≈1,6</.test(svg) && /≈ = odhad instalovaného příkonu/.test(svg);
+    // ruční přepsání štítek zruší
+    inp('#rz-vlastnosti [data-rp2="pi"]', '1,8'); await __T.w(100);
+    y = rozvNajit(a.uid).x; st = document.querySelector('#rz-vlastnosti .rz-pi-odhad');
+    r.rucne = y.pi === '1,8' && !('piOdhad' in y) && st.hidden;
+    svg = rozvSchemaListy(DOK_TYPY.rozv.cist(dokForm())).map(l => l.svg).join('');
+    r.schRucne = />1,8</.test(svg) && !/≈1,8/.test(svg) && !/≈ = odhad/.test(svg);
+    // ruční hodnotu odhad nepřepíše
+    await otevri(a.uid); inp('#rz-pi-obsah [data-pi="n"]', '10');
+    r.blok = tl().disabled && /ručně zadaná hodnota/.test(document.getElementById('rz-pi-obsah').textContent);
+    TD_AKCE.tdRPiPouzit(); await __T.w(100); r.blokPi = rozvNajit(a.uid).x.pi;
+    TD_AKCE.tdRPiZavrit();
+    // spotřebič: rychlé volby, sporák 9 kW, TČ zadat
+    b.spotr = 'spotrebic'; await otevri(b.uid);
+    r.volby = Array.from(document.querySelectorAll('.rz-pi-volba')).map(e => e.textContent).join('|');
+    document.querySelector('.rz-pi-volba[data-v="tc"]').click(); await __T.w(50);
+    r.tc = document.querySelector('#rz-pi-obsah [data-pi="prikon"]').value === '' && tl().disabled;
+    document.querySelector('.rz-pi-volba[data-v="sporak"]').click(); await __T.w(50);
+    r.sporak = document.querySelector('#rz-pi-obsah [data-pi="prikon"]').value;
+    inp('#rz-pi-obsah [data-pi="prikon"]', '9,5'); tl().click(); await __T.w(150);
+    y = rozvNajit(b.uid).x; r.spPi = y.pi + ' | ' + y.piOdhad;
+    // motor: Pn ze štítku
+    m.spotr = 'motor'; await otevri(m.uid);
+    r.motorPole = !!document.querySelector('#rz-pi-obsah [data-pi="prikon"]') && !document.querySelector('#rz-pi-obsah [data-pi="n"]') && /Pn ze štítku/.test(document.getElementById('rz-pi-obsah').textContent);
+    inp('#rz-pi-obsah [data-pi="prikon"]', '5,5'); tl().click(); await __T.w(150);
+    r.motor = rozvNajit(m.uid).x.pi;
+    // Nastavení konfigurátoru: jiné výchozí příkony, jen v prohlížeči
+    await otevri(c.uid);
+    r.svetlo = document.querySelector('#rz-pi-obsah [data-pi="prikon"]').value;
+    document.querySelector('#rz-pi-obsah .rz-pi-nastaveni').open = true;
+    inp('#rz-pi-obsah .rz-pi-nast[data-pin="svetlo"]', '0,05'); TD_AKCE.tdRPiZavrit();
+    await otevri(c.uid); r.svetlo2 = document.querySelector('#rz-pi-obsah [data-pi="prikon"]').value;
+    inp('#rz-pi-obsah [data-pi="n"]', '12'); r.svVysl = vysl(); TD_AKCE.tdRPiZavrit();
+    r.ls = localStorage.getItem('revize_el_rz_pi');
+    __rz.vyber = null; rozvVlastnostiVykreslit();
+    r.panel = !!document.querySelector('#rz-vlastnosti .rz-pi-nastaveni .rz-pi-nast[data-pin="zasuvka"]');
+    r.vData = /0,05|0\.05/.test(JSON.stringify(DOK_TYPY.rozv.cist(dokForm())));
+    TD_AKCE.tdRPiVychozi(); r.poReset = localStorage.getItem('revize_el_rz_pi');
+    return r;
+  });
+  check('Pi odhad: zásuvky — typ podle názvu, výchozí 0,2 kW/ks, 8 × 0,2 = 1,6 kW, bez počtu „Použít" nejde',
+    pi.typ === 'zasuvka' && pi.prikon === '0,2' && pi.tlPred && !pi.tlPo && /Pi ≈ 1,6 kW/.test(pi.vysl) && pi.pi === '1,6', JSON.stringify([pi.typ, pi.prikon, pi.vysl, pi.pi]));
+  check('Pi odhad: v poli Pi se štítkem „odhad" (bublina s výpočtem), uloží se do rozvaděče',
+    pi.odhad === '8 zásuvek × 0,2 kW' && pi.stitek === 'odhad: 8 zásuvek × 0,2 kW' && pi.pole === '1,6' && pi.cist === pi.odhad, JSON.stringify([pi.odhad, pi.stitek, pi.cist]));
+  check('Pi odhad: ve schématu „≈1,6" a vysvětlivka; po ručním přepsání štítek i ≈ zmizí', pi.schOdhad && pi.rucne && pi.schRucne, JSON.stringify([pi.schOdhad, pi.rucne, pi.schRucne]));
+  check('Pi odhad nikdy nepřepíše ručně zadanou hodnotu („Použít" vypnuté, hláška)', pi.blok && pi.blokPi === '1,8', pi.blokPi);
+  check('Pi odhad: spotřebič — rychlé volby (bojler 2 … nabíječka EV 11, TČ a jiný zadat), sporák 9 kW, hodnota jde přepsat',
+    /Bojler 2 kW/.test(pi.volby) && /Sporák 9 kW/.test(pi.volby) && /Varná deska 7,4 kW/.test(pi.volby) && /Nabíječka EV 11 kW/.test(pi.volby) &&
+    /Tepelné čerpadlo – zadat/.test(pi.volby) && pi.tc && pi.sporak === '9' && pi.spPi === '9,5 | Sporák 9,5 kW', pi.volby + ' / ' + pi.spPi);
+  check('Pi odhad: motor — jen Pn ze štítku (5,5 kW)', pi.motorPole && pi.motor === '5,5', pi.motor);
+  check('Pi odhad: Nastavení konfigurátoru — svítidlo 0,03 → 0,05 kW/ks platí příště, jen v prohlížeči (ne v rozvaděči), ↺ vrátí výchozí',
+    pi.svetlo === '0,03' && pi.svetlo2 === '0,05' && /12 svítidel × 0,05 kW/.test(pi.svVysl) && /Pi ≈ 0,6 kW/.test(pi.svVysl) &&
+    /"svetlo":0\.05/.test(pi.ls || '') && pi.panel && !pi.vData && !pi.poReset, JSON.stringify([pi.svetlo, pi.svetlo2, pi.svVysl, pi.ls, pi.panel, pi.vData, pi.poReset]));
+
   // ── oddělení od revizí ────────────────────────────────────────────────
   const odd = await p.evaluate(async () => {
     showScreen('home'); renderArchiv();

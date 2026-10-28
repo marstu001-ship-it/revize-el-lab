@@ -2112,6 +2112,34 @@ jejímu Penc (`rozvOteplKnihHtml`).
 Test: `test-rozvadec.js` (tři barvy, bez Penc, bez Pv, klepnutí, PDF bez
 ukazatele, štítek v knihovně).
 
+#### Instalovaný příkon Pi — rychlý odhad
+
+Pole **Pi (kW)** je ve vlastnostech vývodu hned pod Typem obvodu (dřív ve
+sbalených „Další údaje") s tlačítkem **„🧮 Odhadnout…"** → okno
+`#modal-rz-pi` (`rozvPiDialogHtml`, typ předvybraný z Typu obvodu, v okně jde
+změnit jen pro výpočet): zásuvky a světla počet × příkon, spotřebič rychlé
+volby `ROZV_PI_SPOTR` (bojler 2, sporák 9, varná deska 7,4, trouba 3,5, myčka
+2,2, pračka 2,2, sušička 2,5, klimatizace 1,5, nabíječka EV 11 kW; tepelné
+čerpadlo a jiný = zadat), motor Pn ze štítku, jiný příkon. Výchozí zásuvka
+0,2 kW/ks, svítidlo LED 0,03 kW/ks — **volba technika, ne údaj z normy**;
+všechny jdou změnit v **„⚙ Nastavení konfigurátoru"** (v okně i v panelu
+Vlastnosti bez výběru), jen v prohlížeči: localStorage `revize_el_rz_pi`
+(jen odchylky, „↺ Výchozí hodnoty" klíč smaže), do rozvaděče se neukládají.
+
+- „Použít odhad" zapíše `x.pi` a **`x.piOdhad`** = popis výpočtu („8 zásuvek
+  × 0,2 kW") → u pole štítek **„odhad"** s bublinou. **Ruční přepsání Pi
+  `piOdhad` smaže.** Je-li v Pi ručně zadaná hodnota, odhad ji **nikdy
+  nepřepíše** (tlačítko vypnuté, okno to řekne).
+- Schéma: odhadnuté Pi v tabulce pod schématem s **„≈"** („≈1,6") a pod
+  tabulkou „≈ = odhad instalovaného příkonu" (jen když na listu nějaký je).
+- Soudobost ani součty (tech.pi, Pm) se nemění. Rozvaděč bez odhadu beze
+  změny (klíč vzniká jen použitím odhadu).
+
+Test: `test-rozvadec.js` (8 × 0,2 = 1,6 kW, štítek, ≈ ve schématu, ruční
+přepsání, nepřepíše ruční, spotřebič a motor, nastavení jen v prohlížeči).
+V `test-mobil.js` stavy „…barvy podle ampéráže s legendou, ukazatel
+oteplení", „…odhad instalovaného příkonu Pi (okno)", „…vývod s odhadem Pi".
+
 ### PDF (část 4)
 
 - `DOK_TYPY.rozv.pdf(d)` → bloky pro společné stránkování tvorby
