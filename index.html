@@ -33014,7 +33014,7 @@ function rozvVlastnostiVykreslit() {
       '<div class="dk-pozn rp-volny-text">Do polí jde napsat i vlastní text (např. „rezerva") — nabídka je jen pro rychlost.</div>';
     if (RS_OBVODOVE.indexOf(p.kat) !== -1 || (rfVyvod(x) && RS_PSC_VYVODY.indexOf(p.kat) !== -1)) {   // schéma zapojení (etapa 3; PSC: i QF, QS)
       var pr = rsSpotrPredikce(x.vyvod);
-      h += '<div class="g2 rp-schema"><div class="f"><label>Spotřebič ve schématu</label><select class="rp-pole" data-rp2="spotr">' +
+      h += '<div class="g2 rp-schema"><div class="f"><label title="Podle typu se ve schématu kreslí značka (zásuvka, svítidlo, motor) a nabízí odhad Pi">Typ obvodu</label><select class="rp-pole" data-rp2="spotr">' +
           '<option value=""' + (!x.spotr ? ' selected' : '') + '>podle názvu (' + esc(rsSpotrNazev(pr || 'jine')) + ')</option>' +
           RS_SPOTR.map(function (v) { return '<option value="' + v[0] + '"' + (x.spotr === v[0] ? ' selected' : '') + '>' + esc(v[1]) + '</option>'; }).join('') + '</select></div>' +
         pole('obvod', 'Obvod č.', x.obvod || '', { nepov: true, ph: '1' }) + '</div>';
@@ -35986,7 +35986,9 @@ var RS_SLOUPCE = RS_OBVODOVE.concat(RS_VYSTUPNI);
 var RS_RIDICI = ['KM', 'KT', 'KA', 'PJ', 'HL', 'SF'];    // zapojení není v návrhu — jen poznámka na listu
 var RS_PSC_VYVODY = ['QF', 'QS'];                         // PSC (etapa 5b): výkonový jistič a odpínač jako vývod
 var RS_PSC_MIMO = ['TA', 'PM', 'XN', 'XPE'];             // PSC: měření na přívodu, přípojnice N a PE — ne sloupce
-var RS_SPOTR = [['zasuvka', 'zásuvka'], ['svetlo', 'světlo'], ['motor', 'motor'], ['jine', 'jiné']];
+// Typ obvodu (2026-10-27; dřív „Spotřebič ve schématu", klíč dat zůstal x.spotr):
+// zásuvky → značka zásuvky ČSN EN 60617-11, světla → svítidlo ⊗, spotřebič a jiný → obdélník.
+var RS_SPOTR = [['zasuvka', 'zásuvky'], ['svetlo', 'světla'], ['spotrebic', 'spotřebič'], ['motor', 'motor'], ['jine', 'jiný']];
 
 function rsN(n) { return Math.round(n * 100) / 100; }
 function rsCara(x1, y1, x2, y2, o) {
@@ -36402,6 +36404,7 @@ function rsSloupecHtml(x, g, sl, kus, c) {
   } else {
     var sp = rsSpotr(x);
     h += rsZnacka(sp === 'svetlo' ? 'svetlo' : sp === 'zasuvka' ? 'zasuvka' : sp === 'motor' ? 'motor' : 'jine', xx, ySp, { trif: tri });
+    if (sp === 'zasuvka' && tri) h += rsText(xx, ySp + RS_ZNACKY.zasuvka.h + 2.1, '3/N/PE', { fs: 1.7, zar: 'middle' });   // trojfázová zásuvka
   }
   return '<g data-puid="' + esc(x.uid) + '">' + h + '</g>';
 }

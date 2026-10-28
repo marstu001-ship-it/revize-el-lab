@@ -2078,6 +2078,21 @@ berou `x.ozn`, takže se nové značení promítne samo.
 `-faze-otepleni`, `-schema` čekaly -QM1 u nově vloženého vypínače (teď -QH1)
 a skupinu „Hl. vypínače".
 
+#### Typ obvodu a značka zásuvky ve schématu
+
+Pole **„Typ obvodu"** ve vlastnostech vývodu (dřív „Spotřebič ve schématu";
+klíč dat zůstal `x.spotr`, `RS_SPOTR`): zásuvky / světla / spotřebič / motor /
+jiný, první volba „podle názvu (…)" = odhad z názvu vývodu
+(`rsSpotrPredikce`: „zás…", „zásuv…" → zásuvky, „světl…", „osvětl…" →
+světla) — **odhad se neukládá**, do dat jde jen ruční volba. Schéma:
+zásuvky → značka zásuvky ČSN EN 60617-11 (`RS_ZNACKY.zasuvka`, půlkruh pod
+příčkou), trojfázová navíc text **„3/N/PE"** pod značkou (počet vodičů dál
+lomítky na vývodu), světla → svítidlo ⊗, spotřebič a jiný → obdélník,
+motor → M. Vektorové PDF beze změny cesty. Typ obvodu použije i odhad Pi
+(níž).
+
+**Upraveno:** `test-rozvadec-schema.js` (popisek a volby pole).
+
 ### PDF (část 4)
 
 - `DOK_TYPY.rozv.pdf(d)` → bloky pro společné stránkování tvorby

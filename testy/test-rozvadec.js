@@ -1603,6 +1603,29 @@ function pomocnik() {
   check('vypínače: „Přečíslovat vypínače" → hlavní -QH, ostatní -Q, nabídka zmizí; „Nechat" ji schová; kategorie „Vypínač / odpínač"',
     qh.qmPrec === '-QH1 / -Q1,-Q2 / ' && !qh.upozPo && qh.nechat && qh.kat === 'Vypínač / odpínač', qh.qmPrec);
 
+  // ── typ obvodu a značka zásuvky ve schématu (2026-10-27) ───────────────
+  const zas = await p.evaluate(async () => {
+    await dokNovy('rozv'); rozvSkrinNastavit(rozvKnihPolozka('v-sk-3x12-n'));
+    const V = (kid, vyvod, faze) => { const x = rozvVlozit(kid, 0, __rz.rady[0].prvky.length); x.vyvod = vyvod; if (faze) x.faze = faze; x.kabel = 'CYKY-J'; x.prurez = '3×2,5'; return x; };
+    V('v-fa-1-B16', 'Zásuvky kuchyň', 'L1'); V('v-fa-1-B10', 'Osvětlení obývák', 'L2'); V('v-fa-3-B16', 'Zásuvka 400 V dílna'); const b = V('v-fa-1-B16', 'Bojler', 'L3');
+    rozvZmena('test', () => {}); await __T.w(100);
+    const d = DOK_TYPY.rozv.cist(dokForm()), svg = rozvSchemaListy(d).map(l => l.svg).join('');
+    const r = { zas: (svg.match(/data-znacka="zasuvka"/g) || []).length, svet: (svg.match(/data-znacka="svetlo"/g) || []).length, tri: /3\/N\/PE/.test(svg),
+                ulozeno: __rz.rady[0].prvky.map(x => x.spotr || '').join() };
+    __rz.vyber = b.uid; rozvVlastnostiVykreslit();
+    const sel = document.querySelector('#rz-vlastnosti [data-rp2="spotr"]');
+    r.label = sel.closest('.f').querySelector('label').textContent; r.volby = Array.from(sel.options).map(o => o.textContent).join('|');
+    window.__dokOtevreny.data.dokVyber = { cp: false, schema: true, tech: false, prohl: false, ko: false };
+    await dokNahled(); await __T.w(700);
+    r.pdf = (document.getElementById('dok-pdf-pages').innerHTML.match(/data-znacka="zasuvka"/g) || []).length;
+    TD_AKCE.tdPdfZpet(); await __T.w(150);
+    return r;
+  });
+  check('typ obvodu: pole „Typ obvodu" (podle názvu / zásuvky / světla / spotřebič / motor / jiný), odhad z názvu se neukládá',
+    zas.label === 'Typ obvodu' && zas.volby === 'podle názvu (jiný)|zásuvky|světla|spotřebič|motor|jiný' && zas.ulozeno === ',,,', JSON.stringify(zas));
+  check('schéma: zásuvkové vývody končí značkou zásuvky (2×), trojfázová s „3/N/PE", osvětlení svítidlem', zas.zas === 2 && zas.tri && zas.svet === 1, JSON.stringify(zas));
+  check('schéma v PDF: značky zásuvek jsou i v listech PDF', zas.pdf === 2, zas.pdf);
+
   // ── oddělení od revizí ────────────────────────────────────────────────
   const odd = await p.evaluate(async () => {
     showScreen('home'); renderArchiv();

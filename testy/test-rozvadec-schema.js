@@ -191,8 +191,8 @@ const presahy = (p, svg) => p.evaluate(svg => {
     v.value = 'Zásuvky – ložnice'; v.dispatchEvent(new Event('input', { bubbles: true }));
     return o;
   });
-  check('vlastnosti: „Spotřebič ve schématu" = „podle názvu (zásuvka)", zásuvka/světlo/motor/jiné, Obvod č., Pi', vl.prvni === 'podle názvu (zásuvka)' && vl.volby === ',zasuvka,svetlo,motor,jine' && vl.obvod && vl.pi, JSON.stringify(vl));
-  check('předpověď se mění s názvem a neukládá se (uloží se jen ruční volba)', vl.prvni2 === 'podle názvu (světlo)' && vl.ulozeno === 'motor' && vl.smazano, JSON.stringify(vl));
+  check('vlastnosti: „Typ obvodu" = „podle názvu (zásuvky)", zásuvky/světla/spotřebič/motor/jiný, Obvod č., Pi', vl.prvni === 'podle názvu (zásuvky)' && vl.volby === ',zasuvka,svetlo,spotrebic,motor,jine' && vl.obvod && vl.pi, JSON.stringify(vl));
+  check('předpověď se mění s názvem a neukládá se (uloží se jen ruční volba)', vl.prvni2 === 'podle názvu (světla)' && vl.ulozeno === 'motor' && vl.smazano, JSON.stringify(vl));
 
   // ── 6. MET, předřazený jistič, A3 ─────────────────────────────────────
   await p.evaluate(() => { __T.dk('[data-dk="privodJistic"]', '3×40 A, char. B'); });
