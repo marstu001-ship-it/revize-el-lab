@@ -1626,6 +1626,44 @@ function pomocnik() {
   check('schéma: zásuvkové vývody končí značkou zásuvky (2×), trojfázová s „3/N/PE", osvětlení svítidlem', zas.zas === 2 && zas.tri && zas.svet === 1, JSON.stringify(zas));
   check('schéma v PDF: značky zásuvek jsou i v listech PDF', zas.pdf === 2, zas.pdf);
 
+  // ── průběžný odhad oteplení v liště (2026-10-27) ──────────────────────
+  const ot = await p.evaluate(async () => {
+    const st = async () => { await __T.w(200); const e = document.getElementById('rz-otepl-ukaz'); return { hid: e.hidden, c: e.className, t: e.textContent, tit: e.title }; };
+    const r = {};
+    await dokNovy('rozv'); rozvSkrinNastavit(rozvKnihPolozka('v-sk-3x12-n'));
+    for (let i = 0; i < 6; i++) { const x = rozvVlozit('v-fa-1-B16', 0, __rz.rady[0].prvky.length); x.p.pv = 2.5; x.ib = 12; }
+    rozvVlozit('v-fa-1-B16', 1, 0); rozvZmena('t', () => {});
+    r.bez = await st();
+    const v = rozvOteplVypocet(DOK_TYPY.rozv.cist(dokForm()));
+    r.celkem = v.celkem;
+    for (const pen of [60, 15, 10]) { __rz.skrin.penc = pen; rozvZmena('p', () => {}); r['p' + pen] = await st(); }
+    // klik → podrobný výpočet (Dokumenty, oddíl oteplení); celkem sedí s listem
+    document.getElementById('rz-otepl-ukaz').click(); await __T.w(400);
+    const od = document.querySelector('#rz-pan-dok [data-oddil="otepleni"]');
+    r.list = od && od.open && !document.getElementById('rz-pan-dok').hidden ? od.querySelector('.rot-souc').textContent : '';
+    rozvZalozkaNastavit('navrh'); await __T.w(100);
+    // živě: smazání přístroje sníží odhad
+    rozvSmazat(__rz.rady[0].prvky[0].uid); r.poSmazani = await st();
+    // knihovna skříní: značka ≈ % u skříně s Penc
+    DOK.rozvKnihovna.push(rozvPolozkaNorm({ nazev: 'Testovací skříň s Penc', rady: 3, modulu: 12, penc: 20 }, 'skrin'));
+    document.querySelector('.rz-tab[data-tab="skrine"]').click(); await __T.w(200);
+    r.knih = Array.from(document.querySelectorAll('.rz-otepl-knih')).map(e => e.textContent).join();
+    DOK.rozvKnihovna.pop(); document.querySelector('.rz-tab[data-tab="pristroje"]').click();
+    window.__dokOtevreny.data.dokVyber = { cp: true, schema: false, tech: false, prohl: false, ko: false };
+    await dokNahled(); await __T.w(500);
+    r.pdf = /Oteplení ≈|rz-otepl/.test(document.getElementById('dok-pdf-pages').innerHTML);
+    TD_AKCE.tdPdfZpet(); await __T.w(150);
+    return r;
+  });
+  const cel = t => (/≈ (\d+) \/ (\d+) W \((\d+) %\)/.exec(t) || []).slice(1).join('/');
+  check('oteplení v liště: bez Penc šedě „skříň nemá Penc – doplnit", přístroj bez Pv se jmenuje (1 přístroj bez Pv)',
+    !ot.bez.hid && /bezPenc/.test(ot.bez.c) && /skříň nemá Penc – doplnit/.test(ot.bez.t) && /\(1 přístroj bez Pv\)/.test(ot.bez.t) && /závazný je list Výpočet oteplení/.test(ot.bez.tit), JSON.stringify(ot.bez));
+  check('oteplení v liště: zelená < 80 %, oranžová 80–100 %, červená > 100 % (Penc 60 / 15 / 10 W)',
+    /zelena/.test(ot.p60.c) && /oranzova/.test(ot.p15.c) && /cervena/.test(ot.p10.c) && cel(ot.p60.t) === '13/60/21' && cel(ot.p10.t) === '13/10/127', [ot.p60.t, ot.p15.t, ot.p10.t].join(' | '));
+  check('oteplení v liště = list „Výpočet oteplení" (stejná funkce); klik otevře podrobný výpočet', Math.round(ot.celkem) === 13 && /= 12,7 W/.test(ot.list), ot.list);
+  check('oteplení v liště se přepočítá při smazání přístroje; do PDF nejde', /≈ 11 \//.test(ot.poSmazani.t) && !ot.pdf, ot.poSmazani.t);
+  check('knihovna skříní: u skříně s Penc odhad „≈ 53 %" (s vloženými přístroji)', ot.knih === '≈ 53 %', ot.knih);
+
   // ── oddělení od revizí ────────────────────────────────────────────────
   const odd = await p.evaluate(async () => {
     showScreen('home'); renderArchiv();

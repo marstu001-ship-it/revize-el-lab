@@ -2093,6 +2093,25 @@ motor → M. Vektorové PDF beze změny cesty. Typ obvodu použije i odhad Pi
 
 **Upraveno:** `test-rozvadec-schema.js` (popisek a volby pole).
 
+#### Průběžný odhad oteplení v liště
+
+Nad čelním pohledem (DBO i PSC) ukazatel **„Oteplení ≈ 38 / 47 W (81 %)"**
+(`#rz-otepl-ukaz`, `rozvOteplUkazatelHned`) — **táž funkce
+`rozvOteplVypocet` jako list „Výpočet oteplení"**, žádný druhý výpočet.
+Semafor: pod 80 % zelená, 80–100 % oranžová, nad 100 % červená. Bez Penc
+šedě „Oteplení: skříň nemá Penc – doplnit", přístroje bez Pv se dopíšou
+„(3 přístroje bez Pv)" — Pv se nevymýšlí. Bublina „Předběžný odhad podle
+čl. 10.10.4.2 – závazný je list Výpočet oteplení."; klepnutí přepne na
+Dokumenty, otevře oddíl oteplení a skočí do Penc. Výpočet nelze (víc polí PSC,
+nad 630 A, prázdný rozvaděč) = ukazatel schovaný. Do PDF nejde. Při plném
+překreslení pohledu se počítá hned (jinak by se lišta posunula až po
+vykreslení a rolování), při tažení se zpožděním 80 ms. V knihovně skříní
+(DBO) má skříň s Penc štítek **„≈ 72 %"** = dosavadní ztráty návrhu proti
+jejímu Penc (`rozvOteplKnihHtml`).
+
+Test: `test-rozvadec.js` (tři barvy, bez Penc, bez Pv, klepnutí, PDF bez
+ukazatele, štítek v knihovně).
+
 ### PDF (část 4)
 
 - `DOK_TYPY.rozv.pdf(d)` → bloky pro společné stránkování tvorby

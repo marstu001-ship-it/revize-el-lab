@@ -1981,6 +1981,15 @@ html.dark .rz-banner{background:#3d3410;color:#f0d78a}
 .rz-chyba{background:#fdecea;border:1px solid #e6a59d;color:#9b2c1f;padding:.45rem .7rem;margin-bottom:.5rem;font-size:.84rem;border-radius:3px;font-weight:600}
 html.dark .rz-chyba{background:#3a1f1c;color:#f3b0a6;border-color:#6b2c25}
 .rz-qm-upoz{font-size:.78rem;color:var(--muted);margin:0 0 .4rem;display:flex;flex-wrap:wrap;align-items:center;gap:.3rem}
+.rz-otepl-ukaz{font:inherit;font-size:.8rem;border:1px solid var(--border);border-radius:3px;padding:.1rem .45rem;cursor:pointer;background:var(--surface);color:var(--muted)}
+.rz-otepl-zelena{background:#e3f4ea;border-color:#7cc49a;color:#0f5f3f}
+.rz-otepl-oranzova{background:#fdf0d8;border-color:#e0a800;color:#7a4d00}
+.rz-otepl-cervena{background:#fdecea;border-color:#e6a59d;color:#9b2c1f;font-weight:600}
+.rz-otepl-bezPenc{background:var(--bg);color:var(--muted)}
+html.dark .rz-otepl-zelena{background:#173a2a;color:#9fe0bb}
+html.dark .rz-otepl-oranzova{background:#3d3410;color:#f0d78a}
+html.dark .rz-otepl-cervena{background:#3a1f1c;color:#f3b0a6}
+.rz-otepl-knih{font-weight:600;padding:0 .25rem;border-radius:2px;border:1px solid transparent}
 .rz-barvy{display:inline-flex;align-items:center;gap:.25rem;font-size:.78rem;position:relative}
 .rz-barvy-b.akt{background:#e8f1fb;border-color:var(--accent2)}
 html.dark .rz-barvy-b.akt{background:#253043}
@@ -31327,7 +31336,7 @@ function rozvPolozkaHtml(it) {
   return '<div class="rz-polozka' + (vybr ? ' vybrana' : '') + (skrin && __rz && __rz.skrin && __rz.skrin.knih === it.id ? ' pouzita' : '') +
       '" data-kid="' + esc(it.id) + '" title="' + esc(pole ? 'Klepnutím pole přidáte vpravo k rozvaděči' : skrin ? 'Klepnutím skříň použijete' : 'Táhněte myší do řady, nebo klepněte a pak klepněte na místo v řadě') + '">' +
     '<span class="rz-ikona" style="' + (k && k.barva ? 'background:' + k.barva : '') + '">' + esc(skrin ? '🗄' : (k ? k.k : '?')) + '</span>' +
-    '<span class="rz-p-text"><b>' + esc(rozvNazev(it)) + '</b><small>' + meta + '</small></span>' +
+    '<span class="rz-p-text"><b>' + esc(rozvNazev(it)) + '</b><small>' + meta + (skrin ? rozvOteplKnihHtml(it) : '') + '</small></span>' +
     (pole ? '<button class="dok-mini" data-action="tdRSkrinPouzit" title="Přidat pole vpravo k rozvaděči">＋ Přidat pole</button>'
       : skrin ? '<button class="dok-mini" data-action="tdRSkrinPouzit" title="Použít tuto skříň pro rozvaděč">Použít</button>'
       : '<button class="rz-hvezda" data-action="tdRHvezda" title="' + (rozvOblibena(it.id) ? 'Odebrat z oblíbených' : 'Přidat do oblíbených') + '">' + (rozvOblibena(it.id) ? '★' : '☆') + '</button>' +
@@ -31347,6 +31356,10 @@ function rozvViceHtml(akce, zbyva) {
 }
 function rozvKnihovnaVykreslit() {
   var box = document.getElementById('rz-seznam'); if (!box) return;
+  __rzOteplKnih = null;
+  if (__rz && __rz.rezim !== 'PSC' && __rzF.tab === 'skrine' && rozvVse().length) {
+    try { var oo = rozvOteplOdhad(); if (oo && oo.stav !== 'nelze' && oo.v.celkem > 0) __rzOteplKnih = oo.v.celkem; } catch (e) {}
+  }
   document.querySelectorAll('.rz-tab').forEach(function (b) { b.classList.toggle('akt', b.getAttribute('data-tab') === __rzF.tab); });
   var vse = rozvKnihovnaVse(), s = rozvFiltrovat(vse, __rzF), psc = rozvKnihPsc();
   var celkem = vse.filter(function (it) { return rozvKnihVidet(it, __rzF.tab === 'skrine' ? (psc ? 'pole' : 'skrin') : 'pristroj', psc); }).length;
@@ -32586,6 +32599,7 @@ function rozvPohledVykreslit() {
       '<span class="rz-skrin-n" title="' + esc(rozvNazev(sk)) + '">🗄 ' + esc(rozvNazev(sk)) + '</span>' +
       '<span class="rz-volno">' + (__rz.rezim === 'PSC' ? 'Volné místo na lištách' : 'Volné místo') + ': <b>' + esc(rozvCisloText(Math.max(0, v.volno))) + ' / ' + v.celkem + ' modulů</b></span>' +
       '<span class="rz-faze-ukaz" id="rz-faze-ukaz" hidden></span>' +
+      '<button type="button" class="rz-otepl-ukaz" id="rz-otepl-ukaz" data-action="tdROteplOtevrit" hidden></button>' +
       '<span class="rz-zoom">' + (__rz.rezim !== 'PSC' ? '<button class="dok-mini rz-predloha-btn" data-action="tdRzpOtevrit" title="Fotka skutečné řady přímo nad lištou ve stejném měřítku — přístroje pak jen obkreslíte (pokusná funkce)">📷 Předloha z fotky</button>' : '') +
         (__rz.rezim === 'PSC' ? '<button class="dok-mini rz-koty-btn' + (__rz.koty ? ' akt' : '') + '" data-action="tdPscKoty" aria-pressed="' + (__rz.koty ? 'true' : 'false') + '" title="Kóty šířky a výšky polí zapnout / vypnout">📏 Kóty</button>' : '') +
         '<button class="dok-mini rz-nasirku' + (__rz.kRucni ? '' : ' akt') + '" data-action="tdRNaSirku" aria-pressed="' + (__rz.kRucni ? 'false' : 'true') +
@@ -32643,6 +32657,7 @@ function rozvPohledVykreslit() {
     }
   }
   rozvFazeUkazatel();
+  rozvOteplUkazatelHned();   // hned — lišta se nesmí posunout až po vykreslení
 }
 
 // Jen obsah rámečku (bez lišty a nápovědy) — rámeček zůstane, posuvník taky.
@@ -32650,6 +32665,55 @@ function rozvSvgPrekreslit() {
   var ram = document.getElementById('rz-svg-ram'); if (!ram || !__rz) return;
   ram.innerHTML = rozvSvg(__rz, { k: ram.__k || rozvMeritko() });
   rozvFazeUkazatel();
+  rozvOteplUkazatel();
+}
+
+// ── Průběžná „předtucha" oteplení v liště (2026-10-27) ──────────────────
+// TÁŽ funkce jako list „Výpočet oteplení" (rozvOteplVypocet) — žádný druhý
+// výpočet. Jen orientace na obrazovce, do PDF nejde; Pv se nevymýšlí.
+function rozvOteplData() {
+  var t = DOK_TYPY[((window.__dokOtevreny || {}).typ)] || DOK_TYPY.rozv, f = dokForm();
+  return f ? t.cist(f) : null;
+}
+function rozvOteplOdhad() {
+  var d = rozvOteplData(); if (!d) return null;
+  var v = rozvOteplVypocet(d);
+  if (v.stav === 'nelze') return { stav: 'nelze', v: v };
+  var bez = (v.radky || []).filter(function (q) { return q.chybi === 'doplňte Pv'; }).length;
+  if (v.penc === '' || v.penc == null) return { stav: 'bezPenc', v: v, bez: bez };
+  var pct = v.penc > 0 ? v.celkem / v.penc * 100 : 0;
+  return { stav: pct > 100 + 1e-9 ? 'cervena' : pct >= 80 ? 'oranzova' : 'zelena', v: v, bez: bez, pct: pct };
+}
+var __rzOteplT = null;
+function rozvOteplUkazatel() {   // odloženě — při tažení se SVG překresluje každým pohybem
+  clearTimeout(__rzOteplT); __rzOteplT = setTimeout(rozvOteplUkazatelHned, 80);
+}
+function rozvOteplUkazatelHned() {
+  var el = document.getElementById('rz-otepl-ukaz'); if (!el) return;
+  var o = __rz && rozvVse().length ? rozvOteplOdhad() : null;
+  if (!o || o.stav === 'nelze') { el.hidden = true; return; }
+  el.hidden = false;
+  var bez = o.bez ? ' (' + dokPocetTvar(o.bez, ['přístroj', 'přístroje', 'přístrojů']) + ' bez Pv)' : '';
+  el.className = 'rz-otepl-ukaz rz-otepl-' + o.stav;
+  el.textContent = o.stav === 'bezPenc' ? 'Oteplení: skříň nemá Penc – doplnit' + bez
+    : 'Oteplení ≈ ' + rozvCisloText(Math.round(o.v.celkem)) + ' / ' + rozvCisloText(Math.round(o.v.penc)) + ' W (' + rozvCisloText(Math.round(o.pct)) + ' %)' + bez;
+  el.title = 'Předběžný odhad podle čl. 10.10.4.2 – závazný je list Výpočet oteplení. Klepnutím otevřete podrobný výpočet' + (o.stav === 'bezPenc' ? ' a doplníte Penc skříně.' : '.');
+}
+function rozvVse() { var a = []; if (__rz) __rz.rady.forEach(function (r) { (r.prvky || []).forEach(function (x) { if (x.p.kat !== 'REZ') a.push(x); }); }); return a; }
+TD_AKCE.tdROteplOtevrit = function () {
+  rozvZalozkaNastavit('dok');
+  setTimeout(function () {
+    var od = document.querySelector('#rz-pan-dok [data-oddil="otepleni"]'); if (!od) return;
+    od.open = true; od.scrollIntoView({ block: 'start', behavior: 'smooth' });
+    var pe = od.querySelector('[data-dk="otepleni.penc"]'); if (pe && !pe.value) try { pe.focus({ preventScroll: true }); } catch (e) {}
+  }, 60);
+};
+// Odhad u skříní v knihovně (když už jsou vložené přístroje): celkové ztráty / Penc skříně.
+var __rzOteplKnih = null;
+function rozvOteplKnihHtml(it) {
+  if (__rzOteplKnih == null || !(it.druh === 'skrin') || it.penc === '' || it.penc == null || !(+it.penc > 0)) return '';
+  var pct = __rzOteplKnih / +it.penc * 100, c = pct > 100 + 1e-9 ? 'cervena' : pct >= 80 ? 'oranzova' : 'zelena';
+  return ' <span class="rz-otepl-knih rz-otepl-' + c + '" title="Předběžný odhad oteplení s touto skříní (čl. 10.10.4.2)">≈ ' + rozvCisloText(Math.round(pct)) + ' %</span>';
 }
 
 // Dotyk nebo úzké okno — nápovědy mluví o klepání a o vlastnostech pod pohledem.
