@@ -1980,6 +1980,18 @@ html.dark .rz-polozka.vybrana{background:#3d3410}
 html.dark .rz-banner{background:#3d3410;color:#f0d78a}
 .rz-chyba{background:#fdecea;border:1px solid #e6a59d;color:#9b2c1f;padding:.45rem .7rem;margin-bottom:.5rem;font-size:.84rem;border-radius:3px;font-weight:600}
 html.dark .rz-chyba{background:#3a1f1c;color:#f3b0a6;border-color:#6b2c25}
+.rz-barvy{display:inline-flex;align-items:center;gap:.25rem;font-size:.78rem;position:relative}
+.rz-barvy-b.akt{background:#e8f1fb;border-color:var(--accent2)}
+html.dark .rz-barvy-b.akt{background:#253043}
+.rz-barvy-leg summary{list-style:none;cursor:pointer;padding:.1rem .35rem;color:var(--accent2);font-weight:700}
+.rz-barvy-leg summary::-webkit-details-marker{display:none}
+.rz-leg{position:absolute;right:0;top:100%;z-index:30;background:var(--surface);border:1px solid var(--border);border-radius:3px;box-shadow:0 4px 14px rgba(0,0,0,.18);
+  padding:.5rem .6rem;display:grid;grid-template-columns:repeat(2,minmax(9rem,auto));gap:.15rem .8rem;font-size:.74rem;white-space:nowrap}
+.rz-leg-t{grid-column:1 / -1;margin-bottom:.2rem;white-space:normal}
+.rz-leg-t b{font-weight:600}
+.rz-leg-r{display:flex;align-items:center;gap:.35rem}
+.rz-leg-cely{grid-column:1 / -1}
+.rz-leg-r i{flex:0 0 auto;display:inline-block;width:1.1rem;height:.7rem;border:1px solid #777;border-radius:2px}
 .rz-predlohy{display:flex;flex-direction:column;gap:3px;margin:0 0 5px}
 .rz-predloha-r{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem;font-size:.75rem;padding:3px 6px;background:var(--bg);border:1px solid var(--border);border-radius:3px}
 .rzp-op-l{display:inline-flex;align-items:center;gap:.3rem}
@@ -2329,6 +2341,9 @@ html.dark .rz-imp-chyby{background:#3a1f1c;border-color:#6b2c25}
   table:has(#plan-o-cyklus-el) tbody tr{padding:.35rem 0;border-bottom:1px solid var(--border)}
   table:has(#plan-o-cyklus-el) input{width:100%!important}
   table:has(#plan-o-cyklus-el) td:last-child input{width:5rem!important;flex:0 0 5rem}
+  /* rozvaděč — legenda barev podle In pod přepínačem, ne přes okraj displeje */
+  .rz-leg{position:static;grid-template-columns:minmax(0,1fr);white-space:normal;margin-top:.3rem}
+  .rz-barvy{flex-wrap:wrap}
   /* rozvaděč — předloha z fotky: posuvníky průhlednosti a narovnání na prst */
   .rzp-op,#rzp-uhel{min-height:44px}
 }
@@ -32019,6 +32034,56 @@ function rozvVyrZnacka(p) {
   var zn = z ? z.zn : v, kr = z ? (z.kr || z.zn) : v;
   return { text: (zn + ' ' + rada).trim(), barva: z ? z.b : ROZV_ZNACKA_SEDA, zn: zn, kr: kr, rada: rada, vyrobce: v };
 }
+// ── Barvy podle jmenovitého proudu (přepínač „Barvy: výrobce | ampéráž", 2026-10-27)
+// Barevný kód ovládacích páček jističů OEZ LSN (katalog OEZ LSN 3081-Z01-06,
+// str. 6, 0,2–63 A), shodný s barvami terčíků šroubových pojistek; 80–125 A
+// podle barev terčíků pojistek (zadání uživatele). Jiný proud = šedá s textem.
+var ROZV_AMP_BARVY = [
+  [2, 'růžová', '#f2a7c9'], [4, 'hnědá', '#7a4a26'], [6, 'zelená', '#2e8b3e'], [8, 'světle zelená', '#9fd46b'],
+  [10, 'červená', '#c62828'], [13, 'písková', '#d9c28d'], [16, 'šedá', '#9b9b9b'], [20, 'modrá', '#1f5fbf'],
+  [25, 'žlutá', '#f2d21b'], [32, 'fialová', '#7b3fa0'], [40, 'černá', '#1a1a1a'], [50, 'bílá', '#ffffff'],
+  [63, 'měděná', '#b8733a'], [80, 'stříbrná', '#c9cdd2'], [100, 'červená', '#c62828'], [125, 'žlutá', '#f2d21b']
+];
+var ROZV_AMP_CERNA = ['0,2–1,6', 'černá', '#1a1a1a'];
+var ROZV_BARVY_KLIC = 'revize_el_rz_barvy';   // 'vyrobce' (výchozí) / 'proud' — jen v prohlížeči
+function rozvBarvyRezim() {
+  var v = null; try { v = localStorage.getItem(ROZV_BARVY_KLIC); } catch (e) {}
+  return v === 'proud' ? 'proud' : 'vyrobce';
+}
+function rozvAmpTextBarva(hex) {
+  var c = [1, 3, 5].map(function (i) { var v = parseInt(hex.substr(i, 2), 16) / 255; return v <= 0.03928 ? v / 12.92 : Math.pow((v + 0.055) / 1.055, 2.4); });
+  return 0.2126 * c[0] + 0.7152 * c[1] + 0.0722 * c[2] > 0.25 ? '#111' : '#fff';
+}
+// { text: '16 A', barva, textBarva, nazev, obrys, znamy } — u přístroje bez In šedá bez textu.
+function rozvAmpBarva(p) {
+  var In = p && p.In !== '' && p.In != null ? +p.In : NaN;
+  if (!(In > 0)) return { text: '', barva: ROZV_ZNACKA_SEDA, textBarva: '#fff', nazev: 'bez In', znamy: false };
+  var z = null;
+  if (In >= 0.2 - 1e-9 && In <= 1.6 + 1e-9) z = ROZV_AMP_CERNA;
+  else ROZV_AMP_BARVY.forEach(function (r) { if (Math.abs(r[0] - In) < 1e-9) z = r; });
+  var text = rozvCisloText(In) + ' A';
+  if (!z) return { text: text, barva: ROZV_ZNACKA_SEDA, textBarva: '#fff', nazev: 'bez barevného kódu', znamy: false };
+  return { text: text, barva: z[2], textBarva: rozvAmpTextBarva(z[2]), nazev: z[1], obrys: z[2] === '#ffffff', znamy: true };
+}
+function rozvBarvyPrepinacHtml() {
+  var r = rozvBarvyRezim(), b = function (v, t, tip) {
+    return '<button type="button" class="dok-mini rz-barvy-b' + (r === v ? ' akt' : '') + '" data-action="tdRBarvy" data-r="' + v + '" aria-pressed="' + (r === v ? 'true' : 'false') + '" title="' + tip + '">' + t + '</button>';
+  };
+  var leg = [ROZV_AMP_CERNA].concat(ROZV_AMP_BARVY).map(function (z) {
+    return '<span class="rz-leg-r"><i style="background:' + z[2] + '"></i>' + (typeof z[0] === 'number' ? rozvCisloText(z[0]) : z[0]) + ' A – ' + z[1] + '</span>';
+  }).join('');
+  return '<span class="rz-barvy" role="group" aria-label="Barvy pruhu na přístrojích">Barvy: ' +
+    b('vyrobce', 'výrobce', 'Pruh nahoře na přístroji ve barvě výrobce se značkou a řadou') +
+    b('proud', 'ampéráž', 'Pruh nahoře na přístroji v barvě podle jmenovitého proudu (kód páček jističů OEZ LSN)') +
+    '<details class="rz-barvy-leg"><summary title="Legenda barev podle jmenovitého proudu">ⓘ</summary><div class="rz-leg">' +
+      '<span class="rz-leg-t"><b>Barvy podle In</b> (páčky jističů OEZ LSN, terčíky pojistek)</span>' + leg +
+      '<span class="rz-leg-r rz-leg-cely"><i style="background:' + ROZV_ZNACKA_SEDA + '"></i>jiný proud / bez In – šedá</span></div></details></span>';
+}
+TD_AKCE.tdRBarvy = function (el) {
+  try { localStorage.setItem(ROZV_BARVY_KLIC, el.getAttribute('data-r')); } catch (e) {}
+  rozvPohledVykreslit();
+};
+
 // Text pruhu pro šířku w (mm) a písmo fs (mm): zkracuje se, písmo se nezmenšuje.
 function rozvZnackaText(z, w, fs) {
   var max = Math.max(2, Math.floor((w - 1.4) / (fs * 0.55)));
@@ -32043,7 +32108,8 @@ function rozvPrvekSvg(d, x, y, o) {
   }
   var sk = o.h ? Math.max(1, Math.min(2.4, Math.min(w, H) / 42)) : 1;   // velký přístroj na desce (PSC) — větší písmo
   var zna = rozvVyrZnacka(p), dz = zna ? 1 : 0;   // dz: posun textů pod pruh se značkou
-  var tit = [d.ozn, rozvNazev(p), zna && zna.vyrobce ? (zna.vyrobce + ' ' + zna.rada).trim() : '', d.vyvod, d.faze].filter(Boolean).join(' · ') + (d.upoz && d.upoz.length ? ' · ⚠ ' + d.upoz.join(', ') : '');
+  var ampT = zna && rozvBarvyRezim() === 'proud' ? rozvAmpBarva(p) : null;
+  var tit = [d.ozn, rozvNazev(p), zna && zna.vyrobce ? (zna.vyrobce + ' ' + zna.rada).trim() : '', ampT && ampT.znamy ? 'barva ' + ampT.text + ' = ' + ampT.nazev : '', d.vyvod, d.faze].filter(Boolean).join(' · ') + (d.upoz && d.upoz.length ? ' · ⚠ ' + d.upoz.join(', ') : '');
   h += '<g class="rz-pr' + (o.tazeny ? ' rz-tazeny' : '') + '"' + (o.duch ? '' : ' data-puid="' + esc(d.uid) + '"') + '><title>' + esc(tit) + '</title>';
   if (p.kat === 'REZ') {
     h += '<rect x="' + rozvZaokr(x + 0.4) + '" y="' + (y + 6) + '" width="' + rozvZaokr(w - 0.8) + '" height="' + (H - 12) + '" rx="1" fill="#fafafa" stroke="#9a9a9a" stroke-width="0.4" stroke-dasharray="1.5 1"/>';
@@ -32054,11 +32120,13 @@ function rozvPrvekSvg(d, x, y, o) {
       h += '<rect x="' + rozvZaokr(x + w / 2 - lw / 2) + '" y="' + rozvZaokr(y + ((rozvCelo(p).filter(Boolean).length > 1 ? 15.5 : 13) + dz * 2.6) * sk) + '" width="' + rozvZaokr(lw) + '" height="' + rozvZaokr(9 * sk) + '" rx="0.8" fill="' + (p.kat === 'QM' || p.kat === 'QS' ? '#b5291c' : '#444') + '"/>';
     }
   }
-  if (zna) {   // pruh se značkou a řadou výrobce
-    var zh = 4.4 * sk, zf = Math.min(2.7 * sk, w * 0.3), zt = zna.text ? rozvZnackaText(zna, w, zf) : '';
-    h += '<rect class="rz-znacka-pruh" x="' + rozvZaokr(x + 0.7) + '" y="' + rozvZaokr(y + 0.45) + '" width="' + rozvZaokr(w - 1.4) + '" height="' + rozvZaokr(zh) + '" rx="0.8" fill="' + zna.barva + '"/>';
+  if (zna) {   // pruh se značkou a řadou výrobce, nebo (přepínač „Barvy: ampéráž") barva podle In
+    var zh = 4.4 * sk, zf = Math.min(2.7 * sk, w * 0.3), amp = rozvBarvyRezim() === 'proud' ? rozvAmpBarva(p) : null;
+    var zt = amp ? rozvZkratit(amp.text, Math.max(2, Math.floor((w - 1.4) / (zf * 0.55)))) : zna.text ? rozvZnackaText(zna, w, zf) : '';
+    h += '<rect class="rz-znacka-pruh' + (amp ? ' rz-amp-pruh' : '') + '" x="' + rozvZaokr(x + 0.7) + '" y="' + rozvZaokr(y + 0.45) + '" width="' + rozvZaokr(w - 1.4) + '" height="' + rozvZaokr(zh) +
+      '" rx="0.8" fill="' + (amp ? amp.barva : zna.barva) + '"' + (amp && amp.obrys ? ' stroke="#555" stroke-width="0.35"' : '') + (amp ? ' data-amp="' + esc(amp.nazev) + '"' : '') + '/>';
     if (zt) h += '<text class="rz-znacka-text" x="' + rozvZaokr(x + w / 2) + '" y="' + rozvZaokr(y + 0.45 + zh / 2 + zf * 0.36) + '" font-size="' + rozvZaokr(zf) +
-      '" font-weight="700" text-anchor="middle" fill="#fff">' + esc(zt) + '</text>';
+      '" font-weight="700" text-anchor="middle" fill="' + (amp ? amp.textBarva : '#fff') + '">' + esc(zt) + '</text>';
   }
   if (mimo) h += '<rect x="' + rozvZaokr(x + 0.3) + '" y="' + y + '" width="' + rozvZaokr(w - 0.6) + '" height="' + H + '" fill="url(#rz-srafa' + (o.tisk ? 't' : '') + ')" stroke="#c0392b" stroke-width="0.9"/>';
   // označení nahoře, hodnota pod ním, vývod dole
@@ -32525,7 +32593,8 @@ function rozvPohledVykreslit() {
         '<button class="dok-mini" data-action="tdRZoom" data-z="+" title="Zvětšit">＋</button>' +
         // Přečíslování natrvalo vedle zoomu (pokyn uživatele 2026-10-19 — ve
         // vlastnostech bez výběru ho starší technik nenašel)
-        '<button class="dok-mini rz-precislovat" data-action="tdRPrecislovat" title="Označení podle pořadí v řadách zleva doprava: -QM1, -FA1, -FA2… (jde vzít zpět)">🔢 Přečíslovat označení</button></span>' +
+        '<button class="dok-mini rz-precislovat" data-action="tdRPrecislovat" title="Označení podle pořadí v řadách zleva doprava: -QM1, -FA1, -FA2… (jde vzít zpět)">🔢 Přečíslovat označení</button>' +
+        rozvBarvyPrepinacHtml() + '</span>' +
     '</div>' + rzpListaHtml();
   if (vybrany || presun || (presunVic && presunVic.length)) {
     // PSC: výkonový přístroj (bez modulů) se klepnutím dává na montážní desku

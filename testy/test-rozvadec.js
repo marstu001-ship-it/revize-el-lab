@@ -1525,6 +1525,45 @@ function pomocnik() {
   check('ruční ＋ drží měřítko i po změně velikosti okna; „Na šířku okna" ho zruší (4×24 na 1366 px: nejmenší čitelné, posuvník smí zůstat)',
     sir2.zoom.rucni && Math.abs(sir3.drzi.k - sir2.zoom.k) < 1e-6 && !sir3.auto1366.rucni && sir3.auto1366.k === 2.3 && sir3.pressed === 'true', JSON.stringify([sir2.zoom, sir3]));
 
+  // ── přepínač barev: výrobce | ampéráž (2026-10-27) ──────────────────────
+  const amp = await p.evaluate(async () => {
+    try { localStorage.removeItem('revize_el_rz_barvy'); } catch (e) {}
+    await dokNovy('rozv'); rozvSkrinNastavit(rozvKnihPolozka('v-sk-3x12-n'));
+    const V = (kid, In, r) => { const x = rozvVlozit(kid, r, __rz.rady[r].prvky.length); if (In != null) x.p.In = In; x.p.vyrobce = 'OEZ'; x.p.rada = 'LSN'; return x; };
+    [1, 2, 4, 6, 8, 10].forEach(i => V('v-fa-1-B16', i, 0)); [13, 16, 20, 25, 32, 40].forEach(i => V('v-fa-1-B16', i, 1));
+    [50, 63, 3].forEach(i => V('v-fa-1-B16', i, 2)); V('v-spd-12-1N', null, 2);
+    rozvZmena('test', () => {}); __rz.vyber = null; rozvPohledVykreslit(); await __T.w(100);
+    const r = { vychozi: rozvBarvyRezim(), vyrobceText: (document.querySelector('#rz-svg-ram .rz-znacka-text') || {}).textContent };
+    document.querySelector('[data-action="tdRBarvy"][data-r="proud"]').click(); await __T.w(150);
+    const g = Array.from(document.querySelectorAll('#rz-svg-ram .rz-pr')).map(e => { const pr = e.querySelector('.rz-znacka-pruh'), t = e.querySelector('.rz-znacka-text');
+      return { fill: pr && pr.getAttribute('fill'), nazev: pr && pr.getAttribute('data-amp'), t: t ? t.textContent : '', tf: t ? t.getAttribute('fill') : '', obrys: pr && pr.getAttribute('stroke') }; });
+    r.g = g; r.ls = localStorage.getItem('revize_el_rz_barvy');
+    r.data = JSON.stringify(__rz.rady).includes('barv');
+    r.leg = document.querySelectorAll('.rz-barvy-leg .rz-leg-r').length;
+    window.__dokOtevreny.data.dokVyber = { cp: true, schema: false, tech: false, prohl: false, ko: false };
+    await dokNahled(); await __T.w(600);
+    const h = document.getElementById('dok-pdf-pages').innerHTML;
+    r.pdfProud = /data-amp="písková"/.test(h) && />13 A</.test(h);
+    TD_AKCE.tdPdfZpet(); await __T.w(150);
+    document.querySelector('[data-action="tdRBarvy"][data-r="vyrobce"]').click(); await __T.w(100);
+    await dokNahled(); await __T.w(600);
+    const h2 = document.getElementById('dok-pdf-pages').innerHTML;
+    r.pdfVyrobce = !/data-amp=/.test(h2) && /OEZ LSN/.test(h2);
+    TD_AKCE.tdPdfZpet(); await __T.w(150);
+    return r;
+  });
+  const ag = amp.g, A = i => ag[i] || {};
+  check('barvy: výchozí „výrobce" (pruh OEZ LSN), přepínač „ampéráž" se pamatuje jen v prohlížeči, data rozvaděče beze změny',
+    amp.vychozi === 'vyrobce' && amp.vyrobceText === 'OEZ LSN' && amp.ls === 'proud' && !amp.data, JSON.stringify([amp.vychozi, amp.vyrobceText, amp.ls]));
+  check('barvy podle In: 1 A černá, 2 růžová, 4 hnědá, 6 zelená, 8 světle zelená, 10 červená, 13 písková, 16 šedá, 20 modrá, 25 žlutá, 32 fialová, 40 černá, 50 bílá, 63 měděná',
+    ag.slice(0, 14).map(x => x.nazev).join() === 'černá,růžová,hnědá,zelená,světle zelená,červená,písková,šedá,modrá,žlutá,fialová,černá,bílá,měděná' &&
+    A(6).fill === '#d9c28d' && A(6).t === '13 A', ag.map(x => x.nazev + ' ' + x.fill).join(' | '));
+  check('barvy podle In: In je v pruhu textem (čitelné i černobíle), bílá s rámečkem a tmavým textem, černá se světlým textem',
+    A(12).obrys && A(12).tf === '#111' && A(0).tf === '#fff' && A(11).t === '40 A', JSON.stringify([A(0), A(11), A(12)]));
+  check('barvy podle In: 3 A (bez kódu) šedá s textem, SPD bez In šedá bez textu; legenda ⓘ má všechny barvy',
+    A(14).nazev === 'bez barevného kódu' && A(14).t === '3 A' && A(15).nazev === 'bez In' && A(15).t === '' && amp.leg === 18, JSON.stringify([A(14), A(15), amp.leg]));
+  check('barvy: do PDF jde právě zapnutý režim (ampéráž → písková 13 A, výrobce → OEZ LSN)', amp.pdfProud && amp.pdfVyrobce);
+
   // ── oddělení od revizí ────────────────────────────────────────────────
   const odd = await p.evaluate(async () => {
     showScreen('home'); renderArchiv();

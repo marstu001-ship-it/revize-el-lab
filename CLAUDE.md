@@ -2035,6 +2035,25 @@ a „…předloha nad řadou, nastavení čelního pohledu". Posuvníky průhled
 
 Test: `test-rozvadec.js` (klepnutí do kabelu „CYKY-J" hodnotu nechá a označí, „rezerva" se zapíše).
 
+### Připomínky z praxe 27. 10. (2026-10-27)
+
+#### Barvy pruhu: výrobce | ampéráž
+
+Přepínač **„Barvy: výrobce | ampéráž"** v liště nad čelním pohledem vedle
+„Přečíslovat označení" (`rozvBarvyPrepinacHtml`, `tdRBarvy`) — jen
+v prohlížeči, localStorage `revize_el_rz_barvy` (`vyrobce` výchozí / `proud`).
+V režimu ampéráž má pruh nahoře na přístroji (ne celý přístroj) barvu podle In
+(`rozvAmpBarva`, tabulka `ROZV_AMP_BARVY` doslova podle zadání: kód páček
+jističů OEZ LSN, katalog 3081-Z01-06 str. 6 pro 0,2–63 A, 80–125 A podle
+terčíků pojistek; 0,2–1,6 A černá). **In je v pruhu vždy textem** („16 A"),
+barva textu podle jasu pozadí, bílá má rámeček. Jiný proud (3 A, 160 A) =
+šedý pruh s textem, přístroj bez In (SPD, zdroje) = šedý bez textu. Legenda
+v „ⓘ" vedle přepínače (na telefonu pod ním). Do PDF jde právě zapnutý režim
+(`rozvSvg` čte tutéž volbu). Data rozvaděče se nemění.
+
+Test: `test-rozvadec.js` (všech 14 barev, 13 A písková, 3 A a SPD šedé,
+bílá s rámečkem, legenda, PDF v obou režimech).
+
 ### PDF (část 4)
 
 - `DOK_TYPY.rozv.pdf(d)` → bloky pro společné stránkování tvorby
