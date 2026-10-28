@@ -1494,6 +1494,37 @@ function pomocnik() {
   check('vývodový kabel: klepnutím se pole nevyprázdní (jen označí) a jde přepsat vlastním textem „rezerva"', kab1.v === 'CYKY-J' && kab1.oz === 6 && kab2 === 'rezerva',
     JSON.stringify(kab1) + ' → ' + kab2);
 
+  // ── čelní pohled na šířku okna (připomínka 2026-10-27) ──────────────────
+  const sir = await p.evaluate(async () => {
+    const info = () => { const r = document.getElementById('rz-svg-ram'); return { cw: r.clientWidth, sw: r.scrollWidth, k: r.__k, rucni: __rz.kRucni || null,
+      btn: (document.querySelector('[data-action="tdRNaSirku"]') || {}).getAttribute && document.querySelector('[data-action="tdRNaSirku"]').getAttribute('aria-pressed') }; };
+    const r = {};
+    await dokNovy('rozv'); rozvSkrinNastavit(rozvKnihPolozka('v-sk-3x12-n')); await __T.w(200); r.a = info();
+    return r;
+  });
+  await p.setViewportSize({ width: 1920, height: 1000 }); await w(500);
+  const sir2 = await p.evaluate(async () => {
+    const info = () => { const r = document.getElementById('rz-svg-ram'); return { cw: r.clientWidth, sw: r.scrollWidth, k: r.__k, rucni: __rz.kRucni || null }; };
+    const r = { a1920: info() };
+    rozvSkrinNastavit(rozvKnihPolozka('v-sk-4x24-ocel')); await __T.w(250); r.b1920 = info();
+    TD_AKCE.tdRZoom(document.querySelector('[data-action="tdRZoom"][data-z="+"]')); await __T.w(150); r.zoom = info();
+    return r;
+  });
+  await p.setViewportSize({ width: 1366, height: 900 }); await w(500);
+  const sir3 = await p.evaluate(async () => {
+    const info = () => { const r = document.getElementById('rz-svg-ram'); return { cw: r.clientWidth, sw: r.scrollWidth, k: r.__k, rucni: __rz.kRucni || null }; };
+    const r = { drzi: info() };
+    TD_AKCE.tdRNaSirku(); await __T.w(150); r.auto1366 = info();
+    r.pressed = document.querySelector('[data-action="tdRNaSirku"]').getAttribute('aria-pressed');
+    return r;
+  });
+  check('na šířku okna: výchozí stav (tlačítko „⇔ Na šířku okna" zapnuté), ruční měřítko není', sir.a.btn === 'true' && !sir.a.rucni, JSON.stringify(sir.a));
+  check('na šířku okna 1920 px: 3×12 i 4×24 bez vodorovného posuvníku a rámeček široký (> 1100 px)',
+    sir2.a1920.sw <= sir2.a1920.cw && sir2.b1920.sw <= sir2.b1920.cw && sir2.a1920.cw > 1100 && sir2.b1920.k > 2.3, JSON.stringify([sir2.a1920, sir2.b1920]));
+  check('po změně okna se měřítko přepočítá (3×12 na 1366 px menší než na 1920 px)', sir2.a1920.k > sir.a.k, sir.a.k + ' → ' + sir2.a1920.k);
+  check('ruční ＋ drží měřítko i po změně velikosti okna; „Na šířku okna" ho zruší (4×24 na 1366 px: nejmenší čitelné, posuvník smí zůstat)',
+    sir2.zoom.rucni && Math.abs(sir3.drzi.k - sir2.zoom.k) < 1e-6 && !sir3.auto1366.rucni && sir3.auto1366.k === 2.3 && sir3.pressed === 'true', JSON.stringify([sir2.zoom, sir3]));
+
   // ── oddělení od revizí ────────────────────────────────────────────────
   const odd = await p.evaluate(async () => {
     showScreen('home'); renderArchiv();

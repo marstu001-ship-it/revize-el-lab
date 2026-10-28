@@ -1767,9 +1767,15 @@ záložky a zaškrtávátka), `test-rozvadec-dokumenty.js` a
   B16, 40A/30mA A, T1+T2…), páčka, dole vývod (svisle, u širokých
   vodorovně), vpravo fáze; co přetéká skříň, je šrafované červeně.
   `<title>` u přístroje = celý popis.
-- **Měřítko na obrazovce** `rozvMeritko()`: vejít se do rámečku, ale
-  2,3–4 px/mm (čitelnost); širší skříň se posouvá **ve svém rámečku**
-  (`.rz-svg-ram`), tlačítka − / ＋ zoom (jen v paměti). Rámeček je na PC
+- **Měřítko na obrazovce** `rozvMeritko()`: výchozí **„⇔ Na šířku okna"**
+  (`rozvMeritkoNaSirku`, 2,3–4 px/mm, `RZ_K_MIN` / `RZ_K_MAX` — pod 2,3 není
+  čitelný pruh výrobce ani In; PSC 0,9–3), přepočítá se při změně okna. − / ＋
+  nastaví **ruční měřítko** `__rz.kRucni` (px/mm), které se drží i po změně
+  okna, dokud technik znovu nestiskne „Na šířku okna" (jen v paměti, nové
+  otevření začíná na šířku). Editor rozvaděče nemá pevnou šířku (`.dok-wrap`
+  `max-width:none`, jen záložka Dokumenty 1560 px), takže na 1920 px je
+  čelní pohled 3×12 i 4×24 bez posuvníku. Širší skříň se posouvá **ve svém
+  rámečku** (`.rz-svg-ram`). Rámeček je na PC
   nejvýš `max(380px, 100vh − 150px)` vysoký a posouvá se **v obou směrech**
   (vodorovný posuvník byl u vysoké skříně až pod koncem stránky);
   na telefonu `max-height:none` (blok MOBIL), posouvá se stránka.

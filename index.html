@@ -1579,8 +1579,8 @@ html.dark .rz-psc-upoz{background:#3a2c14;color:#f0c27a}
 .psc-dil-pridat{display:flex;flex-wrap:wrap;gap:.3rem;margin:.3rem 0}
 .psc-dil-pridat .add-row{flex:0 0 auto;width:auto;margin:0;padding:.3rem .6rem}
 .rp-psc-umisteni{font-size:.8rem;color:var(--muted);margin:.3rem 0}
-.rz-koty-btn.akt{background:#e8f1fb;border-color:var(--accent2)}
-html.dark .rz-koty-btn.akt{background:#253043}
+.rz-koty-btn.akt,.rz-nasirku.akt{background:#e8f1fb;border-color:var(--accent2)}
+html.dark .rz-koty-btn.akt,html.dark .rz-nasirku.akt{background:#253043}
 .rz-zdroj{font-size:.78rem;color:var(--muted);margin:0 0 .5rem}
 .dok-drobky{margin:0 0 .5rem}
 .dok-dlazdice-pocet{margin-top:.7rem;font-size:.78rem;color:#0f7b5f;font-weight:600}
@@ -1732,7 +1732,8 @@ html.dark .dk-upozorneni.vyrazne{color:#ffc29a;background:#3d2210;border-color:#
 .dk-nabidka-b{margin-top:.35rem}
 .dk-nabidka-b select{width:auto;max-width:100%;font-size:.8rem}
 /* ── Rozvaděč DBO — konfigurátor (knihovna vlevo, čelní pohled, vlastnosti vpravo) ── */
-#screen-dok-form[data-typ="rozv"] .dok-wrap,#screen-dok-form[data-typ="psc"] .dok-wrap{max-width:1560px}
+#screen-dok-form[data-typ="rozv"] .dok-wrap,#screen-dok-form[data-typ="psc"] .dok-wrap{max-width:none}
+#screen-dok-form[data-typ="rozv"] #rz-pan-dok,#screen-dok-form[data-typ="psc"] #rz-pan-dok{max-width:1560px;margin:0 auto}
 @media (max-width:1180px){.rz-mrizka{grid-template-columns:280px minmax(0,1fr)}.rz-vlastnosti{grid-column:1 / -1}}
 .rz-hlavicka{margin-bottom:1rem}
 .rz-hlavicka select{width:100%}
@@ -31536,7 +31537,7 @@ DOK_TYPY.rozv.form = function (d) {
   var zal = (__rz && o && __rz.o === o && __rz.zalozka) || 'navrh';
   var psc = d.rezim === 'PSC';
   __rz = { o: o, skrin: d.skrin ? dokKopie(d.skrin) : null, rady: dokKopie(d.rady || []),
-           vyber: null, vic: null, kotva: null, rezimVyberu: false, knihVyber: null, presun: null, aktRada: 0, zoom: (__rz && __rz.zoom) || 1, zalozka: zal,
+           vyber: null, vic: null, kotva: null, rezimVyberu: false, knihVyber: null, presun: null, aktRada: 0, zoom: 1, kRucni: (__rz && __rz.o === o && __rz.kRucni) || null, zalozka: zal,
            faze: d.faze ? dokKopie(d.faze) : null };
   if (psc) {   // výkonový rozvaděč (etapa 5a): skříň = pole vedle sebe
     __rz.rezim = 'PSC'; __rz.pole = 0; __rz.dil = null; __rz.koty = true;
@@ -32518,6 +32519,8 @@ function rozvPohledVykreslit() {
       '<span class="rz-faze-ukaz" id="rz-faze-ukaz" hidden></span>' +
       '<span class="rz-zoom">' + (__rz.rezim !== 'PSC' ? '<button class="dok-mini rz-predloha-btn" data-action="tdRzpOtevrit" title="Fotka skutečné řady přímo nad lištou ve stejném měřítku — přístroje pak jen obkreslíte (pokusná funkce)">📷 Předloha z fotky</button>' : '') +
         (__rz.rezim === 'PSC' ? '<button class="dok-mini rz-koty-btn' + (__rz.koty ? ' akt' : '') + '" data-action="tdPscKoty" aria-pressed="' + (__rz.koty ? 'true' : 'false') + '" title="Kóty šířky a výšky polí zapnout / vypnout">📏 Kóty</button>' : '') +
+        '<button class="dok-mini rz-nasirku' + (__rz.kRucni ? '' : ' akt') + '" data-action="tdRNaSirku" aria-pressed="' + (__rz.kRucni ? 'false' : 'true') +
+          '" title="Měřítko tak, aby se celá skříň vešla na šířku okna (výchozí; přepočítá se při změně okna)">⇔ Na šířku okna</button>' +
         '<button class="dok-mini" data-action="tdRZoom" data-z="-" title="Zmenšit">－</button>' +
         '<button class="dok-mini" data-action="tdRZoom" data-z="+" title="Zvětšit">＋</button>' +
         // Přečíslování natrvalo vedle zoomu (pokyn uživatele 2026-10-19 — ve
@@ -32585,12 +32588,19 @@ function rozvDotyk() {
 }
 
 // Px na mm: aby se skříň vešla do rámečku, ale písmo zůstalo čitelné.
-function rozvMeritko() {
+// Výchozí je „⇔ Na šířku okna" — měřítko se přepočítá s velikostí okna.
+// Po − / ＋ platí ruční měřítko (`__rz.kRucni`, px/mm) a drží se i při změně
+// okna, dokud technik znovu nestiskne „Na šířku okna" (2026-10-27).
+var RZ_K_MIN = 2.3, RZ_K_MAX = 4;   // DBO: pod 2,3 px/mm není čitelný pruh výrobce ani In
+function rozvMeritkoNaSirku() {
   var ram = document.getElementById('rz-svg-ram') || document.getElementById('rz-pohled');
-  var sirka = ram ? ram.clientWidth - 4 : 700;
-  var k = __rz.rezim === 'PSC' ? Math.max(0.9, Math.min(3, sirka / rozvSvgRozmery(__rz).Wsvg))   // PSC: skutečné rozměry v mm
-    : Math.max(2.3, Math.min(4, sirka / rozvSvgRozmery(__rz).Wsvg));
-  return k * (__rz.zoom || 1);
+  var sirka = ram ? ram.clientWidth - 14 : 700;   // padding rámečku 2 × 6 px + rezerva
+  return __rz.rezim === 'PSC' ? Math.max(0.9, Math.min(3, sirka / rozvSvgRozmery(__rz).Wsvg))   // PSC: skutečné rozměry v mm
+    : Math.max(RZ_K_MIN, Math.min(RZ_K_MAX, sirka / rozvSvgRozmery(__rz).Wsvg));
+}
+function rozvMeritko() {
+  if (__rz.kRucni) return __rz.kRucni;
+  return rozvMeritkoNaSirku() * (__rz.zoom || 1);
 }
 
 var __rzResize = null;
@@ -32601,10 +32611,13 @@ window.addEventListener('resize', function () {
 
 TD_AKCE.tdRZoom = function (el) {
   if (!__rz) return;
-  var z = (__rz.zoom || 1) * (el.getAttribute('data-z') === '+' ? 1.25 : 0.8);
-  __rz.zoom = Math.max(__rz.rezim === 'PSC' ? 0.3 : 0.5, Math.min(__rz.rezim === 'PSC' ? 5 : 2.5, z));
+  var ram = document.getElementById('rz-svg-ram'), k0 = (ram && ram.__k) || rozvMeritko();
+  var psc = __rz.rezim === 'PSC', z = k0 * (el.getAttribute('data-z') === '+' ? 1.25 : 0.8);
+  __rz.kRucni = Math.max(psc ? 0.27 : RZ_K_MIN * 0.5, Math.min(psc ? 15 : RZ_K_MAX * 2.5, z));
+  __rz.zoom = 1;
   rozvPohledVykreslit();
 };
+TD_AKCE.tdRNaSirku = function () { if (!__rz) return; __rz.kRucni = null; __rz.zoom = 1; rozvPohledVykreslit(); };
 TD_AKCE.tdRZrusitVyber = function () { if (!__rz) return; __rz.knihVyber = null; __rz.presun = null; rozvPohledVykreslit(); rozvKnihovnaVykreslit(); };
 
 // ── Úpravy (všechny přes rozvZmena → ZPĚT, uložení) ─────────────────────
