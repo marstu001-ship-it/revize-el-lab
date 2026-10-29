@@ -589,6 +589,25 @@ function vsechnyStavy(zalozky) {
     __rz.vyber = x.uid; rozvPohledVykreslit(); rozvVlastnostiVykreslit();
     document.querySelector('#rz-vlastnosti .rp-pi').scrollIntoView({ block: 'start' }); await __M.w(100);
   }));
+  // soudobý příkon a návrh hlavního jističe (2026-10-29)
+  const soudPriprav = `(() => { const pis = ['0,5', '2', '7,4', '3,5', '2', '6', '11', '1,5', '2,2', '1'];
+    let i = 0; __rz.rady.forEach(r => r.prvky.forEach(x => { if (rzsMaPole(x)) x.pi = pis[i++ % pis.length]; }));
+    __rz.soud = { evDyn: true, evLimit: '3,7' }; })()`;
+  add('rozvaděč – panel Soudobost a souhrn Pp v liště', 'Tvorba dokumentace', E(async F => {
+    await __M.rozv(); eval(F); __rz.vyber = null; rozvPohledVykreslit(); rozvVlastnostiVykreslit(); await __M.w(150);
+    document.getElementById('rz-soud-panel').scrollIntoView({ block: 'start' }); await __M.w(100);
+  }, soudPriprav));
+  add('rozvaděč – vývod: skupina soudobosti a „Nepracuje současně s"', 'Tvorba dokumentace', E(async F => {
+    await __M.rozv(); eval(F); const v = rzsVyvody({ rady: __rz.rady }); v[0].soudBlok = [v[1].uid];
+    __rz.vyber = v[0].uid; __rz.soudBlokOtevreno = true; rozvPohledVykreslit(); rozvVlastnostiVykreslit();
+    document.querySelector('#rz-vlastnosti .rp-soud').scrollIntoView({ block: 'start' }); await __M.w(100);
+    __rz.soudBlokOtevreno = false;
+  }, soudPriprav));
+  add('rozvaděč – soudobost: více bytů a Nastavení konfigurátoru β', 'Tvorba dokumentace', E(async () => {
+    await __M.rozv(); __rz.soud = { byty: { zap: true, n: '10', stupen: 'B' } }; __rz.vyber = null; rozvPohledVykreslit(); rozvVlastnostiVykreslit(); await __M.w(150);
+    const n = document.querySelector('#rz-vlastnosti .rz-pi-nastaveni'); n.open = true; n.querySelector('.rz-soud-nast').open = true;
+    document.getElementById('rz-soud-panel').scrollIntoView({ block: 'start' }); await __M.w(100);
+  }));
   add('rozvaděč – vybraný přístroj a vlastnosti', 'Tvorba dokumentace', E(async () => {
     await __M.rozv(); __rz.vyber = __rz.rady[1].prvky[3].uid; rozvPohledVykreslit(); rozvVlastnostiVykreslit();
     document.getElementById('rz-vlastnosti').scrollIntoView({ block: 'start' }); await __M.w(100);

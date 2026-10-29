@@ -1938,6 +1938,166 @@ function pomocnik() {
   check('rozvaděč bez ovládání: v datech žádné nové klíče, žádný list ovládacích obvodů, poznámka jako dřív, žádné varování',
     !ovStary.klice && !ovStary.ovl && ovStary.listy === 2 && ovStary.pozn && ovStary.kontrola === 0, JSON.stringify(ovStary));
 
+  // ── soudobý příkon Pp a návrh hlavního jističe (2026-10-29) ───────────
+  const sd = await p.evaluate(async () => {
+    const r = {}, w = __T.w;
+    try { localStorage.removeItem('revize_el_rz_soud'); } catch (e) {}
+    const nast = (k, v) => __T.nast('[data-dk="' + k + '"]', v);
+    const novy = async (sk) => { await dokNovy('rozv'); rozvSkrinNastavit(rozvKnihPolozka(sk || 'v-sk-3x12-n')); nast('soustava', '3NPE ~400/230 V TN-S'); };
+    const V = (kid, vyvod, pi, ri) => { ri = ri || 0; const x = rozvVlozit(kid, ri, __rz.rady[ri].prvky.length); x.vyvod = vyvod; if (pi !== undefined) x.pi = pi; return x; };
+    const D = () => DOK_TYPY.rozv.cist(dokForm()), S = () => rozvSoudVypocet(D());
+    const panel = () => { __rz.vyber = null; __rz.vic = null; rozvVlastnostiVykreslit(); return document.getElementById('rz-soud-panel'); };
+    const sk = (v, k) => v.skupiny.filter(q => q.k === k)[0] || {};
+    // kuchyně: deska 7,4 + trouba 3,5 + myčka 2,2 = 13,1 × 0,4 = 5,24 kW
+    await novy();
+    V('v-fa-3-B16', 'Varná deska', '7,4'); V('v-fa-1-B16', 'Trouba', '3,5'); V('v-fa-1-B16', 'Myčka', '2,2');
+    rozvZmena('t', () => {}); await w(150);
+    let v = S(); r.kuch = [sk(v, 'kuchyne').pi, sk(v, 'kuchyne').b, v.pp].map(n => Math.round(n * 1000) / 1000).join('|');
+    r.kuchZdroj = sk(v, 'kuchyne').zdroj + '|' + sk(v, 'kuchyne').overit;
+    r.ukaz = document.getElementById('rz-soud-ukaz').textContent; r.ukazHid = document.getElementById('rz-soud-ukaz').hidden;
+    let pn = panel(); r.panelOtevren = pn && pn.open; r.panelText = pn ? pn.innerText : '';
+    // nastavení β (uživatel): kuchyně 0,5 → 6,55 kW, zdroj Nastavení
+    const nb = document.querySelector('#rz-vlastnosti .rz-pi-nastaveni .rzs-nast[data-n="beta.kuchyne"]');
+    nb.value = '0,5'; nb.dispatchEvent(new Event('input', { bubbles: true })); await w(150);
+    v = S(); r.nast = Math.round(v.pp * 1000) / 1000 + '|' + sk(v, 'kuchyne').zdroj; r.nastLs = localStorage.getItem('revize_el_rz_soud');
+    r.nastVData = /soudobost/.test(JSON.stringify(D()));
+    // přepsání β u rozvaděče: 0,35 → 4,585 kW, uloží se do d.soudobost
+    let bi = document.querySelector('#rz-soud-panel [data-rzs="beta.kuchyne"]');
+    bi.focus(); bi.value = '0,35'; bi.dispatchEvent(new Event('input', { bubbles: true })); await w(150);
+    v = S(); r.prep = Math.round(v.pp * 1000) / 1000 + '|' + sk(v, 'kuchyne').zdroj + '|' + JSON.stringify(D().soudobost);
+    r.prepFokus = document.activeElement && document.activeElement.getAttribute('data-rzs');
+    try { localStorage.removeItem('revize_el_rz_soud'); } catch (e) {}
+    // EV 11 kW: β 1,0; s dynamickým řízením a limitem 3,7 kW → 3,7
+    await novy(); const ev = V('v-fa-3-B16', 'Nabíječka EV', '11'); rozvZmena('t', () => {}); await w(100);
+    v = S(); r.ev = sk(v, 'ev').pp + '|' + sk(v, 'ev').b + '|' + sk(v, 'ev').overit;
+    panel();
+    let cb = document.querySelector('#rz-soud-panel [data-rzs="evDyn"]'); cb.checked = true; cb.dispatchEvent(new Event('change', { bubbles: true })); await w(100);
+    let li = document.querySelector('#rz-soud-panel [data-rzs="evLimit"]'); li.value = '3,7'; li.dispatchEvent(new Event('input', { bubbles: true })); await w(100);
+    v = S(); r.evLim = sk(v, 'ev').pp + '|' + /limit nabíjení 3,7 kW/.test(sk(v, 'ev').zdroj);
+    // blokování bojler × TČ: započte se jen větší
+    await novy(); const bo = V('v-fa-1-B16', 'Bojler', '2'), tc = V('v-fa-3-B16', 'Tepelné čerpadlo', '6');
+    rozvZmena('t', () => {}); await w(100);
+    r.bezBlok = S().pp;
+    __rz.vyber = bo.uid; __rz.soudBlokOtevreno = true; rozvVlastnostiVykreslit();
+    r.skBo = document.querySelector('#rz-vlastnosti [data-rp2="soudSk"] option[value=""]').textContent;
+    const ref = document.querySelector('#rz-vlastnosti .rp-soud-ref[data-ref="' + tc.uid + '"]');
+    ref.checked = true; ref.dispatchEvent(new Event('change', { bubbles: true })); await w(150);
+    v = S(); r.blok = v.pp + '|' + v.blok.map(q => q.nazev + ' ' + q.pp + ' / ' + q.s).join();
+    r.blokData = JSON.stringify(rozvNajit(bo.uid).x.soudBlok) === JSON.stringify([tc.uid]);
+    pn = panel(); r.blokText = pn.innerText;
+    // skupina ručně a zpět „podle typu"
+    __rz.vyber = bo.uid; rozvVlastnostiVykreslit();
+    let ss = document.querySelector('#rz-vlastnosti [data-rp2="soudSk"]'); ss.value = 'ostatni'; ss.dispatchEvent(new Event('change', { bubbles: true }));
+    r.skRucne = rozvNajit(bo.uid).x.soudSk;
+    ss = document.querySelector('#rz-vlastnosti [data-rp2="soudSk"]'); ss.value = ''; ss.dispatchEvent(new Event('change', { bubbles: true }));
+    r.skZpet = 'soudSk' in rozvNajit(bo.uid).x;
+    r.predikce = ['Varná deska', 'Bojler', 'Nabíječka EV', 'TČ venkovní jednotka', 'Klimatizace', 'Pračka', 'Zásuvky kuchyň', 'Osvětlení'].map(n => rzsPredikce({ vyvod: n, p: {} })).join();
+    // byty n = 10 × 11 kW × 0,45 = 49,5 kW
+    await novy(); V('v-qm-3-40', 'Hlavní vypínač'); rozvZmena('t', () => {}); await w(100);
+    pn = panel(); r.bezPiPanel = pn.classList.contains('rz-soud-zap') && !pn.open && document.getElementById('rz-soud-ukaz').hidden;
+    pn.open = true;
+    cb = document.querySelector('#rz-soud-panel [data-rzs="byty.zap"]'); cb.checked = true; cb.dispatchEvent(new Event('change', { bubbles: true })); await w(100);
+    const n = document.querySelector('#rz-soud-panel [data-rzs="byty.n"]'); n.value = '10'; n.dispatchEvent(new Event('input', { bubbles: true })); await w(100);
+    v = S(); r.byty = Math.round(v.pp * 1000) / 1000 + '|' + v.byty.beta + '|' + v.byty.pb + '|' + v.byty.overit;
+    r.bytyText = document.getElementById('rz-soud-panel').innerText;
+    const n2 = document.querySelector('#rz-soud-panel [data-rzs="byty.n"]'); n2.value = '40'; n2.dispatchEvent(new Event('input', { bubbles: true })); await w(100);
+    v = S(); r.byty40 = v.upoz.join() + '|' + v.pp;
+    // Ip 3f/1f a výběr jističe: Pp 14,2 kW, cos φ 0,95 → 21,6 A → 25 A
+    await novy(); V('v-fa-3-B25', 'Dílna', '14,2'); V('v-fa-1-B16', 'Zásuvky garáž'); rozvZmena('t', () => {}); await w(150);
+    v = S(); r.ip3 = (Math.round(v.ip * 10) / 10) + '|' + v.navrh + '|' + v.faze;
+    r.ukaz2 = document.getElementById('rz-soud-ukaz').textContent;
+    r.bezPi = v.bezPi.length;
+    pn = panel(); r.panel2 = pn.innerText;
+    r.pouzitBtn = !!pn.querySelector('[data-action="tdRSoudPouzit"]');
+    nast('soustava', '1NPE ~230 V'); v = S(); r.ip1 = (Math.round(v.ip * 10) / 10) + '|' + v.navrh + '|' + v.faze;
+    nast('soustava', '3NPE ~400/230 V TN-S');
+    // Použít navržený → hlavička, ZPĚT
+    TD_AKCE.tdRSoudPouzit(); await w(100);
+    r.pouzit = dokForm().querySelector('[data-dk="privodJistic"]').value;
+    v = S(); r.poPouz = v.ok + '|' + (v.skut || {}).In;
+    // ✗ když je skutečný jistič menší
+    nast('privodJistic', '3×20 A, char. B'); await w(100);
+    v = S(); r.mensi = v.ok + '|' + v.skut.In; pn = panel(); r.mensiText = pn.innerText;
+    rozvSoudUkazatelHned(); r.ukazNe = document.getElementById('rz-soud-ukaz').className + '|' + document.getElementById('rz-soud-ukaz').textContent;
+    // klik na souhrn v liště otevře panel
+    __rz.vyber = null; rozvVlastnostiVykreslit(); document.getElementById('rz-soud-panel').open = false;
+    document.getElementById('rz-soud-ukaz').click(); await w(150);
+    r.klik = document.getElementById('rz-soud-panel').open;
+    // PDF list se zdroji β (vektorově, jen když je Pi)
+    const d1 = D();
+    r.zatrh = !!rozvDokHtml(d1).match(/data-dk="dokVyber\.soudobost"/);
+    const B = DOK_TYPY.rozv.pdf(Object.assign({}, d1, { dokVyber: {} })).map(q => q.cela || '').join('');
+    r.vPdf = /rz-soud-strana/.test(B);
+    const L = rozvSoudListSvg(d1).svg;
+    r.list = { nadpis: /VÝPOČET SOUDOBÉHO PŘÍKONU/.test(L), zdroj: /Zdroj β/.test(L), pozn: /Výpočet podle ČSN 33 2130 ed\. 4; koeficienty β zadal zpracovatel\./.test(L),
+      ip: /21,6 A/.test(L), jistic: /3×25 A/.test(L), skut: /NEVYHOVUJE/.test(L), ram: /data-ram="1"/.test(L) && /data-razitko="1"/.test(L),
+      jednoduche: !/<(foreignObject|image|style)|class=/.test(L) };
+    // kuchyně se zdrojem ČSN a odhadem Pi v PDF
+    await novy(); const de = V('v-fa-3-B16', 'Varná deska', '7,4'); de.piOdhad = 'Varná deska 7,4 kW'; V('v-fa-1-B10', 'Osvětlení', '0,5'); rozvZmena('t', () => {}); await w(100);
+    const L2 = rozvSoudListSvg(D()).svg;
+    r.list2 = /ČSN 33 2130 \(rozsah 0,35–0,5\) – ověřit v ČSN 33 2130 ed\. 4/.test(L2) && /\(odhad\)/.test(L2) && /výchozí bez zdroje – β nezadáno/.test(L2);
+    // bez Pi: list se nenabízí a nejde do PDF
+    await novy(); V('v-fa-1-B16', 'Zásuvky'); rozvZmena('t', () => {}); await w(100);
+    const d0 = D();
+    r.bezPiPdf = !rozvSoudMa(d0) && !/dokVyber\.soudobost/.test(rozvDokHtml(d0)) && !/rz-soud-strana/.test(DOK_TYPY.rozv.pdf(Object.assign({}, d0, { dokVyber: {} })).map(q => q.cela || '').join(''));
+    // otevření starého rozvaděče s Pi (bez soudobosti) nezmění data — ani výběr vývodu a panel
+    await novy(); nast('oznaceni', 'RS-STARY'); const a1 = V('v-fa-1-B16', 'Bojler', '2'); V('v-fa-3-B16', 'Varná deska', '7,4'); rozvZmena('t', () => {});
+    await dokUlozitOtevreny(); const uid = __dokOtevreny.uid;
+    const pred = JSON.stringify(dokNajit(uid).data);
+    await dokOtevrit(uid); await w(300);
+    __rz.vyber = a1.uid; rozvVlastnostiVykreslit(); __rz.vyber = null; rozvVlastnostiVykreslit(); rozvSoudUkazatelHned();
+    rozvZalozkaNastavit('dok'); await w(200); rozvZalozkaNastavit('navrh'); await w(100);
+    const po = JSON.stringify(D()); r.staryLadeni = po.slice(0, 200);
+    r.stary = !/"soudSk"|"soudBlok"/.test(po) && JSON.stringify(JSON.parse(pred).rady) === JSON.stringify(JSON.parse(po).rady) && !('soudobost' in JSON.parse(po));
+    return r;
+  });
+  check('soudobost: kuchyně deska 7,4 + trouba 3,5 + myčka 2,2 = 13,1 × 0,4 = 5,24 kW (zdroj ČSN 33 2130, „ověřit v ed. 4")',
+    sd.kuch === '13.1|0.4|5.24' && /ČSN 33 2130/.test(sd.kuchZdroj) && /\|true$/.test(sd.kuchZdroj), sd.kuch + ' / ' + sd.kuchZdroj);
+  check('soudobost: souhrn v liště „Pp ≈ 5,24 kW → 10 A", panel ve vlastnostech rozvaděče otevřený', !sd.ukazHid && sd.ukaz === 'Pp ≈ 5,24 kW → 10 A' && sd.panelOtevren &&
+    /kuchyně/.test(sd.panelText) && /5,24 kW/.test(sd.panelText), sd.ukaz);
+  check('soudobost: β z Nastavení konfigurátoru (kuchyně 0,5 → 6,55 kW) — jen v prohlížeči, ne v rozvaděči',
+    sd.nast === '6.55|Nastavení konfigurátoru (zadal uživatel)' && /"kuchyne":0\.5/.test(sd.nastLs || '') && !sd.nastVData, sd.nast + ' / ' + sd.nastLs);
+  check('soudobost: β přepsané u rozvaděče (0,35 → 4,585 kW) má přednost, uloží se do d.soudobost, kurzor zůstane v poli',
+    sd.prep === '4.585|zadáno u rozvaděče|{"beta":{"kuchyne":"0,35"}}' && sd.prepFokus === 'beta.kuchyne', sd.prep);
+  check('soudobost: EV 11 kW β 1,0 („ověřit"), s dynamickým řízením a limitem 3,7 kW → 3,7 kW', sd.ev === '11|1|true' && sd.evLim === '3.7|true', sd.ev + ' / ' + sd.evLim);
+  check('soudobost: bojler 2 × TČ 6 nepracují současně → započte se jen TČ (8 → 6 kW), hláška v panelu',
+    sd.bezBlok === 8 && /^6\|/.test(sd.blok) && /Bojler 2 \/ -FA2 Tepelné čerpadlo/.test(sd.blok) && sd.blokData && /Bojler 2 kW nezapočten – nepracuje současně s -FA2 Tepelné čerpadlo/.test(sd.blokText), sd.blok);
+  check('soudobost: skupina vývodu — odhad z typu/názvu se neukládá, ruční volba ano („podle typu" ji smaže)',
+    sd.skBo === 'podle typu (ohřev vody)' && sd.skRucne === 'ostatni' && sd.skZpet === false &&
+    sd.predikce === 'kuchyne,ohrev,ev,tc,klima,pradlo,zasuvky,osvetleni', sd.skBo + ' / ' + sd.predikce);
+  check('soudobost: rozvaděč bez Pi — panel sbalený, souhrn v liště schovaný', sd.bezPiPanel, '');
+  check('soudobost: více bytů n = 10 × 11 kW (stupeň B) × 0,45 = 49,5 kW, β(n) z tabulky „ověřit v příloze B"; n = 40 → zadat ručně',
+    sd.byty === '49.5|0.45|11|true' && /10 × 11 kW × 0,45 = 49,5 kW/.test(sd.bytyText) && /ověřit v příloze B ed\. 4/.test(sd.bytyText) && /nad 34/.test(sd.byty40), sd.byty + ' / ' + sd.byty40);
+  check('soudobost: Pp 14,2 kW, cos φ 0,95, 3f → Ip 21,6 A → 25 A; 1f → 65 A → 80 A', sd.ip3 === '21.6|25|3f' && sd.ip1 === '65|80|1f' && sd.ukaz2 === 'Pp ≈ 14,2 kW → 25 A', sd.ip3 + ' / ' + sd.ip1 + ' / ' + sd.ukaz2);
+  check('soudobost: vývod bez Pi nezapočten s hláškou', sd.bezPi === 1 && /1 vývod bez Pi – nezapočten/.test(sd.panel2), sd.panel2.slice(0, 300));
+  check('soudobost: bez hlavního jističe „Použít navržený" → hlavička „3×25 A", pak vyhovuje', sd.pouzitBtn && sd.pouzit === '3×25 A' && sd.poPouz === 'true|25', sd.pouzit + ' / ' + sd.poPouz);
+  check('soudobost: ✗ když je skutečný jistič (3×20 A) menší než Ip; nic se samo nemění; klik na souhrn otevře panel',
+    sd.mensi === 'false|20' && /✗ skutečný jistič 3×20 A, char\. B/.test(sd.mensiText) && /je menší než Ip/.test(sd.mensiText) && /rz-soud-ne/.test(sd.ukazNe) && /✗$/.test(sd.ukazNe) && sd.klik, sd.mensi + ' / ' + sd.ukazNe);
+  check('soudobost: list „Výpočet soudobého příkonu" — rám a razítko, zdroje β, Ip, jistič, poznámka ČSN 33 2130 ed. 4, jen jednoduché prvky; v Dokumentech zaškrtnutý a v PDF',
+    sd.zatrh && sd.vPdf && Object.values(sd.list).every(Boolean) && sd.list2, JSON.stringify(sd.list) + ' ' + sd.list2);
+  check('soudobost: rozvaděč bez Pi — list se nenabízí a do PDF nejde', sd.bezPiPdf, '');
+  check('soudobost: otevření starého rozvaděče s Pi (výběr vývodu, panel, Dokumenty) data nezmění', sd.stary, sd.staryLadeni);
+  // vektorové PDF listu (text jde přečíst)
+  const sdPdf = await p.evaluate(async () => {
+    await dokNovy('rozv'); rozvSkrinNastavit(rozvKnihPolozka('v-sk-3x12-n'));
+    __T.nast('[data-dk="oznaceni"]', 'RD1'); __T.nast('[data-dk="soustava"]', '3NPE ~400/230 V TN-S');
+    const x = rozvVlozit('v-fa-3-B16', 0, 0); x.vyvod = 'Varná deska'; x.pi = '7,4'; rozvZmena('t', () => {});
+    const box = document.getElementById('dok-pdf-pages'); showScreen('dok-pdf'); box.innerHTML = '';
+    const pg = document.createElement('div'); pg.className = 'a4 a4-landscape rz-sch-strana'; pg.setAttribute('data-vektor', '1');
+    pg.innerHTML = rozvSoudListSvg(DOK_TYPY.rozv.cist(dokForm())).svg; box.appendChild(pg);
+    const blob = await renderPagesToPDF([pg], 'x.pdf', { vratitBlob: true }); if (!blob) return null;
+    const a = new Uint8Array(await blob.arrayBuffer()); let s = ''; for (let i = 0; i < a.length; i += 8192) s += String.fromCharCode.apply(null, a.subarray(i, i + 8192));
+    showScreen('dok-form');
+    return { b64: btoa(s), vekt: window.__pdfVektor };
+  });
+  let sdTxt = '';
+  if (sdPdf) {
+    const fp = require('path').join(__dirname, '_beh', 'rozvadec-soudobost.pdf'); require('fs').writeFileSync(fp, Buffer.from(sdPdf.b64, 'base64'));
+    try { sdTxt = require('child_process').execFileSync('pdftotext', [fp, '-']).toString(); } catch (e) { sdTxt = String(e); }
+  }
+  check('soudobost: PDF listu vektorově, text čitelný (VÝPOČET SOUDOBÉHO PŘÍKONU, β, cos φ, Varná deska)', sdPdf && sdPdf.vekt === true &&
+    /VÝPOČET SOUDOBÉHO PŘÍKONU/.test(sdTxt) && /cos φ/.test(sdTxt) && /Varná deska/.test(sdTxt) && /ČSN 33 2130 ed\. 4/.test(sdTxt), sdTxt.slice(0, 160).replace(/\s+/g, ' '));
+
   // ── oddělení od revizí ────────────────────────────────────────────────
   const odd = await p.evaluate(async () => {
     showScreen('home'); renderArchiv();

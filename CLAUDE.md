@@ -2133,13 +2133,98 @@ Vlastnosti bez výběru), jen v prohlížeči: localStorage `revize_el_rz_pi`
   nepřepíše** (tlačítko vypnuté, okno to řekne).
 - Schéma: odhadnuté Pi v tabulce pod schématem s **„≈"** („≈1,6") a pod
   tabulkou „≈ = odhad instalovaného příkonu" (jen když na listu nějaký je).
-- Soudobost ani součty (tech.pi, Pm) se nemění. Rozvaděč bez odhadu beze
-  změny (klíč vzniká jen použitím odhadu).
+- Součty v tabulce listu 1 (tech.pi, Pm) se nemění; Pi vývodů používá
+  výpočet soudobosti (oddíl níž). Rozvaděč bez odhadu beze změny (klíč
+  vzniká jen použitím odhadu).
 
 Test: `test-rozvadec.js` (8 × 0,2 = 1,6 kW, štítek, ≈ ve schématu, ruční
 přepsání, nepřepíše ruční, spotřebič a motor, nastavení jen v prohlížeči).
 V `test-mobil.js` stavy „…barvy podle ampéráže s legendou, ukazatel
 oteplení", „…odhad instalovaného příkonu Pi (okno)", „…vývod s odhadem Pi".
+
+### Soudobý příkon Pp a návrh hlavního jističe (2026-10-29, blok „ROZVADĚČ — SOUDOBOST")
+
+Zadání uživatele: z Pi vývodů spočítat soudobý příkon Pp, výpočtový proud Ip
+a navrhnout hlavní jistič před elektroměrem. **Jen podle ČSN 33 2130 ed. 4**
+(12/2024, příloha A výpočtové zatížení, příloha B byty) — **plné znění
+nemáme**, proto **žádný koeficient napevno**: výchozí β jsou v **⚙ Nastavení
+konfigurátoru** (jen v prohlížeči, localStorage `revize_el_rz_soud`, jen
+odchylky, „↺ Výchozí β") a jdou **přepsat u rozvaděče**. U každé β se ukazuje
+zdroj; hodnoty z ed. 3 / z podkladů mají štítek **„ověřit v ČSN 33 2130 ed. 4"**.
+Tabulky distributorů se nepoužívají.
+
+**Co v programu bylo (2026-10-29):** soudobost tu nebyla. „Součinitel
+soudobosti RDF" (oddíl Oteplení, `rotRdf`, `tech.rdf`) je jmenovitý
+součinitel rozvaděče podle ČSN EN IEC 61439 pro oteplení — **jiný pojem,
+nesahá se na něj**; pole Pi / Pm v tabulce listu 1 schématu (`tech.pi`,
+`tech.pm`) zůstávají ruční. Výpočet stojí na poli Pi vývodu a odhadu Pi
+(v1.35); Ib ani fáze Pi nepoužívají a nezměnily se.
+
+- **Skupiny** `RZS_SKUPINY` (klíč, název, výchozí β, zdroj, ověřit):
+  kuchyně 0,4 (ČSN 33 2130, rozsah 0,35–0,5, ověřit), nabíjení EV 1,0
+  (ČSN 33 2130 – bez dynamického řízení, ověřit), osvětlení, zásuvky, ohřev
+  vody, TČ / vytápění, klimatizace, pračka a sušička, motory 1,0 **bez
+  zdroje** (šedý štítek „β nezadáno" → odkaz do Nastavení), ostatní 1,0.
+  Pp skupiny = Σ Pi × β.
+- **Pole vývodu „Skupina soudobosti"** (`x.soudSk`; jen u vývodů s polem Pi,
+  `rzsMaPole`): první volba „podle typu (…)" = odhad `rzsPredikce` z Typu
+  obvodu (zásuvky / světla / motor), druhu spotřebiče z odhadu Pi (popis
+  `piOdhad` začíná názvem z `ROZV_PI_SPOTR`) a z názvu vývodu — **odhad se
+  neukládá**, do dat jde jen ruční volba.
+- **EV:** „dynamické řízení výkonu" (`evDyn`) → β, nebo **limit nabíjení
+  [kW]** (`evLimit`) = Pp skupiny EV (nejvýš Σ Pi).
+- **„Nepracuje současně s"** (`x.soudBlok` = uid vývodů nebo `sk:skupina`;
+  sbalené pod skupinou, nabízí jen vývody s Pi a skupiny v rozvaděči).
+  Jednotka = vývod, nebo celá odkazovaná skupina; spojené jednotky se počítají
+  jen **největší** (po β), ostatní „bojler 2 kW nezapočten – nepracuje
+  současně s …". Odškrtnutí zruší vztah z obou stran. Jde přes `rozvZmena`
+  (ZPĚT, Ctrl+Z).
+- **Více bytů** (`byty: { zap, n, stupen, pb, beta, pbZ }`): Pp = n × Pb ×
+  β(n); Pb podle stupně A 7 / B 11 kW (Nastavení), C zadat nebo **převzít
+  z výpočtu jiného rozvaděče** (výběr z rozvaděčů s Pp). β(n)
+  `RZS_BYTY_BETA` 1–34 (ed. 3 podle podkladů ČVUT, „ověřit v příloze B
+  ed. 4"), nad 34 hláška „zadejte β ručně". Skupiny vývodů se přičtou jako
+  společné spotřeby domu.
+- **Výpočet** `rozvSoudVypocet(d)` (čistá funkce — panel, lišta i PDF):
+  Ip = Pp·1000 / (√3·400·cos φ) u 3f, Pp·1000 / (230·cos φ) u 1f; cos φ
+  výchozí 0,95 (`cos`); přívod podle soustavy (1… = 1f, 3… = 3f), jde
+  přepnout (`faze`). Navržený jistič = nejbližší vyšší z `RZS_RADA`
+  (10–125 A). **Skutečný** = předřazený jistič z hlavičky (`privodJistic`) →
+  hlavní vypínač -QH / přívodní přístroj → jmenovitý proud přívodu;
+  ✓ vyhovuje / ✗ menší než Ip. **Nic se samo nemění** — jen „✓ Použít
+  navržený" (zapíše „3×25 A" do Předřazeného jističe, ZPĚT), když rozvaděč
+  žádný hlavní jistič nemá. Upozornění: vývody bez Pi (nezapočteny),
+  selektivita (hlavní ≤ největší jistič vývodu), β nezadáno.
+- **Panel „⚡ Soudobost a hlavní jistič"** ve vlastnostech rozvaděče (bez
+  výběru, DBO i PSC): skupiny pod sebou (Pi × β [pole] = Pp, zdroj),
+  blokování, Pp, Ip, návrh, skutečný, upozornění, sbalené „Další nastavení
+  výpočtu" (cos φ, přívod, byty). Psaní přepočítá panel a kurzor zůstane
+  v poli. **Bez Pi** jen sbalený řádek s nápovědou a volbou „Napájí více
+  bytů". Data rozvaděče `d.soudobost` (`__rz.soud`, `cist`) — **jen co
+  technik zadal**, při otevření se nic nezapisuje.
+- **Souhrn v liště** nad čelním pohledem vedle oteplení: **„Pp ≈ 14,2 kW →
+  25 A"** (`#rz-soud-ukaz`, červeně s ✗ když skutečný jistič nestačí; bez Pi
+  schovaný); klik otevře panel.
+- **List „Výpočet soudobého příkonu"** (`rozvSoudListSvg` — A4 na šířku,
+  vektorově, rám se zónami a razítko jako schéma, jen jednoduché prvky):
+  tabulka skupin (vývody s Pi, „(odhad)" u odhadnutého, Pi, β, **zdroj β**,
+  Pp), byty, blokování, Pp, cos φ, Ip, navržený a skutečný jistič,
+  upozornění a „Výpočet podle ČSN 33 2130 ed. 4; koeficienty β zadal
+  zpracovatel." Písmo PDF nemá √ ✓ ✗ — v listu „1,732" a VYHOVUJE /
+  NEVYHOVUJE. V Dokumentech zaškrtávátko **„výpočet soudobého příkonu"**
+  (`dokVyber.soudobost`, výchozí zapnuto) **jen když má rozvaděč Pi** (nebo
+  byty) — jinak se nenabízí a PDF je beze změny; v PDF za schématem.
+
+Test: `test-rozvadec.js` (+17: kuchyně 13,1 × 0,4 = 5,24, souhrn v liště,
+β z Nastavení a přepsané u rozvaděče, EV s limitem 3,7, bojler × TČ, skupina
+podle typu se neukládá, byty 10 × 11 × 0,45 = 49,5 a n = 40, Ip 21,6 A →
+25 A a 1f 65 A → 80 A, vývod bez Pi, Použít navržený, ✗ menší jistič,
+list se zdroji β, bez Pi bez listu, starý rozvaděč beze změny, vektorové PDF
+přes pdftotext). V `test-mobil.js` stavy „…panel Soudobost a souhrn Pp
+v liště", „…vývod: skupina soudobosti a „Nepracuje současně s"" a
+„…soudobost: více bytů a Nastavení konfigurátoru β".
+**Upraveno:** `test-rozvadec-psc.js` (DBO porovnání bez souhrnu, sbaleného
+panelu a nastavení soudobosti). Novinky se nedělaly.
 
 ### Ovládací obvody — stykače, relé, spouště, tlačítka (2026-10-29, bloky „ROZVADĚČ — OVLÁDACÍ OBVODY")
 

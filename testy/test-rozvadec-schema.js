@@ -235,10 +235,11 @@ const presahy = (p, svg) => p.evaluate(svg => {
   await p.evaluate(() => TD_AKCE.tdPdfZpet()); await w(300);
   await p.evaluate(() => rozvZalozkaNastavit('dok')); await w(300);
   const vyb = await p.evaluate(() => Array.from(document.querySelectorAll('.rz-dok-vyber input')).map(i => (i.checked ? '☑' : '☐') + i.parentNode.textContent.trim()).join('|'));
-  check('Dokumenty: zaškrtávátko „schéma zapojení" (výchozí zapnuté) za čelním pohledem', vyb === '☑čelní pohled a seznam přístrojů|☑schéma zapojení|☐pohled 3D (ilustrační)|☑technické údaje|☑prohlášení o shodě|☑protokol o kusovém ověření|☐ověření oteplení (příloha)|☐popisky pod přístroje', vyb);
+  // rozvaděč má Pi → přibylo „výpočet soudobého příkonu" (soudobost, 2026-10-29)
+  check('Dokumenty: zaškrtávátko „schéma zapojení" (výchozí zapnuté) za čelním pohledem', vyb === '☑čelní pohled a seznam přístrojů|☑schéma zapojení|☐pohled 3D (ilustrační)|☑výpočet soudobého příkonu|☑technické údaje|☑prohlášení o shodě|☑protokol o kusovém ověření|☐ověření oteplení (příloha)|☐popisky pod přístroje', vyb);
   await p.evaluate(async () => { await TD_AKCE.tdRDokPdf(); }); await w(600);
   const sou = await p.evaluate(() => dokPdfStranky().map(s => s.classList.contains('rz-sch-strana') ? 'S' + (s.classList.contains('rz-sch-a3') ? '3' : '4') : (s.classList.contains('a4-landscape') ? 'L' : 'P')).join(''));
-  check('souhrnné PDF: čelní pohled (na šířku), pak 2 listy schématu A3, pak strany na výšku', /^L+S3S3P+$/.test(sou), sou);
+  check('souhrnné PDF: čelní pohled (na šířku), pak 2 listy schématu A3, list soudobosti A4, pak strany na výšku', /^L+S3S3S4P+$/.test(sou), sou);
   const f2 = path.join(BEH, 'schema-souhrn.pdf'), r2 = await pdfUloz(f2);
   let info2 = ''; try { info2 = execFileSync('pdfinfo', ['-f', '1', '-l', '20', f2]).toString(); } catch (e) {}
   const vel = (info2.match(/Page\s+\d+ size:\s+[\d.]+ x [\d.]+/g) || []).map(x => /1190/.test(x) ? '3' : '4').join('');
