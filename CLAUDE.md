@@ -2141,6 +2141,107 @@ přepsání, nepřepíše ruční, spotřebič a motor, nastavení jen v prohlí
 V `test-mobil.js` stavy „…barvy podle ampéráže s legendou, ukazatel
 oteplení", „…odhad instalovaného příkonu Pi (okno)", „…vývod s odhadem Pi".
 
+### Ovládací obvody — stykače, relé, spouště, tlačítka (2026-10-29, bloky „ROZVADĚČ — OVLÁDACÍ OBVODY")
+
+Zadání uživatele 2026-10-29 (návrh schválen týž den: SF = tlačítko -SB,
+CENTRAL STOP z jističe před hlavním vypínačem, svorky i do čelního pohledu,
+příslušenství s označením přístroje, sloupec `typ_prislusenstvi`).
+
+- **Knihovna:** nové kategorie **MS** motorový spouštěč (-QM; kategorie QM
+  dál = vypínač, -QM u MS nehlásí „starší značení"), **PRISL** příslušenství
+  (napěťová / podpěťová spoušť, pomocný a signalizační kontakt, motorový
+  pohon) a **VNEJSI** prvek mimo rozvaděč (vyrážecí tlačítko, HDO, termostat,
+  čidlo, výstup na svorky). **SF = „Tlačítko / ovladač / přepínač", nová
+  předpona -SB** (kód SF v datech zůstává; starý přístroj bez kontaktů má na
+  čele dál „SF"). KA = „Relé (instalační, impulzní, monitorovací)", HL =
+  „Kontrolka". Skupina knihovny **„Ovládání"** (KM, KA, KT, SF, HL, MS, PRISL,
+  VNEJSI), „Ostatní" už jen PJ, X, XS, JINE, REZ.
+- **Nová pole (nepovinná, ukládají se jen vyplněná — `ROZV_PRISTROJ_NAVIC`):**
+  `uc`, `kontakty` („2Z", „1Z1V", „1P"), `ieAc1` (A), `peAc3` (kW), `rozsah`,
+  `prislK` (řady, ke kterým se příslušenství hodí; prázdné = univerzální),
+  `montaz` (`lista` / `bok vlevo` / `bok vpravo` / `dvere` / `mimo`; neznámý text =
+  „výrobce neuvádí"), `prislTyp` (druh — ze sloupce, jinak z názvu,
+  `rozvPrislTyp`). **CSV:** `uc;kontakty;ie_ac1;pe_ac3_kw;rozsah_nastaveni;
+  prislusenstvi_k;montaz;typ_prislusenstvi` (šablona 51 sloupců); starý soubor
+  beze změny, neznámá kategorie řádek přeskočí, neznámý sloupec se ohlásí.
+- **Vestavěné obecné:** stykače s kontakty a Uc 230 V AC (km-20-2, km-25-2,
+  km-25-4, km-40-4), relé 1P, impulzní relé, schodišťový automat, tlačítko
+  ZAP/VYP 1Z1V, přepínač 0/1/AUTO, motorový spouštěč 3P 6,3–10 A, napěťová
+  a podpěťová spoušť 230 V AC, pomocný kontakt 1Z1V, vyrážecí tlačítko,
+  tlačítko a kontakt HDO (mimo rozvaděč). Montáž příslušenství prázdná.
+
+**Příslušenství** je v řadě samostatný přístroj s `x.prislNa` (uid přístroje)
+a `x.strana`. **`rozvPrislUklid()` v každé `rozvZmena`** ho přisune těsně
+k přístroji (vlevo → přístroj → vpravo) a dá mu jeho označení — posouvá
+se, kopíruje (`rozvKopieSkupiny`) a maže s ním, mezi ně nejde nic vložit,
+tažení / ◀ ▶ / ✥ berou celou skupinu (`rozvSkupinaPrvku`, `rozvSRozsirenim`).
+Čelní pohled, seznam, popisky ani 3D se kvůli tomu neměnily. „＋ Příslušenství"
+ve vlastnostech (okno `#modal-rz-prisl`) nabídne jen kompatibilní
+(`rozvPrislKompat`: spouště ne ke stykači a relé, `prislK` × řada přístroje);
+prázdná montáž = dotaz na stranu. Zatím jen na DIN liště.
+Pozn.: v návrhu bylo `x.prisl = [...]` uvnitř přístroje; samostatný přístroj
+v řadě je jednodušší (kreslení a seznam beze změny), data jsou stejně volitelná.
+
+**Prvky mimo rozvaděč** `d.vnejsi = [{ uid, knih, p, ozn, misto, dvere }]` —
+vlastní seznam „🚪 Prvky mimo rozvaděč" pod pohledem, panel vlastností
+(`__rz.vyberVn`), předpona podle druhu (`ROZV_VNEJSI_OZN`: -SB, -HDO, -BT, -B,
+-A). Do čelního pohledu nejdou; tlačítko s montáží „dveře" taky sem (bez svorek).
+
+**Ovládání** `x.ovl = { z: uid zdroje, retez: [{ u, k: 'Z'|'V', c?, t? } |
+{ par: [[…], …] }] }` u cívky stykače / relé, spouště, pohonu, kontrolky
+a výstupu (`rozvMaCivku`). Vývod `x.spina = uid stykače`, jistič
+ovládacích obvodů `x.predHlavnim = true`. Panel ⚡ Ovládání: Napájení z
+(jistič, transformátor, zdroj), řetěz s ▲ ▼ 🗑, zapínací / rozpínací, popis
+polohy, paralelní větve (jedna úroveň). **Čísla kontaktů přiděluje
+`rozvOvlPridel(d)` při kreslení** (nikam se neukládají): silové stykače 1-2,
+3-4…, pomocné n3-n4 / n1-n2, přepínací n1-n2-n4; ruční `c` má přednost.
+**Ovládací svorky** spočítá `rozvOvlSvorky` (2 na každý úsek mimo
+rozvaděč), v řadě jsou to svorky ½ M `svorkaOvl` s označením `-X1:n`
+(Přečíslovat je nemění), „＋ Doplnit svorky do řady".
+
+**Schéma:** za jednopólovými listy **listy „Ovládací obvody"** (`rsoModel`,
+`rsoList`, `rsoCesta` — jen když je něco zapojené): dráhy číslované, L/N
+(u zdroje DC +/−) po zdrojích, kontakty se značkou ovládacího členu
+(tlačítko, hříbek, přepínač, termostat), svorky `X1:n` na hranici,
+prvky mimo rozvaděč v čárkovaném rámečku s místem, cívka (A1–A2, C1–C2,
+D1–D2, kontrolka X1–X2) a pod ní **tabulka kontaktů s odkazy** (`/list.dráha`
+v ovládacích listech, `/list.zóna` v jednopólovém). U kontaktu odkaz na
+cívku, u spouště čárkovaná mechanická vazba „┄ -QH1 /2.2". V jednopólovém
+listu: silový kontakt stykače ve spínaném vývodu („-KM1 1-2 /3.2"), jistič
+ovládání odbočený před hlavním vypínačem a s šipkou „ovládání /3.1" místo
+spotřebiče (`rozvJenOvladaci` — nechce kabel), u -QH1 „spoušť C1–C2 /3.1",
+motorový spouštěč jako vývod (`RS_OBVODOVE` + MS, značka `spoustec`).
+Poznámka „Ovládací obvody nejsou zakresleny" zůstává jen pro nezapojené.
+**Kontroly** `rozvOvlKontrola(d)` (řádek „⚠ Ovládání" v záložce Schéma
+a upozornění ve vlastnostech): cívka bez napájení, kontakt bez cívky,
+nekompatibilní příslušenství, napětí cívky × napájení (230/400 V AC
+z jističe, transformátor AC, zdroj DC; rozsah „24–240 V AC/DC" projde),
+chybějící kontakty a svorky. Rozvaděč bez ovládání nehlásí nic.
+
+**Šablony** „⚡ Ovládání" v liště nad čelním pohledem (jen DBO), ve
+vlastnostech cívky a na záložce Schéma (`RZO_SABLONY`, okno `#modal-rz-ovl`,
+`rozvOvlSablona`): CENTRAL STOP (napěťová / podpěťová), stykač přes HDO
+(i s přepínačem 0/1/AUTO), stykač s tlačítky ZAP/VYP (přídržný kontakt,
+u 3+N pomocný kontakt) nebo přepínačem 0/1, schodišťový automat,
+signalizace (pomocný kontakt → kontrolka / výstup na svorky), motor
+(spouštěč + stykač + ZAP/VYP). Vloží, propojí, doplní svorky, vybere
+cívku; jedno ZPĚT. Šablony s vývodem vyžadují vybraný jistič.
+
+**Starý rozvaděč beze změny:** bez `vnejsi`, `ovl`, `spina`, `prislNa`,
+`predHlavnim`, `svorkaOvl` se data, čelní pohled i schéma nemění (test).
+
+Test: `test-rozvadec.js` (+15: import v7 se 44 vymyšlenými položkami „Výrobce
+A/B" a starý soubor, kompatibilita a dotaz na stranu, tažení skutečnou myší
+i s příslušenstvím a Ctrl+Z, ▶ a smazání jako celek, šablony, dráha CENTRAL
+STOP odshora dolů s mechanickou vazbou, kontakty -KM1 ve vývodu bojleru
+a tabulka pod cívkou, varování napětí cívky a cívky bez napájení, vektorové
+PDF listu, rozvaděč bez ovládání). V `test-mobil.js` stavy „rozvaděč – šablony
+ovládání (okno)", „…příslušenství, dotaz na stranu", „…cívka stykače
+s ovládáním…", „…prvek mimo rozvaděč…" a „…list ovládacích obvodů".
+**Upraveno:** `test-rozvadec.js` (21 kategorií, skupina „Ovládání"),
+`test-rozvadec-psc.js` (šablona 51 sloupců, DBO porovnání bez tlačítka
+⚡ Ovládání). Novinky se nedělaly.
+
 ### PDF (část 4)
 
 - `DOK_TYPY.rozv.pdf(d)` → bloky pro společné stránkování tvorby

@@ -593,6 +593,29 @@ function vsechnyStavy(zalozky) {
     await __M.rozv(); __rz.vyber = __rz.rady[1].prvky[3].uid; rozvPohledVykreslit(); rozvVlastnostiVykreslit();
     document.getElementById('rz-vlastnosti').scrollIntoView({ block: 'start' }); await __M.w(100);
   }));
+  // ovládací obvody (2026-10-29)
+  add('rozvaděč – šablony ovládání (okno)', 'Tvorba dokumentace', E(async () => {
+    await __M.rozv(); __rz.vyber = __rz.rady[1].prvky[3].uid; rozvPohledVykreslit(); TD_AKCE.tdROvlSablony(); await __M.w(100);
+  }), '#modal-rz-ovl');
+  add('rozvaděč – příslušenství, dotaz na stranu (okno)', 'Tvorba dokumentace', E(async () => {
+    await __M.rozv(); const q = __rz.rady[0].prvky.find(x => x.p.kat === 'QM'); __rz.vyber = q.uid; rozvVlastnostiVykreslit();
+    TD_AKCE.tdRPrislOtevrit(); await __M.w(50); document.querySelector('#rz-prisl-obsah [data-kid="v-prisl-nap"]').click(); await __M.w(100);
+  }), '#modal-rz-prisl');
+  add('rozvaděč – cívka stykače s ovládáním, prvky mimo rozvaděč, svorky', 'Tvorba dokumentace', E(async () => {
+    await __M.rozv(); document.getElementById('toast-wrap').innerHTML = '';
+    rozvOvlSablona('stop', 'nap'); __rz.vyber = __rz.rady[1].prvky[3].uid; rozvOvlSablona('hdo', 'auto');
+    document.getElementById('toast-wrap').innerHTML = ''; rozvPohledVykreslit(); rozvVlastnostiVykreslit();
+    document.querySelector('#rz-vlastnosti .rp-ovl').scrollIntoView({ block: 'start' }); await __M.w(100);
+  }));
+  add('rozvaděč – prvek mimo rozvaděč ve vlastnostech', 'Tvorba dokumentace', E(async () => {
+    await __M.rozv(); document.getElementById('toast-wrap').innerHTML = ''; rozvOvlSablona('stop', 'podp');
+    document.getElementById('toast-wrap').innerHTML = ''; __rz.vyber = null; __rz.vyberVn = __rz.vnejsi[0].uid; rozvPohledVykreslit(); rozvVlastnostiVykreslit();
+    document.querySelector('.rz-vnejsi').scrollIntoView({ block: 'start' }); await __M.w(100);
+  }));
+  add('rozvaděč – záložka Schéma, list ovládacích obvodů', 'Tvorba dokumentace', E(async () => {
+    await __M.rozv(); rozvOvlSablona('stop', 'nap'); document.getElementById('toast-wrap').innerHTML = '';
+    rozvZalozkaNastavit('sch'); await __M.w(300); __rzSch.list = 99; rozvSchKreslit(); await __M.w(100);
+  }));
   add('rozvaděč – výběr více přístrojů (pruh a vlastnosti výběru)', 'Tvorba dokumentace', E(async () => {
     await __M.rozv(); rozvRezimVyberu(__rz.rady[1].prvky[1].uid);
     rozvVyberNastavit(__rz.rady[1].prvky.slice(1, 4).map(x => x.uid)); rozvPohledVykreslit(); rozvVlastnostiVykreslit();

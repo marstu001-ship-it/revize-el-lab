@@ -1742,6 +1742,202 @@ function pomocnik() {
     pi.svetlo === '0,03' && pi.svetlo2 === '0,05' && /12 svítidel × 0,05 kW/.test(pi.svVysl) && /Pi ≈ 0,6 kW/.test(pi.svVysl) &&
     /"svetlo":0\.05/.test(pi.ls || '') && pi.panel && !pi.vData && !pi.poReset, JSON.stringify([pi.svetlo, pi.svetlo2, pi.svVysl, pi.ls, pi.panel, pi.vData, pi.poReset]));
 
+  // ── ovládací obvody: stykače, relé, spouště, tlačítka (2026-10-29) ─────
+  // Vymyšlená data „Výrobce A/B" ve formátu importu v7 (nové sloupce) — žádná data výrobců.
+  const ovI = await p.evaluate(async () => {
+    const r = {};
+    const hl = 'druh;kategorie;nazev;vyrobce;rada;typ;poly;in;charakteristika;sirka_moduly;uc;kontakty;ie_ac1;pe_ac3_kw;rozsah_nastaveni;prislusenstvi_k;montaz;typ_prislusenstvi;neznamy_sloupec';
+    const rad = [];
+    ['A', 'B'].forEach(v => {
+      const R = 'R' + v;
+      rad.push(`pristroj;QM;Vypínač 3P 40 A;Výrobce ${v};${R};${v}-QM40;3;40;;3;;;;;;;;;x`);
+      rad.push(`pristroj;FA;;Výrobce ${v};${R};${v}-B6;1;6;B;1;;;;;;;;;`);
+      [[20, '2Z', 1], [25, '2Z', 1], [25, '4Z', 2], [40, '4Z', 3], [63, '3Z1V', 3]].forEach(([i, k, s]) => rad.push(`pristroj;KM;Stykač ${i} A ${k};Výrobce ${v};${R};${v}-KM${i}-${k};;${i};;${s};230 V AC;${k};${i};${(i / 8).toFixed(1).replace('.', ',')} kW;;;lista;`));
+      rad.push(`pristroj;KM;Stykač 25 A 24 V;Výrobce ${v};${R};${v}-KM25-24;;25;;1;24 V AC/DC;2Z;25;;;;lista;`);
+      rad.push(`pristroj;KA;Relé 1P;Výrobce ${v};${R};${v}-KA1;;;;1;230 V AC;1P;;;;;;`);
+      rad.push(`pristroj;KA;Impulzní relé;Výrobce ${v};${R};${v}-KAI;;;;1;230 V AC;1Z;;;;;;`);
+      rad.push(`pristroj;KT;Časové relé;Výrobce ${v};${R};${v}-KT1;;;;1;24–240 V AC/DC;1P;;;0,1 s–10 h;;;`);
+      rad.push(`pristroj;KT;Schodišťový automat;Výrobce ${v};${R};${v}-KTS;;;;1;230 V AC;1Z;;;0,5–10 min;;;`);
+      rad.push(`pristroj;SB;Tlačítko ZAP/VYP;Výrobce ${v};${R};${v}-SB1;;;;1;;1Z1V;;;;;lista;`);
+      rad.push(`pristroj;SB;Ovladač na dveře;Výrobce ${v};${R};${v}-SBD;;;;;;1Z;;;;;dveře;`);
+      rad.push(`pristroj;kontrolka;Kontrolka zelená;Výrobce ${v};${R};${v}-HL;;;;1;230 V AC;;;;;;;`);
+      rad.push(`pristroj;MS;Motorový spouštěč;Výrobce ${v};${R};${v}-MS10;3;10;;2,5;;;;;6,3–10 A;;;`);
+      rad.push(`pristroj;PRISL;Napěťová spoušť 230 V;Výrobce ${v};${R};${v}-NS;;;;1;230 V AC;;;;;${R};;`);
+      rad.push(`pristroj;PRISL;Podpěťová spoušť 230 V;Výrobce ${v};${R};${v}-PS;;;;1;230 V AC;;;;;${R};bok vpravo;`);
+      rad.push(`pristroj;PRISL;Pomocný kontakt;Výrobce ${v};${R};${v}-PK;;;;0,5;;1Z1V;;;;${R}, ${R}X;bok vlevo;pom`);
+      rad.push(`pristroj;PRISL;Signalizační kontakt;Výrobce ${v};${R};${v}-SK;;;;0,5;;1P;;;;${R};;sig`);
+      rad.push(`pristroj;VNEJSI;Termostat;Výrobce ${v};;${v}-T;;;;;;1V;;;;;;`);
+      rad.push(`pristroj;VNEJSI;Kontakt HDO;Výrobce ${v};;${v}-HDO;;;;;;1Z;;;;;;hdo`);
+    });
+    rad.push('pristroj;XYZ;Neznámá věc;Výrobce A;RA;A-XYZ;;;;1;;;;;;;;;');   // neznámá kategorie → přeskočí se
+    r.pocet = rad.length;
+    const v7 = rozvImportRozebrat('﻿' + hl + '\r\n' + rad.join('\r\n') + '\r\n', 'knihovna_vyrobcu_v7.csv');
+    r.ok = v7.polozky.length; r.chyby = v7.chyby.map(c => c.radek + ': ' + c.text); r.nezname = (v7.neznameSloupce || []).join();
+    const km = v7.polozky.map(q => q.polozka).find(x => x.typ === 'A-KM25-4Z') || {};
+    r.km = [km.kat, km.uc, km.kontakty, km.ieAc1, km.peAc3, km.montaz].join('|');
+    const pk = v7.polozky.map(q => q.polozka).find(x => x.typ === 'A-PK') || {};
+    r.pk = [pk.kat, pk.prislTyp, pk.prislK, pk.montaz, pk.sirka].join('|');
+    const sb = v7.polozky.map(q => q.polozka).find(x => x.typ === 'A-SBD') || {};
+    r.sbd = [sb.kat, sb.montaz, sb.sirka].join('|');
+    r.ms = (v7.polozky.map(q => q.polozka).find(x => x.typ === 'A-MS10') || {}).rozsah;
+    const stare = rozvImportRozebrat('kategorie;typ;sirka_moduly\nKM;VV-KM-OLD;1\nSF;VV-SF-OLD;1\n', 'stare.csv');
+    r.stare = stare.chyby.length + '|' + stare.polozky.map(q => q.polozka.kat + ':' + q.polozka.typ + ':' + ('kontakty' in q.polozka)).join();
+    await rozvImportSoubor(new File(['﻿' + hl + '\r\n' + rad.join('\r\n') + '\r\n'], 'knihovna_vyrobcu_v7.csv', { type: 'text/csv' }));
+    await TD_AKCE.tdRImportUlozit(); await __T.w(100);
+    r.vKnihovne = DOK.rozvKnihovna.filter(x => /^[AB]-/.test(x.typ)).length;
+    return r;
+  });
+  check('ovládání – import v7: všech 44 vymyšlených položek s novými sloupci, neznámá kategorie přeskočena, neznámý sloupec ohlášen',
+    ovI.ok === 44 && ovI.chyby.length === 1 && /neznámá kategorie „XYZ"/.test(ovI.chyby[0]) && ovI.nezname === 'neznamy_sloupec' && ovI.vKnihovne === 44, JSON.stringify(ovI));
+  check('ovládání – import v7: uc, kontakty, Ie AC-1, Pe AC-3 (kW), montáž, druh příslušenství, „k řadám", rozsah, tlačítko „dveře" bez šířky',
+    ovI.km === 'KM|230 V AC|4Z|25|3.1|lista' && ovI.pk === 'PRISL|pom|RA, RAX|bok vlevo|0.5' &&
+    ovI.sbd === 'SF|dvere|' && ovI.ms === '6,3–10 A', JSON.stringify([ovI.km, ovI.pk, ovI.sbd, ovI.ms]));
+  check('ovládání – starý soubor bez nových sloupců se načte jako dřív (SF = tlačítko, žádné nové klíče)', ovI.stare === '0|KM:VV-KM-OLD:false,SF:VV-SF-OLD:false', ovI.stare);
+
+  // příslušenství: kompatibilita, dotaz na stranu, přichycení
+  const ovP = await p.evaluate(async () => {
+    const r = {};
+    await dokNovy('rozv'); rozvSkrinNastavit(rozvKnihPolozka('v-sk-3x12-n')); __T.nast('[data-dk="oznaceni"]', 'RO1');
+    const id = t => DOK.rozvKnihovna.find(x => x.typ === t).id;
+    const qm = rozvVlozit(id('A-QM40'), 0, 0), fa = rozvVlozit('v-fa-1-B16', 0, 1), km = rozvVlozit(id('A-KM25-2Z'), 0, 2);
+    rozvVybrat(qm.uid); TD_AKCE.tdRPrislOtevrit();
+    const nab = Array.from(document.querySelectorAll('#rz-prisl-obsah .rz-prisl-pol')).map(b => b.getAttribute('data-kid'));
+    r.nabA = nab.filter(k => /A-/.test((rozvKnihPolozka(k) || {}).typ || '')).map(k => rozvKnihPolozka(k).typ).sort().join();
+    r.nabB = nab.filter(k => /^B-/.test((rozvKnihPolozka(k) || {}).typ || '')).length;
+    r.overit = !!document.querySelector('#rz-prisl-obsah .rz-prisl-overit');
+    document.querySelector('#rz-prisl-obsah [data-kid="' + id('A-NS') + '"]').click(); await __T.w(50);
+    r.dotaz = (document.querySelector('#rz-prisl-obsah .rz-prisl-strana') || {}).innerText || '';
+    document.querySelector('#rz-prisl-obsah [data-s="vlevo"]').click(); await __T.w(50);
+    rozvVybrat(qm.uid); TD_AKCE.tdRPrislOtevrit(); document.querySelector('#rz-prisl-obsah [data-kid="' + id('A-PS') + '"]').click(); await __T.w(50);
+    r.bezDotazu = !document.getElementById('modal-rz-prisl').classList.contains('open');
+    r.rada0 = __rz.rady[0].prvky.map(x => x.ozn + ':' + x.p.kat + (x.prislNa ? '/' + x.strana : '')).join(' ');
+    rozvVybrat(km.uid); TD_AKCE.tdRPrislOtevrit();
+    r.nabKM = Array.from(document.querySelectorAll('#rz-prisl-obsah .rz-prisl-pol')).map(b => rozvKnihPolozka(b.getAttribute('data-kid'))).map(x => rozvPrislTyp(x)).sort().join();
+    TD_AKCE.tdRPrislZavrit();
+    r.qmUid = qm.uid;
+    return r;
+  });
+  check('příslušenství: k vypínači řady RA jen díly pro RA (spouště, kontakty), nic pro RB, univerzální s „ověřte"',
+    ovP.nabA === 'A-NS,A-PK,A-PS,A-SK' && ovP.nabB === 0 && ovP.overit, JSON.stringify(ovP));
+  check('příslušenství: prázdná montáž → dotaz „na kterou stranu"; „bok vpravo" se přichytí bez dotazu; nese označení přístroje',
+    /výrobce neuvádí, na kterou stranu/.test(ovP.dotaz) && ovP.bezDotazu && ovP.rada0 === '-QH1:PRISL/vlevo -QH1:QM -QH1:PRISL/vpravo -FA1:FA -KM1:KM', ovP.rada0);
+  check('příslušenství: ke stykači se spoušť nenabídne (jen pomocné kontakty)', ovP.nabKM && !/nap|podp/.test(ovP.nabKM) && /pom/.test(ovP.nabKM), ovP.nabKM);
+  // tažení skutečnou myší: vypínač s oběma spouštěmi do řady 2 — příslušenství jede s ním
+  await p.evaluate(() => { __rz.kRucni = 3; rozvPohledVykreslit(); document.getElementById('rz-pohled').scrollIntoView({ block: 'start' }); }); await w(200);
+  const ovOd = await p.evaluate(u => { const b = document.querySelector('#rz-pohled [data-puid="' + u + '"]').getBoundingClientRect(); return { x: b.x + b.width / 2, y: b.y + b.height / 2 }; }, ovP.qmUid);
+  const ovKam = await p.evaluate(() => { const b = document.querySelector('#rz-pohled .rz-rada[data-rada="1"]').getBoundingClientRect(); return { x: b.x + 30, y: b.y + b.height / 2 }; });
+  await p.mouse.move(ovOd.x, ovOd.y); await p.mouse.down(); await p.mouse.move(ovOd.x + 12, ovOd.y + 5, { steps: 3 }); await p.mouse.move(ovKam.x, ovKam.y, { steps: 8 }); await w(80); await p.mouse.up(); await w(300);
+  const ovT = await p.evaluate(() => ({ r0: __rz.rady[0].prvky.map(x => x.ozn).join(' '), r1: __rz.rady[1].prvky.map(x => x.ozn + (x.prislNa ? '*' : '')).join(' '),
+    poz: rozvPozice(__rz.rady[1]).join(',') }));
+  await p.keyboard.press('Control+z'); await w(200);
+  const ovZ = await p.evaluate(() => __rz.rady[0].prvky.map(x => x.ozn + (x.prislNa ? '*' : '')).join(' '));
+  check('příslušenství: přetažený vypínač jede do řady 2 i se spouštěmi těsně vedle sebe; Ctrl+Z vrátí', ovT.r1 === '-QH1* -QH1 -QH1*' && ovT.r0 === '-FA1 -KM1' &&
+    /^\d+(\.\d+)?,\d+(\.\d+)?,\d+(\.\d+)?$/.test(ovT.poz) && ovZ === '-QH1* -QH1 -QH1* -FA1 -KM1', JSON.stringify([ovT, ovZ]));
+  const ovS = await p.evaluate(() => {
+    const qm = __rz.rady[0].prvky[1]; rozvPosun(qm.uid, 'p');
+    const a = __rz.rady[0].prvky.map(x => x.ozn).join(' ');
+    rozvSmazat(qm.uid); const b = __rz.rady[0].prvky.map(x => x.ozn).join(' ');
+    return [a, b];
+  });
+  check('příslušenství: ▶ posune vypínač i se spouštěmi jako celek, smazání vypínače smaže i jeho příslušenství', ovS[0] === '-FA1 -QH1 -QH1 -QH1 -KM1' && ovS[1] === '-FA1 -KM1', JSON.stringify(ovS));
+
+  // šablona CENTRAL STOP a stykač přes HDO
+  const ovC = await p.evaluate(async () => {
+    const r = {};
+    await dokNovy('rozv'); rozvSkrinNastavit(rozvKnihPolozka('v-sk-3x12-n')); __T.nast('[data-dk="oznaceni"]', 'RD1'); __T.nast('[data-dk="soustava"]', '3NPE ~400/230 V TN-S');
+    rozvVlozit('v-qm-3-40', 0, 0);
+    const boj = rozvVlozit('v-fa-1-B16', 1, 0); boj.vyvod = 'Bojler'; boj.faze = 'L1'; boj.kabel = 'CYKY-J'; boj.prurez = '3×2,5';
+    __rz.vyber = null; TD_AKCE.tdROvlSablony();
+    r.dlg = Array.from(document.querySelectorAll('#rzo-obsah .rzo-s-t')).map(x => x.innerText.trim()).join(' | ');
+    r.hdoVypnute = document.querySelector('[data-action="tdRzoVlozit"][data-k="hdo"]').disabled;
+    document.querySelector('[data-action="tdRzoVlozit"][data-k="stop"][data-v="nap"]').click(); await __T.w(100);
+    r.vybrana = (rozvNajit(__rz.vyber) || {}).x?.p.kat;
+    rozvVybrat(boj.uid); TD_AKCE.tdROvlSablony(); document.querySelector('[data-action="tdRzoVlozit"][data-k="hdo"][data-v="prost"]').click(); await __T.w(100);
+    r.rady = __rz.rady.map(q => q.prvky.map(x => x.ozn + (x.prislNa ? '*' : '')).join(' ')).join(' | ');
+    r.vn = __rz.vnejsi.map(x => x.ozn).join();
+    const d = DOK_TYPY.rozv.cist(dokForm()); r.kontrola = rozvOvlKontrola(d).map(q => q.text);
+    const L = rozvSchemaListy(d), ovl = L.filter(l => l.g.ovl), sil = L.filter((l, i) => i && !l.g.ovl);
+    r.typy = L.map((l, i) => !i ? 'O' : l.g.ovl ? 'C' : 'J').join('');
+    const texty = svg => Array.from(svg.matchAll(/<text x="([\d.]+)" y="([\d.]+)"[^>]*>([^<]*)<\/text>/g)).map(m => ({ x: +m[1], y: +m[2], t: m[3].replace(/&gt;/g, '>').replace(/&amp;/g, '&') }));
+    const T = texty(ovl[0].svg), najdi = t => T.find(q => q.t === t) || {};
+    const xSb = najdi('-SB1').x, sl = T.filter(q => Math.abs(q.x - (xSb - 2.6)) < 8 || Math.abs(q.x - xSb) < 3);
+    r.draha = ['z -FA2 /2.' , 'X1:1', '-SB1', 'X1:2', '-QH1'].map(t => { const q = T.find(z => z.t.indexOf(t) === 0 && Math.abs(z.x - xSb) < 12); return q ? q.y : null; });
+    r.L = !!T.find(q => q.t === 'L' && q.y < 40) && !!T.find(q => q.t === 'N' && q.y > 120);
+    r.mech = (T.find(q => /^┄ -QH1 \/2\.\d$/.test(q.t)) || {}).t || '';
+    r.cv = ['C1', 'C2'].every(t => T.some(q => q.t === t));
+    r.svCisla = T.filter(q => /^X1:\d$/.test(q.t)).map(q => q.t).join();
+    r.mimo = (ovl[0].svg.match(/stroke-dasharray="1.6 1"/g) || []).length;
+    const Ts = texty(sil[0].svg);
+    r.silSpoust = (Ts.find(q => /^spoušť C1–C2 \/3\.\d+$/.test(q.t)) || {}).t || '';
+    r.silKM = (Ts.find(q => /^1-2 \/3\.\d+$/.test(q.t)) || {}).t || '';
+    r.silKMozn = Ts.some(q => q.t === '-KM1');
+    r.ovlZdroj = Ts.some(q => q.t === 'ovládání');
+    r.tabulka = T.filter(q => /^1-2 \/2\.\d$|^3-4$|^Z$/.test(q.t)).map(q => q.t).join();
+    r.hdo = T.some(q => q.t === '-HDO1') && T.some(q => q.t === 'X1:3');
+    window.__ovlD = d;
+    return r;
+  });
+  check('šablony: okno nabízí CENTRAL STOP, HDO, ruční, schodiště, signalizaci, motor; HDO bez vybraného vývodu nejde', /CENTRAL STOP/.test(ovC.dlg) && /HDO/.test(ovC.dlg) && /ručním/.test(ovC.dlg) &&
+    /Schodišťový/.test(ovC.dlg) && /Signalizace/.test(ovC.dlg) && /Motor/.test(ovC.dlg) && ovC.hdoVypnute, ovC.dlg);
+  check('CENTRAL STOP: spoušť na -QH1 (vybraná), jistič ovládání, vyrážecí tlačítko mimo rozvaděč, svorky -X1 v čelním pohledu, žádné varování',
+    ovC.vybrana === 'PRISL' && /^-QH1 -QH1\* -FA2/.test(ovC.rady) && /-X1:1 -X1:2 -X1:3 -X1:4/.test(ovC.rady) && ovC.vn === '-SB1,-HDO1' && !ovC.kontrola.length, ovC.rady + ' / ' + JSON.stringify(ovC.kontrola));
+  check('CENTRAL STOP: list Ovládací obvody — dráha L → -FA2 → X1:1 → -SB1 → X1:2 → spoušť -QH1 (C1–C2) → N, odshora dolů',
+    ovC.typy === 'OJC' && ovC.draha.every(y => y != null) && ovC.draha.every((y, i, a) => !i || y > a[i - 1]) && ovC.L && ovC.cv, JSON.stringify(ovC.draha) + ' ' + ovC.typy);
+  check('CENTRAL STOP: mechanická vazba „┄ -QH1 /2.x", prvek mimo rozvaděč v čárkovaném rámečku, v jednopólovém schématu „spoušť C1–C2 /3.x" a jistič „ovládání"',
+    !!ovC.mech && ovC.mimo >= 2 && !!ovC.silSpoust && ovC.ovlZdroj, JSON.stringify([ovC.mech, ovC.mimo, ovC.silSpoust]));
+  check('stykač přes HDO: kontakty -KM1 ve vývodu bojleru s odkazem na cívku („1-2 /3.x"), pod cívkou tabulka „Z 1-2 /2.x, 3-4", HDO mimo rozvaděč přes X1:3',
+    ovC.silKMozn && !!ovC.silKM && /Z/.test(ovC.tabulka) && /1-2 \/2\.\d/.test(ovC.tabulka) && /3-4/.test(ovC.tabulka) && ovC.hdo, JSON.stringify([ovC.silKM, ovC.tabulka]));
+
+  // varování: napětí cívky, cívka bez napájení
+  const ovV = await p.evaluate(async () => {
+    const r = {}, km = __rz.rady.flatMap(q => q.prvky).find(x => x.p.kat === 'KM');
+    rozvVybrat(km.uid); rozvZmena('t', () => { rozvNajit(km.uid).x.p.uc = '24 V AC'; });
+    const d = DOK_TYPY.rozv.cist(dokForm());
+    r.k = rozvOvlKontrola(d).map(q => q.text).join(' | ');
+    r.panel = (document.querySelector('#rz-vlastnosti .rp-ovl-upoz') || {}).innerText || '';
+    rozvZmena('t', () => { rozvNajit(km.uid).x.p.uc = '24–240 V AC/DC'; });
+    r.rozsah = rozvOvlKontrola(DOK_TYPY.rozv.cist(dokForm())).filter(q => q.druh === 'napeti').length;
+    rozvZmena('t', () => { rozvNajit(km.uid).x.p.uc = '230 V AC'; });
+    const km2 = rozvVlozit('v-km-25-4', 2, 0);
+    r.bez = rozvOvlKontrola(DOK_TYPY.rozv.cist(dokForm())).map(q => q.text).join(' | ');
+    rozvZalozkaNastavit('sch'); await __T.w(400);
+    r.radek = document.getElementById('rz-sch-chybi').innerText;
+    rozvZalozkaNastavit('navrh'); rozvSmazat(km2.uid);
+    return r;
+  });
+  check('varování: cívka 24 V AC na jističi 230 V → „napětí cívky -KM1 (24 V AC) neodpovídá napájení z -FA1 (230 V AC)" (i ve vlastnostech); rozsah 24–240 V AC/DC projde',
+    /napětí cívky -KM1 \(24 V AC\) neodpovídá napájení z -FA1 \(230 V AC\)/.test(ovV.k) && /neodpovídá/.test(ovV.panel) && ovV.rozsah === 0, ovV.k + ' / ' + ovV.panel);
+  check('varování: nezapojený stykač = „cívka bez napájení" v řádku záložky Schéma', /cívka bez napájení: -KM2/.test(ovV.bez) && /⚠ Ovládání: .*cívka bez napájení: -KM2/.test(ovV.radek), ovV.radek);
+
+  // PDF listu ovládacích obvodů (vektorově)
+  await p.evaluate(async () => { rozvZalozkaNastavit('sch'); await TD_AKCE.tdRSchPdf(); }); await w(500);
+  const ovPdf = await p.evaluate(async () => {
+    const blob = await renderPagesToPDF(dokPdfStranky(), 'x.pdf', { vratitBlob: true }); if (!blob) return null;
+    const a = new Uint8Array(await blob.arrayBuffer()); let s = ''; for (let i = 0; i < a.length; i += 8192) s += String.fromCharCode.apply(null, a.subarray(i, i + 8192));
+    return { b64: btoa(s), vekt: window.__pdfVektor, stran: dokPdfStranky().length };
+  });
+  let ovTxt = '', ovInfo = '';
+  if (ovPdf) {
+    const fp = require('path').join(__dirname, '_beh', 'rozvadec-ovladani.pdf'); require('fs').writeFileSync(fp, Buffer.from(ovPdf.b64, 'base64'));
+    try { ovInfo = require('child_process').execFileSync('pdfinfo', [fp]).toString(); ovTxt = require('child_process').execFileSync('pdftotext', [fp, '-']).toString(); } catch (e) { ovInfo = String(e); }
+  }
+  check('PDF: list „OVLÁDACÍ OBVODY" vektorově (text jde přečíst: -SB1, X1:1, C1, -KM1, -HDO1), 3 listy', ovPdf && ovPdf.vekt === true && /Pages:\s+3/.test(ovInfo) &&
+    /OVLÁDACÍ OBVODY/.test(ovTxt) && /-SB1/.test(ovTxt) && /X1:1/.test(ovTxt) && /-HDO1/.test(ovTxt), (ovInfo.match(/Pages.*/) || [''])[0] + ' / ' + ovTxt.slice(0, 120).replace(/\s+/g, ' '));
+  await p.evaluate(() => TD_AKCE.tdPdfZpet()); await w(300);
+
+  // starý rozvaděč bez ovládání: data i schéma beze změny
+  const ovStary = await p.evaluate(async () => {
+    await dokNovy('rozv'); rozvSkrinNastavit(rozvKnihPolozka('v-sk-3x12-n'));
+    __T.nast('[data-dk="oznaceni"]', 'RH9'); __T.nast('[data-dk="soustava"]', '3NPE ~400/230 V TN-S');
+    rozvVlozit('v-qm-3-40', 0, 0); const km = rozvVlozit('v-km-25-4', 0, 1);
+    const d = DOK_TYPY.rozv.cist(dokForm()), j = JSON.stringify(d);
+    const L = rozvSchemaListy(d);
+    return { klice: /"(vnejsi|ovl|spina|prislNa|predHlavnim|svorkaOvl)"/.test(j), listy: L.length, ovl: L.some(l => l.g.ovl),
+      pozn: /Ovládací obvody nejsou na výkresu zakresleny/.test(L[1].svg), kontrola: rozvOvlKontrola(d).length };
+  });
+  check('rozvaděč bez ovládání: v datech žádné nové klíče, žádný list ovládacích obvodů, poznámka jako dřív, žádné varování',
+    !ovStary.klice && !ovStary.ovl && ovStary.listy === 2 && ovStary.pozn && ovStary.kontrola === 0, JSON.stringify(ovStary));
+
   // ── oddělení od revizí ────────────────────────────────────────────────
   const odd = await p.evaluate(async () => {
     showScreen('home'); renderArchiv();

@@ -2081,7 +2081,7 @@ html.dark .rz-banner-vyber{background:#1d2a3a;color:#c9dcf3}
 .rzo-s-p{font-size:.8rem;color:var(--muted);flex:1}
 .rzo-s-chybi{font-size:.78rem;color:#8a4b00}
 .rzo-s-v{display:flex;flex-wrap:wrap;gap:.3rem}
-.rzo-s-b{font-size:.78rem;padding:.35rem .6rem;text-transform:none;letter-spacing:0}
+.rzo-s-b{font-size:.8rem!important;padding:.35rem .6rem!important;text-transform:none!important;letter-spacing:0!important;white-space:normal!important;font-family:var(--sans)!important;text-align:left;max-width:100%;line-height:1.25}
 .rzo-s-b:disabled{opacity:.45;cursor:not-allowed}
 .rzo-vybrano{font-size:.85rem;margin:.3rem 0}
 .rz-sch-ovl{font-size:.84rem;margin:.3rem 0}
@@ -2363,6 +2363,16 @@ html.dark .rz-imp-chyby{background:#3a1f1c;border-color:#6b2c25}
   .rz-seznam{max-height:45vh}
   .rz-chip{display:inline-flex;align-items:center}
   .rz-f-l>span{flex-basis:5.5rem}
+}
+
+/* ── Mobil: ovládací obvody rozvaděče (2026-10-29) ── */
+@media (max-width:600px), (pointer:coarse) and (max-height:500px){
+  .rz-vn-b,.rz-prisl-pol,.rzo-s-b{min-height:44px}
+  .rzo-s-b{flex:1 1 100%}
+  .rzo-sablony{grid-template-columns:1fr;max-height:none}
+  .rp-ovl-ovl select,.rp-ovl-ovl input{min-height:44px;max-width:none;flex:1 1 7rem}
+  .rp-ovl-ovl .dok-mini{min-width:44px;min-height:44px}
+  .rp-ovl-pridat,.rp-ovl-z{min-height:44px;width:100%}
 }
 
 /* ── Mobil: plán revizí ── */
@@ -33191,7 +33201,7 @@ function rozvHlasitPreplneni(r) {
 
 function rozvPresunout(uid, r, idx, poz, pos) {
   var z = rozvNajit(uid); if (!z) return;
-  var sk = rozvSkupina(uid); if (sk.length > 1) { rozvPresunBlok(sk, r, idx, poz, pos); return; }
+  var sk = rozvSkupinaPrvku(uid); if (sk.length > 1) { rozvPresunBlok(sk, r, idx, poz, pos); return; }
   if (pscRadaDeska(r)) { pscBlokNaDesku([uid], r, pos); return; }
   var m = {}; m[uid] = 1;
   if (poz != null) {   // do volného místa: přesně tam, ostatní se nehnou
@@ -33244,7 +33254,7 @@ function rozvDuplikovat(uid) {
 // jinak na podobné místo v pořadí.
 function rozvPosun(uid, smer) {
   var z = rozvNajit(uid); if (!z) return;
-  var sk = rozvSkupina(uid); if (sk.length > 1) { rozvPosunVic(sk, smer); return; }   // přístroj s příslušenstvím jako celek
+  var sk = rozvSkupinaPrvku(uid); if (sk.length > 1) { rozvPosunVic(sk, smer); return; }   // přístroj s příslušenstvím jako celek
   if (pscRadaDeska(z.r)) { pscPostrcit([uid], smer); return; }   // na desce o 5 mm
   var rada = __rz.rady[z.r], mod = rozvModR(z.r);
   if (smer === 'l' || smer === 'p') {
@@ -33271,7 +33281,7 @@ function rozvPosun(uid, smer) {
 // `jenVolno` (šipky) jen do volna, jinak (tlačítko +½) odsune přístroje
 // těsně za ním, dokud se vejdou do řady. Přístroje za mezerou se nehnou.
 function rozvMezeraPosun(uid, d, jenVolno) {
-  var sk0 = rozvSkupina(uid); if (sk0.length > 1) uid = sk0[0];   // mezera patří před celou skupinu
+  var sk0 = rozvSkupinaPrvku(uid); if (sk0.length > 1) uid = sk0[0];   // mezera patří před celou skupinu
   var z = rozvNajit(uid); if (!z || !__rz.skrin) return false;
   if (pscRadaDeska(z.r)) return false;
   var rada = __rz.rady[z.r], mod = rozvModR(z.r), pz = rozvPozice(rada);
@@ -33675,7 +33685,7 @@ function rozvTahZacit(d) {
     if (prvky.length) d.blok = { w: rozvW(prvky[0]), off: off.x, bez: {} };
   } else {
     var vic = rozvVic();
-    d.uidy = rozvSRozsirenim(vic && vic.indexOf(d.puid) !== -1 ? vic : rozvSkupina(d.puid));
+    d.uidy = rozvSRozsirenim(vic && vic.indexOf(d.puid) !== -1 ? vic : rozvSkupinaPrvku(d.puid));
     d.uidy.forEach(function (u) { var q = rozvNajit(u); if (q) prvky.push(q.x); });
     var pred = 0, gp = null, b = rozvBodMm(d.x0, d.y0);
     for (var i = 0; i < prvky.length && prvky[i].uid !== d.puid; i++) pred += (+prvky[i].p.sirka || 1) * RZG.M;
@@ -36386,7 +36396,7 @@ function rozvPrislu(uid) {   // příslušenství přístroje v pořadí řady
   return a;
 }
 // Skupina přístroj + jeho příslušenství (uid v pořadí řady); u příslušenství celá skupina hostitele.
-function rozvSkupina(uid) {
+function rozvSkupinaPrvku(uid) {
   var q = rozvNajit(uid); if (!q) return [uid];
   var hu = q.x.prislNa && rozvPrislHostitel(q.x) ? q.x.prislNa : uid, h = rozvNajit(hu);
   var m = {}; m[hu] = 1; rozvPrislu(hu).forEach(function (a) { m[a.uid] = 1; });
@@ -37247,7 +37257,7 @@ function rzoVnejsi(it, o) {
   x.ozn = rozvDalsiOzn(x.p, x.uid); return x;
 }
 function rzoVlozitZa(uid, xs) {   // za přístroj (i s jeho příslušenstvím), co se nevejde, pokračuje v další řadě
-  var sk = uid ? rozvSkupina(uid) : [], q = sk.length ? rozvNajit(sk[sk.length - 1]) : null;
+  var sk = uid ? rozvSkupinaPrvku(uid) : [], q = sk.length ? rozvNajit(sk[sk.length - 1]) : null;
   var r = q ? q.r : rozvRadaProVlozeni(xs.reduce(function (s, x) { return s + rozvW(x); }, 0)), idx = q ? q.i + 1 : __rz.rady[r].prvky.length;
   rozvRozmistit(__rz.rady, xs, r, idx);
   xs.forEach(function (x) { if (!x.ozn) x.ozn = rozvDalsiOzn(x.p, x.uid); });
