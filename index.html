@@ -1991,7 +1991,7 @@ html.dark .rz-pi-odhad{background:#3a2c0e;color:#f3c76b;border-color:#7a5c1c}
 .rz-pi-rucne{margin:.3rem 0 .5rem;font-size:.85rem;color:#8a4b00}
 html.dark .rz-pi-rucne{color:#f0a35e}
 .rz-pi-nastaveni .rz-pi-nr{display:flex;align-items:center;gap:.4rem;font-size:.85rem;margin:.2rem 0;text-transform:none;letter-spacing:0;font-family:inherit}
-.rz-pi-nastaveni .rz-pi-nr input{width:5.5rem!important;flex:0 0 auto;margin-left:auto}
+.rz-pi-nastaveni .rz-pi-nr input{width:4.2rem!important;flex:0 0 auto;margin-left:auto}
 .rz-otepl-ukaz{font:inherit;font-size:.8rem;border:1px solid var(--border);border-radius:3px;padding:.1rem .45rem;cursor:pointer;background:var(--surface);color:var(--muted)}
 .rz-otepl-zelena{background:#e3f4ea;border-color:#7cc49a;color:#0f5f3f}
 .rz-otepl-oranzova{background:#fdf0d8;border-color:#e0a800;color:#7a4d00}
@@ -2001,6 +2001,42 @@ html.dark .rz-otepl-zelena{background:#173a2a;color:#9fe0bb}
 html.dark .rz-otepl-oranzova{background:#3d3410;color:#f0d78a}
 html.dark .rz-otepl-cervena{background:#3a1f1c;color:#f3b0a6}
 .rz-otepl-knih{font-weight:600;padding:0 .25rem;border-radius:2px;border:1px solid transparent}
+/* Soudobost a hlavní jistič (2026-10-29) */
+.rz-soud-ukaz{font:inherit;font-size:.8rem;border:1px solid var(--border);border-radius:3px;padding:.1rem .45rem;cursor:pointer;background:var(--surface);color:var(--text)}
+.rz-soud-ukaz.rz-soud-ne{background:#fdecea;border-color:#e6a59d;color:#9b2c1f;font-weight:600}
+html.dark .rz-soud-ukaz.rz-soud-ne{background:#3a1f1c;color:#f3b0a6}
+.rz-soud summary.rp-faze-t{cursor:pointer}
+.rz-soud-sk-t{font-size:.72rem;font-weight:600;color:var(--muted);margin:.35rem 0 .1rem;display:flex;justify-content:space-between}
+.rz-soud-sk{border-top:1px solid var(--border);padding:.3rem 0;font-size:.82rem}
+.rz-soud-sk-r{display:flex;align-items:center;gap:.3rem;flex-wrap:wrap}
+.rz-soud-pp{margin-left:auto;font-weight:700;white-space:nowrap}
+.rz-soud-vzorec{color:var(--muted);font-size:.8rem;margin-top:.1rem}
+.rz-soud-sk input.rzs-beta{width:3.6rem!important;padding:.1rem .3rem;text-align:right;font-size:.82rem}
+.rz-soud-nw{white-space:nowrap}
+.rz-soud-zdroj{font-size:.7rem;color:var(--muted);line-height:1.25;margin-top:.1rem}
+.rz-soud-overit{display:inline-block;font-size:.66rem;padding:0 .3rem;border-radius:3px;background:#fff3d6;color:#7a4b00;border:1px solid #e0b75a}
+html.dark .rz-soud-overit{background:#3a2c0e;color:#f3c76b;border-color:#7a5c1c}
+.rz-soud-nezad{font:inherit;font-size:.66rem;padding:0 .3rem;border-radius:3px;background:var(--bg);color:var(--muted);border:1px solid var(--border);cursor:pointer}
+.rz-soud-evdyn{font-size:.75rem;margin-top:.2rem}
+.rz-soud-evlim{display:flex;align-items:center;gap:.3rem;font-size:.75rem;text-transform:none;letter-spacing:0;font-family:inherit}
+.rz-soud-evlim input{width:4rem!important;padding:.15rem .25rem}
+.rz-soud-blok{font-size:.78rem;color:var(--muted);margin:.3rem 0}
+.rz-soud-vysl{margin:.4rem 0;padding:.45rem .55rem;border-radius:4px;background:var(--bg);font-size:.86rem;line-height:1.45}
+.rz-soud-navrh{font-size:.95rem}
+.rz-soud-ok{color:#0f5f3f}.rz-soud-ne{color:#9b2c1f;font-weight:600}
+html.dark .rz-soud-ok{color:#9fe0bb}html.dark .rz-soud-ne{color:#f3b0a6}
+.rz-soud-vysl .rz-soud-pouzit{margin-top:.3rem}
+.rz-soud-upoz{font-size:.78rem;color:#8a4b00;margin:.3rem 0;line-height:1.4}
+html.dark .rz-soud-upoz{color:#f0a35e}
+.rz-soud-bytyv{font-size:.85rem;margin:.2rem 0 .3rem}
+.rz-soud-byty{margin-top:.3rem}
+.rz-soud-nast{margin-top:.5rem}.rz-soud-nast summary{cursor:pointer;font-size:.85rem;font-weight:600}
+.rz-soud-nr{display:flex;align-items:center;gap:.4rem;font-size:.85rem;margin:.25rem 0;text-transform:none;letter-spacing:0;font-family:inherit;font-weight:400}
+.rz-soud-nr>span{flex:1;min-width:0;line-height:1.2}
+.rz-soud-nr input{width:3.8rem!important;flex:0 0 auto;padding:.15rem .3rem!important;text-align:right}
+.rz-soud-nast .rz-soud-nzdroj{display:block;color:var(--muted);font-size:.68rem}
+.rz-soud-nbyty{display:grid;grid-template-columns:repeat(auto-fill,minmax(6.6rem,1fr));gap:0 .6rem}
+.rp-soud-blok summary{font-size:.82rem}
 .rz-barvy{display:inline-flex;align-items:center;gap:.25rem;font-size:.78rem;position:relative}
 .rz-barvy-b.akt{background:#e8f1fb;border-color:var(--accent2)}
 html.dark .rz-barvy-b.akt{background:#253043}
@@ -31723,7 +31759,8 @@ DOK_TYPY.rozv.form = function (d) {
   var psc = d.rezim === 'PSC';
   __rz = { o: o, skrin: d.skrin ? dokKopie(d.skrin) : null, rady: dokKopie(d.rady || []),
            vyber: null, vic: null, kotva: null, rezimVyberu: false, knihVyber: null, presun: null, aktRada: 0, zoom: 1, kRucni: (__rz && __rz.o === o && __rz.kRucni) || null, zalozka: zal,
-           faze: d.faze ? dokKopie(d.faze) : null, vnejsi: dokKopie(d.vnejsi || []), vyberVn: null };
+           faze: d.faze ? dokKopie(d.faze) : null, vnejsi: dokKopie(d.vnejsi || []), vyberVn: null,
+           soud: d.soudobost ? dokKopie(d.soudobost) : null };
   if (psc) {   // výkonový rozvaděč (etapa 5a): skříň = pole vedle sebe
     __rz.rezim = 'PSC'; __rz.pole = 0; __rz.dil = null; __rz.koty = true;
     if (!__rz.skrin || !__rz.skrin.pole) __rz.skrin = { pole: [] };
@@ -31772,6 +31809,7 @@ DOK_TYPY.rozv.cist = function (koren) {
   d.skrin = __rz && __rz.skrin ? dokKopie(__rz.skrin) : null;
   d.rady = __rz ? dokKopie(__rz.rady) : [];
   if (__rz) { if (__rz.faze) d.faze = dokKopie(__rz.faze); else delete d.faze; }   // práh nesymetrie (etapa 4)
+  if (__rz) { if (__rz.soud) d.soudobost = dokKopie(__rz.soud); else delete d.soudobost; }   // soudobost (2026-10-29)
   if (__rz) { if (__rz.vnejsi && __rz.vnejsi.length) d.vnejsi = dokKopie(__rz.vnejsi); else delete d.vnejsi; }   // prvky mimo rozvaděč (ovládání)
   return d;
 };
@@ -32474,7 +32512,7 @@ function rozvPiNastaveniHtml(panel) {
     '<div class="dk-pozn">Výchozí příkony pro „🧮 Odhadnout…" u Pi. Platí jen v tomto prohlížeči, do rozvaděče se neukládají.</div>' +
     r('zasuvka', 'Zásuvka', 'kW/ks') + r('svetlo', 'Svítidlo (LED)', 'kW/ks') +
     ROZV_PI_SPOTR.filter(function (q) { return q[2] != null; }).map(function (q) { return r(q[0], q[1], 'kW'); }).join('') +
-    '<button class="dok-mini" data-action="tdRPiVychozi" title="Vrátit výchozí hodnoty programu">↺ Výchozí hodnoty</button></details>';
+    '<button class="dok-mini" data-action="tdRPiVychozi" title="Vrátit výchozí hodnoty programu">↺ Výchozí hodnoty</button>' + (panel ? rozvSoudNastaveniHtml() : '') + '</details>';
 }
 var __rzPi = null;   // otevřený dialog: { uid, typ, n, prikon, volba }
 function rozvPiVychoziPrikon(typ, volba) {
@@ -32583,6 +32621,518 @@ document.addEventListener('change', function (e) {
   __rzPi.prikon = rozvCisloText(rozvPiVychoziPrikon(t.value, '')) || '';
   rozvPiPrekreslit();
 });
+
+// ═══ ROZVADĚČ — SOUDOBOST: soudobý příkon Pp a návrh hlavního jističe (2026-10-29) ═══
+// Z instalovaných příkonů Pi vývodů: Pp = Σ skupin (Σ Pi × β) − vzájemně
+// blokované vývody (+ n × Pb × β(n) u rozvaděče pro víc bytů), Ip a nejbližší
+// vyšší jistič z řady. Jen podle ČSN 33 2130 ed. 4 (příloha A, B) — PLNÉ ZNĚNÍ
+// NEMÁME, proto žádný koeficient napevno: výchozí β jsou v Nastavení
+// konfigurátoru (jen v prohlížeči, localStorage `revize_el_rz_soud`) a jdou
+// přepsat u rozvaděče (d.soudobost.beta). U každé β se ukazuje zdroj.
+// Data (vše volitelné, uloží se až úpravou): vývod x.soudSk (skupina; bez
+// klíče = odhad z typu obvodu / odhadu Pi / názvu), x.soudBlok (['uid',
+// 'sk:skupina'] — „Nepracuje současně s"), rozvaděč d.soudobost = { beta,
+// evDyn, evLimit, cos, faze, byty: { zap, n, stupen, pb, beta } }.
+// Pi pro Ib ani fáze se tu nepoužívá; s RDF (oteplení, 61439) nesouvisí.
+var RZS_KLIC = 'revize_el_rz_soud';
+var RZS_OVERIT = 'ověřit v ČSN 33 2130 ed. 4';
+// [klíč, název, výchozí β, zdroj (prázdný = bez zdroje → „β nezadáno"), ověřit]
+var RZS_SKUPINY = [
+  ['kuchyne', 'kuchyně (varná deska, trouba, sporák, myčka)', 0.4, 'ČSN 33 2130 (rozsah 0,35–0,5)', true],
+  ['ev', 'nabíjení EV', 1, 'ČSN 33 2130 – bez dynamického řízení výkonu', true],
+  ['osvetleni', 'osvětlení', 1, ''], ['zasuvky', 'zásuvky', 1, ''], ['ohrev', 'ohřev vody (bojler)', 1, ''],
+  ['tc', 'tepelné čerpadlo / vytápění', 1, ''], ['klima', 'klimatizace', 1, ''], ['pradlo', 'pračka, sušička', 1, ''],
+  ['motory', 'motory', 1, ''], ['ostatni', 'ostatní', 1, '–']
+];
+// β(n) pro skupinu bytů — ČSN 33 2130 ed. 3 podle podkladů ČVUT [ověřit v příloze B ed. 4]
+var RZS_BYTY_BETA = [null, 1, 0.77, 0.66, 0.6, 0.56, 0.53, 0.5, 0.48, 0.47, 0.45, 0.44, 0.43, 0.42, 0.41, 0.41, 0.4, 0.39, 0.39, 0.38, 0.38,
+  0.37, 0.37, 0.37, 0.36, 0.36, 0.36, 0.35, 0.35, 0.35, 0.33, 0.31, 0.3, 0.3, 0.28];
+var RZS_BYTY_ZDROJ = 'ČSN 33 2130 ed. 3 (podklady ČVUT)';
+var RZS_PB = { A: 7, B: 11 };   // Pp na byt podle stupně elektrizace (kW); C = zadat
+var RZS_RADA = [10, 13, 16, 20, 25, 32, 40, 50, 63, 80, 100, 125];
+var RZS_COS = 0.95;
+// druh spotřebiče z dialogu odhadu Pi → skupina
+var RZS_DRUH = { bojler: 'ohrev', sporak: 'kuchyne', deska: 'kuchyne', trouba: 'kuchyne', mycka: 'kuchyne', pracka: 'pradlo', susicka: 'pradlo',
+  klima: 'klima', ev: 'ev', tc: 'tc', jiny: 'ostatni' };
+
+function rzsSkupina(k) { for (var i = 0; i < RZS_SKUPINY.length; i++) if (RZS_SKUPINY[i][0] === k) return RZS_SKUPINY[i]; return null; }
+function rzsNazev(k) { var s = rzsSkupina(k); return s ? s[1] : k; }
+function rzsKratce(k) { return rzsNazev(k).replace(/\s*\(.*\)$/, ''); }
+function rzsNast() {
+  var u = null; try { u = JSON.parse(localStorage.getItem(RZS_KLIC) || 'null'); } catch (e) {}
+  return u && typeof u === 'object' ? u : {};
+}
+function rzsNastUlozit(u) {
+  var prazdne = !Object.keys(u).some(function (k) { return u[k] !== undefined && (typeof u[k] !== 'object' || Object.keys(u[k]).length); });
+  try { if (prazdne) localStorage.removeItem(RZS_KLIC); else localStorage.setItem(RZS_KLIC, JSON.stringify(u)); } catch (e) {}
+}
+function rzsKladne(v) { var n = rozvPiCislo(v); return n > 0 ? n : null; }
+// Výchozí β skupiny: Nastavení konfigurátoru, jinak program. { b, zdroj, overit, nezadano }
+function rzsBetaVychozi(k, nast) {
+  nast = nast || rzsNast();
+  var s = rzsSkupina(k) || rzsSkupina('ostatni'), u = nast.beta && rzsKladne(nast.beta[k]);
+  if (u != null) return { b: u, zdroj: 'Nastavení konfigurátoru (zadal uživatel)', overit: false, nezadano: false };
+  return { b: s[2], zdroj: s[3] || 'výchozí bez zdroje', overit: !!s[4], nezadano: !s[3] };
+}
+function rzsBytyBeta(n, nast) {
+  nast = nast || rzsNast();
+  var u = nast.byty && rzsKladne(nast.byty[n]);
+  if (u != null) return { b: u, zdroj: 'Nastavení konfigurátoru (zadal uživatel)', overit: false };
+  return RZS_BYTY_BETA[n] != null ? { b: RZS_BYTY_BETA[n], zdroj: RZS_BYTY_ZDROJ, overit: true } : null;
+}
+// Skupina vývodu: uložená volba, jinak odhad (neukládá se).
+function rzsBezDiakr(s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
+function rzsDruhZOdhadu(popis) {
+  var p = rzsBezDiakr(popis);
+  for (var i = 0; i < ROZV_PI_SPOTR.length; i++) if (p.indexOf(rzsBezDiakr(ROZV_PI_SPOTR[i][1])) === 0) return ROZV_PI_SPOTR[i][0];
+  return '';
+}
+function rzsPredikce(x) {
+  var t = rsSpotr(x);
+  if (t === 'zasuvka') return 'zasuvky';
+  if (t === 'svetlo') return 'osvetleni';
+  if (t === 'motor') return 'motory';
+  var dr = rzsDruhZOdhadu(x.piOdhad); if (dr && RZS_DRUH[dr]) return RZS_DRUH[dr];
+  var n = rzsBezDiakr(x.vyvod);
+  if (/varn|desk|troub|sporak|mycka|indukc/.test(n)) return 'kuchyne';
+  if (/\bev\b|nabij|wallbox|elektromobil/.test(n)) return 'ev';
+  if (/bojler|ohrev vody|\btuv\b|zasobnik/.test(n)) return 'ohrev';
+  if (/tepeln|\btc\b|primotop|topen|vytap|kotel|akumul/.test(n)) return 'tc';
+  if (/klim/.test(n)) return 'klima';
+  if (/prack|susick|pradel/.test(n)) return 'pradlo';
+  if (/motor|kompres|cerpadl/.test(n)) return 'motory';
+  return 'ostatni';
+}
+function rzsSk(x) { return x.soudSk && rzsSkupina(x.soudSk) ? x.soudSk : rzsPredikce(x); }
+// Vývody, které mají pole Pi (stejná podmínka jako ve vlastnostech přístroje).
+function rzsMaPole(x) { return !!(x && x.p && (RS_OBVODOVE.indexOf(x.p.kat) !== -1 || (rfVyvod(x) && RS_PSC_VYVODY.indexOf(x.p.kat) !== -1))); }
+function rzsVyvody(d) { return rozvDokPrvky(d).filter(function (x) { return rzsMaPole(x) && !rozvJenOvladaci(d, x); }); }
+function rzsPi(x) { return rozvPiCislo(x.pi); }
+// Má rozvaděč z čeho počítat? (aspoň jedno Pi, nebo napájí víc bytů)
+function rozvSoudMa(d) {
+  var s = (d && d.soudobost) || {};
+  return !!(s.byty && s.byty.zap) || rzsVyvody(d || {}).some(function (x) { return rzsPi(x) > 0; });
+}
+function rzsFaze(d) {
+  var s = d.soudobost || {};
+  if (s.faze === '1f' || s.faze === '3f') return { f: s.faze, zdroj: 'zadáno' };
+  var so = String(d.soustava || '');
+  if (/^1/.test(so)) return { f: '1f', zdroj: 'podle soustavy' };
+  if (/^3/.test(so)) return { f: '3f', zdroj: 'podle soustavy' };
+  if (/^\s*1\s*[x×]/i.test(d.privodJistic || '')) return { f: '1f', zdroj: 'podle předřazeného jističe' };
+  return { f: '3f', zdroj: 'výchozí' };
+}
+// Skutečný hlavní jistič: předřazený jistič z hlavičky → hlavní vypínač -QH / přívodní přístroj → jmenovitý proud přívodu.
+function rzsSkutecny(d) {
+  var t = String(d.privodJistic || ''), m = /(\d+(?:[.,]\d+)?)\s*A\b/i.exec(t) || /[x×]\s*(\d+(?:[.,]\d+)?)/i.exec(t) || /^\s*(\d+(?:[.,]\d+)?)\s*$/.exec(t);
+  if (m) return { In: rozvCislo(m[1]), zdroj: 'předřazený jistič (hlavička)', text: t.trim() };
+  var rady = d.rady || [], hl = rozvHlavniVypinace(rady), q = null;
+  rozvDokPrvky(d).forEach(function (x) { if (!q && (x.privod === true || hl.indexOf(x.uid) !== -1) && rfNum(x.p.In) !== '') q = x; });
+  if (q) return { In: rfNum(q.p.In), zdroj: (q.privod === true ? 'přívodní přístroj ' : 'hlavní vypínač ') + (q.ozn || ''), text: rozvCisloText(rfNum(q.p.In)) + ' A' };
+  var v = rfNum(d.privodIn);
+  if (v !== '') return { In: v, zdroj: 'jmenovitý proud přívodu (hlavička)', text: rozvCisloText(v) + ' A' };
+  return null;
+}
+function rzsKw(n) { return rozvCisloText(Math.round(n * 100) / 100); }
+function rzsVyvodText(x) { return [x.ozn, x.vyvod].filter(Boolean).join(' ') || rozvNazev(x.p); }
+
+// Výpočet — čistá funkce nad daty rozvaděče (obrazovka, lišta i PDF jedou přes ni).
+function rozvSoudVypocet(d) {
+  d = d || {};
+  var s = d.soudobost || {}, nast = rzsNast(), r = { skupiny: [], blok: [], bezPi: [], vyvody: 0, upoz: [] };
+  var vse = rzsVyvody(d), poSk = {};
+  vse.forEach(function (x) {
+    var pi = rzsPi(x);
+    if (!(pi > 0)) { r.bezPi.push(x); return; }
+    r.vyvody++;
+    var k = rzsSk(x); (poSk[k] = poSk[k] || []).push({ x: x, pi: pi });
+  });
+  var podil = {};   // uid → příspěvek do Pp (Pi × β skupiny)
+  RZS_SKUPINY.forEach(function (sk) {
+    var k = sk[0], cl = poSk[k]; if (!cl) return;
+    var pi = cl.reduce(function (a, q) { return a + q.pi; }, 0), v = rzsBetaVychozi(k, nast), b = v.b, zdroj = v.zdroj, overit = v.overit, nezad = v.nezadano;
+    var rb = s.beta && rzsKladne(s.beta[k]);
+    if (rb != null) { b = rb; zdroj = 'zadáno u rozvaděče'; overit = false; nezad = false; }
+    var pp = pi * b, limit = null;
+    if (k === 'ev' && s.evDyn) {
+      limit = rzsKladne(s.evLimit);
+      if (limit != null) { pp = Math.min(pi, limit); b = pi > 0 ? pp / pi : b; zdroj = 'dynamické řízení výkonu – limit nabíjení ' + rzsKw(limit) + ' kW'; overit = false; nezad = false; }
+      else if (rb == null) zdroj = 'dynamické řízení výkonu – zadejte β nebo limit';
+    }
+    cl.forEach(function (q) { podil[q.x.uid] = q.pi * (pi > 0 ? pp / pi : b); });
+    r.skupiny.push({ k: k, nazev: sk[1], pi: pi, b: b, zdroj: zdroj, overit: overit, nezadano: nezad, pp: pp, limit: limit, vyvody: cl, prepsano: rb != null });
+  });
+  // Vzájemné blokování: jednotky = vývod, nebo celá odkazovaná skupina; ze spojené množiny se počítá jen největší jednotka.
+  var cleny = {}, jedn = {};
+  Object.keys(podil).forEach(function (u) { cleny[u] = 1; });
+  var vyvodSk = {}; Object.keys(poSk).forEach(function (k) { poSk[k].forEach(function (q) { vyvodSk[q.x.uid] = k; }); });
+  var odkazSk = {};
+  vse.forEach(function (x) { (x.soudBlok || []).forEach(function (o) { if (/^sk:/.test(o) && cleny[x.uid] && vyvodSk[x.uid] !== o.slice(3) && poSk[o.slice(3)]) odkazSk[o.slice(3)] = 1; }); });
+  var jednotka = function (u) { return vyvodSk[u] && odkazSk[vyvodSk[u]] ? 'sk:' + vyvodSk[u] : u; };
+  var rodic = {}, najdi = function (a) { while (rodic[a] && rodic[a] !== a) a = rodic[a]; return a; };
+  var spoj = function (a, b) { a = najdi(a); b = najdi(b); if (a !== b) rodic[b] = a; };
+  var ma = {};
+  vse.forEach(function (x) {
+    if (!cleny[x.uid]) return;
+    (x.soudBlok || []).forEach(function (o) {
+      var c = /^sk:/.test(o) ? (poSk[o.slice(3)] && vyvodSk[x.uid] !== o.slice(3) ? o : null) : (cleny[o] ? jednotka(o) : null);
+      var a = jednotka(x.uid); if (!c || c === a) return;
+      spoj(a, c); ma[a] = ma[c] = 1;
+    });
+  });
+  var komp = {};
+  Object.keys(ma).forEach(function (j) { var k = najdi(j); (komp[k] = komp[k] || {})[j] = 1; });
+  var nezap = 0;
+  Object.keys(komp).forEach(function (kk) {
+    var J = Object.keys(komp[kk]).map(function (j) {
+      var u = /^sk:/.test(j) ? poSk[j.slice(3)].map(function (q) { return q.x.uid; }) : [j];
+      return { j: j, uidy: u, pp: u.reduce(function (a, q) { return a + (podil[q] || 0); }, 0),
+               nazev: /^sk:/.test(j) ? 'skupina ' + rzsKratce(j.slice(3)) : rzsVyvodText(vse.filter(function (x) { return x.uid === j; })[0]) };
+    });
+    J.sort(function (a, b) { return b.pp - a.pp; });
+    J.slice(1).forEach(function (q) { nezap += q.pp; r.blok.push({ nazev: q.nazev, pp: q.pp, s: J[0].nazev, uidy: q.uidy }); });
+  });
+  r.ppSkupiny = r.skupiny.reduce(function (a, q) { return a + q.pp; }, 0);
+  r.nezap = nezap;
+  // Víc bytů na jednom rozvaděči
+  var by = s.byty || {};
+  if (by.zap) {
+    var n = Math.round(rozvPiCislo(by.n)), st = by.stupen === 'A' || by.stupen === 'C' ? by.stupen : 'B';
+    var pbN = nast.pb && rzsKladne(nast.pb[st]), pb = rzsKladne(by.pb), pbZdroj = pb != null ? (by.pbZ ? 'z výpočtu ' + by.pbZ : 'zadáno u rozvaděče') : '';
+    if (pb == null && st !== 'C') { pb = pbN != null ? pbN : RZS_PB[st]; pbZdroj = 'stupeň elektrizace ' + st + (pbN != null ? ' (Nastavení konfigurátoru)' : ''); }
+    var bn = rzsKladne(by.beta), bz = null;
+    if (bn != null) bz = { b: bn, zdroj: 'zadáno u rozvaděče', overit: false };
+    else if (n >= 1) bz = rzsBytyBeta(n, nast);
+    r.byty = { n: n, stupen: st, pb: pb, pbZdroj: pbZdroj, beta: bz ? bz.b : null, zdroj: bz ? bz.zdroj : '', overit: bz ? bz.overit : false, pp: null };
+    if (!(n >= 1)) r.upoz.push('zadejte počet bytů');
+    else if (pb == null) r.upoz.push('zadejte Pp na byt (stupeň C)');
+    else if (!bz) r.upoz.push('pro ' + n + ' bytů není β v tabulce (nad 34) – zadejte β ručně');
+    else r.byty.pp = n * pb * bz.b;
+  }
+  r.pp = r.ppSkupiny - nezap + (r.byty && r.byty.pp ? r.byty.pp : 0);
+  var cos = rzsKladne(s.cos); r.cos = cos != null && cos <= 1 ? cos : RZS_COS;
+  var fz = rzsFaze(d); r.faze = fz.f; r.fazeZdroj = fz.zdroj;
+  r.ip = r.pp > 0 ? (r.faze === '3f' ? r.pp * 1000 / (Math.sqrt(3) * 400 * r.cos) : r.pp * 1000 / (230 * r.cos)) : 0;
+  r.navrh = null;
+  if (r.ip > 0) for (var i = 0; i < RZS_RADA.length; i++) if (RZS_RADA[i] >= r.ip - 1e-9) { r.navrh = RZS_RADA[i]; break; }
+  if (r.ip > 0 && r.navrh == null) r.upoz.push('Ip nad 125 A – hlavní jistič navrhněte jinak (řada končí 125 A)');
+  r.skut = rzsSkutecny(d);
+  r.ok = r.skut && r.ip > 0 ? r.skut.In >= r.ip - 1e-9 : null;
+  // selektivita — jen upozornění
+  var maxV = null;
+  vse.forEach(function (x) { var v = rfNum(x.p.In); if (v !== '' && (!maxV || v > maxV.In)) maxV = { In: v, ozn: x.ozn || '' }; });
+  var hlIn = r.skut ? r.skut.In : r.navrh;
+  r.selekt = maxV && hlIn && hlIn <= maxV.In ? { hl: hlIn, max: maxV } : null;
+  r.nezadano = r.skupiny.filter(function (q) { return q.nezadano; });
+  return r;
+}
+
+// ── Panel „Soudobost" ve vlastnostech rozvaděče ─────────────────────────
+function rzsZdrojHtml(q) {
+  return esc(q.zdroj) + (q.overit ? ' <span class="rz-soud-overit" title="Hodnota z ed. 3 / z podkladů — plné znění ed. 4 jsme nečetli">' + RZS_OVERIT + '</span>' : '') +
+    (q.nezadano ? ' <button type="button" class="rz-soud-nezad" data-action="tdRSoudNast" data-k="' + esc(q.k) + '" title="Výchozí β = 1 (bezpečná strana). Hodnotu doplníte v Nastavení konfigurátoru.">β nezadáno</button>' : '');
+}
+function rzsJisticText(r) { return (r.faze === '1f' ? '1×' : '3×') + r.navrh + ' A'; }
+function rozvSoudPanelHtml() {
+  if (!__rz) return '';
+  var d = rozvOteplData(); if (!d) return '';
+  var s = __rz.soud || {}, ma = rozvSoudMa(d);
+  var bytyHtml = function () {
+    var by = s.byty || {};
+    var h = '<label class="teren-radek rz-soud-byty-zap"><input type="checkbox" class="rzs-in" data-rzs="byty.zap"' + (by.zap ? ' checked' : '') +
+      '> Napájí více bytů <span class="dk-nepov">(hlavní domovní / elektroměrový rozvaděč)</span></label>';
+    if (!by.zap) return h;
+    var jine = (DOK.dokumenty || []).filter(function (q) { return rozvTyp(q.typ) && q.uid !== rzpUid() && q.data && rozvSoudMa(q.data); })
+      .map(function (q) { var v = rozvSoudVypocet(q.data); return v.pp > 0 ? [q.uid, ((q.data.oznaceni || q.cislo) + ' – ' + rzsKw(v.pp) + ' kW'), rzsKw(v.pp), q.data.oznaceni || q.cislo] : null; }).filter(Boolean);
+    return h + '<div class="g3 rz-soud-byty">' +
+      '<div class="f"><label>Počet bytů n</label><input type="text" class="rzs-in" data-rzs="byty.n" value="' + esc(by.n || '') + '" inputmode="numeric" placeholder="10" autocomplete="off"></div>' +
+      '<div class="f"><label>Stupeň elektrizace</label><select class="rzs-in" data-rzs="byty.stupen">' +
+        [['A', 'A – ' + rozvCisloText(RZS_PB.A) + ' kW'], ['B', 'B – ' + rozvCisloText(RZS_PB.B) + ' kW'], ['C', 'C – zadat']].map(function (v) {
+          return '<option value="' + v[0] + '"' + ((by.stupen || 'B') === v[0] ? ' selected' : '') + '>' + v[1] + '</option>'; }).join('') + '</select></div>' +
+      '<div class="f"><label>Pp na byt Pb (kW)</label><input type="text" class="rzs-in" data-rzs="byty.pb" value="' + esc(by.pb || '') + '" inputmode="decimal" placeholder="podle stupně" autocomplete="off"></div>' +
+      '<div class="f"><label>β(n) <span class="dk-nepov">(prázdné = tabulka)</span></label><input type="text" class="rzs-in" data-rzs="byty.beta" value="' + esc(by.beta || '') + '" inputmode="decimal" placeholder="z tabulky" autocomplete="off"></div>' +
+      (jine.length ? '<div class="f span2"><label>Převzít Pb z výpočtu bytového rozvaděče</label><select class="rzs-prevzit"><option value="">— vyberte —</option>' +
+        jine.map(function (q) { return '<option value="' + esc(q[2]) + '" data-n="' + esc(q[3]) + '">' + esc(q[1]) + '</option>'; }).join('') + '</select></div>' : '') +
+      '</div>';
+  };
+  if (!ma) {
+    return '<details class="rp-dalsi rz-soud-zap" id="rz-soud-panel"' + (__rz.soudOtevreno ? ' open' : '') + '><summary>⚡ Soudobost a hlavní jistič</summary>' +
+      '<div class="dk-pozn">Doplňte u vývodů instalovaný příkon Pi (ve vlastnostech vývodu, 🧮 Odhadnout…) — soudobý příkon a návrh hlavního jističe se pak spočítají samy.</div>' +
+      bytyHtml() + '</details>';
+  }
+  var r = rozvSoudVypocet(d), kw = rzsKw;
+  var h = '<details class="rp-faze rz-soud" id="rz-soud-panel"' + (__rz.soudOtevreno !== false ? ' open' : '') + '><summary class="rp-faze-t">⚡ Soudobost a hlavní jistič</summary>';
+  if (r.byty) h += '<div class="rz-soud-bytyv">Byty: ' + (r.byty.pp != null ? r.byty.n + ' × ' + kw(r.byty.pb) + ' kW × ' + rozvCisloText(r.byty.beta) + ' = <b>' + kw(r.byty.pp) + ' kW</b>' : '—') +
+    (r.byty.beta != null ? ' <small>(β(n): ' + esc(r.byty.zdroj) + (r.byty.overit ? ' <span class="rz-soud-overit">ověřit v příloze B ed. 4</span>' : '') + ')</small>' : '') + '</div>';
+  if (r.skupiny.length) {
+    h += '<div class="rz-soud-sk-t">' + (r.byty ? 'Společné spotřeby domu' : 'Skupiny') + ' <small>Pi × β = Pp</small></div>' +
+      r.skupiny.map(function (q) {
+        var ev = q.k === 'ev';
+        return '<div class="rz-soud-sk" data-k="' + q.k + '"><div class="rz-soud-sk-r"><b>' + esc(rzsKratce(q.k)) + '</b> <small>' + dokPocetTvar(q.vyvody.length, ['vývod', 'vývody', 'vývodů']) + '</small>' +
+          '<span class="rz-soud-pp">' + kw(q.pp) + ' kW</span></div>' +
+          '<div class="rz-soud-sk-r rz-soud-vzorec">' + kw(q.pi) + ' kW × β <input type="text" class="rzs-in rzs-beta" data-rzs="beta.' + q.k + '" value="' + esc((s.beta || {})[q.k] || '') +
+            '" placeholder="' + esc(rozvCisloText(rzsBetaVychozi(q.k).b)) + '" inputmode="decimal" autocomplete="off" aria-label="β ' + esc(rzsKratce(q.k)) + '"' +
+            (q.limit != null ? ' disabled title="Platí limit nabíjení"' : '') + '></div>' +
+          '<div class="rz-soud-zdroj">' + rzsZdrojHtml(q) + '</div>' +
+          (ev ? '<label class="teren-radek rz-soud-evdyn"><input type="checkbox" class="rzs-in" data-rzs="evDyn"' + (s.evDyn ? ' checked' : '') + '> dynamické řízení výkonu</label>' +
+            (s.evDyn ? '<label class="rz-soud-evlim">limit nabíjení <input type="text" class="rzs-in" data-rzs="evLimit" value="' + esc(s.evLimit || '') + '" inputmode="decimal" placeholder="—" autocomplete="off"> kW <small>(nebo zadejte β)</small></label>' : '') : '') +
+          '</div>';
+      }).join('');
+  }
+  if (r.blok.length) h += '<div class="rz-soud-blok">' + r.blok.map(function (q) { return '⇄ ' + esc(q.nazev) + ' ' + kw(q.pp) + ' kW nezapočten – nepracuje současně s ' + esc(q.s); }).join('<br>') + '</div>';
+  var pp = '<div class="rz-soud-vysl"><div>Pp = <b>' + kw(r.pp) + ' kW</b></div>' +
+    '<div>Ip = ' + (r.faze === '3f' ? 'Pp / (√3 · 400 V · cos φ)' : 'Pp / (230 V · cos φ)') + ' = <b class="rz-soud-nw">' + rozvCisloText(Math.round(r.ip * 10) / 10) + ' A</b></div>' +
+    (r.navrh ? '<div class="rz-soud-navrh">Navržený hlavní jistič: <b>' + rzsJisticText(r) + '</b></div>' : '') +
+    (r.skut && r.ip > 0 ? '<div class="rz-soud-skut ' + (r.ok ? 'rz-soud-ok' : 'rz-soud-ne') + '">' + (r.ok ? '✓ ' : '✗ ') + 'skutečný jistič ' + esc(r.skut.text) +
+      ' <small>(' + esc(r.skut.zdroj) + ')</small>' + (r.ok ? ' vyhovuje' : ' je menší než Ip') + '</div>' : '') +
+    (!r.skut && r.navrh ? '<button class="dok-mini rz-soud-pouzit" data-action="tdRSoudPouzit" title="Zapíše navržený jistič do hlavičky (Předřazený jistič v elektroměrovém rozvaděči); jde vzít zpět">✓ Použít navržený</button>' : '') +
+    '</div>';
+  h += pp;
+  var up = r.upoz.slice();
+  if (r.bezPi.length) up.push(dokPocetTvar(r.bezPi.length, ['vývod', 'vývody', 'vývodů']) + ' bez Pi – nezapočten' + (r.bezPi.length === 1 ? '' : 'y') + ' (' + r.bezPi.map(function (x) { return x.ozn || x.p.kat; }).join(', ') + ')');
+  if (r.selekt) up.push('hlavní jistič ' + rozvCisloText(r.selekt.hl) + ' A ≤ největší jistič vývodu ' + rozvCisloText(r.selekt.max.In) + ' A' + (r.selekt.max.ozn ? ' (' + r.selekt.max.ozn + ')' : '') + ' – zkontrolujte selektivitu');
+  if (r.nezadano.length) up.push('β nezadáno: ' + r.nezadano.map(function (q) { return rzsKratce(q.k); }).join(', ') + ' – počítá se 1,0');
+  if (up.length) h += '<div class="rz-soud-upoz">' + up.map(function (t) { return '⚠ ' + esc(t); }).join('<br>') + '</div>';
+  h += '<details class="rp-dalsi rz-soud-dalsi"' + (s.byty && s.byty.zap ? ' open' : '') + '><summary>Další nastavení výpočtu</summary>' +
+    '<div class="g2"><div class="f"><label>cos φ</label><input type="text" class="rzs-in" data-rzs="cos" value="' + esc(s.cos || '') + '" placeholder="' + rozvCisloText(RZS_COS) + '" inputmode="decimal" autocomplete="off"></div>' +
+    '<div class="f"><label>Přívod</label><select class="rzs-in" data-rzs="faze"><option value="">' + (r.faze === '3f' ? 'trojfázový' : 'jednofázový') + ' (' + esc(r.fazeZdroj) + ')</option>' +
+      '<option value="3f"' + (s.faze === '3f' ? ' selected' : '') + '>trojfázový 400 V</option><option value="1f"' + (s.faze === '1f' ? ' selected' : '') + '>jednofázový 230 V</option></select></div></div>' +
+    bytyHtml() + '</details>';
+  h += '<div class="dk-pozn">Výpočet podle ČSN 33 2130 ed. 4 (přílohy A a B). Skupinu a „Nepracuje současně s" nastavíte ve vlastnostech vývodu; výchozí β v ⚙ Nastavení konfigurátoru.</div></details>';
+  return h;
+}
+function rozvSoudPanelObnovit() {
+  var box = document.getElementById('rz-soud-panel'); if (!box || !__rz) return;
+  var a = document.activeElement, k = a && a.getAttribute && a.getAttribute('data-rzs'), pos = null;
+  try { pos = a && a.selectionStart; } catch (e) {}
+  var dalsi = box.querySelector('.rz-soud-dalsi'), dOpen = dalsi && dalsi.open;
+  var t = document.createElement('div'); t.innerHTML = rozvSoudPanelHtml();
+  if (!t.firstElementChild) return;
+  box.replaceWith(t.firstElementChild);
+  var nb = document.getElementById('rz-soud-panel'), nd = nb && nb.querySelector('.rz-soud-dalsi'); if (nd && dOpen) nd.open = true;
+  if (k) { var el = nb && nb.querySelector('[data-rzs="' + k + '"]'); if (el) { el.focus(); try { if (pos != null) el.setSelectionRange(pos, pos); } catch (e) {} } }
+}
+function rzsCesta(o, cesta, v) {
+  var c = cesta.split('.'), t = o;
+  for (var i = 0; i < c.length - 1; i++) t = t[c[i]] = t[c[i]] && typeof t[c[i]] === 'object' ? t[c[i]] : {};
+  if (v === '' || v === false) delete t[c[c.length - 1]]; else t[c[c.length - 1]] = v;
+}
+function rzsUklid(o) {   // prázdné podobjekty pryč, ať se v datech neobjeví nic, co technik nezadal
+  Object.keys(o).forEach(function (k) { if (o[k] && typeof o[k] === 'object') { rzsUklid(o[k]); if (!Object.keys(o[k]).length) delete o[k]; } });
+  return o;
+}
+function rozvSoudNastavit(cesta, v) {
+  var s = dokKopie(__rz.soud || {});
+  rzsCesta(s, cesta, v);
+  if (cesta === 'byty.pb') { if (s.byty) delete s.byty.pbZ; }
+  rzsUklid(s);
+  __rz.soud = Object.keys(s).length ? s : null;
+}
+document.addEventListener('input', function (e) {
+  var t = e.target; if (!t || !t.classList || !__rz) return;
+  if (t.classList.contains('rzs-in') && t.type !== 'checkbox' && t.tagName !== 'SELECT') {
+    rozvSoudNastavit(t.getAttribute('data-rzs'), t.value.trim());
+    rozvSoudPanelObnovit(); rozvSoudUkazatel();
+  } else if (t.classList.contains('rzs-nast')) {
+    var u = rzsNast(), kl = t.getAttribute('data-n').split('.'), n = rozvPiCislo(t.value);
+    u[kl[0]] = u[kl[0]] || {};
+    if (n > 0) u[kl[0]][kl[1]] = n; else delete u[kl[0]][kl[1]];
+    if (!Object.keys(u[kl[0]]).length) delete u[kl[0]];
+    rzsNastUlozit(u);
+    rozvSoudPanelObnovit(); rozvSoudUkazatel();
+  }
+});
+document.addEventListener('change', function (e) {
+  var t = e.target; if (!t || !t.classList || !__rz) return;
+  if (t.classList.contains('rzs-in') && (t.type === 'checkbox' || t.tagName === 'SELECT')) {
+    var k = t.getAttribute('data-rzs');
+    rozvSoudNastavit(k, t.type === 'checkbox' ? t.checked : t.value);
+    if (k === 'byty.zap' && t.checked) __rz.soudOtevreno = true;
+    if (k === 'byty.zap' || k === 'evDyn') {   // mění rozložení panelu (i sbalený panel bez Pi)
+      var p = document.getElementById('rz-soud-panel'); if (p && p.classList.contains('rz-soud-zap') && rozvSoudMa(rozvOteplData())) __rz.soudOtevreno = true;
+    }
+    rozvSoudPanelObnovit(); rozvSoudUkazatel();
+  } else if (t.classList.contains('rzs-prevzit') && t.value) {
+    var o = t.options[t.selectedIndex];
+    rozvSoudNastavit('byty.pb', t.value);
+    var s = __rz.soud; if (s && s.byty) s.byty.pbZ = o.getAttribute('data-n') || '';
+    rozvSoudPanelObnovit(); rozvSoudUkazatel();
+  }
+});
+document.addEventListener('toggle', function (e) {
+  var t = e.target; if (t && t.id === 'rz-soud-panel' && __rz) __rz.soudOtevreno = t.open;
+}, true);
+TD_AKCE.tdRSoudPouzit = function () {
+  var d = rozvOteplData(); if (!d) return;
+  var r = rozvSoudVypocet(d); if (!r.navrh || r.skut) return;
+  var f = dokForm(), el = f && f.querySelector('[data-dk="privodJistic"]'); if (!el) return;
+  var pred = el.value, txt = rzsJisticText(r);
+  el.value = txt; el.dispatchEvent(new Event('input', { bubbles: true }));
+  rozvSoudPanelObnovit(); rozvSoudUkazatel();
+  showToast('Předřazený jistič v hlavičce: ' + txt, { timeout: 8000, actionLabel: '↩ ZPĚT', action: function () {
+    var e2 = dokForm() && dokForm().querySelector('[data-dk="privodJistic"]'); if (!e2) return;
+    e2.value = pred; e2.dispatchEvent(new Event('input', { bubbles: true })); rozvSoudPanelObnovit(); rozvSoudUkazatel();
+  } });
+};
+// „β nezadáno" → Nastavení konfigurátoru s polem té skupiny
+TD_AKCE.tdRSoudNast = function (el) {
+  var k = el.getAttribute('data-k'), n = document.querySelector('#rz-vlastnosti .rz-pi-nastaveni'); if (!n) return;
+  n.open = true;
+  var s = n.querySelector('.rz-soud-nast'); if (s) s.open = true;
+  var i = n.querySelector('[data-n="beta.' + k + '"]') || s || n;
+  i.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  if (i.focus) try { i.focus({ preventScroll: true }); } catch (e) {}
+};
+
+// ── Souhrn v liště nad pohledem „Pp ≈ 14,2 kW → 25 A" ──
+var __rzSoudT = null;
+function rozvSoudUkazatel() { clearTimeout(__rzSoudT); __rzSoudT = setTimeout(rozvSoudUkazatelHned, 80); }
+function rozvSoudUkazatelHned() {
+  var el = document.getElementById('rz-soud-ukaz'); if (!el) return;
+  var d = __rz ? rozvOteplData() : null;
+  if (!d || !rozvSoudMa(d)) { el.hidden = true; return; }
+  var r = rozvSoudVypocet(d);
+  el.hidden = false;
+  el.className = 'rz-soud-ukaz' + (r.ok === false ? ' rz-soud-ne' : r.ok ? ' rz-soud-ok' : '');
+  el.textContent = 'Pp ≈ ' + rzsKw(r.pp) + ' kW' + (r.navrh ? ' → ' + r.navrh + ' A' : '') + (r.ok === false ? ' ✗' : '');
+  el.title = 'Soudobý příkon podle ČSN 33 2130 ed. 4 — Ip ' + rozvCisloText(Math.round(r.ip * 10) / 10) + ' A' + (r.skut ? ', skutečný hlavní jistič ' + r.skut.text + (r.ok ? ' vyhovuje' : ' je menší než Ip') : '') + '. Klepnutím otevřete panel Soudobost.';
+}
+// Změna soustavy nebo jističe v hlavičce přepočítá souhrn i panel.
+document.addEventListener('input', function (e) {
+  var t = e.target, k = t && t.getAttribute && t.getAttribute('data-dk');
+  if (!__rz || !/^(soustava|privodJistic|privodIn)$/.test(k || '')) return;
+  rozvSoudUkazatel(); clearTimeout(rozvSoudPanelObnovit.__t); rozvSoudPanelObnovit.__t = setTimeout(rozvSoudPanelObnovit, 120);
+});
+TD_AKCE.tdRSoudOtevrit = function () {
+  if (!__rz) return;
+  rozvZalozkaNastavit('navrh');
+  __rz.vyber = null; __rz.vic = null; __rz.vyberVn = null; __rz.soudOtevreno = true;
+  rozvPohledVykreslit(); rozvVlastnostiVykreslit();
+  var p = document.getElementById('rz-soud-panel'); if (p) { p.open = true; p.scrollIntoView({ block: 'start', behavior: 'smooth' }); }
+};
+
+// ── Vývod: skupina soudobosti a „Nepracuje současně s" ──
+function rozvSoudVyvodHtml(x) {
+  var pr = rzsPredikce(x), bl = x.soudBlok || [], d = { rady: __rz.rady };
+  var ma0 = function (u) { return bl.indexOf(u) !== -1 || (((rozvNajit(u) || {}).x || {}).soudBlok || []).indexOf(x.uid) !== -1; };
+  var jine = rzsVyvody(d).filter(function (y) { return y.uid !== x.uid && (rzsPi(y) > 0 || ma0(y.uid)); });   // jen vývody s Pi (a už zaškrtnuté)
+  var skup = {}; rzsVyvody(d).forEach(function (y) { if (rzsPi(y) > 0) skup[rzsSk(y)] = 1; });
+  var ma = function (u) { return bl.indexOf(u) !== -1 || (u.indexOf('sk:') !== 0 && ((rozvNajit(u) || {}).x || {}).soudBlok && rozvNajit(u).x.soudBlok.indexOf(x.uid) !== -1); };
+  var vybrane = jine.filter(function (y) { return ma(y.uid); }).map(function (y) { return y.ozn || y.p.kat; })
+    .concat(bl.filter(function (o) { return /^sk:/.test(o); }).map(function (o) { return 'skupina ' + rzsKratce(o.slice(3)); }));
+  return '<div class="f rp-soud"><label title="Pro výpočet soudobého příkonu Pp — každá skupina má svůj součinitel β">Skupina soudobosti</label><select class="rp-pole" data-rp2="soudSk">' +
+      '<option value=""' + (!x.soudSk ? ' selected' : '') + '>podle typu (' + esc(rzsKratce(pr)) + ')</option>' +
+      RZS_SKUPINY.map(function (v) { return '<option value="' + v[0] + '"' + (x.soudSk === v[0] ? ' selected' : '') + '>' + esc(v[1]) + '</option>'; }).join('') + '</select></div>' +
+    '<details class="rp-dalsi rp-soud-blok"' + (__rz.soudBlokOtevreno ? ' open' : '') + '><summary>Nepracuje současně s' + (vybrane.length ? ': <b>' + esc(vybrane.join(', ')) + '</b>' : '') + '</summary>' +
+      '<div class="dk-pozn">Např. bojler na HDO × tepelné čerpadlo, přímotop × klimatizace. Z takové dvojice se do Pp započte jen větší.</div>' +
+      jine.map(function (y) {
+        return '<label class="teren-radek"><input type="checkbox" class="rp-soud-ref" data-ref="' + esc(y.uid) + '"' + (ma(y.uid) ? ' checked' : '') + '> ' + esc(rzsVyvodText(y)) + '</label>'; }).join('') +
+      RZS_SKUPINY.filter(function (v) { return v[0] !== rzsSk(x) && (skup[v[0]] || bl.indexOf('sk:' + v[0]) !== -1); }).map(function (v) {
+        return '<label class="teren-radek"><input type="checkbox" class="rp-soud-ref" data-ref="sk:' + v[0] + '"' + (bl.indexOf('sk:' + v[0]) !== -1 ? ' checked' : '') + '> celá skupina: ' + esc(rzsKratce(v[0])) + '</label>'; }).join('') +
+    '</details>';
+}
+document.addEventListener('change', function (e) {
+  var t = e.target; if (!t || !t.classList || !t.classList.contains('rp-soud-ref') || !__rz) return;
+  var z = __rz.vyber && rozvNajit(__rz.vyber); if (!z) return;
+  var ref = t.getAttribute('data-ref'), zap = t.checked;
+  __rz.soudBlokOtevreno = true;
+  rozvZmena(zap ? 'Nepracuje současně' : 'Pracuje současně', function () {
+    var x = rozvNajit(z.x.uid).x, a = (x.soudBlok || []).filter(function (o) { return o !== ref; });
+    if (zap) a.push(ref);
+    if (a.length) x.soudBlok = a; else delete x.soudBlok;
+    if (!zap && ref.indexOf('sk:') !== 0) {   // vztah zadaný z druhé strany zruší i tam
+      var y = rozvNajit(ref); if (y && y.x.soudBlok) { y.x.soudBlok = y.x.soudBlok.filter(function (o) { return o !== x.uid; }); if (!y.x.soudBlok.length) delete y.x.soudBlok; }
+    }
+  });
+});
+
+// ── Nastavení konfigurátoru: výchozí β (jen v prohlížeči) ──
+function rozvSoudNastaveniHtml() {
+  var u = rzsNast();
+  var pole = function (kl, label, ph, zdroj) {
+    var c = kl.split('.'), v = u[c[0]] && u[c[0]][c[1]];
+    return '<label class="rz-soud-nr"><span>' + label + (zdroj ? '<small class="rz-soud-nzdroj">' + zdroj + '</small>' : '') + '</span>' +
+      '<input type="text" class="rzs-nast" data-n="' + kl + '" value="' + esc(v != null ? rozvCisloText(v) : '') + '" placeholder="' + esc(ph) + '" inputmode="decimal" autocomplete="off" aria-label="' + esc(label.replace(/<[^>]*>/g, '')) + '"></label>';
+  };
+  return '<details class="rz-soud-nast"><summary>Soudobost — výchozí součinitele β</summary>' +
+    '<div class="dk-pozn">Výchozí hodnoty pro výpočet soudobého příkonu (ČSN 33 2130 ed. 4, přílohy A a B — plné znění nemáme, ověřte). Prázdné = hodnota programu. Platí jen v tomto prohlížeči; u rozvaděče je jde přepsat.</div>' +
+    RZS_SKUPINY.map(function (s) {
+      return pole('beta.' + s[0], '<b>' + esc(rzsKratce(s[0])) + '</b>', rozvCisloText(s[2]), s[3] ? esc(s[3]) + (s[4] ? ' · ' + RZS_OVERIT : '') : 'bez zdroje – doplňte');
+    }).join('') +
+    '<div class="dk-blok-t">Pp na byt podle stupně elektrizace (kW)</div>' +
+    pole('pb.A', 'stupeň A', rozvCisloText(RZS_PB.A), '') + pole('pb.B', 'stupeň B', rozvCisloText(RZS_PB.B), '') +
+    '<div class="dk-blok-t">β(n) pro n bytů <small>' + RZS_BYTY_ZDROJ + ' · ověřit v příloze B ed. 4</small></div>' +
+    '<div class="rz-soud-nbyty">' + RZS_BYTY_BETA.map(function (b, n) { return n ? pole('byty.' + n, 'n = ' + n, rozvCisloText(b), '') : ''; }).join('') + '</div>' +
+    '<button class="dok-mini" data-action="tdRSoudNastVychozi" title="Vrátit výchozí β programu">↺ Výchozí β</button></details>';
+}
+TD_AKCE.tdRSoudNastVychozi = function () {
+  try { localStorage.removeItem(RZS_KLIC); } catch (e) {}
+  document.querySelectorAll('.rzs-nast').forEach(function (i) { i.value = ''; });
+  rozvSoudPanelObnovit(); rozvSoudUkazatel();
+};
+
+// ── List „Výpočet soudobého příkonu" (vektorově, rám a razítko jako schéma) ──
+function rozvSoudSoubor(d) { return ((d.cislo || 'ROZ') + '_soudobost_' + (d.oznaceni || '')).replace(/[\\\/:*?"<>|\s]+/g, '_').replace(/_+$/, '') + '.pdf'; }
+function rozvSoudListSvg(d) {
+  var r = rozvSoudVypocet(d), t = (typeof STORE !== 'undefined' && STORE.technik) || {}, kw = rzsKw;
+  var g = rsGeom('A4', false, false), h = rsRam(g);
+  var c = { vypracoval: t.jmeno || '', datum: dokDatumCz(d.datum) || '', akce: d.stavba || '', investor: (d.investor || {}).nazev || '',
+            nazev: 'Výpočet soudobého příkonu', projekt: d.stavba || '', zakazka: d.cislo || '', soubor: rozvSoudSoubor(d), listu: 1 };
+  h += rsRazitko(g, c, 1);
+  var x0 = 16, y = 19, W = g.W - 32;
+  h += rsText(x0, y, 'VÝPOČET SOUDOBÉHO PŘÍKONU', { fs: 4.2, tucne: true });
+  y += 5.2;
+  h += rsText(x0, y, rsVejit('Rozvaděč ' + [d.oznaceni, d.misto].filter(Boolean).join(' – ') + (d.soustava ? ' · ' + d.soustava : '') + ' · podle ČSN 33 2130 ed. 4', W, 2.5), { fs: 2.5 });
+  y += 5;
+  // tabulka skupin
+  var sl = [[0, 46, 'Skupina'], [46, 104, 'Vývody (Pi)'], [150, 16, 'Pi [kW]'], [166, 12, 'β'], [178, 66, 'Zdroj β'], [244, W - 244, 'Pp [kW]']];
+  var hl = 5, fs = 2.1;
+  var bunky = function (yy, vy, hodn, o) {
+    o = o || {};
+    var s = '';
+    sl.forEach(function (k, i) {
+      var tx = hodn[i], cx = x0 + k[0] + 1.2;
+      if (Array.isArray(tx)) tx.forEach(function (rr, j) { s += rsText(cx, yy + 3.4 + j * 2.7, rr, { fs: fs, tucne: o.tucne }); });
+      else s += rsText(i >= 2 && i !== 4 ? x0 + k[0] + k[1] - 1.2 : cx, yy + 3.4, tx, { fs: fs, tucne: o.tucne || (i === 5 && !o.hlav), zar: i >= 2 && i !== 4 ? 'end' : null });
+    });
+    return s;
+  };
+  var radky = r.skupiny.map(function (q) {
+    var vv = q.vyvody.map(function (v) { return (v.x.ozn || '') + ' ' + (v.x.vyvod || rozvNazev(v.x.p)) + ' ' + kw(v.pi) + (v.x.piOdhad ? ' (odhad)' : ''); }).join(', ');
+    var zd = q.zdroj + (q.overit ? ' – ' + RZS_OVERIT : '') + (q.nezadano ? ' – β nezadáno' : '');
+    return { b: [rsZalomit(rzsNazev(q.k), 44, fs, 2), rsZalomit(vv, 102, fs, 3), kw(q.pi), rozvCisloText(Math.round(q.b * 1000) / 1000), rsZalomit(zd, 64, fs, 3), kw(q.pp)] };
+  });
+  if (r.byty) radky.unshift({ b: [['byty (' + (r.byty.n || '?') + ' × ' + (r.byty.pb != null ? kw(r.byty.pb) : '?') + ' kW)'], [r.byty.pbZdroj ? 'Pb: ' + r.byty.pbZdroj : ''],
+    r.byty.pb != null && r.byty.n ? kw(r.byty.n * r.byty.pb) : '', r.byty.beta != null ? rozvCisloText(r.byty.beta) : '',
+    rsZalomit((r.byty.zdroj || '') + (r.byty.overit ? ' – ověřit v příloze B ed. 4' : ''), 64, fs, 3), r.byty.pp != null ? kw(r.byty.pp) : '—'] });
+  var hy = function (q) { return Math.max(5, 1.6 + 2.7 * Math.max.apply(null, q.b.map(function (b) { return Array.isArray(b) ? b.length : 1; }))); };
+  var celk = hl + radky.reduce(function (a, q) { return a + hy(q); }, 0);
+  h += rsObd(x0, y, W, celk, { w: 0.4 }) + rsObd(x0, y, W, hl, { fill: '#eeeeee', w: 0.4 });
+  sl.slice(1).forEach(function (k) { h += rsCara(x0 + k[0], y, x0 + k[0], y + celk, { w: RS_TENKA }); });
+  h += bunky(y, 0, sl.map(function (k) { return k[2]; }), { tucne: true, hlav: true });
+  var yy = y + hl;
+  radky.forEach(function (q) { h += rsCara(x0, yy, x0 + W, yy, { w: RS_TENKA }) + bunky(yy, 0, q.b); yy += hy(q); });
+  y = yy + 5;
+  var radek = function (t, o) {   // nad razítkem celá šířka, vedle něj jen levá část
+    o = o || {}; var f = o.fs || 2.4; y += f * 0.55;
+    h += rsText(x0, y, rsVejit(t, y > g.H - 10 - RS_RAZ.h - 3 ? g.W - 10 - RS_RAZ.w - 4 - x0 : W, f), { fs: f, tucne: o.tucne }); y += f * 1.15;
+  };
+  r.blok.forEach(function (q) { radek('Nepracuje současně: ' + q.nazev + ' ' + kw(q.pp) + ' kW nezapočten – blokován s ' + q.s + '.', { fs: 2.2 }); });
+  if (r.blok.length) y += 1;
+  radek('Pp = ' + (r.byty && r.byty.pp ? kw(r.byty.pp) + ' (byty) + ' : '') + kw(r.ppSkupiny) + (r.nezap ? ' − ' + kw(r.nezap) + ' (nezapočteno)' : '') + ' = ' + kw(r.pp) + ' kW', { tucne: true, fs: 2.8 });
+  radek('cos φ = ' + rozvCisloText(r.cos) + ' · přívod ' + (r.faze === '3f' ? 'trojfázový 400 V' : 'jednofázový 230 V'));
+  // písmo PDF (podmnožina Roboto Condensed) nemá √, ✓ ani ✗ — proto 1,732 a slova
+  radek('Ip = ' + (r.faze === '3f' ? 'Pp · 1000 / (1,732 · 400 · cos φ)' : 'Pp · 1000 / (230 · cos φ)') + ' = ' + rozvCisloText(Math.round(r.ip * 10) / 10) + ' A', { tucne: true, fs: 2.8 });
+  radek('Navržený hlavní jistič (nejbližší vyšší z řady ' + RZS_RADA.join(', ') + ' A): ' + (r.navrh ? rzsJisticText(r) : '—'), { tucne: true });
+  if (r.skut) radek('Skutečný hlavní jistič: ' + r.skut.text + ' (' + r.skut.zdroj + ')' + (r.ip > 0 ? (r.ok ? ' — VYHOVUJE (In ≥ Ip)' : ' — NEVYHOVUJE, menší než Ip') : ''));
+  var up = r.upoz.slice();
+  if (r.bezPi.length) up.push(dokPocetTvar(r.bezPi.length, ['vývod', 'vývody', 'vývodů']) + ' bez Pi – nezapočteno (' + r.bezPi.map(function (x) { return x.ozn || x.p.kat; }).join(', ') + ')');
+  if (r.selekt) up.push('hlavní jistič ' + rozvCisloText(r.selekt.hl) + ' A ≤ největší jistič vývodu ' + rozvCisloText(r.selekt.max.In) + ' A – zkontrolovat selektivitu');
+  if (up.length) { y += 1; up.forEach(function (t2) { radek('Upozornění: ' + t2 + '.', { fs: 2.1 }); }); }
+  y += 2;
+  radek('Výpočet podle ČSN 33 2130 ed. 4; koeficienty β zadal zpracovatel. „(odhad)" = instalovaný příkon odhadnutý z počtu a příkonu spotřebičů.', { fs: 2.1 });
+  return { g: g, svg: rsSvgObal(g, h) };
+}
 
 // ═══ PŘEDLOHA Z FOTKY (pokusná funkce, lab 2026-10-26) ═══════════════════
 // Oříznutý pruh fotky jedné řady se kreslí PŘES řadu v čelním pohledu, ve
@@ -32905,6 +33455,7 @@ function rozvPohledVykreslit() {
       '<span class="rz-volno">' + (__rz.rezim === 'PSC' ? 'Volné místo na lištách' : 'Volné místo') + ': <b>' + esc(rozvCisloText(Math.max(0, v.volno))) + ' / ' + v.celkem + ' modulů</b></span>' +
       '<span class="rz-faze-ukaz" id="rz-faze-ukaz" hidden></span>' +
       '<button type="button" class="rz-otepl-ukaz" id="rz-otepl-ukaz" data-action="tdROteplOtevrit" hidden></button>' +
+      '<button type="button" class="rz-soud-ukaz" id="rz-soud-ukaz" data-action="tdRSoudOtevrit" hidden></button>' +
       '<span class="rz-zoom">' + (__rz.rezim !== 'PSC' ? '<button class="dok-mini rz-predloha-btn" data-action="tdRzpOtevrit" title="Fotka skutečné řady přímo nad lištou ve stejném měřítku — přístroje pak jen obkreslíte (pokusná funkce)">📷 Předloha z fotky</button>' : '') +
         (__rz.rezim === 'PSC' ? '<button class="dok-mini rz-koty-btn' + (__rz.koty ? ' akt' : '') + '" data-action="tdPscKoty" aria-pressed="' + (__rz.koty ? 'true' : 'false') + '" title="Kóty šířky a výšky polí zapnout / vypnout">📏 Kóty</button>' : '') +
         '<button class="dok-mini rz-nasirku' + (__rz.kRucni ? '' : ' akt') + '" data-action="tdRNaSirku" aria-pressed="' + (__rz.kRucni ? 'false' : 'true') +
@@ -32964,6 +33515,7 @@ function rozvPohledVykreslit() {
   }
   rozvFazeUkazatel();
   rozvOteplUkazatelHned();   // hned — lišta se nesmí posunout až po vykreslení
+  rozvSoudUkazatelHned();
 }
 
 // Jen obsah rámečku (bez lišty a nápovědy) — rámeček zůstane, posuvník taky.
@@ -32972,6 +33524,7 @@ function rozvSvgPrekreslit() {
   ram.innerHTML = rozvSvg(__rz, { k: ram.__k || rozvMeritko() });
   rozvFazeUkazatel();
   rozvOteplUkazatel();
+  rozvSoudUkazatel();
 }
 
 // ── Průběžná „předtucha" oteplení v liště (2026-10-27) ──────────────────
@@ -33349,13 +33902,13 @@ function rozvVlastnostiVykreslit() {
   if (z) __rz.vyberVn = null;   // prvek mimo rozvaděč (ovládání) — vlastní panel
   var vn = !z && __rz.vyberVn ? rozvVnNajit(__rz.vyberVn) : null;
   if (vn) { box.innerHTML = rozvVnPanelHtml(vn); return; }
-  if (!z && __rz.rezim === 'PSC') { box.innerHTML = pscPanelHtml() + rozvMixHtml() + rozvFazePanelHtml(); return; }
+  if (!z && __rz.rezim === 'PSC') { box.innerHTML = pscPanelHtml() + rozvMixHtml() + rozvFazePanelHtml() + rozvSoudPanelHtml() + rozvPiNastaveniHtml(true); return; }
   if (!z) {
     var pocet = __rz.rady.reduce(function (s, r) { return s + r.prvky.filter(function (x) { return x.p.kat !== 'REZ'; }).length; }, 0);
     var v = __rz.skrin ? rozvVolnoCelkem(__rz) : null;
     box.innerHTML = '<div class="rp-t">Vlastnosti</div>' +
       (__rz.skrin ? '<div class="rp-souhrn">🗄 <b>' + esc(rozvNazev(__rz.skrin)) + '</b><br>' + __rz.rady.length + ' × ' + __rz.skrin.modulu + ' modulů · přístrojů ' + pocet +
-        ' · volno ' + esc(rozvCisloText(Math.max(0, v.volno))) + ' M</div>' : '') + rozvMixHtml() + rozvFazePanelHtml() + rozvNastaveniPohleduHtml() + rozvPiNastaveniHtml(true) +
+        ' · volno ' + esc(rozvCisloText(Math.max(0, v.volno))) + ' M</div>' : '') + rozvMixHtml() + rozvFazePanelHtml() + rozvSoudPanelHtml() + rozvNastaveniPohleduHtml() + rozvPiNastaveniHtml(true) +
       '<div class="dk-pozn">Klepněte na přístroj v čelním pohledu — tady pak vyplníte název vývodu, fázi a kabel. ' +
         (rozvDotyk() ? 'Víc přístrojů vyberete delším podržením prstu na přístroji.' : 'Víc přístrojů vyberete s Ctrl nebo Shift, nebo tažením rámečku v prázdném místě pohledu.') + '</div>' +
       (__rz.skrin ? '<button class="add-row" data-action="tdRSkrinVymenit">🗄 Vyměnit skříň</button>' : '');
@@ -33415,7 +33968,8 @@ function rozvVlastnostiVykreslit() {
         '<div class="f rp-pi"><label>Instalovaný příkon Pi (kW) <span class="dk-nepov">(nepovinné)</span>' +
           ' <span class="rz-pi-odhad"' + (x.piOdhad ? ' title="' + esc('odhad: ' + x.piOdhad) + '"' : ' hidden') + '>odhad</span></label>' +
           '<div class="rp-pi-radek"><input type="text" class="rp-pole" data-rp2="pi" value="' + esc(x.pi || '') + '" placeholder="do tabulky pod schématem" inputmode="decimal" autocomplete="off">' +
-          '<button class="dok-mini" data-action="tdRPiOdhad" title="Spočítat Pi z počtu zásuvek, svítidel nebo z příkonu spotřebiče">🧮 Odhadnout…</button></div></div>';
+          '<button class="dok-mini" data-action="tdRPiOdhad" title="Spočítat Pi z počtu zásuvek, svítidel nebo z příkonu spotřebiče">🧮 Odhadnout…</button></div></div>' +
+        rozvSoudVyvodHtml(x);
     }
     if (ROZV_NADR_BEZ.indexOf(p.kat) === -1) {
       var fi = [];
@@ -33565,6 +34119,11 @@ function rozvVlastnostZmena(el) {
     var st = el.closest('.rp-pi'); st = st && st.querySelector('.rz-pi-odhad'); if (st) st.hidden = true;
   }
   if (k === 'spotr' && !v) delete z.x.spotr;   // předpověď z názvu se neukládá
+  if (k === 'soudSk' && !v) delete z.x.soudSk;   // odhad skupiny se neukládá
+  if (k === 'spotr' || k === 'vyvod') {   // „podle typu (…)" u skupiny soudobosti
+    var s0 = document.querySelector('#rz-vlastnosti [data-rp2="soudSk"] option[value=""]');
+    if (s0) s0.textContent = 'podle typu (' + rzsKratce(rzsPredikce(z.x)) + ')';
+  }
   if (k === 'sbernice' && !v) delete z.x.sbernice;
   if (k === 'vyvod') {   // „podle názvu (…)" se mění s názvem
     var o0 = document.querySelector('#rz-vlastnosti [data-rp2="spotr"] option[value=""]');
@@ -35104,7 +35663,7 @@ function rozvIpText(e) { return [e.ipz, e.ipo].filter(Boolean).join(' / '); }
 function rozvRokMes(ym, oddel) { var m = /^(\d{4})-(\d{2})/.exec(ym || ''); return m ? (oddel === '/' ? m[1] + '/' + m[2] : +m[2] + '/' + m[1]) : (ym || ''); }
 function rozvVyber(d) {
   var v = d.dokVyber || {};
-  return { cp: v.cp !== false, schema: v.schema !== false, overeni: v.overeni !== false && pscJe(d), tech: v.tech !== false, prohl: v.prohl !== false, ko: v.ko !== false, popisky: v.popisky === true, pohled3d: v.pohled3d === true,
+  return { cp: v.cp !== false, schema: v.schema !== false, overeni: v.overeni !== false && pscJe(d), tech: v.tech !== false, prohl: v.prohl !== false, ko: v.ko !== false, popisky: v.popisky === true, pohled3d: v.pohled3d === true, soudobost: v.soudobost !== false && rozvSoudMa(d),
            otepleni: v.otepleni === '' ? null : v.otepleni };
 }
 
@@ -35168,7 +35727,7 @@ function rozvDokHtml(d) {
   var h = '<div class="scard rz-dok-hlava"><div class="scard-title">📄 Dokumenty z návrhu — ' + (psc ? 'ČSN EN IEC 61439-2 (PSC)' : 'ČSN EN IEC 61439-3 (DBO)') + '</div>' +
     '<button class="btn btn-gold dok-hlavni-akce rz-dok-generuj" data-action="tdRDokPdf">📄 Vygenerovat dokumentaci (PDF)</button>' +
     '<div class="rz-dok-vyber"><span class="rz-dok-vyber-t">Do PDF patří:</span>' +
-      zatrh('cp', 'čelní pohled a seznam přístrojů') + zatrh('schema', 'schéma zapojení') + zatrh('pohled3d', 'pohled 3D (ilustrační)') + zatrh('tech', 'technické údaje') + (psc ? zatrh('overeni', 'ověření návrhu') : '') +
+      zatrh('cp', 'čelní pohled a seznam přístrojů') + zatrh('schema', 'schéma zapojení') + zatrh('pohled3d', 'pohled 3D (ilustrační)') + (rozvSoudMa(d) ? zatrh('soudobost', 'výpočet soudobého příkonu') : '') + zatrh('tech', 'technické údaje') + (psc ? zatrh('overeni', 'ověření návrhu') : '') +
       zatrh('prohl', 'prohlášení o shodě') +
       zatrh('ko', 'protokol o kusovém ověření') + rozvOteplZatrh(d) + (psc ? '' : zatrh('popisky', 'popisky pod přístroje')) + '</div>' +
     '<div class="rz-dok-stitek-r"><button class="rz-dok-tisk2 rz-dok-stitek-btn" data-action="tdRStitek" title="Štítek se tiskne zvlášť, ve skutečné velikosti">🏷 Tisk štítku</button>' +
@@ -35455,7 +36014,7 @@ document.addEventListener('input', function (e) {
 
 TD_AKCE.tdRDokPdf = async function () {
   var f = dokForm(), d = f ? DOK_TYPY.rozv.cist(f) : {}, v = rozvVyber(d);
-  if (!v.cp && !v.schema && !v.tech && !v.prohl && !v.ko && !v.overeni && !v.pohled3d) {
+  if (!v.cp && !v.schema && !v.tech && !v.prohl && !v.ko && !v.overeni && !v.pohled3d && !v.soudobost) {
     if (v.popisky) { await TD_AKCE.tdRPopisky(); return; }
     showToast('Zaškrtněte, co má v PDF být.'); return;
   }
@@ -35899,11 +36458,12 @@ TD_AKCE.tdRStitek = async function () {
 var rozvPdfNavrh = DOK_TYPY.rozv.pdf;
 DOK_TYPY.rozv.pdf = function (d) {
   var v = rozvVyber(d), e = rozvDokEff(d), B = [];
-  if (!v.cp && !v.tech && !v.prohl && !v.ko && !v.schema) v.cp = true;
+  if (!v.cp && !v.tech && !v.prohl && !v.ko && !v.schema && !v.soudobost) v.cp = true;
   if (v.cp) B = B.concat(rozvPdfNavrh(d));
   if (v.schema) rozvSchemaListy(d).forEach(function (l) {   // celé listy výkresu (vektorově do PDF)
     B.push({ cela: '<div class="a4 a4-landscape rz-sch-strana' + (l.g.fmt === 'A3' ? ' rz-sch-a3' : '') + '" data-vektor="1">' + l.svg + '</div>' });
   });
+  if (v.soudobost) B.push({ cela: '<div class="a4 a4-landscape rz-sch-strana rz-soud-strana" data-vektor="1">' + rozvSoudListSvg(d).svg + '</div>' });
   if (v.tech) B = B.concat(rozvPdfTech(d, e));
   if (v.overeni) B = B.concat(pscPdfOvereni(d, e));   // jen PSC
   if (rozvOteplPriloha(d)) B = B.concat(rozvPdfOtepleni(d, e));
