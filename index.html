@@ -2075,6 +2075,16 @@ html.dark .rz-banner-vyber{background:#1d2a3a;color:#c9dcf3}
 .rp-ovl-vetev{margin:.25rem 0 .35rem}
 .rp-ovl-pridat{max-width:100%}
 .rz-ovl-kontrola{margin-top:.3rem;color:#8a4b00}
+.rzo-sablony{display:grid;grid-template-columns:repeat(auto-fill,minmax(220px,1fr));gap:.6rem;max-height:62vh;overflow:auto;margin-top:.5rem}
+.rzo-s{border:1px solid var(--border);border-radius:8px;padding:.55rem .7rem;background:var(--surface);display:flex;flex-direction:column;gap:.3rem}
+.rzo-s-t{font-size:.98rem}
+.rzo-s-p{font-size:.8rem;color:var(--muted);flex:1}
+.rzo-s-chybi{font-size:.78rem;color:#8a4b00}
+.rzo-s-v{display:flex;flex-wrap:wrap;gap:.3rem}
+.rzo-s-b{font-size:.78rem;padding:.35rem .6rem;text-transform:none;letter-spacing:0}
+.rzo-s-b:disabled{opacity:.45;cursor:not-allowed}
+.rzo-vybrano{font-size:.85rem;margin:.3rem 0}
+.rz-sch-ovl{font-size:.84rem;margin:.3rem 0}
 .rz-svorky-info{font-size:.84rem;margin:.3rem 0;color:var(--text)}
 .rz-vn-stitek{font-size:.72rem;background:#efe4d2;color:#5a3d10;border-radius:4px;padding:0 .3rem}
 .rp-t{font-family:var(--mono);font-size:.62rem;letter-spacing:.1em;text-transform:uppercase;color:var(--accent2);margin-bottom:.5rem}
@@ -4982,6 +4992,15 @@ html.dark .rz-imp-chyby{background:#3a1f1c;border-color:#6b2c25}
   </div>
 </div>
 <!-- MODAL: rozvaděč — vlastní velikost skříně (řady × moduly / DIN lišty) -->
+<div class="modal-overlay" id="modal-rz-ovl">
+  <div class="modal" style="max-width:760px">
+    <div class="modal-title">⚡ Šablony ovládání</div>
+    <div id="rzo-obsah"></div>
+    <div class="modal-actions">
+      <button class="btn btn-ghost" style="background:var(--bg);color:var(--text);border:1px solid var(--border)" data-action="tdRzoZavrit">Zavřít</button>
+    </div>
+  </div>
+</div>
 <div class="modal-overlay" id="modal-rz-prisl">
   <div class="modal" style="max-width:620px">
     <div class="modal-title">＋ Příslušenství přístroje</div>
@@ -32884,6 +32903,7 @@ function rozvPohledVykreslit() {
         '<button class="dok-mini" data-action="tdRZoom" data-z="+" title="Zvětšit">＋</button>' +
         // Přečíslování natrvalo vedle zoomu (pokyn uživatele 2026-10-19 — ve
         // vlastnostech bez výběru ho starší technik nenašel)
+        (__rz.rezim !== 'PSC' ? '<button class="dok-mini rz-ovl-btn" data-action="tdROvlSablony" title="Hotová zapojení ovládacích obvodů: CENTRAL STOP, stykač přes HDO, tlačítka ZAP/VYP, schodišťový automat, signalizace, motor">⚡ Ovládání</button>' : '') +
         '<button class="dok-mini rz-precislovat" data-action="tdRPrecislovat" title="Označení podle pořadí v řadách zleva doprava: -QH1, -FA1, -FA2… (jde vzít zpět)">🔢 Přečíslovat označení</button>' +
         rozvBarvyPrepinacHtml() + '</span>' +
     '</div>' + rozvQmUpozHtml() + rzpListaHtml();
@@ -37059,7 +37079,7 @@ function rsoCesta(d, cs, li, om, c, od, prid, svk, napajeno) {
         rsText(x + 2.6, yy + hh / 2 + 1.6, [q.kod, kr.t].filter(Boolean).join(' '), { fs: 1.5 }) +
         (ref ? rsText(x + 2.6, yy + hh / 2 + 3.6, ref, { fs: 1.45, barva: '#333' }) : '') + '</g>';
       if (e.vn) { if (vnOd == null) vnOd = yy; } else if (vnOd != null) { vnBox.push([x, vnOd, yy]); vnOd = null; }
-      if (e.vn && yv && yv.misto) h += rsText(x - 1.4, yy + hh - 0.6, rsVejit(yv.misto, RSO.sl - 3, 1.35), { fs: 1.35, zar: 'end', barva: '#555' });
+      if (e.vn && yv && yv.misto && !ref) h += rsText(x + 2.6, yy + hh / 2 + 3.6, rsVejit(yv.misto, RSO.sl - 3.5, 1.35), { fs: 1.35, barva: '#555' });
       yy += hh;
     });
     if (vnOd != null) vnBox.push([x, vnOd, yy]);
@@ -37176,6 +37196,141 @@ function rozvOvlKontrola(d) {
   var sv = rozvOvlSvorky(d), svR = rozvSvorkyVRade(d).length;
   if (sv > svR && !pscJe(d)) ch.push({ uid: '', druh: 'svorky', text: 'v čelním pohledu chybí ' + (sv - svR) + ' ovládacích svorek ' + rozvSvorkovnice(d) });
   return ch;
+}
+
+// ═══ ROZVADĚČ — OVLÁDACÍ OBVODY: šablony (2026-10-29) ════════════════════
+// Hotová zapojení pro běžné úlohy — vloží přístroje, propojí je a vybere
+// cívku, technik jen upraví. Jedno vložení = jedno ZPĚT / Ctrl+Z.
+var RZO_SABLONY = [
+  { k: 'stop', ikona: '🛑', nazev: 'CENTRAL STOP', popis: 'Vyrážecí tlačítko u vstupu vypne hlavní vypínač přes spoušť. Jistič ovládání před hlavním vypínačem, svorky -X1.',
+    varianty: [['nap', 'napěťová spoušť (zapínací tlačítko)'], ['podp', 'podpěťová spoušť (rozpínací tlačítko)']] },
+  { k: 'hdo', ikona: '♨️', nazev: 'Stykač přes HDO', popis: 'Bojler nebo akumulační topení: kontakt HDO spíná cívku stykače, kontakty stykače jsou ve vývodu.', vyvod: true,
+    varianty: [['prost', 'jen HDO'], ['auto', 's přepínačem 0/1/AUTO']] },
+  { k: 'rucni', ikona: '🔘', nazev: 'Stykač s ručním ovládáním', popis: 'Tlačítka ZAP/VYP s přídržným kontaktem, nebo přepínač 0/1.', vyvod: true,
+    varianty: [['tlacitka', 'tlačítka ZAP/VYP'], ['prepinac', 'přepínač 0/1']] },
+  { k: 'schod', ikona: '💡', nazev: 'Schodišťový automat', popis: 'Tlačítka na chodbě (paralelně) spouštějí automat, jeho kontakt spíná osvětlení.', vyvod: true, varianty: [['', 'Vložit']] },
+  { k: 'sig', ikona: '🔔', nazev: 'Signalizace', popis: 'Pomocný kontakt na vybraném jističi / chrániči → kontrolka, nebo výstup na svorky (dohled).', host: true,
+    varianty: [['kontrolka', 'kontrolka -HL'], ['vystup', 'výstup na svorky']] },
+  { k: 'motor', ikona: '⚙️', nazev: 'Motor', popis: 'Motorový spouštěč -QM, stykač -KM, tlačítka ZAP/VYP s přídržným kontaktem.', varianty: [['', 'Vložit']] }
+];
+function rzoDialogHtml() {
+  var sel = __rz && __rz.vyber ? rozvNajit(__rz.vyber) : null, x = sel ? sel.x : null;
+  var vyvodOk = x && ['FA', 'FIFA', 'AFDD', 'FU'].indexOf(x.p.kat) !== -1, hostOk = x && RZ_PRISL_HOST.indexOf(x.p.kat) !== -1 && x.p.kat !== 'KM' && x.p.kat !== 'KA';
+  return '<div class="dk-pozn">Šablona vloží přístroje a propojí je — pak stačí zkontrolovat ve vlastnostech. Zapojení uvidíte na záložce ⚡ Schéma (list Ovládací obvody). Jde vzít zpět (Ctrl+Z).</div>' +
+    (x ? '<div class="rzo-vybrano">Vybraný přístroj: <b>' + esc((x.ozn || '') + ' ' + rozvNazev(x.p)) + '</b>' + (x.vyvod ? ' — ' + esc(x.vyvod) : '') + '</div>' : '') +
+    '<div class="rzo-sablony">' + RZO_SABLONY.map(function (s) {
+      var chybi = s.vyvod && !vyvodOk ? 'Nejdřív klepněte v čelním pohledu na jistič vývodu' + (s.k === 'schod' ? ' osvětlení' : s.k === 'hdo' ? ' (bojleru)' : '') + '.'
+        : s.host && !hostOk ? 'Nejdřív klepněte na jistič, chránič nebo vypínač, jehož stav se má hlásit.' : '';
+      return '<div class="rzo-s"><div class="rzo-s-t">' + s.ikona + ' <b>' + esc(s.nazev) + '</b></div><div class="rzo-s-p">' + esc(s.popis) + '</div>' +
+        (chybi ? '<div class="rzo-s-chybi">' + esc(chybi) + '</div>' : '') +
+        '<div class="rzo-s-v">' + s.varianty.map(function (v) {
+          return '<button class="btn btn-gold rzo-s-b" data-action="tdRzoVlozit" data-k="' + s.k + '" data-v="' + v[0] + '"' + (chybi ? ' disabled' : '') + '>' + esc(v[1]) + '</button>';
+        }).join('') + '</div></div>';
+    }).join('') + '</div>';
+}
+TD_AKCE.tdROvlSablony = function () {
+  if (!__rz || !__rz.skrin) { showToast('Nejdřív vyberte skříň.'); return; }
+  document.getElementById('rzo-obsah').innerHTML = rzoDialogHtml();
+  document.getElementById('modal-rz-ovl').classList.add('open');
+};
+TD_AKCE.tdRSchOvl = function () { rozvZalozkaNastavit('navrh'); TD_AKCE.tdROvlSablony(); };
+TD_AKCE.tdRzoZavrit = function () { closeModal('modal-rz-ovl'); };
+TD_AKCE.tdRzoVlozit = function (el) {
+  closeModal('modal-rz-ovl');
+  rozvOvlSablona(el.getAttribute('data-k'), el.getAttribute('data-v'));
+};
+// Nový přístroj z knihovny (označení až po vložení) / prvek mimo rozvaděč.
+function rzoPrvek(kid, o) { var it = rozvKnihPolozka(kid), x = rozvNovyPrvek(it); x.ozn = ''; return Object.assign(x, o || {}); }
+function rzoVnejsi(it, o) {
+  var x = rozvNovyPrvek(it.id ? it : Object.assign({ id: '' }, it)); delete x.faze; delete x.nadr; delete x.nadrRucne; x.ozn = '';
+  Object.assign(x, o || {}); __rz.vnejsi = rozvVnejsi().concat([x]);
+  x.ozn = rozvDalsiOzn(x.p, x.uid); return x;
+}
+function rzoVlozitZa(uid, xs) {   // za přístroj (i s jeho příslušenstvím), co se nevejde, pokračuje v další řadě
+  var sk = uid ? rozvSkupina(uid) : [], q = sk.length ? rozvNajit(sk[sk.length - 1]) : null;
+  var r = q ? q.r : rozvRadaProVlozeni(xs.reduce(function (s, x) { return s + rozvW(x); }, 0)), idx = q ? q.i + 1 : __rz.rady[r].prvky.length;
+  rozvRozmistit(__rz.rady, xs, r, idx);
+  xs.forEach(function (x) { if (!x.ozn) x.ozn = rozvDalsiOzn(x.p, x.uid); });
+}
+function rzoOvlJistic(zaUid, nazev) {   // jistič ovládacích obvodů: existující („ovládání" v názvu), jinak nový B6
+  var e = rozvOvlZdroje().filter(function (y) { return /ovl[aá]d/i.test(y.vyvod || '') && ['FA', 'FIFA'].indexOf(y.p.kat) !== -1; })[0];
+  if (e) return e;
+  var fa = rzoPrvek('v-fa-1-B6', { vyvod: 'Ovládání – ' + nazev, faze: 'L1' });
+  rzoVlozitZa(zaUid, [fa]); return fa;
+}
+function rzoStykacPro(vyvod, hold) {   // stykač podle pólů vývodu (+ přídržný kontakt)
+  var n = rozvPolyCislo(vyvod.p) + (hold ? 1 : 0);
+  return n <= 2 ? (n === 1 ? 'v-km-20-2' : 'v-km-25-2') : 'v-km-25-4';
+}
+function rozvOvlSablona(k, v) {
+  if (!__rz || !__rz.skrin) return;
+  var sel = __rz.vyber ? rozvNajit(__rz.vyber) : null, vx = sel ? sel.x : null, cil = null, nazev = '';
+  var s = RZO_SABLONY.filter(function (q) { return q.k === k; })[0]; if (!s) return;
+  if (k === 'stop' && !rozvHlavniVypinace(__rz.rady).length) { alert('CENTRAL STOP vypíná hlavní vypínač — nejdřív ho vložte do rozvaděče (knihovna → Vypínače).'); return; }
+  if (s.vyvod && !(vx && ['FA', 'FIFA', 'AFDD', 'FU'].indexOf(vx.p.kat) !== -1)) { alert('Nejdřív klepněte v čelním pohledu na jistič vývodu, který se má spínat.'); return; }
+  if (s.host && !(vx && RZ_PRISL_HOST.indexOf(vx.p.kat) !== -1)) { alert('Nejdřív klepněte na jistič, chránič nebo vypínač, jehož stav se má hlásit.'); return; }
+  rozvZmena('Šablona ovládání: ' + s.nazev, function () {
+    if (k === 'stop') {
+      var hl = rozvNajit(rozvHlavniVypinace(__rz.rady)[0]).x;
+      var spo = rozvPrislPripojit(hl.uid, v === 'podp' ? 'v-prisl-podp' : 'v-prisl-nap', 'vpravo', { uvnitr: true, bezVyberu: true });
+      rozvPrislUklid();
+      var fa = rzoPrvek('v-fa-1-B6', { vyvod: 'Ovládání – CENTRAL STOP', faze: 'L1', predHlavnim: true });
+      rzoVlozitZa(hl.uid, [fa]);
+      var sb = rzoVnejsi(rozvKnihPolozka('v-vn-vyraz'), { misto: 'u vstupu do objektu' });
+      spo.ovl = { z: fa.uid, retez: [{ u: sb.uid, k: v === 'podp' ? 'V' : 'Z' }] };
+      cil = spo; nazev = 'CENTRAL STOP (' + (v === 'podp' ? 'podpěťová' : 'napěťová') + ' spoušť)';
+    } else if (k === 'hdo' || k === 'rucni') {
+      var hold = k === 'rucni' && v === 'tlacitka';
+      var km = rzoPrvek(rzoStykacPro(vx, hold)), nove = [km], ret;
+      if (k === 'hdo') {
+        var hdo = rzoVnejsi(rozvKnihPolozka('v-vn-hdo'), { misto: 'elektroměrový rozvaděč' });
+        if (v === 'auto') {
+          var pr = rzoPrvek('v-sf-auto'); nove.push(pr);
+          ret = [{ par: [[{ u: pr.uid, k: 'Z', t: '1' }], [{ u: pr.uid, k: 'Z', t: 'AUTO' }, { u: hdo.uid, k: 'Z' }]] }];
+        } else ret = [{ u: hdo.uid, k: 'Z' }];
+        nazev = 'stykač přes HDO';
+      } else if (hold) {
+        var sb2 = rzoPrvek('v-sf-zapvyp'); nove.push(sb2);
+        ret = [{ u: sb2.uid, k: 'V', t: 'VYP' }, { par: [[{ u: sb2.uid, k: 'Z', t: 'ZAP' }], [{ u: km.uid, k: 'Z', t: 'přídržný' }]] }];
+        nazev = 'stykač s tlačítky ZAP/VYP';
+      } else {
+        var sf = rzoPrvek('v-sf-pr'); nove.push(sf);
+        ret = [{ u: sf.uid, k: 'Z', t: '0/1' }]; nazev = 'stykač s přepínačem 0/1';
+      }
+      rzoVlozitZa(vx.uid, nove);
+      if (hold && rozvPolyCislo(vx.p) + 1 > 4) { rozvPrislPripojit(km.uid, 'v-prisl-pom', 'vpravo', { uvnitr: true, bezVyberu: true }); rozvPrislUklid(); }
+      var vv = rozvNajit(vx.uid).x; vv.spina = km.uid;
+      km.ovl = { z: vx.uid, retez: ret }; cil = km;
+    } else if (k === 'schod') {
+      var kt = rzoPrvek('v-kt-schod');
+      rzoVlozitZa(vx.uid, [kt]);
+      var t1 = rzoVnejsi(rozvKnihPolozka('v-vn-tl'), { misto: 'chodba – přízemí' }), t2 = rzoVnejsi(rozvKnihPolozka('v-vn-tl'), { misto: 'chodba – patro' });
+      rozvNajit(vx.uid).x.spina = kt.uid;
+      kt.ovl = { z: vx.uid, retez: [{ par: [[{ u: t1.uid, k: 'Z' }], [{ u: t2.uid, k: 'Z' }]] }] };
+      cil = kt; nazev = 'schodišťový automat';
+    } else if (k === 'sig') {
+      rozvPrislPripojit(vx.uid, 'v-prisl-pom', 'vpravo', { uvnitr: true, bezVyberu: true }); rozvPrislUklid();
+      if (v === 'vystup') {
+        var vy = rzoVnejsi(rozvPolozkaNorm({ kat: 'VNEJSI', nazev: 'Výstup na svorky (dohled)', vyrobce: 'obecný', prislTyp: 'vystup', zdroj: 'vestaveny' }, 'pristroj'), { misto: 'dohled / EZS' });
+        vy.ovl = { z: '', retez: [{ u: vx.uid, k: 'Z', t: 'porucha' }] }; cil = vy;
+      } else {
+        var fa2 = rzoOvlJistic(vx.uid, 'signalizace'), hl2 = rzoPrvek('v-hl-1');
+        rzoVlozitZa(fa2.uid, [hl2]);
+        hl2.ovl = { z: fa2.uid, retez: [{ u: vx.uid, k: 'V', t: 'vypnuto' }] }; cil = hl2;
+      }
+      nazev = 'signalizace ' + (vx.ozn || '');
+    } else if (k === 'motor') {
+      var ms = rzoPrvek('v-ms-3-10', { vyvod: 'Motor', faze: '3f', spotr: 'motor' }), km2 = rzoPrvek('v-km-25-4'), sb3 = rzoPrvek('v-sf-zapvyp');
+      rzoVlozitZa(vx ? vx.uid : null, [ms, km2, sb3]);
+      var fa3 = rzoOvlJistic(sb3.uid, 'motor');
+      ms.spina = km2.uid;
+      km2.ovl = { z: fa3.uid, retez: [{ u: sb3.uid, k: 'V', t: 'VYP' }, { par: [[{ u: sb3.uid, k: 'Z', t: 'ZAP' }], [{ u: km2.uid, k: 'Z', t: 'přídržný' }]] }] };
+      cil = km2; nazev = 'motor se spouštěčem a stykačem';
+    }
+    rozvSvorkyDoplnit({ uvnitr: true });
+    if (cil && rozvNajit(cil.uid)) { __rz.vyber = cil.uid; __rz.vic = null; __rz.vyberVn = null; }
+    else if (cil) { __rz.vyber = null; __rz.vic = null; __rz.vyberVn = cil.uid; }
+  }, { toast: '⚡ Vloženo: ' + s.nazev + ' — zkontrolujte ve vlastnostech; zapojení je na záložce ⚡ Schéma.' });
 }
 
 // ═══ SCHÉMA ZAPOJENÍ — etapa 3 (v1.23) ════════════════════════════════════
@@ -37806,6 +37961,7 @@ function rozvSchHtml(d) {
         '<option value="A3"' + (fmt === 'A3' ? ' selected' : '') + '>A3 na šířku</option></select></label>' +
     '</div>' +
     '<div class="rz-dok-chybi" id="rz-sch-chybi"></div>' +
+    (pscJe(d) ? '' : '<div class="rz-sch-ovl">Ovládací obvody (stykače, spouště, tlačítka) se kreslí na vlastní listy. <button class="dok-mini" data-action="tdRSchOvl">⚡ Šablony ovládání…</button></div>') +
     '<div class="dk-pozn">Výkres se kreslí sám z návrhu — v náhledu se nic neupravuje. Klepněte na přístroj a otevře se v Návrhu.</div></div>' +
     '<div class="rz-sch-ram" id="rz-sch-ram"></div>' +
     rzOddil('schema', '🏷 Razítko, tabulka údajů a MET',
