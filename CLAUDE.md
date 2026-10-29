@@ -33,14 +33,14 @@ a skládá se z těchto LAB-only míst:
 | `index.html` — **jediný `<script>` hned za `<title>`** (blok „LAB — ODDĚLENÍ OD OSTRÉHO PROGRAMU") | běží před vším ostatním a obaluje API prohlížeče, takže zbytek `index.html` je **bajt po bajtu stejný jako v revize-el** |
 | `sw.js` | `CACHE_NAME = 'revize-el-lab-v…'`, `activate` maže jen `revize-el-lab-…`, čte se jen z vlastní cache (`zCache`) |
 | `manifest.json` | „Revize EL – LAB" / „Revize LAB", `id`/`start_url`/`scope` = `/revize-el-lab/`, oranžová ikona s nápisem LAB |
-| `testy/test-lab-oddeleni.js` | důkaz oddělení (44 kontrol, port 8930) |
+| `testy/test-lab-oddeleni.js` | důkaz oddělení (45 kontrol, port 8930) |
 | tahle sekce `CLAUDE.md` | |
 
 Co blok přesměruje (program sám pořád píše `revize_el_…`, `revize-el-db`…):
 
 | ostrý program | lab |
 |---|---|
-| localStorage / sessionStorage `revize_el_X` (store, autosave, novinky_seen, email_rezim, email_migrace, banner_dismissed, theme, view, form_archiv, form_archiv_sirka, archiv_razeni, rz_info — sbalení pruhu v knihovně rozvaděčů, rz_cisla — čísla pozic v čelním pohledu, rz_predlohy — fotky předloh bez IndexedDB; v sessionStorage `obnova` — návrat na obrazovku po načtení stránky) | `revize_lab_X`; jiný klíč `K` → `revize_lab__K`; `key()`/`length`/`clear()` vidí a mažou jen labové |
+| localStorage / sessionStorage `revize_el_X` (store, autosave, novinky_seen, email_rezim, email_migrace, banner_dismissed, theme, view, form_archiv, form_archiv_sirka, archiv_razeni, rz_info — sbalení pruhu v knihovně rozvaděčů, rz_cisla — čísla pozic v čelním pohledu, rz_predlohy — fotky předloh bez IndexedDB, rz_soud — výchozí β soudobosti; v sessionStorage `obnova` — návrat na obrazovku po načtení stránky) | `revize_lab_X`; jiný klíč `K` → `revize_lab__K`; `key()`/`length`/`clear()` vidí a mažou jen labové |
 | událost `storage` | zápisy ostrého programu se zahodí, labové dostane program pod `revize_el_…` |
 | IndexedDB `revize-el-db` (i s odkazem na složku zálohy `backup_dir_handle` a fotkami předloh rozvaděčů `dok_rzPredlohy`) | `revize-lab-db` (jiný název `N` → `revize-lab--N`) |
 | `BroadcastChannel('revize-el-store')` (hlídání dvou oken) | `revize-lab-store` |

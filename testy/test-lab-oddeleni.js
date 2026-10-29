@@ -253,6 +253,11 @@ async function snimek(p) {
     const prOstry = await surova.evaluate(() => ({ ostry: localStorage.getItem('revize_el_rz_info'), lab: localStorage.getItem('revize_lab_rz_info') }));
     check('sbalení pruhu knihovny rozvaděčů: localStorage revize_lab_rz_info, revize_el_rz_info ostrého programu nedotčený',
       prOstry.lab === pr.cte && !!pr.cte && prOstry.ostry === 'rozbaleno', JSON.stringify([pr.cte, prOstry]));
+    // výchozí β soudobosti v Nastavení konfigurátoru (localStorage revize_el_rz_soud)
+    const so = await lab.evaluate(() => { rzsNastUlozit({ beta: { kuchyne: 0.45 } }); return rzsNast(); });
+    const soOstry = await surova.evaluate(() => ({ ostry: localStorage.getItem('revize_el_rz_soud'), lab: localStorage.getItem('revize_lab_rz_soud') }));
+    check('soudobost: výchozí β jen v revize_lab_rz_soud, revize_el_rz_soud ostrého programu nedotčený',
+      so.beta && so.beta.kuchyne === 0.45 && /0\.45/.test(soOstry.lab || '') && soOstry.ostry === null, JSON.stringify(soOstry));
     await surova.evaluate(() => localStorage.removeItem('revize_el_rz_info'));   // ať ho neshodí kontrola „žádný klíč revize_el_…"
     // návrat na obrazovku po načtení stránky (sessionStorage revize_el_obnova)
     const ob = await lab.evaluate(() => { obnovaZapsat(); return { klice: Object.keys(sessionStorage).join(','), cte: !!sessionStorage.getItem('revize_el_obnova') }; });
