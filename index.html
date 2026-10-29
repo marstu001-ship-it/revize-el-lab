@@ -30841,12 +30841,17 @@ var ROZV_KAT = [
   { k: 'AFDD', nazev: 'Ochrana před obloukem (AFDD)',    ozn: '-FA',    barva: '#ece3f6', etim: '',         pole: ['In', 'char', 'icn', 'idn', 'rcdTyp', 'ue'] },
   { k: 'SPD',  nazev: 'Přepěťová ochrana (SPD)',         ozn: 'SPD',    barva: '#fbe5c4', etim: 'EC000941', pole: ['spdTrida', 'up', 'ue'] },
   { k: 'FU',   nazev: 'Pojistkový odpínač',              ozn: '-FU',    barva: '#efefef', etim: '',         pole: ['In', 'ue'] },
-  { k: 'KM',   nazev: 'Stykač',                          ozn: '-KM',    barva: '#e3f1e0', etim: '',         pole: ['In', 'ue'] },
-  { k: 'KT',   nazev: 'Časové relé / spínací hodiny',    ozn: '-KT',    barva: '#e3f1e0', etim: '',         pole: ['ue'] },
-  { k: 'KA',   nazev: 'Instalační relé',                 ozn: '-KA',    barva: '#e3f1e0', etim: '',         pole: ['In', 'ue'] },
+  { k: 'KM',   nazev: 'Stykač',                          ozn: '-KM',    barva: '#e3f1e0', etim: '',         pole: ['In', 'ue', 'uc', 'kontakty', 'ieAc1', 'peAc3'] },
+  { k: 'KT',   nazev: 'Časové relé / spínací hodiny',    ozn: '-KT',    barva: '#e3f1e0', etim: '',         pole: ['ue', 'uc', 'kontakty', 'rozsah'] },
+  { k: 'KA',   nazev: 'Relé (instalační, impulzní, monitorovací)', ozn: '-KA', barva: '#e3f1e0', etim: '', pole: ['In', 'ue', 'uc', 'kontakty'] },
   { k: 'PJ',   nazev: 'Elektroměr / měřicí přístroj',    ozn: '-PJ',    barva: '#efefdc', etim: '',         pole: ['In', 'ue'] },
-  { k: 'HL',   nazev: 'Signálka',                        ozn: '-HL',    barva: '#fff3c4', etim: '',         pole: ['ue'] },
-  { k: 'SF',   nazev: 'Ovladač / přepínač',              ozn: '-SF',    barva: '#efefef', etim: '',         pole: ['In', 'ue'] },
+  { k: 'HL',   nazev: 'Kontrolka',                       ozn: '-HL',    barva: '#fff3c4', etim: '',         pole: ['ue', 'uc', 'montaz'] },
+  // kód SF zůstává kvůli starým rozvaděčům a souborům; nové přístroje dostávají -SB (2026-10-29)
+  { k: 'SF',   nazev: 'Tlačítko / ovladač / přepínač',   ozn: '-SB',    barva: '#efefef', etim: '',         pole: ['In', 'ue', 'kontakty', 'montaz'] },
+  // ovládací obvody (2026-10-29)
+  { k: 'MS',   nazev: 'Motorový spouštěč',               ozn: '-QM',    barva: '#f3e1d6', etim: '',         pole: ['In', 'rozsah', 'icu', 'ue'] },
+  { k: 'PRISL', nazev: 'Příslušenství přístroje (spoušť, pomocný kontakt…)', ozn: '', barva: '#e8e2f2', etim: '', pole: ['prislTyp', 'uc', 'kontakty', 'prislK', 'montaz'], prisl: true },
+  { k: 'VNEJSI', nazev: 'Prvek mimo rozvaděč (tlačítko, HDO, termostat…)', ozn: '-SB', barva: '#f0f0f0', etim: '', pole: ['prislTyp', 'kontakty', 'uc'], vnejsi: true },
   { k: 'X',    nazev: 'Svorky',                          ozn: '-X',     barva: '#e2e2e2', etim: '',         pole: [] },
   // transformátory, zdroje, zásuvky a ostatní (pokyn uživatele 2026-10-22 — zvonek, LED pásky, domácí telefon)
   { k: 'TR',   nazev: 'Transformátor (zvonkový, bezpečnostní, ovládací)', ozn: '-T', barva: '#efe4d2', etim: '', pole: ['vykon', 'uVstup', 'uVystup'] },
@@ -30886,8 +30891,56 @@ var ROZV_POLE = {
   uVstup:   { nazev: 'Vstupní napětí', jedn: 'V', text: true, ph: '230' },
   uVystup:  { nazev: 'Výstupní napětí', jedn: 'V', text: true, ph: '8/12/24 nebo 24 DC' },
   iVystup:  { nazev: 'Výstupní proud', jedn: 'A', cislo: true },
-  ozn:      { nazev: 'Předpona označení', text: true, ph: '-A' }                   // jen „Ostatní přístroj"
+  ozn:      { nazev: 'Předpona označení', text: true, ph: '-A' },                  // jen „Ostatní přístroj"
+  // ovládací obvody (2026-10-29) — vše nepovinné, nic se nedopočítává
+  uc:       { nazev: 'Napětí cívky Uc', text: true, ph: '230 V AC' },
+  kontakty: { nazev: 'Kontakty (Z zapínací, V rozpínací, P přepínací)', text: true, ph: '2Z, 1Z1V, 1P' },
+  ieAc1:    { nazev: 'Ie AC-1', jedn: 'A', cislo: true },
+  peAc3:    { nazev: 'Pe AC-3', jedn: 'kW', cislo: true },
+  rozsah:   { nazev: 'Rozsah nastavení', text: true, ph: '6,3–10 A / 0,5–10 min' },
+  prislK:   { nazev: 'Hodí se k řadám', text: true, ph: 'LTN, LTE (prázdné = ke všem)' },
+  montaz:   { nazev: 'Montáž', volby: ['', 'lista', 'bok vlevo', 'bok vpravo', 'dvere', 'mimo'], popisky: ['výrobce neuvádí', 'na lištu', 'bok vlevo', 'bok vpravo', 'na dveře', 'mimo rozvaděč'] },
+  prislTyp: { nazev: 'Druh', volby: [] }   // volby podle kategorie — ROZV_PRISL_TYPY / ROZV_VNEJSI_TYPY
 };
+// Druh příslušenství a prvku mimo rozvaděč (2026-10-29). Ze sloupce
+// typ_prislusenstvi, jinak z názvu (rozvPrislTypZTextu).
+var ROZV_PRISL_TYPY = [['nap', 'napěťová spoušť'], ['podp', 'podpěťová spoušť'], ['pom', 'pomocný kontakt'], ['sig', 'signalizační kontakt'], ['pohon', 'motorový pohon']];
+var ROZV_VNEJSI_TYPY = [['hrib', 'vyrážecí tlačítko (CENTRAL STOP)'], ['tlacitko', 'tlačítko / ovladač'], ['hdo', 'kontakt HDO'], ['termostat', 'termostat'], ['cidlo', 'čidlo / snímač'], ['vystup', 'výstup na svorky (dohled, EZS…)'], ['jine', 'jiný prvek']];
+// Montáž u prvku mimo rozvaděč / na dveřích; příslušenství se přichytí na bok.
+var ROZV_MONTAZ = { lista: 'lista', 'na listu': 'lista', din: 'lista', 'bok vlevo': 'bok vlevo', 'levy bok': 'bok vlevo', vlevo: 'bok vlevo', 'bok vpravo': 'bok vpravo',
+  'pravy bok': 'bok vpravo', vpravo: 'bok vpravo', dvere: 'dvere', 'na dvere': 'dvere', mimo: 'mimo', 'mimo rozvadec': 'mimo', vnejsi: 'mimo' };
+function rozvMontazZTextu(v) { var n = rozvNorm(v).trim().replace(/\s+/g, ' '); return ROZV_MONTAZ[n] || ''; }
+function rozvPrislTypZTextu(v, kat) {
+  var n = rozvNorm(v).trim(); if (!n) return '';
+  var L = kat === 'VNEJSI' ? ROZV_VNEJSI_TYPY : ROZV_PRISL_TYPY;
+  for (var i = 0; i < L.length; i++) if (n === L[i][0] || n === rozvNorm(L[i][1])) return L[i][0];
+  if (kat === 'VNEJSI') {
+    if (/vyraz|central|nouz|stop|hrib/.test(n)) return 'hrib';
+    if (/hdo/.test(n)) return 'hdo';
+    if (/termost/.test(n)) return 'termostat';
+    if (/cidl|snimac|senzor|pir|soumrak|detektor/.test(n)) return 'cidlo';
+    if (/vystup|dohled|ezs|eps/.test(n)) return 'vystup';
+    if (/tlacit|ovladac|spinac|prepinac/.test(n)) return 'tlacitko';
+    return '';
+  }
+  if (/podpet|undervolt/.test(n)) return 'podp';
+  if (/napet|vypinaci spoust|shunt/.test(n)) return 'nap';
+  if (/signal|porucho/.test(n)) return 'sig';
+  if (/pohon|motor/.test(n)) return 'pohon';
+  if (/pomocn|kontakt|auxil/.test(n)) return 'pom';
+  return '';
+}
+// Druh pro přístroj: výslovný, jinak z názvu.
+function rozvPrislTyp(p) {
+  if (!p) return '';
+  if (p.kat !== 'PRISL' && p.kat !== 'VNEJSI') return '';
+  return p.prislTyp || rozvPrislTypZTextu(p.nazev, p.kat) || rozvPrislTypZTextu([p.typ, p.pozn].join(' '), p.kat) || (p.kat === 'VNEJSI' ? 'jine' : '');
+}
+function rozvPrislTypNazev(t, kat) {
+  var L = kat === 'VNEJSI' ? ROZV_VNEJSI_TYPY : ROZV_PRISL_TYPY;
+  for (var i = 0; i < L.length; i++) if (L[i][0] === t) return L[i][1];
+  return kat === 'VNEJSI' ? 'prvek mimo rozvaděč' : 'příslušenství';
+}
 // Společné pro všechny přístroje: poly (ETIM: Number of poles), sirka
 // (ETIM: Width in number of modular spacings — desetinné, 1,5 je běžné),
 // pv (W/pól při In; ETIM: Power loss), vyrobce, rada, typ (obj. číslo).
@@ -30938,8 +30991,8 @@ var ROZV_CISELNE = ['In', 'icn', 'icu', 'ics', 'idn', 'up', 'sirka', 'pv', 'ue',
 // PSC (etapa 5a): u přístroje jen když jsou vyplněné — položky DBO zůstávají bajt po bajtu stejné.
 var ROZV_PRISTROJ_PSC = ['icw', 'nastaveni', 'sirkaMm', 'vyskaMm', 'hloubkaMm'];
 // Transformátor, zdroj, ostatní (2026-10-22): taky jen vyplněné — starší položky zůstávají beze změny.
-var ROZV_PRISTROJ_NAVIC = ['vykon', 'uVstup', 'uVystup', 'iVystup', 'ozn'];
-var ROZV_PRISTROJ_NAVIC_TEXT = ['uVstup', 'uVystup', 'ozn'];
+var ROZV_PRISTROJ_NAVIC = ['vykon', 'uVstup', 'uVystup', 'iVystup', 'ozn', 'uc', 'kontakty', 'ieAc1', 'peAc3', 'rozsah', 'prislK', 'montaz', 'prislTyp'];
+var ROZV_PRISTROJ_NAVIC_TEXT = ['uVstup', 'uVystup', 'ozn', 'uc', 'kontakty', 'rozsah', 'prislK', 'montaz', 'prislTyp'];
 var ROZV_POLE_KLICE = ['nazev', 'vyrobce', 'rada', 'typ', 'provedeni', 'material', 'sirkaMm', 'vyskaMm', 'hloubkaMm', 'uzitnaSirkaMm', 'uzitnaVyskaMm',
   'ip', 'ik', 'ina', 'penc', 'icw', 'rozmery', 'trida', 'pozn', 'zdroj', 'overeno'];
 var ROZV_POLE_CISELNE = ['sirkaMm', 'vyskaMm', 'hloubkaMm', 'uzitnaSirkaMm', 'uzitnaVyskaMm', 'ina', 'penc', 'icw'];
@@ -31064,18 +31117,33 @@ function rozvVestavene() {
   });
   P('fu-1-1038', 'FU', 'Pojistkový odpínač 1P 10×38', { poly: '1', In: 32, sirka: 1 });
   P('fu-3-1038', 'FU', 'Pojistkový odpínač 3P 10×38', { poly: '3', In: 32, sirka: 3 });
-  P('km-20-2', 'KM', 'Instalační stykač 20 A, 2 kontakty', { poly: '2', In: 20, sirka: 1 });
-  P('km-25-4', 'KM', 'Instalační stykač 25 A, 4 kontakty', { poly: '4', In: 25, sirka: 2 });
-  P('km-40-4', 'KM', 'Instalační stykač 40 A, 4 kontakty', { poly: '4', In: 40, sirka: 3 });
-  P('kt-rele', 'KT', 'Časové relé (1 modul)', { sirka: 1 });
+  // stykače a relé: kontakty a napětí cívky (2026-10-29) — rozvaděče mají kopii, takže se nezmění
+  P('km-20-2', 'KM', 'Instalační stykač 20 A, 2 kontakty', { poly: '2', In: 20, sirka: 1, kontakty: '2Z', uc: '230 V AC' });
+  P('km-25-2', 'KM', 'Instalační stykač 25 A, 2Z, 230 V AC', { poly: '2', In: 25, sirka: 1, kontakty: '2Z', uc: '230 V AC' });
+  P('km-25-4', 'KM', 'Instalační stykač 25 A, 4 kontakty', { poly: '4', In: 25, sirka: 2, kontakty: '4Z', uc: '230 V AC' });
+  P('km-40-4', 'KM', 'Instalační stykač 40 A, 4 kontakty', { poly: '4', In: 40, sirka: 3, kontakty: '4Z', uc: '230 V AC' });
+  P('kt-rele', 'KT', 'Časové relé (1 modul)', { sirka: 1, kontakty: '1P', uc: '230 V AC' });
   P('kt-hodiny', 'KT', 'Spínací hodiny (2 moduly)', { sirka: 2 });
-  P('ka-rele', 'KA', 'Instalační relé (1 modul)', { sirka: 1 });
+  P('kt-schod', 'KT', 'Schodišťový automat (1 modul)', { sirka: 1, kontakty: '1Z', uc: '230 V AC', rozsah: '0,5–10 min' });
+  P('ka-rele', 'KA', 'Instalační relé (1 modul)', { sirka: 1, kontakty: '1P', uc: '230 V AC' });
+  P('ka-imp', 'KA', 'Impulzní relé 1Z (1 modul)', { sirka: 1, kontakty: '1Z', uc: '230 V AC' });
   P('pj-1f', 'PJ', 'Elektroměr 1f (1 modul)', { poly: '1+N', sirka: 1 });
   P('pj-3f', 'PJ', 'Elektroměr 3f (4 moduly)', { poly: '3+N', sirka: 4 });
-  P('hl-1', 'HL', 'Signálka (1 modul)', { sirka: 1 });
+  P('hl-1', 'HL', 'Signálka (1 modul)', { sirka: 1, uc: '230 V AC' });
   P('hl-3', 'HL', 'Signálka 3f (1 modul)', { sirka: 1 });
-  P('sf-tl', 'SF', 'Ovladač – tlačítko (1 modul)', { sirka: 1 });
-  P('sf-pr', 'SF', 'Přepínač (1 modul)', { sirka: 1 });
+  P('sf-tl', 'SF', 'Ovladač – tlačítko (1 modul)', { sirka: 1, kontakty: '1Z' });
+  P('sf-zapvyp', 'SF', 'Tlačítko ZAP/VYP (1 modul)', { sirka: 1, kontakty: '1Z1V' });
+  P('sf-pr', 'SF', 'Přepínač (1 modul)', { sirka: 1, kontakty: '1Z' });
+  P('sf-auto', 'SF', 'Přepínač 0/1/AUTO (1 modul)', { sirka: 1, kontakty: '2Z' });
+  // motorový spouštěč, příslušenství, prvky mimo rozvaděč (2026-10-29) — obecné, neověřené;
+  // montáž příslušenství prázdná = výrobce neuvádí → program se zeptá na stranu
+  P('ms-3-10', 'MS', 'Motorový spouštěč 3P 6,3–10 A', { poly: '3', In: 10, rozsah: '6,3–10 A', sirka: 2.5 });
+  P('prisl-nap', 'PRISL', 'Napěťová spoušť 230 V AC', { prislTyp: 'nap', uc: '230 V AC', sirka: 1 });
+  P('prisl-podp', 'PRISL', 'Podpěťová spoušť 230 V AC', { prislTyp: 'podp', uc: '230 V AC', sirka: 1 });
+  P('prisl-pom', 'PRISL', 'Pomocný kontakt 1Z1V', { prislTyp: 'pom', kontakty: '1Z1V', sirka: 0.5 });
+  P('vn-vyraz', 'VNEJSI', 'Vyrážecí tlačítko CENTRAL STOP', { prislTyp: 'hrib', kontakty: '1Z1V' });
+  P('vn-tl', 'VNEJSI', 'Tlačítko (mimo rozvaděč)', { prislTyp: 'tlacitko', kontakty: '1Z' });
+  P('vn-hdo', 'VNEJSI', 'Kontakt HDO (přijímač HDO)', { prislTyp: 'hdo', kontakty: '1Z' });
   // transformátory, zdroje, zásuvka (2026-10-22) — obecné, Pv prázdné, šířky běžné modulové, neověřené
   P('tr-zvon-8', 'TR', 'Zvonkový transformátor 8/12 V 8 VA', { uVstup: '230', uVystup: '8/12', vykon: 8, sirka: 2 });
   P('tr-zvon-16', 'TR', 'Zvonkový transformátor 8/12 V 16 VA', { uVstup: '230', uVystup: '8/12', vykon: 16, sirka: 2 });
@@ -31147,7 +31215,8 @@ var ROZV_KAT_SKUPINY = [
   { k: 'FIFA', nazev: 'RCBO', kat: ['FIFA'] }, { k: 'AFDD', nazev: 'AFDD', kat: ['AFDD'] }, { k: 'SPD', nazev: 'SPD', kat: ['SPD'] },
   { k: 'QM', nazev: 'Vypínače', kat: ['QM'] }, { k: 'FU', nazev: 'Pojistky', kat: ['FU'] },
   { k: 'TRZD', nazev: 'Trafa a zdroje', kat: ['TR', 'ZD'] },
-  { k: 'jine', nazev: 'Ostatní', kat: ['KM', 'KT', 'KA', 'PJ', 'HL', 'SF', 'X', 'XS', 'JINE', 'REZ'] },
+  { k: 'ovl', nazev: 'Ovládání', kat: ['KM', 'KA', 'KT', 'SF', 'HL', 'MS', 'PRISL', 'VNEJSI'] },
+  { k: 'jine', nazev: 'Ostatní', kat: ['PJ', 'X', 'XS', 'JINE', 'REZ'] },
   { k: 'QF', nazev: 'Výkonové jističe', kat: ['QF'], psc: true }, { k: 'QS', nazev: 'Odpínače', kat: ['QS'], psc: true },
   { k: 'psc-mer', nazev: 'Měření a přípojnice', kat: ['TA', 'PM', 'XN', 'XPE'], psc: true }
 ];
@@ -32012,7 +32081,9 @@ function rozvCelo(p) {
     case 'KA': return ['KA'];
     case 'PJ': return ['kWh'];
     case 'HL': return ['◉'];
-    case 'SF': return ['SF'];
+    case 'SF': return [p.kontakty ? 'SB' : 'SF'];   // starý přístroj bez kontaktů vypadá jako dřív
+    case 'MS': return ['M', p.rozsah || (In ? In + ' A' : '')];
+    case 'PRISL': return [{ nap: 'spoušť', podp: 'U<', pom: 'PK', sig: 'SK', pohon: 'pohon' }[rozvPrislTyp(p)] || 'přísl.', p.uc ? rozvNapeti(String(p.uc).replace(/\s*(AC|DC|~|=)\s*$/i, ''), true) : ''];
     case 'TR': return [p.uVstup && p.uVystup ? String(p.uVstup).trim().replace(/\s*V$/i, '') + '/' + rozvNapeti(p.uVystup, true) : (rozvNapeti(p.uVystup, true) || 'T'), rozvVykonText(p)];
     case 'ZD': return [rozvNapeti(p.uVystup, true) || '~/=', rozvVykonText(p)];
     case 'XS': return ['zás.', In ? In + ' A' : ''];
@@ -32924,8 +32995,10 @@ function rozvReEsc(s) { return String(s).replace(/[.*+?^${}()|[\]\\\/]/g, '\\$&'
 function rozvPredpona(p) {
   var k = rozvKat(p && p.kat); if (!k) return '';
   if (k.predpona) return String(p.ozn || '').trim() || k.ozn;
+  if (k.vnejsi) return ROZV_VNEJSI_OZN[rozvPrislTyp(p)] || '-A';   // prvek mimo rozvaděč — podle druhu
   return k.ozn;
 }
+var ROZV_VNEJSI_OZN = { hrib: '-SB', tlacitko: '-SB', hdo: '-HDO', termostat: '-BT', cidlo: '-B', vystup: '-A', jine: '-A' };
 // Vypínače (kategorie QM, 2026-10-27): -QH = hlavní vypínač (QH1, QH2…),
 // -Q = ostatní vypínače a odpínače. Hlavní = výslovně zaškrtnutý
 // („Hlavní vypínač" ve vlastnostech, x.hlavni = true); když žádný není,
@@ -37061,7 +37134,12 @@ var ROZV_KAT_ALIAS = { 'fi/fa': 'FIFA', 'rcbo': 'FIFA', 'p': 'PJ', 'sa': 'SF', '
   'transformator': 'TR', 'trafo': 'TR', 'zvonkovy transformator': 'TR', 'bezpecnostni transformator': 'TR', 'ovladaci transformator': 'TR', 't': 'TR',
   'zdroj': 'ZD', 'napajeci zdroj': 'ZD', 'spinany zdroj': 'ZD', 'g': 'ZD',
   'zasuvka': 'XS', 'zasuvka na listu': 'XS', 'zasuvka na din listu': 'XS', 'modulova zasuvka': 'XS',
-  'ostatni': 'JINE', 'ostatni pristroj': 'JINE', 'jine': 'JINE', 'jiny': 'JINE', 'a': 'JINE' };
+  'ostatni': 'JINE', 'ostatni pristroj': 'JINE', 'jine': 'JINE', 'jiny': 'JINE', 'a': 'JINE',
+  // ovládací obvody (2026-10-29)
+  'sb': 'SF', 'ovladac / prepinac': 'SF', 'kontrolka': 'HL', 'impulzni rele': 'KA', 'pomocne rele': 'KA', 'monitorovaci rele': 'KA',
+  'schodistovy automat': 'KT', 'ms': 'MS', 'qm motorovy': 'MS', 'motorovy spoustec': 'MS', 'spoustec': 'MS',
+  'prislusenstvi': 'PRISL', 'napetova spoust': 'PRISL', 'podpetova spoust': 'PRISL', 'pomocny kontakt': 'PRISL', 'signalizacni kontakt': 'PRISL',
+  'motorovy pohon': 'PRISL', 'vnejsi': 'VNEJSI', 'vnejsi prvek': 'VNEJSI', 'prvek mimo rozvadec': 'VNEJSI', 'mimo rozvadec': 'VNEJSI' };
 
 function rozvKatZTextu(v) {
   var s = String(v || '').trim(); if (!s) return '';
@@ -37099,7 +37177,7 @@ function rozvValidovat(raw) {
   var cislo = function (k, nazev, povinne) {
     var t = String(o[k] == null ? '' : o[k]).trim();
     if (!t) { if (povinne) chyby.push('chybí ' + nazev); return ''; }
-    var n = rozvCislo(t.replace(/\s*(ka|ma|kv|va|a|v|w)$/i, ''));   // „16 A", „30 mA", „1,5 kV", „16 VA" projdou
+    var n = rozvCislo(t.replace(/\s*(ka|ma|kv|va|kw|a|v|w)$/i, ''));   // „16 A", „30 mA", „1,5 kV", „16 VA" projdou
     if (n === '' || n < 0) { chyby.push(nazev + ' „' + t + '" není číslo'); return ''; }
     return n;
   };
@@ -37117,12 +37195,18 @@ function rozvValidovat(raw) {
     r.sirkaMm = mmS; r.vyskaMm = mmV; r.hloubkaMm = cislo('hloubkaMm', 'hloubka v mm', false);
     var mmPovinne = kat === 'QF' || kat === 'QS';
     if (mmPovinne && !maMm) chyby.push('u ' + (rozvKat(kat) || {}).nazev + ' jsou povinné rozměry v mm (šířka a výška)');
-    r.sirka = cislo('sirka', 'šířka v modulech', !maMm && !mmPovinne);
+    var mont = rozvMontazZTextu(o.montaz), mimoR = kat === 'VNEJSI' || mont === 'mimo' || mont === 'dvere';
+    r.sirka = cislo('sirka', 'šířka v modulech', !maMm && !mmPovinne && !mimoR);
     if (r.sirka === 0 || r.sirka > 72) { chyby.push('šířka v modulech musí být větší než 0 (a rozumná)'); r.sirka = ''; }
     ['In', 'icn', 'icu', 'ics', 'idn', 'up', 'pv', 'ue', 'icw'].forEach(function (k) {
       r[k] = cislo(k, k === 'In' ? 'In' : (ROZV_POLE[k] ? ROZV_POLE[k].nazev : k) , false);
     });
     r.nastaveni = t0('nastaveni');
+    // ovládací obvody (2026-10-29) — vše nepovinné; neznámá montáž = „výrobce neuvádí"
+    r.uc = t0('uc'); r.rozsah = t0('rozsah'); r.prislK = t0('prislK'); r.montaz = mont;
+    r.kontakty = t0('kontakty').toUpperCase().replace(/\s+/g, '');
+    r.ieAc1 = cislo('ieAc1', 'Ie AC-1', false); r.peAc3 = cislo('peAc3', 'Pe AC-3', false);
+    r.prislTyp = kat === 'PRISL' || kat === 'VNEJSI' ? rozvPrislTypZTextu(o.prislTyp, kat) : '';
     // transformátor, zdroj, ostatní (2026-10-22) — vše volitelné
     r.vykon = cislo('vykon', 'výkon', false); r.iVystup = cislo('iVystup', 'výstupní proud', false);
     r.uVstup = t0('uVstup'); r.uVystup = t0('uVystup');
@@ -37213,6 +37297,14 @@ var ROZV_CSV = [
   ['u_vystup', 'uVystup', ['uvystup', 'vystupninapeti', 'napetivystup']],
   ['i_vystup', 'iVystup', ['ivystup', 'vystupniproud', 'proudvystup']],
   ['nastaveni', 'nastaveni', ['nastaveni', 'nastavenispousti']],
+  ['uc', 'uc', ['uc', 'napeticivky', 'ucv']],
+  ['kontakty', 'kontakty', ['kontakty', 'kontakt']],
+  ['ie_ac1', 'ieAc1', ['ieac1', 'ieac1a']],
+  ['pe_ac3_kw', 'peAc3', ['peac3kw', 'peac3']],
+  ['rozsah_nastaveni', 'rozsah', ['rozsahnastaveni', 'rozsah']],
+  ['prislusenstvi_k', 'prislK', ['prislusenstvik', 'prislusenstvi']],
+  ['montaz', 'montaz', ['montaz']],
+  ['typ_prislusenstvi', 'prislTyp', ['typprislusenstvi', 'druhprislusenstvi', 'typprvku']],
   ['provedeni', 'provedeni', ['provedeni']],
   ['material', 'material', ['material']],
   ['typ_skrine', 'typSkrine', ['typskrine', 'typskrin', 'druhskrine']],
@@ -37499,10 +37591,12 @@ function rozvPolozkaFormular(it) {
       pole('nazev', 'Název', k.predpona ? { span: 'span2', req: true, ph: 'např. Stmívač, Zvonek, Domácí telefon' } : { span: 'span2', ph: 'Nechte prázdné — složí se z údajů' }) +
       pole('vyrobce', 'Výrobce') + pole('rada', 'Řada') + pole('typ', 'Typ / obj. číslo') +
       pole('poly', 'Póly', { volby: ROZV_POLY }) +
-      pole('sirka', 'Šířka v modulech', k.mm ? { cislo: true, nepov: true, ph: 'na montážní desku v mm' }
+      pole('sirka', 'Šířka v modulech', k.mm || k.vnejsi ? { cislo: true, nepov: true, ph: k.vnejsi ? 'mimo rozvaděč — nemá' : 'na montážní desku v mm' }
         : k.predpona && rozvKnihPsc() ? { cislo: true, ph: '1 – nebo rozměry v mm níž' } : { req: true, cislo: true, ph: '1 nebo 1,5' }) +
       k.pole.map(function (pk) {
         var d = ROZV_POLE[pk], jedn = pk === 'vykon' && k.vykonW ? 'W' : d.jedn;
+        if (pk === 'montaz') return pole(pk, d.nazev, { volby: d.volby.slice(1).map(function (v, i) { return [v, d.popisky[i + 1]]; }), nepov: true });
+        if (pk === 'prislTyp') return pole(pk, d.nazev, { volby: k.k === 'VNEJSI' ? ROZV_VNEJSI_TYPY : ROZV_PRISL_TYPY, nepov: true });
         return pole(pk, d.nazev + (jedn ? ' (' + jedn + ')' : ''), d.volby ? { volby: d.volby } : d.text ? { ph: d.ph || '' } : { cislo: true });
       }).join('') +
       (k.psc || k.k === 'FU' || rozvKnihPsc() ? pole('sirkaMm', 'Šířka (mm)', { cislo: true, req: !!k.mm, nepov: !k.mm, ph: 'montážní deska' }) +

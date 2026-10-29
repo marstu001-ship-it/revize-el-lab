@@ -100,7 +100,7 @@ function pomocnik() {
       vyrobci: Array.from(new Set(v.map(x => x.vyrobce))).join(),
       pv: v.filter(x => x.druh === 'pristroj').filter(x => x.pv !== '' || x.icn !== '' || x.icu !== '' || x.ics !== '').length,
       skrineInA: v.filter(x => x.druh === 'skrin' && (x.ina !== '' || x.penc !== '')).length,
-      sirky: v.filter(x => x.druh === 'pristroj' && !(x.sirka > 0)).length,
+      sirky: v.filter(x => x.druh === 'pristroj' && x.kat !== 'VNEJSI' && !(x.sirka > 0)).length,   // prvek mimo rozvaděč šířku nemá
       kat: Array.from(new Set(v.filter(x => x.druh === 'pristroj').map(x => x.kat))).length,
       jistic: !!v.find(x => x.nazev === 'Jistič 1P B16' && x.In === 16 && x.char === 'B' && x.poly === '1' && x.sirka === 1),
       chranic: !!v.find(x => x.nazev === 'Chránič 4P 40 A / 30 mA typ A' && x.idn === 30 && x.rcdTyp === 'A'),
@@ -116,7 +116,7 @@ function pomocnik() {
   check('vestavěné: jen výrobce „obecný", nic ověřeného', vest.vyrobci === 'obecný' && vest.overene === 0, vest.vyrobci + ' / ověřeno ' + vest.overene);
   check('vestavěné: Pv, Icn, Icu, Ics, InA ani Penc nevymyšlené (prázdné)', vest.pv === 0 && vest.skrineInA === 0, vest.pv + ' / ' + vest.skrineInA);
   check('vestavěné: každý přístroj má šířku v modulech, i ½ modulu', vest.sirky === 0 && vest.polmodul);
-  check('vestavěné: všech 18 kategorií (i transformátor, zdroj, zásuvka na lištu)', vest.kat === 18, String(vest.kat));
+  check('vestavěné: všech 21 kategorií (i transformátor, zdroj, zásuvka na lištu, motorový spouštěč, příslušenství, prvek mimo rozvaděč)', vest.kat === 21, String(vest.kat));
   check('vestavěné: jistič, chránič, RCBO, SPD, hlavní vypínač v zadaném tvaru', vest.jistic && vest.chranic && vest.rcbo && vest.spd && vest.qm);
   check('vestavěné skříně: 1–4×12, 2–4×18 plast nástěnné i zapuštěné, 3–4×24 oceloplech, 5–8×24 oceloplech nástěnné, 10 a 12×24 stojanové',
     vest.skrine === '1x12pn,1x12pz,2x12pn,2x12pz,3x12pn,3x12pz,4x12pn,4x12pz,2x18pn,2x18pz,3x18pn,3x18pz,4x18pn,4x18pz,3x24on,4x24on,5x24on,6x24on,7x24on,8x24on,10x24os,12x24os', vest.skrine);
@@ -191,14 +191,14 @@ function pomocnik() {
   check('filtr typu: průmyslové 6 (u položky „průmyslová"), historické zatím nic, domovní 16', f.prum.n === 6 && f.prum.akt === 'Průmyslové' && /průmyslová/.test(f.prum.meta) &&
     /Nic neodpovídá/.test(f.hist) && f.dom === 16, JSON.stringify(f.prum) + ' / ' + f.dom);
   check('karta Skříně: tlačítko „📐 Vlastní velikost skříně"', /📐 Vlastní velikost skříně/.test(f.velBtn), f.velBtn);
-  check('přístroje: kategorie jako řada tlačítek a výrobce, póly, In, charakteristika vždy vidět', f.viditelne.skupiny === 'Vše·Jističe·Chrániče·RCBO·AFDD·SPD·Vypínače·Pojistky·Trafa a zdroje·Ostatní' &&
+  check('přístroje: kategorie jako řada tlačítek a výrobce, póly, In, charakteristika vždy vidět', f.viditelne.skupiny === 'Vše·Jističe·Chrániče·RCBO·AFDD·SPD·Vypínače·Pojistky·Trafa a zdroje·Ovládání·Ostatní' &&
     f.viditelne.sel === 'vyrobce,poly,In,char', JSON.stringify(f.viditelne));
   check('sbalené „Další filtry" jen IΔn, typ chrániče, jen ověřené, jen oblíbené', f.viditelne.sbalene && /^Další filtry/.test(f.viditelne.souhrn), f.viditelne.souhrn);
   check('kategorie Jističe (tlačítko se zvýrazní), počítadlo „Zobrazeno 50 z 80"', /^Zobrazeno 50 z 80 \(v knihovně \d+\)/.test(f.fa) && f.faAkt === 'Jističe', f.fa + ' · ' + f.vse);
   check('filtr: póly + charakteristika + In → právě Jistič 1P B16; „Zrušit filtry" vše vrátí', f.b16 === 'Jistič 1P B16' && /Zrušit filtry/.test(f.pocetB16) &&
     /^Zobrazeno 50 z \d+$/.test(f.poZruseni.pocet) && f.poZruseni.akt === 'Vše', f.b16 + ' · ' + f.pocetB16 + ' · ' + JSON.stringify(f.poZruseni));
   check('filtr IΔn 300 mA u chráničů (v Dalších filtrech, souhrn řekne kolik zapnuto)', f.fi300 === 2 && /1 zapnuto/.test(f.pocetFiltru), f.fi300 + ' ' + f.pocetFiltru);
-  check('„Ostatní" = stykače, relé, hodiny, elektroměry, signálky, ovladače, svorky, zásuvka na lištu, rezervy', f.jine === 'HL,KA,KM,KT,PJ,REZ,SF,X,XS', f.jine);
+  check('„Ostatní" = elektroměry, svorky, zásuvka na lištu, rezervy (stykače, relé, tlačítka a signálky jsou v „Ovládání")', f.jine === 'PJ,REZ,X,XS', f.jine);
   check('fulltext bez háčků a velikosti písmen, víc slov', f.q === 'RCBO 1+N C16 / 30 mA typ A', f.q);
   check('fulltext bez výsledku řekne „Nic neodpovídá"', /Nic neodpovídá/.test(f.qNic));
   check('„jen ověřené" — vestavěné ověřené nejsou', f.over === 0, String(f.over));
