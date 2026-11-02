@@ -33,7 +33,7 @@
 <script>
 (function() {
   'use strict';
-  var LAB_VERZE = 'v1.37 · 2026-10-29';   // bumpni spolu s CACHE_NAME v sw.js
+  var LAB_VERZE = 'v1.38 · 2026-11-02';   // bumpni spolu s CACHE_NAME v sw.js
 
   // ── klíče localStorage / sessionStorage ────────────────────────────────
   function klic(k) {
@@ -2458,7 +2458,7 @@ html.dark .rz-imp-chyby{background:#3a1f1c;border-color:#6b2c25}
 <body>
 
 <div class="topbar">
-  <div class="brand" data-action="home" style="cursor:pointer" title="Hlavní stránka">⚡ Revize <em>EL</em> <span class="ver">v9.134<span class="ver-date"> · 2026-10-25</span></span></div>
+  <div class="brand" data-action="home" style="cursor:pointer" title="Hlavní stránka">⚡ Revize <em>EL</em> <span class="ver">v9.135<span class="ver-date"> · 2026-10-30</span></span></div>
   <div class="topbar-right">
     <button class="btn btn-ghost" id="theme-toggle" data-action="toggleTheme" title="Přepnout světlý / tmavý režim">🌙</button>
     <button class="btn btn-ghost" id="view-toggle" data-action="toggleView" title="Přepnout zobrazení PC / Mobil">💻 PC</button>
@@ -31810,6 +31810,9 @@ DOK_TYPY.rozv.cist = function (koren) {
   d.rady = __rz ? dokKopie(__rz.rady) : [];
   if (__rz) { if (__rz.faze) d.faze = dokKopie(__rz.faze); else delete d.faze; }   // práh nesymetrie (etapa 4)
   if (__rz) { if (__rz.soud) d.soudobost = dokKopie(__rz.soud); else delete d.soudobost; }   // soudobost (2026-10-29)
+  // „výpočet soudobého příkonu" do PDF: chybí = zapnuto (rozvVyber) — ukládá se jen vypnuté,
+  // jinak by starý rozvaděč s Pi dostal pouhým otevřením Dokumentů nový klíč
+  if (d.dokVyber && d.dokVyber.soudobost === true) delete d.dokVyber.soudobost;
   if (__rz) { if (__rz.vnejsi && __rz.vnejsi.length) d.vnejsi = dokKopie(__rz.vnejsi); else delete d.vnejsi; }   // prvky mimo rozvaděč (ovládání)
   return d;
 };

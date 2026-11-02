@@ -200,7 +200,7 @@ Revize EL je single-page PWA (HTML + JS + service worker). Obsah se cachuje
 v prohlížeči přes `sw.js`, takže uživatel nevidí změny, dokud se neinvalidně
 cache.
 
-**Aktuální verze: v9.134 · 2026-10-25**
+**Aktuální verze: v9.135 · 2026-10-30**
 
 ## Povinné při každé změně kódu před commitem
 
@@ -1086,15 +1086,19 @@ informační pruh, karta Skříně".
   sirka_mm;vyska_mm;hloubka_mm;uzitna_sirka_mm;uzitna_vyska_mm;pv;ue;vykon;
   u_vstup;u_vystup;i_vystup;nastaveni;
   provedeni;material;typ_skrine;rady;moduly_v_rade;ip;ik;ina;penc;rozmery;
-  trida_ochrany;overeno;poznamka` (sloupce `icw`, `*_mm` a `nastaveni` přibyly
-  s PSC v etapě 5a, `vykon;u_vstup;u_vystup;i_vystup` 2026-10-22 —
-  staré CSV bez nich se načte beze změny). Pořadí ani všechny sloupce nejsou
+  trida_ochrany;overeno;poznamka;uc;kontakty;ie_ac1;pe_ac3_kw;rozsah_nastaveni;
+  prislusenstvi_k;montaz;typ_prislusenstvi` — **šablona 51 sloupců** (sloupce
+  `icw`, `*_mm` a `nastaveni` přibyly s PSC v etapě 5a, `vykon;u_vstup;
+  u_vystup;i_vystup` 2026-10-22, osm sloupců ovládacích obvodů od `uc` po
+  `typ_prislusenstvi` 2026-10-29 — **staré CSV se 43 i 50 sloupci se načte
+  beze změny**). Pořadí ani všechny sloupce nejsou
   povinné, hlavička se porovnává bez háčků a velikosti písmen (`ROZV_CSV`).
   Oddělovač `;`, `,` nebo tabulátor se pozná sám, uvozovky podle CSV,
   kódování UTF-8, jinak windows-1250 (CSV z českého Excelu).
   - `druh` = `pristroj` / `skrin` (prázdné: skříň, když má řady a nemá
     kategorii), `kategorie` = kód (QM, FA, FI, FI/FA nebo RCBO, AFDD, SPD,
-    FU, KM, KT, KA, PJ, HL, SF, X, REZ, TR, ZD, XS, JINE; i s pomlčkou) nebo
+    FU, KM, KT, KA, PJ, HL, SF (i SB — tlačítko), MS, PRISL, VNEJSI, X, REZ,
+    TR, ZD, XS, JINE; i s pomlčkou; neznámá kategorie řádek přeskočí) nebo
     české slovo (jistič, chránič, svodič přepětí, stykač, transformátor,
     trafo, zdroj, napájecí zdroj, zásuvka, ostatní…), `poly` = 1, 1+N, 2, 3, 3+N,
     4 (projde i „1P", „3P+N"), `in` A, `icn/icu/ics` kA, `idn` mA, `up` kV,
@@ -1109,7 +1113,26 @@ informační pruh, karta Skříně".
     `material` plast/oceloplech, **`typ_skrine` domovni / prumyslova /
     historicka** (i s háčky a velkým písmenem; prázdné nebo soubor bez
     sloupce = domovní, jiný text = chyba řádku), `trida_ochrany` I/II,
-    `overeno` ano/ne.
+    `overeno` ano/ne, `uc` napětí cívky (text), `kontakty` („2Z", „1Z1V",
+    „1P"), `ie_ac1` A, `pe_ac3_kw` kW, `rozsah_nastaveni` text,
+    `prislusenstvi_k` řady, ke kterým se příslušenství hodí (prázdné =
+    univerzální), **`montaz`** = `lista` / `bok vlevo` / `bok vpravo` /
+    `dvere` / `mimo` (projde i „din", „levý bok", „na dveře", „mimo
+    rozvaděč"; jiný text = „výrobce neuvádí"), **`typ_prislusenstvi`** —
+    u PRISL `nap` (napěťová spoušť), `podp` (podpěťová), `pom` (pomocný
+    kontakt), `sig` (signalizační), `pohon` (motorový pohon); u VNEJSI
+    `hrib` (vyrážecí tlačítko), `tlacitko`, `hdo`, `termostat`, `cidlo`,
+    `vystup`, `jine` — kód i celé české jméno; prázdné = odvodí se z názvu.
+  - **Data výrobců (`knihovna_vyrobcu`) do repozitáře nikdy** — jde
+    o interní soubor, který se importuje přetažením; v testech jen vymyšlení
+    „Výrobce A / B“.
+- **Konvence značení** (uživatel 2026-10-27 a 2026-10-29): **-QH** hlavní
+  vypínač (víc → -QH1, -QH2…), **-Q** ostatní vypínače a odpínače, **-QM**
+  motorový spouštěč (MS), **-KM** stykač, **-KT** časové relé / hodiny,
+  **-KA** relé, **-SB** tlačítko / ovladač / přepínač i vyrážecí tlačítko
+  mimo rozvaděč, **-HL** kontrolka, **-X** svorky; jističe -FA, chrániče -FI,
+  RCBO -FI/FA, pojistky -FU. Starší rozvaděč s -QM u vypínače se sám
+  nepřeznačí (viz „Vypínače: -QH hlavní, -Q ostatní“).
 - **Formát JSON** = export „⬇ Export mé knihovny (JSON)":
   `{ "_format": "revize-el-knihovna-rozvadecu", "_version": 1,
   "pristroje": [ … ], "skrine": [ … ] }`, položky s vnitřními klíči (výš).
@@ -2158,7 +2181,7 @@ soudobosti RDF" (oddíl Oteplení, `rotRdf`, `tech.rdf`) je jmenovitý
 součinitel rozvaděče podle ČSN EN IEC 61439 pro oteplení — **jiný pojem,
 nesahá se na něj**; pole Pi / Pm v tabulce listu 1 schématu (`tech.pi`,
 `tech.pm`) zůstávají ruční. Výpočet stojí na poli Pi vývodu a odhadu Pi
-(v1.35); Ib ani fáze Pi nepoužívají a nezměnily se.
+(viz „Instalovaný příkon Pi — rychlý odhad“); Ib ani fáze Pi nepoužívají a nezměnily se.
 
 - **Skupiny** `RZS_SKUPINY` (klíč, název, výchozí β, zdroj, ověřit):
   kuchyně 0,4 (ČSN 33 2130, rozsah 0,35–0,5, ověřit), nabíjení EV 1,0
@@ -2214,6 +2237,11 @@ nesahá se na něj**; pole Pi / Pm v tabulce listu 1 schématu (`tech.pi`,
   NEVYHOVUJE. V Dokumentech zaškrtávátko **„výpočet soudobého příkonu"**
   (`dokVyber.soudobost`, výchozí zapnuto) **jen když má rozvaděč Pi** (nebo
   byty) — jinak se nenabízí a PDF je beze změny; v PDF za schématem.
+  **Ukládá se jen vypnuté** (`cist` zahodí `soudobost: true`, v9.135) —
+  starý rozvaděč s ručním Pi by jinak pouhým otevřením Dokumentů dostal
+  nový klíč. Hlídá `test-rozvadec-stara-data.js` (rozvaděč, zpráva, záloha
+  a import CSV 43 / 50 / 51 sloupců proti staré verzi na 8902 — při přenosu
+  pustit se `STARA=<předchozí vydání>`).
 
 Test: `test-rozvadec.js` (+17: kuchyně 13,1 × 0,4 = 5,24, souhrn v liště,
 β z Nastavení a přepsané u rozvaděče, EV s limitem 3,7, bojler × TČ, skupina
