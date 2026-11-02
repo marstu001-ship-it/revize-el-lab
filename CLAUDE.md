@@ -2355,6 +2355,60 @@ s ovládáním…", „…prvek mimo rozvaděč…" a „…list ovládacích ob
 `test-rozvadec-psc.js` (šablona 51 sloupců, DBO porovnání bez tlačítka
 ⚡ Ovládání). Novinky se nedělaly.
 
+### Výměna výkresů s CAD — export a import DXF (2026-11-02, bloky „ROZVADĚČ — VÝMĚNA S CAD")
+
+Zadání uživatele: technici kreslí ve Schématech CAD (Elmer), který ukládá
+`.sch`, exportuje DXF/DWG/DGN/PDF/SVG a DXF otevře. Stávající tlačítka
+(„Soubor pro kolegu", „Uložit", tisk přes náhled PDF) se neměnila a vedle
+nich nic nepřibylo.
+
+#### Export — „📐 Stáhnout pro CAD (DXF)" v náhledu PDF
+
+- **V liště náhledu PDF hned za „💾 Uložit PDF"**, méně výrazné (`.pbtn`
+  bez výplně, `#dok-pdf-dxf`), bublina „Výkres pro Schémata CAD, AutoCAD
+  a jiné CAD programy – čáry a texty půjdou upravit." Logika pro technika:
+  výkres si stáhne tam, kde ho vidí. **Jen u rozvaděče** — `dokPdfDxfRezim()`
+  podle toho, co náhled ukazuje: souhrnná dokumentace (`dok`, schéma jen když
+  je zaškrtnuté) nebo jen schéma (`schema`); štítek ani popisky ne. Viditelnost
+  hlídá `MutationObserver` na `#dok-pdf-pages`, kreslící funkce se neměnily.
+- **Exportuje se schéma (list 1 osazení + jednopólové listy), ovládací obvody
+  a čelní pohled** (`rozvDxfListy`; čelní pohled = vlastní list
+  `rozvDxfCelniList` s `rozvSvg(…, { tisk: true })`, rámem a razítkem), listy
+  1 : 1 v mm vedle sebe s mezerou 20 mm (`DXF_MEZERA`). Textové dokumenty
+  (prohlášení, výpočty, soudobost) do DXF nejdou.
+- **Nic se nekreslí podruhé:** `dxfZeSvg()` převede TÝŽ SVG, ze kterého jde
+  vektorové PDF (line → LINE, rect / path / ellipse → LWPOLYLINE s vyboulením
+  oblouků, circle → CIRCLE, plná tečka → LWPOLYLINE se šířkou, plný trojúhelník
+  → SOLID, text → TEXT; transformace `translate/rotate/scale` se skládají,
+  osa Y se obrací). Výška textu = font-size × 0,72, tloušťky čar na nejbližší
+  lineweight DXF, čárkování = vlastní typy čar `RS_CARKY1…`.
+- **Formát podle exportu Elmeru:** AC1018, `$DWGCODEPAGE = ANSI_1250`, texty ve
+  windows-1250 (`dxfDoBajtu`, co v ní není → `\U+XXXX`), `$INSUNITS = 4`,
+  sekce HEADER, CLASSES, TABLES (VPORT, LTYPE, LAYER, STYLE, VIEW, UCS, APPID,
+  DIMSTYLE, BLOCK_RECORD), BLOCKS, ENTITIES, OBJECTS. Vlastní generátor
+  (`DxfPisar`), žádná knihovna — **DWG ne** (uzavřený, jediná otevřená
+  knihovna je GPL), `.sch` je neveřejný.
+- **Vrstvy:** `RAM` (rám i razítko), `SILOVA`, `OVLADANI`, `POPISY` (texty),
+  `CELNI_POHLED`, `SVORKY`.
+- **Přístroj = blok + INSERT** (skupina `data-puid` na listech schématu
+  a ovládání): název čitelný bez diakritiky `FA1_JISTIC_3P` (`DXF_KAT_BLOK`,
+  na ovládacích listech `_OVL`), uvnitř texty jako ve schématu (označení,
+  hodnoty, typ) a **skryté ATTRIB** se stejnými hodnotami: OZNACENI, TYP, IN,
+  IDN, ICN, VYVOD, KABEL, PI + pro zpětné načtení REVIZE_EL_ID (uid přístroje),
+  REVIZE_EL_ROZV (uid rozvaděče), REVIZE_EL_KAT, _POLY, _CHAR, _KNIH.
+- Název souboru `<rozvaděč>_<objekt nebo stavba>.dxf` (`rozvDxfNazev`), typ
+  `application/dxf` v `TYPY_SOUBORU`. Data rozvaděče, PDF, „Soubor pro kolegu"
+  ani „Uložit" se nezměnily.
+
+Test: `test-rozvadec.js` (export: tlačítko a bublina, název souboru, **ezdxf
+audit bez chyb a oprav**, AC1018 / ANSI_1250 / mm, vrstvy, počet bloků = počet
+přístrojů ve schématu se skrytým REVIZE_EL_ID, název bloku, „Zásuvky – kuchyňka,
+ř. 1" se přes ezdxf vrátí beze změny, rám na každém listu, tlačítko ve schématu
+a ne ve štítku, **stránky náhledu PDF dokumentace i schématu znak po znaku proti
+předchozí verzi na 8902**). Pomocník `testy/dxf-kontrola.py` (ezdxf, jen v testu:
+`pip install ezdxf`). V `test-mobil.js` stav „rozvaděč – náhled PDF s tlačítkem
+Stáhnout pro CAD (DXF)".
+
 ### PDF (část 4)
 
 - `DOK_TYPY.rozv.pdf(d)` → bloky pro společné stránkování tvorby

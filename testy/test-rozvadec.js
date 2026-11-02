@@ -2098,6 +2098,95 @@ function pomocnik() {
   check('soudobost: PDF listu vektorově, text čitelný (VÝPOČET SOUDOBÉHO PŘÍKONU, β, cos φ, Varná deska)', sdPdf && sdPdf.vekt === true &&
     /VÝPOČET SOUDOBÉHO PŘÍKONU/.test(sdTxt) && /cos φ/.test(sdTxt) && /Varná deska/.test(sdTxt) && /ČSN 33 2130 ed\. 4/.test(sdTxt), sdTxt.slice(0, 160).replace(/\s+/g, ' '));
 
+  // ── výměna s CAD: export DXF a import DXF ze Schémat CAD (2026-11-02) ──
+  {
+    const fs = require('fs'), path = require('path'), cp = require('child_process');
+    const BEH = path.join(__dirname, '_beh'), KON = path.join(__dirname, 'dxf-kontrola.py');
+    const py = (...a) => { try { return cp.execFileSync('python3', [KON, ...a], { maxBuffer: 64 << 20 }).toString(); } catch (e) { return 'CHYBA ' + (e.stderr || e).toString().slice(0, 300); } };
+    const json = s => { try { return JSON.parse(s); } catch (e) { return { chyba: s.slice(0, 200) }; } };
+    // rozvaděč bytu 3+1 s vývodem „Zásuvky – kuchyňka, ř. 1"
+    await p.evaluate('window.__rozvByt = ' + require('./rozvadec-byt.js').toString());
+    const ex = await p.evaluate(async () => {
+      const r = {};
+      try { localStorage.removeItem('revize_el_rz_barvy'); } catch (e) {}
+      await dokNovy('rozv');
+      __T.nast('[data-dk="oznaceni"]', 'RH1'); __T.nast('[data-dk="stavba"]', 'Byt 3+1, Vymyšlená 12');
+      __T.nast('[data-dk="soustava"]', '3NPE ~400/230 V TN-S'); __T.nast('[data-dk="datum"]', '2026-11-02');
+      rozvSkrinNastavit(rozvKnihPolozka('v-sk-3x12-n')); window.__rozvByt();
+      const naj = o => { let y = null; __rz.rady.forEach(rr => rr.prvky.forEach(x => { if (x.ozn === o) y = x; })); return y; };
+      naj('-FA2').vyvod = 'Zásuvky – kuchyňka, ř. 1'; naj('-FA2').pi = '2,5';
+      rozvZmena('t', () => {}); await dokUlozitOtevreny();
+      window.__cadUid = window.__dokOtevreny.uid;
+      const d = window.__dokOtevreny.data;
+      // kolik přístrojů je ve schématu (skupiny data-puid na jednopólových listech)
+      const L = rozvSchemaListy(d), uid = {};
+      L.forEach((l, i) => { if (!i || l.g.ovl) return; const box = document.createElement('div'); box.innerHTML = l.svg;
+        box.querySelectorAll('svg > [data-puid], svg > g:not([data-puid]) [data-puid]').forEach(g => { if (!g.parentNode.closest('[data-puid]')) uid[g.getAttribute('data-puid')] = 1; }); });
+      r.pristroju = Object.keys(uid).length; r.listu = L.length + 1;
+      await dokNahled(); await __T.w(400);
+      const btn = document.getElementById('dok-pdf-dxf');
+      r.btn = !!btn && btn.offsetParent !== null; r.btnText = btn ? btn.textContent : ''; r.btnTitle = btn ? btn.title : '';
+      r.btnZaUlozit = btn && btn.previousElementSibling && btn.previousElementSibling.getAttribute('data-action') === 'tdPdfUlozit';
+      r.nazev = rozvDxfNazev(d);
+      delete window.showSaveFilePicker;
+      return r;
+    });
+    check('CAD export: v náhledu PDF rozvaděče tlačítko „📐 Stáhnout pro CAD (DXF)" hned za Uložit PDF, s bublinou', ex.btn && /Stáhnout pro CAD \(DXF\)/.test(ex.btnText) && ex.btnZaUlozit &&
+      /Schémata CAD, AutoCAD a jiné CAD programy – čáry a texty půjdou upravit/.test(ex.btnTitle), ex.btnText);
+    await p.screenshot({ path: path.join(BEH, 'cad-nahled-pdf-tlacitko.png') });
+    const [dl] = await Promise.all([p.waitForEvent('download', { timeout: 15000 }).catch(() => null), p.click('#dok-pdf-dxf')]);
+    const dxfCesta = path.join(BEH, 'rozvadec-cad-export.dxf');
+    if (dl) await dl.saveAs(dxfCesta);
+    check('CAD export: stáhne se soubor <rozvaděč>_<objekt>.dxf', !!dl && /RH1_Byt_3.1,?_Vym[yý]?[sš]len[aá]_12\.dxf$/.test(dl.suggestedFilename()) && ex.nazev === 'RH1_Byt_3+1,_Vymyšlená_12.dxf', dl ? dl.suggestedFilename() : 'nic');
+    const A = dl ? json(py('rozbor', dxfCesta)) : {};
+    check('CAD export: ezdxf audit bez chyb a oprav, AC1018, ANSI_1250, jednotky mm', A.chyby === 0 && A.opravy === 0 && A.verze === 'AC1018' && A.codepage === 'ANSI_1250' && A.insunits === 4,
+      JSON.stringify([A.chyby, A.opravy, A.verze, A.codepage, A.insunits, A.zpravy, A.chyba]));
+    check('CAD export: vrstvy RAM, SILOVA, OVLADANI, POPISY, CELNI_POHLED, SVORKY', A.vrstvy && ['RAM', 'SILOVA', 'OVLADANI', 'POPISY', 'CELNI_POHLED', 'SVORKY'].every(v => A.vrstvy.includes(v)), (A.vrstvy || []).join());
+    const ins = (A.inserty || []).filter(i => i.vrstva === 'SILOVA');
+    check('CAD export: počet bloků přístrojů = počet přístrojů ve schématu, každý s ATTRIB a skrytým REVIZE_EL_ID', ins.length === ex.pristroju && ex.pristroju > 10 &&
+      ins.every(i => i.atr.REVIZE_EL_ID && i.skryte.REVIZE_EL_ID && 'OZNACENI' in i.atr && 'TYP' in i.atr && 'IN' in i.atr && 'IDN' in i.atr && 'ICN' in i.atr && i.textu > 0), ins.length + ' / ' + ex.pristroju);
+    const fa1 = ins.filter(i => i.atr.OZNACENI === '-FA1')[0] || { atr: {} };
+    check('CAD export: čitelný název bloku bez diakritiky (FA1_JISTIC_3P), atributy = hodnoty přístroje', fa1.blok === 'FA1_JISTIC_3P' && fa1.atr.IN === '25 A' && /B25/.test(fa1.atr.TYP) &&
+      ins.every(i => /^[A-Z0-9_]+$/.test(i.blok)), fa1.blok + ' ' + JSON.stringify(fa1.atr));
+    const fa2 = ins.filter(i => i.atr.OZNACENI === '-FA2')[0] || { atr: {} };
+    check('CAD export: čeština po načtení přes ezdxf beze změny („Zásuvky – kuchyňka, ř. 1")', fa2.atr.VYVOD === 'Zásuvky – kuchyňka, ř. 1' && (A.texty || []).includes('Zásuvky – kuchyňka, ř. 1'), fa2.atr.VYVOD);
+    check('CAD export: listy vedle sebe, na každém rám (vnější, vnitřní) a razítko', A.ramu === 3 * ex.listu && (A.typy || {}).LINE > 50 && (A.typy || {}).TEXT > 50, A.ramu + ' rámů / ' + ex.listu + ' listů');
+    // schéma samotné (náhled jen schématu) — tlačítko i tam; štítek ho nemá
+    const ex2 = await p.evaluate(async () => {
+      const r = {};
+      await TD_AKCE.tdPdfZpet(); await __T.w(100);
+      await TD_AKCE.tdRSchPdf(); await __T.w(300);
+      r.schema = document.getElementById('dok-pdf-dxf').offsetParent !== null;
+      TD_AKCE.tdPdfZpet(); await __T.w(100);
+      const x = { uid: window.__dokOtevreny.uid, typ: 'rozv', data: window.__dokOtevreny.data };
+      rozvStitekVykreslit(x); await __T.w(200);
+      r.stitek = document.getElementById('dok-pdf-dxf').offsetParent !== null;
+      showScreen('dok-form');
+      return r;
+    });
+    check('CAD export: tlačítko i v náhledu schématu, ve štítku ne', ex2.schema && !ex2.stitek, JSON.stringify(ex2));
+
+    // PDF beze změny: tatáž data v předchozí verzi (8902) — stránky náhledu znak po znaku
+    const data = await p.evaluate(() => JSON.stringify({ x: dokNajit(window.__cadUid), t: STORE.technik }));
+    const html = async (pg) => pg.evaluate(async (s) => {
+      const o = JSON.parse(s); STORE.technik = o.t; await dokNacist();
+      DOK.dokumenty = DOK.dokumenty.filter(x => x.uid !== o.x.uid).concat([o.x]); await dokZapsat();
+      const ven = {};
+      await dokNahledZeSeznamu(o.x.uid); await new Promise(r => setTimeout(r, 400)); ven.dok = document.getElementById('dok-pdf-pages').innerHTML;
+      rozvSchemaVykreslit(o.x); await new Promise(r => setTimeout(r, 200)); ven.sch = document.getElementById('dok-pdf-pages').innerHTML;
+      return ven;
+    }, data);
+    const nyni = await html(p);
+    const c3 = await b.newContext({ viewport: { width: 1366, height: 900 } });
+    await c3.route(/cdnjs\.cloudflare\.com\/.*\/(jspdf\.umd\.min\.js|html2canvas\.min\.js)$/, r => r.fulfill({ path: path.join(__dirname, 'knihovny', r.request().url().split('/').pop()), contentType: 'application/javascript', headers: { 'Access-Control-Allow-Origin': '*' } }));
+    await c3.addInitScript(() => { try { navigator.serviceWorker.register = () => new Promise(() => {}); } catch (e) {} });
+    const ps = await c3.newPage(); await ps.goto('http://127.0.0.1:' + (process.env.STARA_PORT || 8902) + '/index.html'); await w(1200);
+    const stara = await html(ps).catch(e => ({ dok: 'chyba ' + e.message }));
+    await c3.close();
+    check('CAD: PDF dokumentace i schématu beze změny proti předchozí verzi (stránky náhledu znak po znaku)', nyni.dok.length > 5000 && nyni.dok === stara.dok && nyni.sch === stara.sch,
+      nyni.dok.length + ' / ' + (stara.dok || '').length);
+  }
+
   // ── oddělení od revizí ────────────────────────────────────────────────
   const odd = await p.evaluate(async () => {
     showScreen('home'); renderArchiv();

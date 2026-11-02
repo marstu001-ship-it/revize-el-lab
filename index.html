@@ -5120,6 +5120,7 @@ html.dark .rz-imp-chyby{background:#3a1f1c;border-color:#6b2c25}
       <button class="pbtn" data-action="tdPdfZpet" style="background:#555;border-color:#555">← Zpět</button>
       <button class="pbtn" data-action="tdPdfTisk" style="background:#b5291c;border-color:#b5291c" title="Vytiskne rovnou ve vyšší kvalitě, nic se do počítače neukládá">🖨️ Tisk přímo</button>
       <button class="pbtn" data-action="tdPdfUlozit" style="background:#0f7b5f;border-color:#0f7b5f">💾 Uložit PDF</button>
+      <button class="pbtn pbtn-dxf" id="dok-pdf-dxf" data-action="tdPdfDxf" style="display:none" title="Výkres pro Schémata CAD, AutoCAD a jiné CAD programy – čáry a texty půjdou upravit.">📐 Stáhnout pro CAD (DXF)</button>
     </div>
   </div>
   <div class="pdf-pages" id="dok-pdf-pages"></div>
@@ -17926,6 +17927,7 @@ var TYPY_SOUBORU = {
   'application/json': { popis: 'JSON soubor', pripona: '.json', mime: 'application/json' },
   'application/pdf':  { popis: 'PDF soubor',  pripona: '.pdf',  mime: 'application/pdf' },
   'text/csv':         { popis: 'CSV (Excel)', pripona: '.csv',  mime: 'text/csv' },
+  'application/dxf':  { popis: 'Výkres DXF (CAD)', pripona: '.dxf', mime: 'application/dxf' },
   'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet':
     { popis: 'Excel (xlsx)', pripona: '.xlsx',
       mime: 'application/vnd.openxmlformats-officedocument.spreadsheetml.sheet' }
@@ -38637,6 +38639,437 @@ TD_AKCE.tdRSchPdf = async function () {
   await dokUlozitOtevreny();
   rozvSchemaVykreslit({ uid: o.uid, typ: o.typ, data: o.data });
 };
+
+// ═══ ROZVADĚČ — VÝMĚNA S CAD: EXPORT DXF (2026-11-02) ═══════════════════════
+// „📐 Stáhnout pro CAD (DXF)" v náhledu PDF rozvaděče. Výkres se NEKRESLÍ
+// znovu: bere se TÝŽ SVG (rozvSchemaListy, rozvSvg), ze kterého jde vektorové
+// PDF, a jeho čáry, oblouky, kružnice a texty se převedou na entity DXF.
+// Formát podle exportu Schémat CAD (Elmer): AC1018 (AutoCAD 2004),
+// $DWGCODEPAGE = ANSI_1250, texty ve windows-1250 (co v ní není → \U+XXXX),
+// jednotky mm ($INSUNITS = 4), listy 1 : 1 vedle sebe s mezerou.
+// Každý přístroj schématu (skupina data-puid) = blok + INSERT s atributy
+// (skryté — hodnoty jsou i jako texty v bloku), REVIZE_EL_ID = uid přístroje
+// a REVIZE_EL_ROZV = uid rozvaděče pro zpětné načtení. Vlastní generátor,
+// žádná knihovna (DWG je uzavřený, jediná otevřená knihovna má GPL).
+var DXF_VRSTVY = [['RAM', 7], ['SILOVA', 7], ['OVLADANI', 5], ['POPISY', 7], ['CELNI_POHLED', 8], ['SVORKY', 3]];
+var DXF_TLOUSTKY = [0, 5, 9, 13, 15, 18, 20, 25, 30, 35, 40, 50, 53, 60, 70, 80, 90, 100, 106, 120, 140, 158, 200, 211];
+var DXF_MEZERA = 20;        // mm mezi listy (jako v Elmeru)
+var DXF_PISMO_VYSKA = 0.72; // výška velkých písmen / font-size (Arial, Roboto)
+var DXF_KAT_BLOK = { FA: 'JISTIC', FI: 'CHRANIC', FIFA: 'JISTIC_CHRANIC', AFDD: 'AFDD', SPD: 'SPD', QM: 'VYPINAC', FU: 'POJISTKA',
+  KM: 'STYKAC', KA: 'RELE', KT: 'HODINY', PJ: 'ELEKTROMER', HL: 'KONTROLKA', SF: 'TLACITKO', X: 'SVORKA', TR: 'TRAFO', ZD: 'ZDROJ',
+  XS: 'ZASUVKA', MS: 'SPOUSTEC', QF: 'VYKONOVY_JISTIC', QS: 'ODPINAC', TA: 'TRANSFORMATOR_PROUDU', PM: 'MERIDLO', PRISL: 'PRISLUSENSTVI',
+  JINE: 'PRISTROJ', XN: 'PRIPOJNICE_N', XPE: 'PRIPOJNICE_PE' };
+
+// ── Listy: co je v náhledu (schéma, ovládací obvody, čelní pohled) ──
+function rozvDxfCelniList(d, cislo, listu, fmt) {
+  var g = rsGeom(fmt, false, false), h = rsRam(g), t = (typeof STORE !== 'undefined' && STORE.technik) || {};
+  var odv = rozvSchOdvozene(d), hod = function (c) { return rozvDokHodnota(d, odv, c); }, e = rozvDokEff(d), sk = d.skrin || {};
+  var c = { vypracoval: t.jmeno || '', datum: dokDatumCz(d.datum) || '', akce: d.stavba || '', investor: (d.investor || {}).nazev || '',
+    nazev: 'Čelní pohled ' + (d.oznaceni || ''), projekt: hod('schema.projekt'), zakazka: hod('schema.zakazka'),
+    soubor: rozvDxfNazev(d), listu: listu };
+  var bx = 16, by = 27, bw = g.W - 32, bh = g.H - 10 - RS_RAZ.h - 6 - by;
+  var nad = [pscJe(d) ? pscSkrinNazev(sk) : sk.rady && sk.modulu ? 'Rozvodnice ' + sk.rady + '×' + sk.modulu + ' modulů' : 'Rozvodnice',
+    sk.vyrobce && sk.vyrobce !== 'obecný' ? sk.vyrobce : '', rozvIpText(e), e.trida ? 'třída ' + e.trida : '',
+    e.rozmery ? 'rozměry ' + e.rozmery + (/mm/.test(e.rozmery) ? '' : ' mm') : ''].filter(Boolean).join(', ');
+  h += rsText(bx, 18, 'Čelní pohled rozvaděče ' + (d.oznaceni || ''), { fs: 3.4, tucne: true }) + rsText(bx, 22.6, rsVejit(nad, bw, 2.5), { fs: 2.5 });
+  if (d.skrin) {
+    var rz = { skrin: d.skrin, rady: d.rady || [] }, rr = rozvSvgRozmery(rz), k = Math.min(bw / rr.Wsvg, bh / rr.Hsvg, 1);
+    k = Math.floor(k * 1000) / 1000;
+    var vnitr = rozvSvg(rz, { tisk: true }).replace(/^<svg[^>]*>/, '').replace(/<\/svg>\s*$/, '');
+    h += '<g data-celni="1">' + rsSkupina(bx, by, vnitr, { k: k }) + '</g>';
+    h += rsText(bx, Math.min(by + rr.Hsvg * k + 4, g.H - 12), k < 0.995 ? 'zmenšeno na ' + Math.round(k * 100) + ' %' : 'skutečná velikost 1 : 1', { fs: 1.9 });
+  } else h += rsText(bx, by + 8, 'Skříň zatím není vybraná.', { fs: 2.6 });
+  h += rsRazitko(g, c, cislo);
+  return { g: g, svg: rsSvgObal(g, h), druh: 'celni' };
+}
+function rozvDxfListy(d, o) {
+  o = o || {};
+  var L = [];
+  if (o.schema !== false) rozvSchemaListy(d).forEach(function (l, i) { L.push({ g: l.g, svg: l.svg, druh: !i ? 'osazeni' : l.g.ovl ? 'ovladani' : 'schema' }); });
+  if (o.celni !== false) {
+    var fmt = ((d.schema || {}).format === 'A3') ? 'A3' : 'A4';
+    L.push(rozvDxfCelniList(d, L.length + 1, L.length + 1, fmt));
+  }
+  return L;
+}
+function rozvDxfNazev(d) {
+  var obj = d.objekt && typeof dokObjNazev === 'function' && dokObjNajit(d.objekt) ? dokObjNazev(d.objekt) : (d.stavba || '');
+  var s = [d.oznaceni || d.cislo || 'rozvadec', obj].filter(Boolean).join('_');
+  return s.replace(/[\\\/:*?"<>|]+/g, '').replace(/\s+/g, '_').slice(0, 90) + '.dxf';
+}
+
+// ── SVG → entity (geometrie v mm listu, osa Y nahoru) ──
+function dxfMat(s) {
+  var m = [1, 0, 0, 1, 0, 0], re = /(matrix|translate|scale|rotate)\s*\(([^)]*)\)/g, x;
+  while ((x = re.exec(s || ''))) {
+    var a = x[2].split(/[\s,]+/).filter(Boolean).map(Number), n;
+    if (x[1] === 'matrix') n = a;
+    else if (x[1] === 'translate') n = [1, 0, 0, 1, a[0] || 0, a[1] || 0];
+    else if (x[1] === 'scale') n = [a[0], 0, 0, a.length > 1 ? a[1] : a[0], 0, 0];
+    else {
+      var r = (a[0] || 0) * Math.PI / 180, cs = Math.cos(r), sn = Math.sin(r), cx = a[1] || 0, cy = a[2] || 0;
+      n = [cs, sn, -sn, cs, cx - cs * cx + sn * cy, cy - sn * cx - cs * cy];
+    }
+    m = dxfNasob(m, n);
+  }
+  return m;
+}
+function dxfNasob(m, n) {
+  return [m[0] * n[0] + m[2] * n[1], m[1] * n[0] + m[3] * n[1], m[0] * n[2] + m[2] * n[3], m[1] * n[2] + m[3] * n[3],
+          m[0] * n[4] + m[2] * n[5] + m[4], m[1] * n[4] + m[3] * n[5] + m[5]];
+}
+function dxfTlouska(mm) {
+  var v = Math.round(mm * 100), best = 0;
+  DXF_TLOUSTKY.forEach(function (t) { if (Math.abs(t - v) < Math.abs(best - v)) best = t; });
+  return best;
+}
+function dxfPlna(f) { return f && f !== 'none' && f !== 'transparent' && !/^url/.test(f) && !/^#f{3}(f{3})?$/i.test(f) && f !== 'white'; }
+function dxfCerna(f) { return /^(#000(000)?|black|#111|#222)$/i.test(String(f || '')); }
+
+// Převod jednoho listu. `st` = { ox, H, vrstva, ent (pole), bloky (pole), d (rozvaděč), druh }.
+function dxfZeSvg(svg, st) {
+  var doc = new DOMParser().parseFromString(svg, 'image/svg+xml'), root = doc.documentElement;
+  if (!root || root.nodeName.toLowerCase() !== 'svg') return;
+  var P = function (m, x, y) { return [st.ox + m[0] * x + m[2] * y + m[4], st.H - (m[1] * x + m[3] * y + m[5])]; };
+  var meritko = function (m) { return Math.sqrt(Math.abs(m[0] * m[3] - m[1] * m[2])) || 1; };
+  var cisla = function (el, a) { return a.map(function (k) { return parseFloat(el.getAttribute(k)) || 0; }); };
+  var cara = function (el, m, cil, vrstva) {
+    var sw = el.getAttribute('stroke'), sk = meritko(m), e = { vrstva: vrstva };
+    if (!sw || sw === 'none') return null;
+    e.lw = dxfTlouska((parseFloat(el.getAttribute('stroke-width')) || 0.25) * sk);
+    var da = el.getAttribute('stroke-dasharray');
+    if (da && da !== 'none') e.lt = da.split(/[\s,]+/).filter(Boolean).map(function (v) { return Math.round(parseFloat(v) * sk * 100) / 100; });
+    return e;
+  };
+  var obrys = function (vrstva) { return { vrstva: vrstva, lw: 13 }; };
+  function prvek(el, m, s) {
+    var tag = el.nodeName.toLowerCase(); if (tag === 'title' || tag === 'defs' || tag === 'pattern' || tag === 'desc') return;
+    var tr = el.getAttribute && el.getAttribute('transform'); if (tr) m = dxfNasob(m, dxfMat(tr));
+    var cil = s.cil, vr = s.vrstva;
+    if (tag === 'g' || tag === 'svg') {
+      var s2 = { cil: cil, vrstva: vr, blok: s.blok };
+      if (el.getAttribute('data-ram') || el.getAttribute('data-razitko')) s2.vrstva = 'RAM';
+      else if (el.getAttribute('data-celni')) s2.vrstva = 'CELNI_POHLED';
+      else if (el.getAttribute('data-znacka') === 'svorka') s2.vrstva = 'SVORKY';
+      var puid = el.getAttribute('data-puid'), novy = null;
+      if (puid && !s.blok && (st.druh === 'schema' || st.druh === 'ovladani')) {
+        novy = { uid: puid, ent: [], vrstva: vr }; s2.cil = novy.ent; s2.blok = novy;
+      }
+      Array.prototype.forEach.call(el.childNodes, function (ch) { if (ch.nodeType === 1) prvek(ch, m, s2); });
+      if (novy && novy.ent.length) st.bloky.push(novy);
+      return;
+    }
+    var e;
+    if (tag === 'line') {
+      e = cara(el, m, cil, vr); if (!e) return;
+      var c = cisla(el, ['x1', 'y1', 'x2', 'y2']);
+      e.t = 'LINE'; e.p = [P(m, c[0], c[1]), P(m, c[2], c[3])]; cil.push(e); return;
+    }
+    if (tag === 'rect') {
+      var r = cisla(el, ['x', 'y', 'width', 'height']), fill = el.getAttribute('fill');
+      if (!r[2] || !r[3]) return;
+      e = cara(el, m, cil, vr);
+      if (!e) { if (!dxfPlna(fill)) return; e = obrys(vr); }
+      if (el.parentNode === root && r[0] === 0 && r[1] === 0) return;   // bílé pozadí listu
+      e.t = 'LWPOLYLINE'; e.uzavrena = true; e.p = [P(m, r[0], r[1]), P(m, r[0] + r[2], r[1]), P(m, r[0] + r[2], r[1] + r[3]), P(m, r[0], r[1] + r[3])];
+      cil.push(e); return;
+    }
+    if (tag === 'circle') {
+      var k = cisla(el, ['cx', 'cy', 'r']), f2 = el.getAttribute('fill'), rr = k[2] * meritko(m);
+      if (dxfCerna(f2)) { var s0 = P(m, k[0], k[1]); cil.push({ t: 'LWPOLYLINE', vrstva: vr, uzavrena: true, sirka: rr, p: [[s0[0] - rr / 2, s0[1]], [s0[0] + rr / 2, s0[1]]], b: [1, 1] }); return; }
+      e = cara(el, m, cil, vr); if (!e) { if (!dxfPlna(f2)) return; e = obrys(vr); }
+      e.t = 'CIRCLE'; e.p = [P(m, k[0], k[1])]; e.r = rr; cil.push(e); return;
+    }
+    if (tag === 'ellipse') {
+      var q = cisla(el, ['cx', 'cy', 'rx', 'ry']); e = cara(el, m, cil, vr); if (!e) return;
+      e.t = 'LWPOLYLINE'; e.uzavrena = true; e.p = [];
+      for (var i = 0; i < 36; i++) { var a = i / 36 * 2 * Math.PI; e.p.push(P(m, q[0] + q[2] * Math.cos(a), q[1] + q[3] * Math.sin(a))); }
+      cil.push(e); return;
+    }
+    if (tag === 'path' || tag === 'polygon' || tag === 'polyline') {
+      var dd = tag === 'path' ? el.getAttribute('d') : 'M' + String(el.getAttribute('points') || '').trim() + (tag === 'polygon' ? 'Z' : '');
+      var fill3 = el.getAttribute('fill'), e0 = cara(el, m, cil, vr);
+      dxfCesta(dd).forEach(function (sp) {
+        var pts = sp.p.map(function (b) { return P(m, b[0], b[1]); }), det = m[0] * m[3] - m[1] * m[2], sk = meritko(m);
+        if (dxfCerna(fill3) && sp.uzavrena && pts.length >= 3 && pts.length <= 4 && !sp.b.some(Boolean)) cil.push({ t: 'SOLID', vrstva: vr, p: pts });
+        if (!e0 && !dxfCerna(fill3)) return;
+        var b = sp.b.map(function (o) {   // oblouk SVG → vyboulení (bulge) segmentu, osa Y se obrací
+          if (!o) return 0;
+          var ccw = (o.sweep === 0) !== (det < 0);
+          return ccw ? o.th : -o.th;
+        });
+        var ee = Object.assign({}, e0 || obrys(vr), { t: 'LWPOLYLINE', uzavrena: sp.uzavrena, p: pts, b: b.map(function (v, i) {
+          if (!sp.b[i]) return 0;
+          var p1 = pts[i], p2 = pts[(i + 1) % pts.length], ch = Math.hypot(p2[0] - p1[0], p2[1] - p1[1]), r = Math.max(sp.b[i].r * sk, ch / 2 + 1e-9);
+          var th = 2 * Math.asin(Math.min(1, ch / (2 * r))); if (sp.b[i].velky) th = 2 * Math.PI - th;
+          return (v > 0 ? 1 : -1) * Math.tan(th / 4);
+        }) });
+        cil.push(ee);
+      });
+      return;
+    }
+    if (tag === 'text') {
+      var txt = String(el.textContent || '').replace(/\s+/g, ' ').trim(); if (!txt) return;
+      var x0 = parseFloat(el.getAttribute('x')) || 0, y0 = parseFloat(el.getAttribute('y')) || 0;
+      var fs = parseFloat(el.getAttribute('font-size')) || 2.2, an = el.getAttribute('text-anchor') || 'start';
+      var bod = P(m, x0, y0), ug = Math.atan2(-m[1], m[0]) * 180 / Math.PI;
+      cil.push({ t: 'TEXT', vrstva: vr === 'RAM' || vr === 'CELNI_POHLED' || vr === 'SVORKY' ? vr : 'POPISY', p: [bod], text: txt,
+        v: fs * meritko(m) * DXF_PISMO_VYSKA, rot: Math.round(ug * 1000) / 1000, zar: an === 'middle' ? 1 : an === 'end' ? 2 : 0,
+        tucne: /^(bold|[6-9]00)$/.test(String(el.getAttribute('font-weight') || '')) });
+    }
+  }
+  prvek(root, [1, 0, 0, 1, 0, 0], { cil: st.ent, vrstva: st.vrstva });
+}
+
+// Cesta SVG (M L H V A Z C Q, i malými písmeny) → podcesty { p: body, b: oblouky segmentů, uzavrena }.
+// Křivky C/Q se rozloží na úsečky (v kresbě programu nejsou, jen pro jistotu).
+function dxfCesta(d) {
+  var tok = String(d || '').match(/[a-zA-Z]|-?(?:\d+\.?\d*|\.\d+)(?:e-?\d+)?/g) || [], i = 0, cmd = '', x = 0, y = 0, sx = 0, sy = 0;
+  var out = [], akt = null;
+  var num = function () { return parseFloat(tok[i++]); };
+  var bod = function (nx, ny, obl) { if (!akt) { akt = { p: [[x, y]], b: [], uzavrena: false }; out.push(akt); } akt.b.push(obl || 0); akt.p.push([nx, ny]); x = nx; y = ny; };
+  while (i < tok.length) {
+    if (/[a-zA-Z]/.test(tok[i])) cmd = tok[i++];
+    var rel = cmd === cmd.toLowerCase(), C = cmd.toUpperCase();
+    if (C === 'Z') { if (akt) { akt.uzavrena = true; var f = akt.p[0], l = akt.p[akt.p.length - 1]; if (Math.abs(f[0] - l[0]) < 1e-6 && Math.abs(f[1] - l[1]) < 1e-6 && akt.p.length > 1) { akt.p.pop(); } else akt.b.push(0); x = sx; y = sy; akt = null; } continue; }
+    if (C === 'M') { var mx = num(), my = num(); if (rel) { mx += x; my += y; } x = sx = mx; y = sy = my; akt = null; cmd = rel ? 'l' : 'L'; continue; }
+    if (C === 'L') { var lx = num(), ly = num(); bod(rel ? x + lx : lx, rel ? y + ly : ly); continue; }
+    if (C === 'H') { var hx = num(); bod(rel ? x + hx : hx, y); continue; }
+    if (C === 'V') { var vy = num(); bod(x, rel ? y + vy : vy); continue; }
+    if (C === 'A') {
+      var rx = num(), ry = num(); num(); var velky = num(), sweep = num(), ax = num(), ay = num();
+      bod(rel ? x + ax : ax, rel ? y + ay : ay, { r: (Math.abs(rx) + Math.abs(ry)) / 2, velky: !!velky, sweep: sweep, th: 1 });
+      continue;
+    }
+    if (C === 'C' || C === 'Q') {
+      var n = C === 'C' ? 3 : 2, k = [];
+      for (var j = 0; j < n; j++) { var px = num(), py = num(); k.push(rel ? [x + px, y + py] : [px, py]); }
+      var p0 = [x, y];
+      for (var tt = 1; tt <= 8; tt++) {
+        var t = tt / 8, u = 1 - t, q;
+        if (n === 3) q = [u * u * u * p0[0] + 3 * u * u * t * k[0][0] + 3 * u * t * t * k[1][0] + t * t * t * k[2][0], u * u * u * p0[1] + 3 * u * u * t * k[0][1] + 3 * u * t * t * k[1][1] + t * t * t * k[2][1]];
+        else q = [u * u * p0[0] + 2 * u * t * k[0][0] + t * t * k[1][0], u * u * p0[1] + 2 * u * t * k[0][1] + t * t * k[1][1]];
+        bod(q[0], q[1]);
+      }
+      continue;
+    }
+    i++;   // neznámý příkaz (S, T…) — přeskočit
+  }
+  return out.filter(function (s) { return s.p.length > 1; });
+}
+
+// ── Atributy přístroje (hodnoty i do textů bloku) ──
+function rozvDxfAtributy(x, rozvUid) {
+  var p = x.p || {}, n = function (v, j) { return v === '' || v == null ? '' : rozvCisloText(v) + ' ' + j; };
+  return [['OZNACENI', x.ozn || ''], ['TYP', p.typ || p.nazev || ''], ['IN', n(p.In, 'A')], ['IDN', n(p.idn, 'mA')], ['ICN', n(p.icn || p.icu, 'kA')],
+    ['VYVOD', x.vyvod || ''], ['KABEL', rsKabel(x)], ['PI', x.pi ? rozvCisloText(x.pi) + ' kW' : ''],
+    ['REVIZE_EL_ID', x.uid], ['REVIZE_EL_ROZV', rozvUid || ''], ['REVIZE_EL_KAT', p.kat || ''], ['REVIZE_EL_POLY', p.poly || ''], ['REVIZE_EL_CHAR', p.char || ''],
+    ['REVIZE_EL_KNIH', x.knih || '']];
+}
+function rozvDxfBlokNazev(x, pouzite, ovl) {
+  var p = x.p || {}, pol = String(p.poly || '').replace('+N', 'PN');
+  var z = [String(x.ozn || '').replace(/^-/, '') || 'PRISTROJ', DXF_KAT_BLOK[p.kat] || 'PRISTROJ', pol ? (/P/.test(pol) ? pol : pol + 'P') : ''].filter(Boolean).join('_') + (ovl ? '_OVL' : '');
+  z = z.normalize('NFD').replace(/[̀-ͯ]/g, '').toUpperCase().replace(/[^A-Z0-9_]+/g, '_');
+  var j = z, i = 2; while (pouzite[j]) j = z + '_' + (i++);
+  pouzite[j] = 1; return j;
+}
+
+// ── Zápis DXF (AC1018) ──
+function dxfCislo(v) { var n = Math.round((+v || 0) * 10000) / 10000; return String(n === 0 ? 0 : n); }
+function rozvDxfVytvor(d, o, rozvUid) {
+  var L = rozvDxfListy(d, o), ent = [], bloky = [], ox = 0, W = 0, H = 0;
+  L.forEach(function (l) {
+    dxfZeSvg(l.svg, { ox: ox, H: l.g.H, vrstva: l.druh === 'schema' ? 'SILOVA' : l.druh === 'ovladani' ? 'OVLADANI' : 'CELNI_POHLED', ent: ent, bloky: bloky, d: d, druh: l.druh });
+    ox += l.g.W + DXF_MEZERA; W = ox - DXF_MEZERA; H = Math.max(H, l.g.H);
+  });
+  // bloky přístrojů: základní bod = levý horní roh, entity relativně
+  var pouzite = {}, ins = [];
+  bloky.forEach(function (b) {
+    var x = rozvPrvekVsude(d, b.uid); if (!x) { b.ent.forEach(function (e) { ent.push(e); }); return; }
+    var minx = Infinity, maxy = -Infinity;
+    b.ent.forEach(function (e) { e.p.forEach(function (q) { minx = Math.min(minx, q[0]); maxy = Math.max(maxy, q[1]); }); });
+    b.base = [minx, maxy];
+    b.ent.forEach(function (e) { e.p = e.p.map(function (q) { return [q[0] - minx, q[1] - maxy]; }); });
+    b.nazev = rozvDxfBlokNazev(x, pouzite, b.vrstva === 'OVLADANI');
+    b.atr = rozvDxfAtributy(x, rozvUid);
+    ins.push(b);
+  });
+  // čárkované čáry → typy čar
+  var lt = {}, ltN = 0;
+  ent.concat([].concat.apply([], ins.map(function (b) { return b.ent; }))).forEach(function (e) {
+    if (!e.lt) return; var k = e.lt.join(' '); if (!lt[k]) lt[k] = { nazev: 'RS_CARKY' + (++ltN), v: e.lt.length % 2 ? e.lt.concat(e.lt) : e.lt };
+    e.ltN = lt[k].nazev;
+  });
+  var w = new DxfPisar();
+  var hModel = w.h(), hPaper = w.h(), hTabBR = w.h(), hDict = w.h(), hDictGrp = w.h();
+  var hBR = {}; ins.forEach(function (b) { hBR[b.nazev] = w.h(); });
+  // HEADER
+  w.g(0, 'SECTION', 2, 'HEADER',
+      9, '$ACADVER', 1, 'AC1018', 9, '$DWGCODEPAGE', 3, 'ANSI_1250',
+      9, '$INSBASE', 10, 0, 20, 0, 30, 0, 9, '$EXTMIN', 10, 0, 20, 0, 30, 0, 9, '$EXTMAX', 10, W, 20, H, 30, 0,
+      9, '$LIMMIN', 10, 0, 20, 0, 9, '$LIMMAX', 10, W, 20, H, 9, '$LTSCALE', 40, 1, 9, '$PSLTSCALE', 70, 0,
+      9, '$TEXTSTYLE', 7, 'STANDARD', 9, '$CLAYER', 8, '0', 9, '$MEASUREMENT', 70, 1, 9, '$INSUNITS', 70, 4, 9, '$LUNITS', 70, 2,
+      9, '$LWDISPLAY', 290, 1, 9, '$HANDSEED', 5, 'FFFFF', 0, 'ENDSEC');
+  w.g(0, 'SECTION', 2, 'CLASSES', 0, 'ENDSEC');
+  // TABLES
+  w.g(0, 'SECTION', 2, 'TABLES');
+  var tabulka = function (jm, polozky, navic) {
+    var th = w.h(); w.g(0, 'TABLE', 2, jm, 5, th, 330, 0, 100, 'AcDbSymbolTable', 70, polozky.length);
+    if (navic) w.g.apply(w, navic);
+    polozky.forEach(function (f) { f(th); });
+    w.g(0, 'ENDTAB');
+  };
+  tabulka('VPORT', [function (th) {
+    w.g(0, 'VPORT', 5, w.h(), 330, th, 100, 'AcDbSymbolTableRecord', 100, 'AcDbViewportTableRecord', 2, '*ACTIVE', 70, 0,
+      10, 0, 20, 0, 11, 1, 21, 1, 12, W / 2, 22, H / 2, 13, 0, 23, 0, 14, 10, 24, 10, 15, 10, 25, 10, 16, 0, 26, 0, 36, 1, 17, 0, 27, 0, 37, 0,
+      40, H * 1.1, 41, Math.max(1, W / H), 42, 50, 43, 0, 44, 0, 50, 0, 51, 0, 71, 0, 72, 100, 73, 1, 74, 3, 75, 0, 76, 0, 77, 0, 78, 0);
+  }]);
+  var ltRec = function (jm, popis, prvky) { return function (th) {
+    w.g(0, 'LTYPE', 5, w.h(), 330, th, 100, 'AcDbSymbolTableRecord', 100, 'AcDbLinetypeTableRecord', 2, jm, 70, 0, 3, popis, 72, 65, 73, prvky.length,
+      40, prvky.reduce(function (s, v) { return s + Math.abs(v); }, 0));
+    prvky.forEach(function (v) { w.g(49, v, 74, 0); });
+  }; };
+  tabulka('LTYPE', [ltRec('ByBlock', '', []), ltRec('ByLayer', '', []), ltRec('Continuous', 'Solid line', [])].concat(Object.keys(lt).map(function (k) {
+    return ltRec(lt[k].nazev, 'Čárkovaně ' + k + ' mm', lt[k].v.map(function (v, i) { return i % 2 ? -v : v; }));
+  })));
+  tabulka('LAYER', [['0', 7]].concat(DXF_VRSTVY).map(function (v) { return function (th) {
+    w.g(0, 'LAYER', 5, w.h(), 330, th, 100, 'AcDbSymbolTableRecord', 100, 'AcDbLayerTableRecord', 2, v[0], 70, 0, 62, v[1], 6, 'Continuous', 370, -3);
+  }; }));
+  tabulka('STYLE', [['STANDARD', 'arial.ttf'], ['TUCNE', 'arialbd.ttf']].map(function (s) { return function (th) {
+    w.g(0, 'STYLE', 5, w.h(), 330, th, 100, 'AcDbSymbolTableRecord', 100, 'AcDbTextStyleTableRecord', 2, s[0], 70, 0, 40, 0, 41, 0.85, 50, 0, 71, 0, 42, 2.5, 3, s[1], 4, '');
+  }; }));
+  tabulka('VIEW', []); tabulka('UCS', []);
+  tabulka('APPID', [function (th) { w.g(0, 'APPID', 5, w.h(), 330, th, 100, 'AcDbSymbolTableRecord', 100, 'AcDbRegAppTableRecord', 2, 'ACAD', 70, 0); }]);
+  tabulka('DIMSTYLE', [function (th) { w.g(0, 'DIMSTYLE', 105, w.h(), 330, th, 100, 'AcDbSymbolTableRecord', 100, 'AcDbDimStyleTableRecord', 2, 'STANDARD', 70, 0); }],
+    [100, 'AcDbDimStyleTable', 71, 0]);
+  // BLOCK_RECORD (tabulka má pevný handle — vlastníci bloků)
+  var br = [['*MODEL_SPACE', hModel], ['*PAPER_SPACE', hPaper]].concat(ins.map(function (b) { return [b.nazev, hBR[b.nazev]]; }));
+  w.g(0, 'TABLE', 2, 'BLOCK_RECORD', 5, hTabBR, 330, 0, 100, 'AcDbSymbolTable', 70, br.length);
+  br.forEach(function (b) { w.g(0, 'BLOCK_RECORD', 5, b[1], 330, hTabBR, 100, 'AcDbSymbolTableRecord', 100, 'AcDbBlockTableRecord', 2, b[0], 70, 0, 280, 1, 281, 0); });
+  w.g(0, 'ENDTAB', 0, 'ENDSEC');
+  // BLOCKS
+  w.g(0, 'SECTION', 2, 'BLOCKS');
+  var blok = function (jm, hb, obsah) {
+    w.g(0, 'BLOCK', 5, w.h(), 330, hb, 100, 'AcDbEntity', 8, '0', 100, 'AcDbBlockBegin', 2, jm, 70, obsah && obsah.atr ? 2 : 0, 10, 0, 20, 0, 30, 0, 3, jm, 1, '');
+    if (obsah) {
+      obsah.ent.forEach(function (e) { dxfEntita(w, e, hb); });
+      obsah.atr.forEach(function (a, i) {
+        w.g(0, 'ATTDEF', 5, w.h(), 330, hb, 100, 'AcDbEntity', 8, 'POPISY', 100, 'AcDbText', 10, 0, 20, -2.5 * (i + 1), 30, 0, 40, 1.5, 1, '', 7, 'STANDARD',
+          100, 'AcDbAttributeDefinition', 280, 0, 3, a[0], 2, a[0], 70, 1, 73, 0);
+      });
+    }
+    w.g(0, 'ENDBLK', 5, w.h(), 330, hb, 100, 'AcDbEntity', 8, '0', 100, 'AcDbBlockEnd');
+  };
+  blok('*Model_Space', hModel); blok('*Paper_Space', hPaper);
+  ins.forEach(function (b) { blok(b.nazev, hBR[b.nazev], b); });
+  w.g(0, 'ENDSEC');
+  // ENTITIES
+  w.g(0, 'SECTION', 2, 'ENTITIES');
+  ent.forEach(function (e) { dxfEntita(w, e, hModel); });
+  ins.forEach(function (b) {
+    var hi = w.h();
+    w.g(0, 'INSERT', 5, hi, 330, hModel, 100, 'AcDbEntity', 8, b.vrstva, 100, 'AcDbBlockReference', 66, 1, 2, b.nazev, 10, b.base[0], 20, b.base[1], 30, 0);
+    b.atr.forEach(function (a, i) {
+      w.g(0, 'ATTRIB', 5, w.h(), 330, hi, 100, 'AcDbEntity', 8, 'POPISY', 100, 'AcDbText', 10, b.base[0], 20, b.base[1] - 2.5 * (i + 1), 30, 0, 40, 1.5, 1, a[1], 7, 'STANDARD',
+        100, 'AcDbAttribute', 280, 0, 2, a[0], 70, 1);
+    });
+    w.g(0, 'SEQEND', 5, w.h(), 330, hi, 100, 'AcDbEntity', 8, b.vrstva);
+  });
+  w.g(0, 'ENDSEC');
+  // OBJECTS
+  w.g(0, 'SECTION', 2, 'OBJECTS',
+      0, 'DICTIONARY', 5, hDict, 330, 0, 100, 'AcDbDictionary', 281, 1, 3, 'ACAD_GROUP', 350, hDictGrp,
+      0, 'DICTIONARY', 5, hDictGrp, 330, hDict, 100, 'AcDbDictionary', 281, 1, 0, 'ENDSEC', 0, 'EOF');
+  return w.text();
+}
+function DxfPisar() { this.r = []; this.n = 0x20; }
+DxfPisar.prototype.h = function () { return (this.n++).toString(16).toUpperCase(); };
+DxfPisar.prototype.g = function () {
+  for (var i = 0; i < arguments.length; i += 2) {
+    var k = arguments[i], v = arguments[i + 1];
+    this.r.push(String(k), typeof v === 'number' ? dxfCislo(v) : String(v == null ? '' : v));
+  }
+};
+DxfPisar.prototype.text = function () {
+  var s = this.r.join('\r\n') + '\r\n';
+  return s.replace(/\$HANDSEED\r\n5\r\nFFFFF/, '$HANDSEED\r\n5\r\n' + this.n.toString(16).toUpperCase());
+};
+// Text do DXF: znaky mimo windows-1250 jako \U+XXXX (AutoCAD i Elmer je přečtou).
+var __dxf1250 = null;
+function dxfMapa1250() {
+  if (__dxf1250) return __dxf1250;
+  __dxf1250 = {};
+  try {
+    var b = new Uint8Array(128); for (var i = 0; i < 128; i++) b[i] = 128 + i;
+    var s = new TextDecoder('windows-1250').decode(b);
+    for (var j = 0; j < s.length; j++) if (s.charCodeAt(j) !== 0xFFFD) __dxf1250[s[j]] = 128 + j;
+  } catch (e) {}
+  return __dxf1250;
+}
+function dxfTextBezpecne(t) {
+  var m = dxfMapa1250();
+  return String(t).replace(/[\r\n]+/g, ' ').replace(/[^\x20-\x7e]/g, function (ch) {
+    return m[ch] ? ch : '\\U+' + ('0000' + ch.charCodeAt(0).toString(16).toUpperCase()).slice(-4);
+  });
+}
+function dxfDoBajtu(s) {
+  var m = dxfMapa1250(), out = new Uint8Array(s.length), n = 0;
+  for (var i = 0; i < s.length; i++) { var c = s.charCodeAt(i); out[n++] = c < 128 ? c : (m[s[i]] || 63); }
+  return out.subarray(0, n);
+}
+function dxfEntita(w, e, vlastnik) {
+  var spol = [5, w.h(), 330, vlastnik, 100, 'AcDbEntity', 8, e.vrstva || '0'];
+  if (e.ltN) spol.push(6, e.ltN);
+  if (e.lw) spol.push(370, e.lw);
+  if (e.t === 'LINE') { w.g.apply(w, [0, 'LINE'].concat(spol, [100, 'AcDbLine', 10, e.p[0][0], 20, e.p[0][1], 30, 0, 11, e.p[1][0], 21, e.p[1][1], 31, 0])); return; }
+  if (e.t === 'CIRCLE') { w.g.apply(w, [0, 'CIRCLE'].concat(spol, [100, 'AcDbCircle', 10, e.p[0][0], 20, e.p[0][1], 30, 0, 40, e.r])); return; }
+  if (e.t === 'SOLID') {
+    var q = e.p.length === 3 ? [e.p[0], e.p[1], e.p[2], e.p[2]] : [e.p[0], e.p[1], e.p[3], e.p[2]];
+    w.g.apply(w, [0, 'SOLID'].concat(spol, [100, 'AcDbTrace', 10, q[0][0], 20, q[0][1], 30, 0, 11, q[1][0], 21, q[1][1], 31, 0,
+      12, q[2][0], 22, q[2][1], 32, 0, 13, q[3][0], 23, q[3][1], 33, 0])); return;
+  }
+  if (e.t === 'LWPOLYLINE') {
+    var a = [0, 'LWPOLYLINE'].concat(spol, [100, 'AcDbPolyline', 90, e.p.length, 70, e.uzavrena ? 1 : 0]);
+    if (e.sirka) a.push(43, e.sirka);
+    e.p.forEach(function (q, i) { a.push(10, q[0], 20, q[1]); if (e.b && e.b[i]) a.push(42, e.b[i]); });
+    w.g.apply(w, a); return;
+  }
+  if (e.t === 'TEXT') {
+    var t = [0, 'TEXT'].concat(spol, [100, 'AcDbText', 10, e.p[0][0], 20, e.p[0][1], 30, 0, 40, Math.max(0.5, Math.round(e.v * 100) / 100),
+      1, dxfTextBezpecne(e.text)]);
+    if (e.rot) t.push(50, e.rot);
+    t.push(7, e.tucne ? 'TUCNE' : 'STANDARD');
+    if (e.zar) t.push(72, e.zar, 11, e.p[0][0], 21, e.p[0][1], 31, 0);
+    t.push(100, 'AcDbText');
+    w.g.apply(w, t);
+  }
+}
+// Tlačítko v náhledu PDF — jen u rozvaděče (náhled dokumentace nebo schématu).
+// Režim se odvodí z toho, co náhled ukazuje: souhrnná dokumentace (bez
+// vlastního názvu souboru) nebo jen schéma; štítek a popisky DXF nemají.
+function dokPdfDxfRezim() {
+  if (!__dokPdf || !__dokPdf.x || !rozvTyp(__dokPdf.x.typ)) return '';
+  if (!__dokPdf.nazev) return 'dok';
+  return __dokPdf.nazev === rozvSchSoubor(__dokPdf.x.data || {}) ? 'schema' : '';
+}
+function dokPdfDxfTlacitko() {
+  var b = document.getElementById('dok-pdf-dxf'); if (!b) return;
+  b.style.display = dokPdfDxfRezim() ? '' : 'none';
+}
+(function () {
+  var box = document.getElementById('dok-pdf-pages');
+  if (box && window.MutationObserver) new MutationObserver(dokPdfDxfTlacitko).observe(box, { childList: true });
+})();
+TD_AKCE.tdPdfDxf = function () {
+  var rez = dokPdfDxfRezim(); if (!rez) return;
+  var x = __dokPdf.x, d = x.data || {};
+  var o = rez === 'schema' ? { schema: true, celni: true } : { schema: rozvVyber(d).schema !== false, celni: true };
+  var txt;
+  try { txt = rozvDxfVytvor(d, o, x.uid); } catch (e) { console.error(e); showToast('⚠ Výkres pro CAD se nepodařilo připravit: ' + ((e && e.message) || e)); return; }
+  var blob = new Blob([dxfDoBajtu(txt)], { type: 'application/dxf' });
+  ulozitSoubor(blob, rozvDxfNazev(d));
+};
+
 
 // ── Vektorové PDF (svg2pdf.js + písmo s háčky z vektor/) ─────────────────
 // Načte se až při prvním PDF se schématem. Když nejde (offline bez cache,

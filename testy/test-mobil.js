@@ -671,6 +671,8 @@ function vsechnyStavy(zalozky) {
   add('rozvaděč – záložka 3D, šikmo s otevřenými dveřmi', 'Tvorba dokumentace', E(async () => { await __M.rozv(); rozvZalozkaNastavit('3d'); await __M.w(300); }));
   add('rozvaděč – náhled schématu (PDF)', 'Tvorba dokumentace', E(async () => { await __M.rozv(); await TD_AKCE.tdRSchPdf(); await __M.w(300); }));
   add('rozvaděč – výrobní štítek', 'Tvorba dokumentace', E(async () => { await __M.rozv(); await TD_AKCE.tdRStitek(); await __M.w(300); }));
+  // výměna s CAD (2026-11-02): náhled PDF s „Stáhnout pro CAD (DXF)", seznam s „Načíst výkres z CAD", náhled importu
+  add('rozvaděč – náhled PDF s tlačítkem Stáhnout pro CAD (DXF)', 'Tvorba dokumentace', E(async () => { await __M.rozv(); await dokNahled(); await __M.w(400); }));
   add('rozvaděč – popisky pod přístroje', 'Tvorba dokumentace', E(async () => { await __M.rozv(); await TD_AKCE.tdRPopisky(); await __M.w(300); }));
   add('rozvaděč – výrobní štítek, jednoduché rozvržení', 'Tvorba dokumentace', E(async () => {
     await __M.rozv(); rozvZalozkaNastavit('dok'); const e = dokForm().querySelector('[data-dk="stitek.styl"]');
