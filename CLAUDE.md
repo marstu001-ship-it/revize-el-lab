@@ -2409,6 +2409,83 @@ předchozí verzi na 8902**). Pomocník `testy/dxf-kontrola.py` (ezdxf, jen v te
 `pip install ezdxf`). V `test-mobil.js` stav „rozvaděč – náhled PDF s tlačítkem
 Stáhnout pro CAD (DXF)".
 
+#### Import — „📐 Načíst výkres z CAD (DXF)" na seznamu rozvaděčů
+
+- **Na seznamu vedle „📋 Zakreslit z revizní zprávy"** (`.dok-druha-akce`,
+  `DOK_TYPY.rozv.zCad`, i PSC), soubor jde i **přetáhnout na seznam** (obecný
+  import souborů pošle `.dxf` / `.dwg` do `rozvDxfPretazeni`; jinde poradí,
+  kam ho dát). Vše jen čtení v prohlížeči, nic se neposílá ven.
+- **Čtení** `dxfNacist`: DWG (`AC10…`) → „DWG neumím — v CAD ho uložte jako DXF",
+  binární DXF, prázdný soubor, cizí soubor → hláška, nic nespadne. Kódování
+  z `$DWGCODEPAGE` (ANSI_1250 → windows-1250), AC1021+ UTF-8, `\U+XXXX`, `%%c`…
+  i formátování MTEXT. `dxfRozvinout` rozvine bloky (i vnořené) do souřadnic modelu.
+- **Výkres Elmeru** (rozbor vzorku uživatele; skutečný soubor v repozitáři není,
+  test má vymyšlený `testy/vstupy/elmer-ordinace.dxf` ze skriptu `dxf-elmer.py`):
+  jedna vrstva, žádné atributy, přístroje = bloky s vlastními názvy kreslíře
+  („JST1P1 (4) (2)", „Fíčko 1f (3)") a obyčejnými texty. **Rozhodují texty,
+  ne názvy bloků** (`dxfPristrojZTextu`): označení `DXF_OZN` (QH, Q, QM, FA, FI,
+  FI/FA, FU, KM, KA, KT, SB, HL, SPD, X…), typ `dxfTypRozbor` („LTN 16B/1",
+  „OLI 10B/2/030/A", „LFN 40/4/030/A", „ASN 32/3" → In, charakteristika, póly,
+  IΔn, typ chrániče), `In=…`, `Idn=…mA`, `…kA`. Hlavní vypínač volným textem
+  (QH · ASN 32/3 · In=32A) = shluk volných textů do 20 × 14 mm.
+- **Řady OEZ** (`DXF_RADY_OEZ`: LTN, LTE, OLI, OLE, LFN, OFI, ASN…) se poznají
+  podle předpony — jen výrobce a druh, data se nevymýšlejí; nemá-li knihovna
+  data OEZ, náhled to napíše.
+- **Listy** = nejvnější velké uzavřené obdélníky (rámy), jinak shluky podle
+  mezer v X; texty do 7 mm od rámu (čísla zón) se ignorují. List bez přístrojů
+  v blocích s ≥ 2 označeními (nebo s „Osazení / Čelní pohled") = **čelní pohled**:
+  označení po řadách (stejné Y ± 4 mm), v řadě podle X.
+- **Tabulka obvodů:** řada čísel (01, 02…, stejné Y) pod přístroji; ve sloupci
+  ± polovina rozteče Pi (číslo), kabel (`CYKY-J 3x1,5`) a popis (víc řádků se
+  spojí shora dolů). Přístroj patří k obvodu podle X. Typ obvodu z popisu
+  („Zás." → zásuvky, „Osv." → světla, „Rezerva"), blok pod vývodem (ZASU…,
+  svítidlo) jen doplňkem.
+- **Nadřazený chránič:** vodorovná přípojnice pod chráničem (čára v rozsahu
+  jeho X) → jističe pod ní (níž v Y a v jejím rozsahu X) dostanou `nadr` ručně;
+  bez čáry do dalšího přístroje na úrovni chrániče.
+- **Razítko a tabulka rozvaděče** (`STITKY`: rozvaděč, akce, investor, soustava,
+  krytí, rozměry, provedení, přívod, způsob ochrany, název výkresu → hodnota
+  vpravo, jinak pod štítkem) a podle tvaru textu (soustava „3 NPE AC 50 Hz
+  230/400V / TN-C-S" → `dxfSoustava`, „automatickým odpojením", „shora",
+  „C1 RH100.2" = napájen z, „FA02 B25/3" = předřazený jistič). Popis skříně
+  („Rozvodnice od výrobce ABB 3x12modulů… IP40, třída II, rozměry 300x545x90")
+  → `dxfSkrinNavrh` (skříň z knihovny se stejnými řadami × moduly a výrobcem,
+  jinak vlastní velikost s výrobcem).
+- **Náhled ke kontrole (povinný)** `#modal-rz-dxf`: nahoře údaje rozvaděče
+  a návrh skříně, souhrn barev, pak tabulka řádek = přístroj (stav, označení,
+  text ve výkresu, **položka z knihovny — výběr jde změnit**, In, obvod, popis,
+  kabel, Pi, typ obvodu, nadřazený, řada / pozice). **Zelená** = typ shodný
+  s položkou knihovny (`dxfTypNorm`: mezery, `/`, `-` a velikost písmen
+  nehrají roli), **oranžová** = odhad (obecná vestavěná položka nebo položka
+  z údajů výkresu: `pozn` „z DXF – nenalezeno v knihovně" + upozornění
+  „doplňte typ"), **červená** = nerozpoznáno (bez druhu, nebo bez In) →
+  výchozí „— vynechat —", jde vybrat položka. Jedna hlavní akce „✓ Založit
+  rozvaděč".
+- **Založení** `rozvDxfZalozit`: řady podle čelního pohledu (co v něm chybí,
+  do řady s místem), bez něj chránič + jeho jističe jako celek přes
+  `rzzSkladat` / `rzzSkrin` (táž logika jako zakreslení z revize). Vývody mají
+  popis, kabel + průřez, Pi, číslo obvodu, typ obvodu; QH je hlavní vypínač.
+  Hlavička z razítka, `zdrojCad`, poznámka „Načteno z výkresu CAD: …", bez
+  jednoznačné soustavy `upoz` „doplňte soustavu". Rozvaděč se otevře v editoru
+  a dál běží všechno jako u ručně složeného (schéma, oteplení, soudobost,
+  štítek, dokumenty). Hláška se ZPĚT. Na seznamu PSC vznikne PSC (`pscZDbo`).
+- **Zpětné načtení vlastního exportu** (`rozvDxfNajitExistujici`): DXF
+  s REVIZE_EL_ID a rozvaděč existuje → okno „Výkres vznikl v tomto programu…",
+  přehled změn (typ, In, popis vývodu, kabel, Pi — z atributů) a hlavní akce
+  „✓ Aktualizovat existující rozvaděč" (převezme jen změny, ZPĚT), vedle
+  „Založit jako nový rozvaděč". **Překreslená geometrie se nepřebírá** a okno
+  to říká. Jako nový (jiný počítač) se díky REVIZE_EL_KNIH / _KAT naváže na
+  tutéž položku knihovny (zelená).
+
+Test: `test-rozvadec.js` (import vymyšleného elmerovského výkresu přes výběr
+souboru: 5× RCBO OLI, 6× LTN, chránič LFN, QH volným textem, FA14 nerozpoznaný;
+barvy 4 / 9 / 1 s vymyšlenou položkou knihovny „LTN-16B-1"; údaje razítka;
+řady čelního pohledu; obvody podle X a dvouřádkový popis; nadřazený chránič;
+obecná položka s poznámkou; přetažení na seznam; vlastní export se změněným
+In a popisem přes ezdxf → aktualizace jen změn; DWG, binární, prázdný, SVG
+a výkres bez přístrojů → hláška). V `test-mobil.js` stavy „rozvaděč – seznam
+s Načíst výkres z CAD (DXF)" a „…náhled importu výkresu z CAD (okno)".
+
 ### PDF (část 4)
 
 - `DOK_TYPY.rozv.pdf(d)` → bloky pro společné stránkování tvorby

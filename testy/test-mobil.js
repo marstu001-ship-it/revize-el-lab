@@ -673,6 +673,12 @@ function vsechnyStavy(zalozky) {
   add('rozvaděč – výrobní štítek', 'Tvorba dokumentace', E(async () => { await __M.rozv(); await TD_AKCE.tdRStitek(); await __M.w(300); }));
   // výměna s CAD (2026-11-02): náhled PDF s „Stáhnout pro CAD (DXF)", seznam s „Načíst výkres z CAD", náhled importu
   add('rozvaděč – náhled PDF s tlačítkem Stáhnout pro CAD (DXF)', 'Tvorba dokumentace', E(async () => { await __M.rozv(); await dokNahled(); await __M.w(400); }));
+  add('rozvaděč – seznam s Načíst výkres z CAD (DXF)', 'Tvorba dokumentace', E(async () => { dokOtevritSeznam('rozv'); await __M.w(150); }));
+  add('rozvaděč – náhled importu výkresu z CAD (okno)', 'Tvorba dokumentace', E(async (b64) => {
+    dokOtevritSeznam('rozv'); await __M.w(100);
+    const bin = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+    await rozvDxfNahled('elmer-ordinace.dxf', dxfRozpoznat(dxfNacist(bin.buffer))); await __M.w(150);
+  }, require('fs').readFileSync(require('path').join(__dirname, 'vstupy', 'elmer-ordinace.dxf')).toString('base64')), '#modal-rz-dxf');
   add('rozvaděč – popisky pod přístroje', 'Tvorba dokumentace', E(async () => { await __M.rozv(); await TD_AKCE.tdRPopisky(); await __M.w(300); }));
   add('rozvaděč – výrobní štítek, jednoduché rozvržení', 'Tvorba dokumentace', E(async () => {
     await __M.rozv(); rozvZalozkaNastavit('dok'); const e = dokForm().querySelector('[data-dk="stitek.styl"]');
