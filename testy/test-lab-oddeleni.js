@@ -353,6 +353,11 @@ async function snimek(p) {
       lab.evaluate(() => stahnoutSoubor(new Blob(['x'], { type: 'application/json' }), 'Plan_revizi_2026-10-15.json')),
     ]);
     check('stažený soubor má předponu LAB_', dl.suggestedFilename() === 'LAB_Plan_revizi_2026-10-15.json', dl.suggestedFilename());
+    const [dl2] = await Promise.all([   // výkres pro CAD (2026-11-02) jde touž cestou
+      lab.waitForEvent('download'),
+      lab.evaluate(() => stahnoutSoubor(new Blob(['0'], { type: 'application/dxf' }), 'RH1_Byt.dxf')),
+    ]);
+    check('výkres pro CAD (.dxf) má předponu LAB_', dl2.suggestedFilename() === 'LAB_RH1_Byt.dxf', dl2.suggestedFilename());
 
     // ── 7. service worker labu ─────────────────────────────────────────
     const sw = await lab.evaluate(async () => {

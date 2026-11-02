@@ -33,7 +33,7 @@ a skládá se z těchto LAB-only míst:
 | `index.html` — **jediný `<script>` hned za `<title>`** (blok „LAB — ODDĚLENÍ OD OSTRÉHO PROGRAMU") | běží před vším ostatním a obaluje API prohlížeče, takže zbytek `index.html` je **bajt po bajtu stejný jako v revize-el** |
 | `sw.js` | `CACHE_NAME = 'revize-el-lab-v…'`, `activate` maže jen `revize-el-lab-…`, čte se jen z vlastní cache (`zCache`) |
 | `manifest.json` | „Revize EL – LAB" / „Revize LAB", `id`/`start_url`/`scope` = `/revize-el-lab/`, oranžová ikona s nápisem LAB |
-| `testy/test-lab-oddeleni.js` | důkaz oddělení (45 kontrol, port 8930) |
+| `testy/test-lab-oddeleni.js` | důkaz oddělení (46 kontrol, port 8930) |
 | tahle sekce `CLAUDE.md` | |
 
 Co blok přesměruje (program sám pořád píše `revize_el_…`, `revize-el-db`…):
@@ -48,7 +48,7 @@ Co blok přesměruje (program sám pořád píše `revize_el_…`, `revize-el-db
 | cache `revize-el-v…` | `revize-el-lab-v…` (sw.js) |
 | automatická záloha `revize-el-zaloha-RRRR-MM-DD_HH-MM.json` | `revize-lab-zaloha-…`; soubory `revize-el-…` ve složce **lab nevidí**, takže je jeho rotace nesmaže |
 | výběr složky zálohy | **složku, ve které jsou zálohy ostrého programu, lab odmítne**; dialog má vlastní zapamatovanou složku (`id: 'revize-lab-zalohy'`) |
-| Uložit jako / stažení (PDF, `Zpravy_…json`, plán, záloha, xlsx, zip) | název dostane předponu **`LAB_`**, dialog má vlastní zapamatovanou složku (`id: 'revize-lab'`) |
+| Uložit jako / stažení (PDF, `Zpravy_…json`, plán, záloha, xlsx, zip, výkres pro CAD `.dxf`) | název dostane předponu **`LAB_`**, dialog má vlastní zapamatovanou složku (`id: 'revize-lab'`) |
 | vzhled | oranžová lišta, štítek **LAB vX.Y** v liště, titulek „Revize EL – LAB", ikona LAB |
 
 **Formáty souborů zůstávají stejné** (`revize-el-backup`, `revize-el-zpravy`,
