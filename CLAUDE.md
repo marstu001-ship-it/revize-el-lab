@@ -2486,6 +2486,12 @@ In a popisem přes ezdxf → aktualizace jen změn; DWG, binární, prázdný, S
 a výkres bez přístrojů → hláška). V `test-mobil.js` stavy „rozvaděč – seznam
 s Načíst výkres z CAD (DXF)" a „…náhled importu výkresu z CAD (okno)".
 
+**Karta v Novinkách** „📐 Výměna výkresů s CAD (Schémata CAD, AutoCAD)"
+(2. 11. 2026) — výjimečně ano, uživatel o ni požádal a určil obsah: kde je
+Stáhnout / Načíst, co jde v CAD upravit a co ne, Uložit jako → DXF – AutoCAD,
+kontrola barev v náhledu, DWG a SVG ne. Hlídá ji `test-rozvadec.js` (i že
+tlačítka, na která odkazuje, v programu jsou).
+
 ### PDF (část 4)
 
 - `DOK_TYPY.rozv.pdf(d)` → bloky pro společné stránkování tvorby

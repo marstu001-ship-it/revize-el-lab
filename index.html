@@ -2635,6 +2635,21 @@ html.dark .rz-imp-chyby{background:#3a1f1c;border-color:#6b2c25}
   </div>
   <div id="nov-hledat-info" class="nov-lupa-info"></div>
 
+  <div class="scard" data-nov-datum="2026-11-02">
+    <div class="scard-title">📐 Výměna výkresů s CAD (Schémata CAD, AutoCAD) <span class="nov-datum">2. 11. 2026</span></div>
+    <p style="font-size:.88rem;line-height:1.6;margin-bottom:.6rem">Výkres rozvaděče jde přenést do CAD programu a zase zpátky. Program používá formát <strong>DXF</strong>, který otevře Schémata CAD (Elmer), AutoCAD i jiné CAD programy.</p>
+    <div style="font-size:.85rem;line-height:1.7">
+      <ul style="margin:.3rem 0 0 1.4rem;padding:0">
+        <li><strong>Do CAD:</strong> otevřete rozvaděč, dejte <strong>Náhled PDF</strong> (nebo na záložce ⚡ Schéma <strong>Tisk schématu</strong>) a v liště nahoře klepněte na <strong>📐 Stáhnout pro CAD (DXF)</strong> — hned vedle Uložit PDF. Stáhne se schéma, ovládací obvody a čelní pohled, každý list vedle sebe.</li>
+        <li>V CAD jde upravit <strong>každá čára a každý text</strong>, přístroje jsou <strong>bloky</strong> (označení, typ, In jsou i v atributech bloku). Ve Schématech CAD to ale nebudou jejich „chytré" značky — je to obyčejná kresba.</li>
+        <li><strong>Z CAD do programu:</strong> ve Schématech CAD dejte <strong>Uložit jako → DXF – AutoCAD</strong>. Pak v Tvorbě dokumentace otevřete seznam rozvaděčů a klepněte na <strong>📐 Načíst výkres z CAD (DXF)</strong> (vedle Zakreslit z revizní zprávy), nebo soubor přetáhněte myší na seznam.</li>
+        <li><strong>Po načtení vždy zkontrolujte náhled.</strong> Zelené řádky program poznal jistě, <strong>oranžové jsou odhad</strong> (typ nenašel v knihovně) a <strong>červené nepoznal</strong> — u nich vyberte přístroj, jinak se vynechají. Pak <strong>✓ Založit rozvaděč</strong> a dál s ním pracujete jako s ručně složeným.</li>
+        <li>Výkres, který jste z programu stáhli a v CAD upravili, program pozná a nabídne <strong>Aktualizovat existující rozvaděč</strong> — převezme jen změněné hodnoty (typ, In, popis vývodu, kabel, Pi), překreslené čáry ne.</li>
+      </ul>
+      <p style="font-size:.8rem;color:var(--muted);margin-top:.6rem">Načíst jde jen DXF — <strong>DWG ani SVG ne</strong>; v CAD je uložte jako DXF. Soubor se čte jen v prohlížeči, nikam se neposílá.</p>
+    </div>
+  </div>
+
   <div class="scard" data-nov-datum="2026-10-21">
     <div class="scard-title">🗄️ Rozvaděč DBO — návrh a dokumentace <span class="nov-datum">21. 10. 2026</span></div>
     <p style="font-size:.88rem;line-height:1.6;margin-bottom:.6rem">Na úvodu v <strong>Tvorbě dokumentace</strong> přibyla dlaždice <strong>Rozvaděč DBO – návrh a dokumentace</strong> (ČSN EN 61439-3). Rozvaděč si poskládáte v čelním pohledu ze skříní a přístrojů a program z návrhu udělá štítek, dokumenty i schéma.</p>
