@@ -2264,6 +2264,7 @@ function pomocnik() {
     py('zmen', dxfCesta, zmen, '-FA3', 'IN', '20 A', '-FA4', 'VYVOD', 'Zásuvky – ložnice u okna');
     const zp = await p.evaluate(async (b64) => {
       const bin = Uint8Array.from(atob(b64), c => c.charCodeAt(0));
+      await dokNacist(); const pred = DOK.dokumenty.length;
       rozvDxfSoubor(new File([bin], 'zmena.dxf')); await __T.w(800);
       const m = document.getElementById('modal-rz-dxf'), r = { open: m.classList.contains('open'), ok: document.getElementById('rzd-ok').textContent, text: m.innerText,
         zmeny: ((__rzDxf || {}).aktual || {}).zmeny || [] };
@@ -2271,12 +2272,12 @@ function pomocnik() {
       await TD_AKCE.tdRDxfOk(); await __T.w(300);
       await dokNacist(); const d = dokNajit(window.__cadUid).data, naj = {};
       d.rady.forEach(rr => rr.prvky.forEach(x => naj[x.ozn] = x));
-      r.po = naj['-FA3'].p.In + '|' + naj['-FA4'].vyvod + '|' + naj['-FA2'].vyvod + '|' + DOK.dokumenty.filter(x => (x.data || {}).oznaceni === 'RH1').length;
+      r.po = naj['-FA3'].p.In + '|' + naj['-FA4'].vyvod + '|' + naj['-FA2'].vyvod + '|' + (DOK.dokumenty.length - pred);
       return r;
     }, fs.readFileSync(zmen).toString('base64'));
     check('CAD zpětně: vlastní výkres → nabídka „Aktualizovat existující rozvaděč" s přehledem změn (jen In a popis)', zp.open && /Aktualizovat existující rozvaděč/.test(zp.ok) && zp.zmeny.length === 2 &&
       /-FA3:In:10→20/.test(zp.z) && /-FA4:vyvod:Zásuvky – obývací pokoj→Zásuvky – ložnice u okna/.test(zp.z) && /geometrie[\s\S]*se nepřebírá/i.test(zp.text), zp.z);
-    check('CAD zpětně: aktualizace převezme jen změněné hodnoty, nový rozvaděč nevznikne', zp.po === '20|Zásuvky – ložnice u okna|Zásuvky – kuchyňka, ř. 1|1', zp.po);
+    check('CAD zpětně: aktualizace převezme jen změněné hodnoty, nový rozvaděč nevznikne', zp.po === '20|Zásuvky – ložnice u okna|Zásuvky – kuchyňka, ř. 1|0', zp.po);
 
     // ── DWG, binární DXF, prázdný soubor, výkres bez přístrojů → hláška, nic nespadne ──
     const prazdnyDxf = path.join(BEH, 'cad-bez-pristroju.dxf'); py('bez-pristroju', prazdnyDxf);
