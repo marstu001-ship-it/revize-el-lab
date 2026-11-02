@@ -2340,6 +2340,20 @@ signalizace (pomocný kontakt → kontrolka / výstup na svorky), motor
 (spouštěč + stykač + ZAP/VYP). Vloží, propojí, doplní svorky, vybere
 cívku; jedno ZPĚT. Šablony s vývodem vyžadují vybraný jistič.
 
+**Popisky se nesmí překrývat (2026-11-02, hlášení uživatele: hlavní vypínač
++ CENTRAL STOP):** u přívodu jde hodnota vypínače svisle od spodku značky
+nahoru; se spouští jen pod mechanickou vazbu (typ se vynechá, když se nevejde)
+a popisek spouště je ve dvou svislých řádcích („spoušť" / „C1–C2 /3.1") celý
+nad popiskem sběrnice „L1, L2, L3". Text soustavy na sběrnici se zarovná
+vpravo jen, když se vejde celý; jinak začne za lomítky a jističem ovládání
+a smí přesáhnout konec sběrnice (dřív přejel přes „L1, L2, L3" nebo se
+uřízl). Dlouhá hodnota vývodu (MCCB se spouštěmi, NH s vložkou) posune
+označení přístroje výš. Hodnota chrániče a RCBO je o 0,7 mm dál od kroužku
+součtového transformátoru. U PSC začínají texty přívodu nad popiskem
+sběrnice. Kontrola: skript ve scratchpadu porovnal obdélníky všech textů
+ve všech listech (QH + CENTRAL STOP, podpěťová s vývody, byt 3+1 se
+šablonami, hala PSC) — 0 překryvů.
+
 **Starý rozvaděč beze změny:** bez `vnejsi`, `ovl`, `spina`, `prislNa`,
 `predHlavnim`, `svorkaOvl` se data, čelní pohled i schéma nemění (test).
 

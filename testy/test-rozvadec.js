@@ -1868,7 +1868,8 @@ function pomocnik() {
     r.svCisla = T.filter(q => /^X1:\d$/.test(q.t)).map(q => q.t).join();
     r.mimo = (ovl[0].svg.match(/stroke-dasharray="1.6 1"/g) || []).length;
     const Ts = texty(sil[0].svg);
-    r.silSpoust = (Ts.find(q => /^spoušť C1–C2 \/3\.\d+$/.test(q.t)) || {}).t || '';
+    const spT = Ts.find(q => q.t === 'spoušť'), spC = Ts.find(q => /^C1–C2 \/3\.\d+$/.test(q.t));
+    r.silSpoust = spT && spC ? 'spoušť ' + spC.t : '';
     r.silKM = (Ts.find(q => /^1-2 \/3\.\d+$/.test(q.t)) || {}).t || '';
     r.silKMozn = Ts.some(q => q.t === '-KM1');
     r.ovlZdroj = Ts.some(q => q.t === 'ovládání');
