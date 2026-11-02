@@ -84,6 +84,7 @@ const w = ms => new Promise(r => setTimeout(r, ms));
 
   // ── dokončená zpráva zůstane jen pro čtení ─────────────────────────────
   await p.evaluate(() => { archiv[0].stav = ''; saveStore(); otevritZpravu(0); showScreen('form'); });
+  await w(500);   // saveStore() píše do IndexedDB asynchronně — obnovení dřív by načetlo starý stav
   await nacti();
   const ro = await p.evaluate(() => ({ s: document.querySelector('.screen.active').id, ro: !!window.__formReadOnly }));
   check('dokončená zpráva se vrátí zase jen pro čtení', ro.s === 'screen-form' && ro.ro, JSON.stringify(ro));

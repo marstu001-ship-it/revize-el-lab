@@ -24,8 +24,8 @@ async function stranka(b, port, init) {
   const p = await ctx.newPage(), err = [];
   p.on('pageerror', e => err.push(e.message)); p.on('dialog', d => d.accept());
   await p.goto('http://127.0.0.1:' + port + '/index.html'); await w(1200);
-  // uložené dokumenty až po načtení programu (přes jeho localStorage — v labu ho přesměruje
-  // labový blok, zapsané před ním by program neviděl), pak znovu načíst
+  // uložené dokumenty až po načtení programu (přes jeho localStorage —
+  // zapsané před načtením by program neviděl), pak znovu načíst
   if (init) { await p.evaluate(dok => localStorage.setItem('revize_el_dok', dok), init); await p.reload(); await w(1200); }
   await p.evaluate('window.__rozvByt = ' + require('./rozvadec-byt.js').toString());
   await p.evaluate(() => {

@@ -1,4 +1,4 @@
-// Data se novou verzí nemění (přenos konfigurátoru z labu, v9.135).
+// Data se novou verzí nemění (přenos konfigurátoru, v9.135).
 // Stará verze z gitu (STARA_PORT, 8902; servery.sh STARA=<commit>) × pracovní kopie:
 //   * starý rozvaděč (s vypínačem — do v9.134 -QM1 — a ručním Pi) po otevření, projití záložek a uložení
 //     bajtově stejný — nic se nepřeznačí, nezapíše se typ obvodu, skupina ani β,

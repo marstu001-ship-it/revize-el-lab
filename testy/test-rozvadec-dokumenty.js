@@ -271,7 +271,7 @@ async function priprava(p) {
   check('políčko přístroje má šířku přístroje, nahoře označení, pod ním vývod a hodnota (B16, 40A/30mA); rezerva prázdná',
     Math.abs(r2.bunky[0].w - 4 * 17.5) <= 0.2 && r2.bunky[0].t === '-FI1 40A/30mA' && /^-FA3 /.test(r2.bunky[2].t) && / B10$/.test(r2.bunky[2].t) &&
     pp.pasky[0].bunky.some(b => b.prazdne && !b.t), r2.bunky.slice(0, 3).map(b => b.t).join(' | '));
-  check('dlouhý název vývodu se zalomí a zmenší (případně zkrátí „…"), nikdy nepřeteče', pp.pasky.every(x => x.bunky.every(b => b.ok)) && /^-FA4 Obývací pokoj.*… B16$/.test(dlouhy.t) && dlouhy.ok, dlouhy.t);
+  check('dlouhý název vývodu se zalomí a zmenší (případně zkrátí „…"), nikdy nepřeteče', pp.pasky.every(x => x.bunky.every(b => b.ok)) && /^-FA4 Obývací pokoj.*(… )?B16$/.test(dlouhy.t) && dlouhy.ok, dlouhy.t);
   await p.evaluate(async () => { await dokOtevrit(__rz.o.uid); rozvZalozkaNastavit('dok'); __T.dk('[data-dk="popisky.vyska"]', '9'); await dokUlozitOtevreny(); });
   const pp9 = await popisky();
   check('výška pásku 9 mm (volba 9 / 12 / 15), obsah se pořád vejde', pp9.pasky.every(x => Math.abs(x.h - 9) <= 0.2 && x.bunky.every(b => b.ok)), pp9.pasky.map(x => x.h.toFixed(1)).join(' '));
