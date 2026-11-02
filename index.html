@@ -2640,7 +2640,7 @@ html.dark .rz-imp-chyby{background:#3a1f1c;border-color:#6b2c25}
     <p style="font-size:.88rem;line-height:1.6;margin-bottom:.6rem">Výkres rozvaděče jde přenést do CAD programu a zase zpátky. Program používá formát <strong>DXF</strong>, který otevře Schémata CAD (Elmer), AutoCAD i jiné CAD programy.</p>
     <div style="font-size:.85rem;line-height:1.7">
       <ul style="margin:.3rem 0 0 1.4rem;padding:0">
-        <li><strong>Do CAD:</strong> otevřete rozvaděč, dejte <strong>Náhled PDF</strong> (nebo na záložce ⚡ Schéma <strong>Tisk schématu</strong>) a v liště nahoře klepněte na <strong>📐 Stáhnout pro CAD (DXF)</strong> — hned vedle Uložit PDF. Stáhne se schéma, ovládací obvody a čelní pohled, každý list vedle sebe.</li>
+        <li><strong>Do CAD:</strong> otevřete rozvaděč, dejte <strong>Náhled PDF</strong> (nebo na záložce ⚡ Schéma <strong>Tisk schématu</strong>) a v liště nahoře klepněte na <strong>📐 Stáhnout pro CAD (DXF)</strong> — hned vedle Uložit PDF. Stáhne se schéma (na prvním listu i s čelním pohledem rozvaděče) a ovládací obvody, listy vedle sebe.</li>
         <li>V CAD jde upravit <strong>každá čára a každý text</strong>, přístroje jsou <strong>bloky</strong> (označení, typ, In jsou i v atributech bloku). Ve Schématech CAD to ale nebudou jejich „chytré" značky — je to obyčejná kresba.</li>
         <li><strong>Z CAD do programu:</strong> ve Schématech CAD dejte <strong>Uložit jako → DXF – AutoCAD</strong>. Pak v Tvorbě dokumentace otevřete seznam rozvaděčů a klepněte na <strong>📐 Načíst výkres z CAD (DXF)</strong> (vedle Zakreslit z revizní zprávy), nebo soubor přetáhněte myší na seznam.</li>
         <li><strong>Po načtení vždy zkontrolujte náhled.</strong> Zelené řádky program poznal jistě, <strong>oranžové jsou odhad</strong> (typ nenašel v knihovně) a <strong>červené nepoznal</strong> — u nich vyberte přístroj, jinak se vynechají. Pak <strong>✓ Založit rozvaděč</strong> a dál s ním pracujete jako s ručně složeným.</li>
@@ -38712,37 +38712,11 @@ var DXF_KAT_BLOK = { FA: 'JISTIC', FI: 'CHRANIC', FIFA: 'JISTIC_CHRANIC', AFDD: 
   XS: 'ZASUVKA', MS: 'SPOUSTEC', QF: 'VYKONOVY_JISTIC', QS: 'ODPINAC', TA: 'TRANSFORMATOR_PROUDU', PM: 'MERIDLO', PRISL: 'PRISLUSENSTVI',
   JINE: 'PRISTROJ', XN: 'PRIPOJNICE_N', XPE: 'PRIPOJNICE_PE' };
 
-// ── Listy: co je v náhledu (schéma, ovládací obvody, čelní pohled) ──
-function rozvDxfCelniList(d, cislo, listu, fmt) {
-  var g = rsGeom(fmt, false, false), h = rsRam(g), t = (typeof STORE !== 'undefined' && STORE.technik) || {};
-  var odv = rozvSchOdvozene(d), hod = function (c) { return rozvDokHodnota(d, odv, c); }, e = rozvDokEff(d), sk = d.skrin || {};
-  var c = { vypracoval: t.jmeno || '', datum: dokDatumCz(d.datum) || '', akce: d.stavba || '', investor: (d.investor || {}).nazev || '',
-    nazev: 'Čelní pohled ' + (d.oznaceni || ''), projekt: hod('schema.projekt'), zakazka: hod('schema.zakazka'),
-    soubor: rozvDxfNazev(d), listu: listu };
-  var bx = 16, by = 27, bw = g.W - 32, bh = g.H - 10 - RS_RAZ.h - 6 - by;
-  var nad = [pscJe(d) ? pscSkrinNazev(sk) : sk.rady && sk.modulu ? 'Rozvodnice ' + sk.rady + '×' + sk.modulu + ' modulů' : 'Rozvodnice',
-    sk.vyrobce && sk.vyrobce !== 'obecný' ? sk.vyrobce : '', rozvIpText(e), e.trida ? 'třída ' + e.trida : '',
-    e.rozmery ? 'rozměry ' + e.rozmery + (/mm/.test(e.rozmery) ? '' : ' mm') : ''].filter(Boolean).join(', ');
-  h += rsText(bx, 18, 'Čelní pohled rozvaděče ' + (d.oznaceni || ''), { fs: 3.4, tucne: true }) + rsText(bx, 22.6, rsVejit(nad, bw, 2.5), { fs: 2.5 });
-  if (d.skrin) {
-    var rz = { skrin: d.skrin, rady: d.rady || [] }, rr = rozvSvgRozmery(rz), k = Math.min(bw / rr.Wsvg, bh / rr.Hsvg, 1);
-    k = Math.floor(k * 1000) / 1000;
-    var vnitr = rozvSvg(rz, { tisk: true }).replace(/^<svg[^>]*>/, '').replace(/<\/svg>\s*$/, '');
-    h += '<g data-celni="1">' + rsSkupina(bx, by, vnitr, { k: k }) + '</g>';
-    h += rsText(bx, Math.min(by + rr.Hsvg * k + 4, g.H - 12), k < 0.995 ? 'zmenšeno na ' + Math.round(k * 100) + ' %' : 'skutečná velikost 1 : 1', { fs: 1.9 });
-  } else h += rsText(bx, by + 8, 'Skříň zatím není vybraná.', { fs: 2.6 });
-  h += rsRazitko(g, c, cislo);
-  return { g: g, svg: rsSvgObal(g, h), druh: 'celni' };
-}
-function rozvDxfListy(d, o) {
-  o = o || {};
-  var L = [];
-  if (o.schema !== false) rozvSchemaListy(d).forEach(function (l, i) { L.push({ g: l.g, svg: l.svg, druh: !i ? 'osazeni' : l.g.ovl ? 'ovladani' : 'schema' }); });
-  if (o.celni !== false) {
-    var fmt = ((d.schema || {}).format === 'A3') ? 'A3' : 'A4';
-    L.push(rozvDxfCelniList(d, L.length + 1, L.length + 1, fmt));
-  }
-  return L;
+// ── Listy: schéma tak, jak je v náhledu (list 1 osazení s čelním pohledem,
+// jednopólové listy, ovládací obvody). Samostatný list čelního pohledu se
+// nepřidává — opakoval by list 1 (rozhodnutí uživatele 2026-11-02).
+function rozvDxfListy(d) {
+  return rozvSchemaListy(d).map(function (l, i) { return { g: l.g, svg: l.svg, druh: !i ? 'osazeni' : l.g.ovl ? 'ovladani' : 'schema' }; });
 }
 function rozvDxfNazev(d) {
   var obj = d.objekt && typeof dokObjNazev === 'function' && dokObjNajit(d.objekt) ? dokObjNazev(d.objekt) : (d.stavba || '');
@@ -38801,7 +38775,6 @@ function dxfZeSvg(svg, st) {
     if (tag === 'g' || tag === 'svg') {
       var s2 = { cil: cil, vrstva: vr, blok: s.blok };
       if (el.getAttribute('data-ram') || el.getAttribute('data-razitko')) s2.vrstva = 'RAM';
-      else if (el.getAttribute('data-celni')) s2.vrstva = 'CELNI_POHLED';
       else if (el.getAttribute('data-znacka') === 'svorka') s2.vrstva = 'SVORKY';
       var puid = el.getAttribute('data-puid'), novy = null;
       if (puid && !s.blok && (st.druh === 'schema' || st.druh === 'ovladani')) {
@@ -39115,9 +39088,8 @@ function dokPdfDxfTlacitko() {
 TD_AKCE.tdPdfDxf = function () {
   var rez = dokPdfDxfRezim(); if (!rez) return;
   var x = __dokPdf.x, d = x.data || {};
-  var o = rez === 'schema' ? { schema: true, celni: true } : { schema: rozvVyber(d).schema !== false, celni: true };
   var txt;
-  try { txt = rozvDxfVytvor(d, o, x.uid); } catch (e) { console.error(e); showToast('⚠ Výkres pro CAD se nepodařilo připravit: ' + ((e && e.message) || e)); return; }
+  try { txt = rozvDxfVytvor(d, {}, x.uid); } catch (e) { console.error(e); showToast('⚠ Výkres pro CAD se nepodařilo připravit: ' + ((e && e.message) || e)); return; }
   var blob = new Blob([dxfDoBajtu(txt)], { type: 'application/dxf' });
   ulozitSoubor(blob, rozvDxfNazev(d));
 };

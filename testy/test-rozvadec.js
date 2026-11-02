@@ -2122,7 +2122,7 @@ function pomocnik() {
       const L = rozvSchemaListy(d), uid = {};
       L.forEach((l, i) => { if (!i || l.g.ovl) return; const box = document.createElement('div'); box.innerHTML = l.svg;
         box.querySelectorAll('svg > [data-puid], svg > g:not([data-puid]) [data-puid]').forEach(g => { if (!g.parentNode.closest('[data-puid]')) uid[g.getAttribute('data-puid')] = 1; }); });
-      r.pristroju = Object.keys(uid).length; r.listu = L.length + 1;
+      r.pristroju = Object.keys(uid).length; r.listu = L.length;
       await dokNahled(); await __T.w(400);
       const btn = document.getElementById('dok-pdf-dxf');
       r.btn = !!btn && btn.offsetParent !== null; r.btnText = btn ? btn.textContent : ''; r.btnTitle = btn ? btn.title : '';
@@ -2150,7 +2150,7 @@ function pomocnik() {
       ins.every(i => /^[A-Z0-9_]+$/.test(i.blok)), fa1.blok + ' ' + JSON.stringify(fa1.atr));
     const fa2 = ins.filter(i => i.atr.OZNACENI === '-FA2')[0] || { atr: {} };
     check('CAD export: čeština po načtení přes ezdxf beze změny („Zásuvky – kuchyňka, ř. 1")', fa2.atr.VYVOD === 'Zásuvky – kuchyňka, ř. 1' && (A.texty || []).includes('Zásuvky – kuchyňka, ř. 1'), fa2.atr.VYVOD);
-    check('CAD export: listy vedle sebe, na každém rám (vnější, vnitřní) a razítko', A.ramu === 3 * ex.listu && (A.typy || {}).LINE > 50 && (A.typy || {}).TEXT > 50, A.ramu + ' rámů / ' + ex.listu + ' listů');
+    check('CAD export: jen listy schématu vedle sebe (bez samostatného čelního pohledu), na každém rám (vnější, vnitřní) a razítko', A.ramu === 3 * ex.listu && (A.typy || {}).LINE > 50 && (A.typy || {}).TEXT > 50, A.ramu + ' rámů / ' + ex.listu + ' listů');
     // schéma samotné (náhled jen schématu) — tlačítko i tam; štítek ho nemá
     const ex2 = await p.evaluate(async () => {
       const r = {};

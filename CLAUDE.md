@@ -2371,11 +2371,12 @@ nich nic nepřibylo.
   podle toho, co náhled ukazuje: souhrnná dokumentace (`dok`, schéma jen když
   je zaškrtnuté) nebo jen schéma (`schema`); štítek ani popisky ne. Viditelnost
   hlídá `MutationObserver` na `#dok-pdf-pages`, kreslící funkce se neměnily.
-- **Exportuje se schéma (list 1 osazení + jednopólové listy), ovládací obvody
-  a čelní pohled** (`rozvDxfListy`; čelní pohled = vlastní list
-  `rozvDxfCelniList` s `rozvSvg(…, { tisk: true })`, rámem a razítkem), listy
-  1 : 1 v mm vedle sebe s mezerou 20 mm (`DXF_MEZERA`). Textové dokumenty
-  (prohlášení, výpočty, soudobost) do DXF nejdou.
+- **Exportují se listy schématu** (`rozvDxfListy` = `rozvSchemaListy`: list 1
+  osazení s čelním pohledem a tabulkou, jednopólové listy, ovládací obvody),
+  1 : 1 v mm vedle sebe s mezerou 20 mm (`DXF_MEZERA`) — i z náhledu
+  dokumentace, kde schéma není zaškrtnuté. **Samostatný list čelního pohledu
+  se nepřidává** (uživatel 2026-11-02 po otevření v Elmeru: jen opakoval
+  list 1). Textové dokumenty (prohlášení, výpočty, soudobost) do DXF nejdou.
 - **Nic se nekreslí podruhé:** `dxfZeSvg()` převede TÝŽ SVG, ze kterého jde
   vektorové PDF (line → LINE, rect / path / ellipse → LWPOLYLINE s vyboulením
   oblouků, circle → CIRCLE, plná tečka → LWPOLYLINE se šířkou, plný trojúhelník
