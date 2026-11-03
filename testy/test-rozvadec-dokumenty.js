@@ -81,6 +81,18 @@ async function priprava(p) {
   check('oddíly sbalitelné: Výroba a značení (otevřený) · Technické údaje · Oteplení · Prohlášení · Kusové ověření', z1.oddily ===
     '🏭 Výroba a značení+|📋 Technické údaje-|🌡 Oteplení — ověření výpočtem (čl. 10.10.4.2)-|📜 Prohlášení o shodě-|🔧 Kusové ověření (čl. 11)-', z1.oddily);
   check('na záložce Dokumenty nefungují klávesy návrhu (Delete nesmaže skrytý přístroj)', z1.aktivni === false);
+  // značka CE podle konstrukční mřížky přílohy II nařízení 765/2008 (jednotka = R/10, C ve středu 0, E ve středu 17)
+  const ceG = await p.evaluate(() => {
+    const host = document.createElement('div'); host.innerHTML = rozvCeSvg(10); document.body.appendChild(host);
+    const svg = host.querySelector('svg'), vb = svg.getAttribute('viewBox').split(' ').map(Number), u = vb[3] / 20;
+    const tvary = Array.from(svg.querySelectorAll('path, rect'));
+    const plne = (x, y) => { const pt = svg.createSVGPoint(); pt.x = (x + 10) * u; pt.y = (y + 10) * u; return tvary.some(t => t.isPointInFill(pt)); };
+    const body = { cLevy: plne(-8.5, 0), cVnitr: !plne(-6.5, 0), cRez: plne(0.8, -8.5) && !plne(1.3, -8.5), eLevy: plne(8.5, 4), eRez: plne(17.8, -8.5) && !plne(18.3, -8.5),
+      pricka: plne(15.8, 0) && !plne(16.3, 0) && plne(12, 1.3) && !plne(12, 1.8), mezera: !plne(5, 0) };
+    host.remove(); return { pomer: vb[2] / vb[3], body };
+  });
+  check('značka CE podle přílohy II nař. 765/2008: kruhy R 10 / r 7, řez 1 za středem, E 17 od C, příčka 3 končí 1 před středem, šířka 1,4 × výška',
+    Math.abs(ceG.pomer - 1.4) < 0.001 && Object.values(ceG.body).every(Boolean), JSON.stringify(ceG));
   await p.screenshot({ path: BEH + '/rz-dok-zalozka.png' });
 
   // ── 2. předvyplnění z návrhu ──────────────────────────────────────────

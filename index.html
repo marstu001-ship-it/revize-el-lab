@@ -36359,15 +36359,20 @@ DOK_TYPY.rozv.pdfNavic = function (x, box) {
 // ── Výrobní štítek (vlastní náhled ve skutečné velikosti) ──
 // CE ze dvou oblouků (C a E na stejně velkých kružnicích, svislý řez),
 // výška nejméně 5 mm. Kreslí se, žádný obrázek odjinud.
+// Značka CE podle konstrukční mřížky přílohy II nařízení (ES) č. 765/2008
+// (jednotka = 1/10 vnějšího poloměru): každé písmeno = mezikruží R 10 / r 7,
+// svislý řez 1 vpravo od středu, středy C a E 17 od sebe, příčka E tloušťky 3
+// od vnitřní kružnice po 1 vlevo od středu. Výška značky = 2R.
 function rozvCeSvg(vyskaMm) {
-  var R = 50, r = 36, dx = 25, yo = Math.sqrt(R * R - dx * dx), yi = Math.sqrt(r * r - dx * dx);
+  var u = 5, R = 10 * u, r = 7 * u, dx = 1 * u, yo = Math.sqrt(R * R - dx * dx), yi = Math.sqrt(r * r - dx * dx);
+  var cC = R, cE = R + 17 * u, W = cE + dx;
   var oblouk = function (cx) {
-    return 'M' + (cx + dx) + ' ' + (50 - yo) + ' A' + R + ' ' + R + ' 0 1 0 ' + (cx + dx) + ' ' + (50 + yo) +
-      ' L' + (cx + dx) + ' ' + (50 + yi) + ' A' + r + ' ' + r + ' 0 1 1 ' + (cx + dx) + ' ' + (50 - yi) + ' Z';
+    return 'M' + (cx + dx) + ' ' + (R - yo) + ' A' + R + ' ' + R + ' 0 1 0 ' + (cx + dx) + ' ' + (R + yo) +
+      ' L' + (cx + dx) + ' ' + (R + yi) + ' A' + r + ' ' + r + ' 0 1 1 ' + (cx + dx) + ' ' + (R - yi) + ' Z';
   };
   var h = Math.max(5, vyskaMm || 5);
-  return '<svg class="rz-ce" viewBox="0 0 180 100" style="height:' + h + 'mm;width:' + (h * 1.8) + 'mm" aria-label="CE">' +
-    '<path d="' + oblouk(50) + '"/><path d="' + oblouk(154) + '"/><rect x="' + (154 - r - 1) + '" y="43" width="' + (r + 1 + 17.5) + '" height="14"/></svg>';
+  return '<svg class="rz-ce" viewBox="0 0 ' + W + ' ' + (2 * R) + '" style="height:' + h + 'mm;width:' + +(h * W / (2 * R)).toFixed(3) + 'mm" aria-label="CE">' +
+    '<path d="' + oblouk(cC) + '"/><path d="' + oblouk(cE) + '"/><rect x="' + (cE - r - 0.5) + '" y="' + (R - 1.5 * u) + '" width="' + (r + 0.5 - dx) + '" height="' + (3 * u) + '"/></svg>';
 }
 function rozvTridaIISvg() {
   return '<svg class="rz-tr2" viewBox="0 0 100 100" aria-label="třída II"><rect x="5" y="5" width="90" height="90" fill="none" stroke="#000" stroke-width="9"/>' +

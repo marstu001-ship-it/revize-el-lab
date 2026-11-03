@@ -1193,8 +1193,13 @@ a výsledky zkoušek program nikdy nevymýšlí.**
   adresa, typ, výr. č., rok/měsíc, „ČSN EN IEC 61439-3 (IEC 61439-3)", CE,
   InA (u DBO vždy). Rozšířená část (výchozí zapnutá): druh sítě s Un a fn,
   Icc, IP, třída; značka třídy II jen při zaškrtnutí a třídě II. **CE kreslí
-  `rozvCeSvg`** (dva oblouky na stejných kružnicích se svislým řezem a příčka
-  E, výška ≥ 5 mm), žádný obrázek. Písmo se zmenší, dokud se obsah nevejde.
+  `rozvCeSvg`** podle konstrukční mřížky **přílohy II nařízení (ES)
+  č. 765/2008** (opraveno 2026-11-03 podle nákresu od uživatele; jednotka =
+  R/10): každé písmeno mezikruží R 10 / r 7, svislý řez 1 vpravo od středu,
+  středy C a E 17 od sebe, příčka E tloušťky 3 od vnitřní kružnice po 1
+  vlevo od středu, šířka = 1,4 × výška, výška ≥ 5 mm; žádný obrázek. Dřív
+  byl řez 5 za středem, písmena 20,8 od sebe a příčka přes střed — hlídá
+  test (body uvnitř/vně tvarů). Písmo se zmenší, dokud se obsah nevejde.
 - **Prohlášení** (`rozvPdfProhlaseni`): vzor přílohy č. 4 NV 118/2016 —
   7 bodů a „Podepsáno za a jménem:" **doslova**; bod 5 NV 118/2016 a 117/2016
   (+ 481/2012 jen s RoHS), bod 6 normy ed. 3 / ed. 2 (+ ČSN EN IEC 63000 jen
