@@ -1889,6 +1889,47 @@ function pomocnik() {
     JSON.stringify(ovU.zpet) === JSON.stringify(ovU.podp) && ovU.obe.sb === '' && ovU.obe.fa === 0 && ovU.obe.svorky === 0, JSON.stringify([ovU.poNap, ovU.toastNap, ovU.zpet, ovU.obe]));
   check('tlačítko mimo rozvaděč bez zapojení má štítek „nezapojeno" a upozornění; smazané tlačítko zmizí i z obvodu spouště',
     ovU.nezap && /není zapojený/.test(ovU.kontrola) && ovU.poSb === '["Z"]', JSON.stringify([ovU.kontrola, ovU.poSb]));
+  // tlačítko na dveřích rozvaděče (hlášení 2026-11-03): svorky se srovnají samy, svorka ve vlastnostech řekne, co na ní je,
+  // ve schématu leží svorky na hranici čárkovaného rámečku „mimo rozvaděč" a dveřní tlačítko je uvnitř s poznámkou
+  const ovD = await p.evaluate(async () => { const r = {}; try {
+    const W = ms => new Promise(q => setTimeout(q, ms));
+    await dokNovy('rozv'); rozvSkrinNastavit(rozvKnihPolozka('v-sk-3x12-n')); __T.nast('[data-dk="soustava"]', '3NPE ~400/230 V TN-S');
+    rozvVlozit('v-qm-3-40', 0, 0);
+    const sab = async (k, v) => { __rz.vyber = null; TD_AKCE.tdROvlSablony(); document.querySelector('[data-action="tdRzoVlozit"][data-k="' + k + '"][data-v="' + v + '"]').click(); await W(80); };
+    await sab('stop', 'nap'); await sab('stop', 'nap');
+    const vn = rozvVnejsi(); vn[0].misto = 'u vstupu do objektu';
+    r.pred = rozvSvorkyVRade(__rz).length;
+    __rz.vyberVn = vn[1].uid; rozvVlastnostiVykreslit();
+    const cb = document.querySelector('.rp-vn[data-vn="dvere"]'); cb.checked = true; cb.dispatchEvent(new Event('change', { bubbles: true })); await W(80);
+    r.po = rozvSvorkyVRade(__rz).map(x => x.ozn).join(',');
+    r.toast = Array.from(document.querySelectorAll('.toast')).map(t => t.textContent).pop() || '';
+    r.misto = !!document.querySelector('.rp-vn[data-vn="misto"]');
+    r.info = (document.querySelector('.rz-svorky-info') || {}).textContent || '';
+    __rz.vyberVn = null; __rz.vyber = rozvSvorkyVRade(__rz)[1].uid; rozvVlastnostiVykreslit();
+    r.svPanel = (document.querySelector('.rp-svorka') || {}).textContent || '';
+    r.vyvodPole = !!document.querySelector('#rz-vlastnosti [data-rp2="vyvod"]');
+    const L = rozvSchemaListy(DOK_TYPY.rozv.cist(dokForm())), list = L[L.length - 1].svg;
+    const host = document.createElement('div'); host.innerHTML = list; const s = host.querySelector('svg');
+    const ram = Array.from(s.querySelectorAll('rect')).filter(e => e.getAttribute('stroke-dasharray') === '1.6 1');
+    const kruhy = Array.from(s.querySelectorAll('circle')).filter(c => +c.getAttribute('r') === 0.8).map(c => +c.getAttribute('cy'));
+    r.ramu = ram.length;
+    if (ram[0]) { const y1 = +ram[0].getAttribute('y'), y2 = y1 + +ram[0].getAttribute('height'); r.naHranici = kruhy.length === 2 && Math.abs(kruhy[0] - y1) < 0.05 && Math.abs(kruhy[1] - y2) < 0.05; }
+    const texty = Array.from(s.querySelectorAll('text')).map(t => t.textContent);
+    r.dvereText = texty.includes('na dveřích'); r.mistoText = texty.includes('u vstupu do objektu'); r.mimo = texty.includes('mimo');
+    // zpátky mimo rozvaděč: svorky se zase doplní
+    __rz.vyber = null; __rz.vyberVn = vn[1].uid; rozvVlastnostiVykreslit();
+    const cb2 = document.querySelector('.rp-vn[data-vn="dvere"]'); cb2.checked = false; cb2.dispatchEvent(new Event('change', { bubbles: true })); await W(80);
+    r.zpet = rozvSvorkyVRade(__rz).length;
+    } catch (e) { r.chyba = String(e && e.stack || e).slice(0, 600); }
+    return r;
+  });
+  if (ovD.chyba) console.log('CHYBA ovD', ovD.chyba);
+  check('tlačítko na dveřích: přebytečné svorky -X1:3–4 se odeberou samy (hláška to řekne), „Kde je" se u dveří nenabízí, zpátky mimo rozvaděč se svorky doplní',
+    ovD.pred === 4 && ovD.po === '-X1:1,-X1:2' && /odebrány svorky -X1:3–4/.test(ovD.toast) && !ovD.misto && /potřeba 2, v rozvaděči 2/.test(ovD.info) && ovD.zpet === 4, JSON.stringify(ovD));
+  check('ovládací svorka ve vlastnostech ukáže, co na ní je (-SB1:14 → X1:2 → -QH1:C1), místo názvu vývodu, fáze a kabelu',
+    /-SB1:14 \(u vstupu do objektu\) → X1:2 → -QH1:C1/.test(ovD.svPanel) && !ovD.vyvodPole, JSON.stringify([ovD.svPanel, ovD.vyvodPole]));
+  check('schéma: svorky X1:1 a X1:2 leží na hranici čárkovaného rámečku, rámeček nese místo („u vstupu do objektu"), dveřní tlačítko je uvnitř s poznámkou „na dveřích"',
+    ovD.ramu === 1 && ovD.naHranici && ovD.mistoText && ovD.dvereText && !ovD.mimo, JSON.stringify(ovD));
   // šablona CENTRAL STOP a stykač přes HDO
   const ovC = await p.evaluate(async () => {
     const r = {};
@@ -1911,7 +1952,7 @@ function pomocnik() {
     const xSb = najdi('-SB1').x, sl = T.filter(q => Math.abs(q.x - (xSb - 2.6)) < 8 || Math.abs(q.x - xSb) < 3);
     r.draha = ['z -FA2 /2.' , 'X1:1', '-SB1', 'X1:2', '-QH1'].map(t => { const q = T.find(z => z.t.indexOf(t) === 0 && Math.abs(z.x - xSb) < 12); return q ? q.y : null; });
     r.L = !!T.find(q => q.t === 'L' && q.y < 40) && !!T.find(q => q.t === 'N' && q.y > 120);
-    r.mech = (T.find(q => /^┄ -QH1 \/2\.\d$/.test(q.t)) || {}).t || '';
+    r.mech = (T.find(q => /^-QH1 \/2\.\d$/.test(q.t)) || {}).t || '';
     r.cv = ['C1', 'C2'].every(t => T.some(q => q.t === t));
     r.svCisla = T.filter(q => /^X1:\d$/.test(q.t)).map(q => q.t).join();
     r.mimo = (ovl[0].svg.match(/stroke-dasharray="1.6 1"/g) || []).length;
@@ -1932,7 +1973,7 @@ function pomocnik() {
     ovC.vybrana === 'PRISL' && /^-QH1 -QH1\* -FA2/.test(ovC.rady) && /-X1:1 -X1:2 -X1:3 -X1:4/.test(ovC.rady) && ovC.vn === '-SB1,-HDO1' && !ovC.kontrola.length, ovC.rady + ' / ' + JSON.stringify(ovC.kontrola));
   check('CENTRAL STOP: list Ovládací obvody — dráha L → -FA2 → X1:1 → -SB1 → X1:2 → spoušť -QH1 (C1–C2) → N, odshora dolů',
     ovC.typy === 'OJC' && ovC.draha.every(y => y != null) && ovC.draha.every((y, i, a) => !i || y > a[i - 1]) && ovC.L && ovC.cv, JSON.stringify(ovC.draha) + ' ' + ovC.typy);
-  check('CENTRAL STOP: mechanická vazba „┄ -QH1 /2.x", prvek mimo rozvaděč v čárkovaném rámečku, v jednopólovém schématu „spoušť C1–C2 /3.x" a jistič „ovládání"',
+  check('CENTRAL STOP: mechanická vazba (čárkovaně) s odkazem „-QH1 /2.x", prvek mimo rozvaděč v čárkovaném rámečku, v jednopólovém schématu „spoušť C1–C2 /3.x" a jistič „ovládání"',
     !!ovC.mech && ovC.mimo >= 2 && !!ovC.silSpoust && ovC.ovlZdroj, JSON.stringify([ovC.mech, ovC.mimo, ovC.silSpoust]));
   check('stykač přes HDO: kontakty -KM1 ve vývodu bojleru s odkazem na cívku („1-2 /3.x"), pod cívkou tabulka „Z 1-2 /2.x, 3-4", HDO mimo rozvaděč přes X1:3',
     ovC.silKMozn && !!ovC.silKM && /Z/.test(ovC.tabulka) && /1-2 \/2\.\d/.test(ovC.tabulka) && /3-4/.test(ovC.tabulka) && ovC.hdo, JSON.stringify([ovC.silKM, ovC.tabulka]));

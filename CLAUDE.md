@@ -2324,7 +2324,7 @@ rozvaděč), v řadě jsou to svorky ½ M `svorkaOvl` s označením `-X1:n`
 prvky mimo rozvaděč v čárkovaném rámečku s místem, cívka (A1–A2, C1–C2,
 D1–D2, kontrolka X1–X2) a pod ní **tabulka kontaktů s odkazy** (`/list.dráha`
 v ovládacích listech, `/list.zóna` v jednopólovém). U kontaktu odkaz na
-cívku, u spouště čárkovaná mechanická vazba „┄ -QH1 /2.2". V jednopólovém
+cívku, u spouště čárkovaná mechanická vazba nad popisem cívky s odkazem „-QH1 /2.2". V jednopólovém
 listu: silový kontakt stykače ve spínaném vývodu („-KM1 1-2 /3.2"), jistič
 ovládání odbočený před hlavním vypínačem a s šipkou „ovládání /3.1" místo
 spotřebiče (`rozvJenOvladaci` — nechce kabel), u -QH1 „spoušť C1–C2 /3.1",
@@ -2370,6 +2370,34 @@ ovládání, pak odebíral, ale tlačítka tam zůstávají"):**
 Test: `test-rozvadec.js` (+4: CENTRAL STOP 3× a podpěťová, druhá stejná
 spoušť nejde, mazání spouště s tlačítky, jističem a svorkami a ZPĚT,
 „nezapojeno", smazané tlačítko zmizí z obvodu).
+
+**Tlačítko na dveřích rozvaděče a ovládací svorky (2026-11-03, hlášení
+uživatele: druhé tlačítko přepnuté „na dveřích" nechalo v řadě svorky navíc,
+svorka ve vlastnostech nic neříkala, ve schématu nebylo jasné, k čemu patří
+popisek):**
+- **Svorky -X1 se srovnávají samy** (`rozvSvorkySrovnat`, uvnitř `rozvZmena`
+  — jedno ZPĚT): přepnutí „Na dveřích rozvaděče" chybějící doplní, přebytečné
+  od konce odebere a hláška to řekne. Přebytek z jiných důvodů nabídne
+  „🗑 Odebrat svorky navíc (N)" (dřív „svorky navíc jsou rezerva").
+- **Ovládací svorka ve vlastnostech** (`rozvSvorkaPanelHtml`) místo názvu
+  vývodu, fáze a kabelu ukáže, co na ní je: „z -FA1 → X1:1 → -SB1:13 (u vstupu
+  do objektu)", „-SB1:14 → X1:2 → -QH1:C1" (`rozvSvorkyMapa` — tytéž dráhy
+  ve stejném pořadí jako list ovládání, takže číslo sedí). Nezapojená svorka
+  to řekne a nabídne odebrání.
+- **Prvek na dveřích** nemá pole „Kde je" (je v rozvaděči, vodiče vedou
+  ohebným svazkem bez svorek); prvek mimo rozvaděč má „Kde je (mimo rozvaděč)"
+  s nápovědou „např. …" (dřív šedý text vypadal jako vyplněná hodnota).
+- **Schéma:** čárkovaný rámeček „mimo rozvaděč" začíná a končí **na osách
+  svorek** (svorka = hranice rozvaděče; dřív dolní svorku obsahoval), místo je
+  svisle vně podél levé strany rámečku (bez místa „mimo rozvaděč"), čísla
+  svorek vpravo od svorky uvnitř rámečku (nekříží sběrnici L ani spoje
+  paralelních větví), rámeček je o 0,8 mm širší (vejde se „-HDO1"). Prvek na
+  dveřích je uvnitř rozvaděče s poznámkou „na dveřích". Mechanická vazba
+  spouště vede nad popisem cívky (dřív škrtala „230 V AC").
+
+Test: `test-rozvadec.js` (+3: svorky po přepnutí dveří a zpět, vlastnosti
+svorky, rámeček na osách svorek s místem a poznámka u dveří). Kontrola
+překryvů textů (skript ve scratchpadu) i se scénářem dveří: 0.
 
 **Popisky se nesmí překrývat (2026-11-02, hlášení uživatele: hlavní vypínač
 + CENTRAL STOP):** u přívodu jde hodnota vypínače svisle od spodku značky
