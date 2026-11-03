@@ -1841,6 +1841,54 @@ function pomocnik() {
   });
   check('příslušenství: ▶ posune vypínač i se spouštěmi jako celek, smazání vypínače smaže i jeho příslušenství', ovS[0] === '-FA1 -QH1 -QH1 -QH1 -KM1' && ovS[1] === '-FA1 -KM1', JSON.stringify(ovS));
 
+  // opakované CENTRAL STOP, mazání spouště a tlačítek (hlášení 2026-11-03: „vkládal jsem ovládání, pak odebíral, ale tlačítka tam zůstávají")
+  const ovU = await p.evaluate(async () => { const r = {}; try {
+    const W = ms => new Promise(q => setTimeout(q, ms));
+    await dokNovy('rozv'); rozvSkrinNastavit(rozvKnihPolozka('v-sk-3x12-n')); __T.nast('[data-dk="soustava"]', '3NPE ~400/230 V TN-S');
+    const qh = rozvVlozit('v-qm-3-40', 0, 0); __rz.vyber = null;
+    const sab = async (k, v) => { TD_AKCE.tdROvlSablony(); document.querySelector('[data-action="tdRzoVlozit"][data-k="' + k + '"][data-v="' + v + '"]').click(); await W(80); };
+    const stav = () => {
+      const pr = rozvPrislu(qh.uid).map(a => rozvPrislTyp(a.p)), fa = rozvVsePrvky(__rz).filter(y => y.predHlavnim).length;
+      return { spouste: pr.join(','), fa, sb: rozvVnejsi().map(y => y.ozn).join(','), svorky: rozvSvorkyVRade(__rz).length };
+    };
+    await sab('stop', 'nap'); await sab('stop', 'nap'); await sab('stop', 'nap');
+    r.tri = stav(); r.toast = Array.from(document.querySelectorAll('.toast')).map(t => t.textContent).pop() || '';
+    const nap = rozvPrislu(qh.uid).find(a => rozvPrislTyp(a.p) === 'nap');
+    r.retez = JSON.stringify(nap.ovl.retez.map(k => k.par ? k.par.length + 'p' : k.k));
+    await sab('stop', 'podp'); r.podp = stav();
+    r.podpRetez = rozvPrislu(qh.uid).find(a => rozvPrislTyp(a.p) === 'podp').ovl.z === nap.ovl.z;
+    // ruční druhá napěťová spoušť nejde, v nabídce příslušenství není
+    r.druha = rozvPrislPripojit(qh.uid, 'v-prisl-nap', 'vpravo') === null;
+    r.nabidka = rozvPrislNabidka(qh).map(it => rozvPrislTyp(it)).filter(t => t === 'nap' || t === 'podp').length;
+    // smazání napěťové spouště: její tři tlačítka zmizí, jistič ovládání zůstane (napájí podpěťovou)
+    rozvSmazat(nap.uid); r.poNap = stav(); r.toastNap = Array.from(document.querySelectorAll('.toast')).map(t => t.textContent).pop() || '';
+    // ZPĚT vrátí všechno
+    zpetPosledni(); r.zpet = stav();
+    // smazání obou spouští: nezbude tlačítko, jistič ovládání ani svorka
+    rozvSmazatVic(rozvPrislu(qh.uid).map(a => a.uid)); r.obe = stav();
+    // ruční tlačítko mimo rozvaděč bez zapojení = štítek „nezapojeno" a upozornění; smazání tlačítka z řetězu ho vyřadí
+    rozvVnejsiPridat(rozvKnihPolozka('v-vn-vyraz'), { bezVyberu: true });
+    rozvPohledVykreslit();
+    r.nezap = !!document.querySelector('.rz-vn-nezap');
+    r.kontrola = rozvOvlKontrola(DOK_TYPY.rozv.cist(dokForm())).map(q => q.text).join(' | ');
+    await sab('stop', 'nap'); await sab('stop', 'nap');
+    const n2 = rozvPrislu(qh.uid).find(a => rozvPrislTyp(a.p) === 'nap');
+    const druheSb = n2.ovl.retez[0].par[1][0].u;
+    __rz.vyberVn = druheSb; TD_AKCE.tdRVnSmazat();
+    r.poSb = JSON.stringify(n2 && rozvPrislu(qh.uid).find(a => rozvPrislTyp(a.p) === 'nap').ovl.retez.map(k => k.par ? 'par' : k.u === druheSb ? 'smazany' : 'Z'));
+    } catch (e) { r.chyba = String(e && e.stack || e).slice(0, 600); }
+    return r;
+  });
+  if (ovU.chyba) console.log('CHYBA ovU', ovU.chyba, JSON.stringify(ovU).slice(0, 800));
+  check('CENTRAL STOP 3×: jedna napěťová spoušť, jeden jistič ovládání, tři vyrážecí tlačítka paralelně (svorky 3 × 2); hláška řekne, že přibylo jen tlačítko',
+    ovU.tri.spouste === 'nap' && ovU.tri.fa === 1 && ovU.tri.sb.split(',').length === 3 && ovU.tri.svorky === 6 && ovU.retez === '["3p"]' && /už napěťovou spoušť má/.test(ovU.toast), JSON.stringify([ovU.tri, ovU.retez, ovU.toast]));
+  check('podpěťová k tomu: druhá spoušť jiného druhu, stejný jistič ovládání; druhou napěťovou ručně přidat nejde a nabídka ji nenabízí',
+    /nap/.test(ovU.podp.spouste) && /podp/.test(ovU.podp.spouste) && ovU.podp.fa === 1 && ovU.podpRetez && ovU.druha && ovU.nabidka === 0, JSON.stringify([ovU.podp, ovU.druha, ovU.nabidka]));
+  check('smazání napěťové spouště smaže i její tři tlačítka a přebytečné svorky, jistič ovládání zůstane; ZPĚT vrátí vše; smazání obou nenechá nic',
+    ovU.poNap.sb.split(',').length === 1 && ovU.poNap.fa === 1 && ovU.poNap.svorky === 2 && /zároveň smazáno/.test(ovU.toastNap) &&
+    JSON.stringify(ovU.zpet) === JSON.stringify(ovU.podp) && ovU.obe.sb === '' && ovU.obe.fa === 0 && ovU.obe.svorky === 0, JSON.stringify([ovU.poNap, ovU.toastNap, ovU.zpet, ovU.obe]));
+  check('tlačítko mimo rozvaděč bez zapojení má štítek „nezapojeno" a upozornění; smazané tlačítko zmizí i z obvodu spouště',
+    ovU.nezap && /není zapojený/.test(ovU.kontrola) && ovU.poSb === '["Z"]', JSON.stringify([ovU.kontrola, ovU.poSb]));
   // šablona CENTRAL STOP a stykač přes HDO
   const ovC = await p.evaluate(async () => {
     const r = {};

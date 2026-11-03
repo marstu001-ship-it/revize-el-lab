@@ -2345,6 +2345,32 @@ signalizace (pomocný kontakt → kontrolka / výstup na svorky), motor
 (spouštěč + stykač + ZAP/VYP). Vloží, propojí, doplní svorky, vybere
 cívku; jedno ZPĚT. Šablony s vývodem vyžadují vybraný jistič.
 
+**Mazání a opakované šablony (2026-11-03, hlášení uživatele: „vkládal jsem
+ovládání, pak odebíral, ale tlačítka tam zůstávají"):**
+- **Spoušť / pohon nejvýš jedna od každého druhu na přístroji**
+  (`rozvSpoustDruhy`): nabídka příslušenství druhou stejnou nenabídne,
+  `rozvPrislPripojit` ji odmítne s hláškou, kontrola ohlásí dvě stejné ve
+  starších datech. Napěťová + podpěťová na jednom přístroji projde (výrobci to
+  podle řady dovolují, nebo ne — to hlídá `prislK`).
+- **CENTRAL STOP podruhé** = žádná druhá spoušť ani druhý jistič ovládání:
+  další vyrážecí tlačítko jde do obvodu existující spouště (napěťová —
+  zapínací kontakty paralelně, podpěťová — rozpínací v sérii) a jistič
+  ovládání před hlavním vypínačem se použije stávající; hláška to řekne.
+- **Smazání přístroje / spouště / prvku mimo rozvaděč** (`rozvOvlUklid`,
+  uvnitř `rozvZmena`, takže jedno ZPĚT): ze zbylých řetězů zmizí kroky na
+  smazané prvky (prázdná větev zmizí, jediná se rozbalí — `rozvOvlBez`),
+  `spina` na smazaný stykač se zruší a **co sloužilo jen smazaným cívkám**
+  (prvek mimo rozvaděč z jejich řetězu, jistič ovládacích obvodů, který je
+  napájel) se smaže taky, když ho nic jiného nepoužívá; přebytečné ovládací
+  svorky od konce. Hláška vyjmenuje, co zmizelo. Ručně přidaný a nezapojený
+  prvek mimo rozvaděč se nemaže.
+- **Tlačítko bez spouště zůstává možné** (nejdřív vložit, pak zapojit), ale
+  v seznamu má štítek **„nezapojeno"** a kontrola ho ohlásí.
+
+Test: `test-rozvadec.js` (+4: CENTRAL STOP 3× a podpěťová, druhá stejná
+spoušť nejde, mazání spouště s tlačítky, jističem a svorkami a ZPĚT,
+„nezapojeno", smazané tlačítko zmizí z obvodu).
+
 **Popisky se nesmí překrývat (2026-11-02, hlášení uživatele: hlavní vypínač
 + CENTRAL STOP):** u přívodu jde hodnota vypínače svisle od spodku značky
 nahoru; se spouští jen pod mechanickou vazbu (typ se vynechá, když se nevejde)
