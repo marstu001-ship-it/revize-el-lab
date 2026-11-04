@@ -621,6 +621,14 @@ a vady v nich se nemění.
 
 Test: `testy/test-normy-1390.js` (39 kontrol).
 
+## Normy – ČSN EN 60204-1 ed. 3, dávka 2 (2026-11-04)
+
+Katalog vad strojů: nouzové zastavení `čl. 9.2.3.4.2, 10.7` (9.2.5.4 bylo
+číslování ed. 2), výstražné značení `čl. 16.2`, přívodní kabel `kap. 12
+(vodiče a kabely), čl. 13.5`; měření poklesu napětí `(12.5)` (úbytek ≤ 5 % Un).
+Výchozí sada měření se mění jen pro nové zprávy a pro technika bez vlastní
+uložené sady. Test: `testy/test-normy-60204.js` (6 kontrol).
+
 ## Tvorba dokumentace — Protokol o určení vnějších vlivů (blok `TVORBA DOKUMENTACE`)
 
 Zadání uživatele 2026-10-16: čtvrtá karta na úvodu

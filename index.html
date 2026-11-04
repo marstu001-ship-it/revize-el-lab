@@ -13412,7 +13412,7 @@ var POPIS_STROJE = 'Jedná se o pracovní stroj napájený ze sítě TN-S přes 
 // Typické závady elektrického zařízení strojů (ČSN EN 60204-1 ed.3).
 var TYPICKE_ZAVADY_STROJE = [
   // C1 - Bezprostředně ohrožující
-  { kod: 'C1', popis: 'Nefunkční nebo chybějící prostředek nouzového zastavení stroje', norma: 'ČSN EN 60204-1 ed.3, čl. 9.2.5.4' },
+  { kod: 'C1', popis: 'Nefunkční nebo chybějící prostředek nouzového zastavení stroje', norma: 'ČSN EN 60204-1 ed.3, čl. 9.2.3.4.2, 10.7' },
   { kod: 'C1', popis: 'Přerušený nebo odpojený ochranný vodič PE stroje', norma: 'ČSN EN 60204-1 ed.3, čl. 8.2' },
   { kod: 'C1', popis: 'Nefunkční blokování ochranného krytu — stroj lze spustit s otevřeným krytem', norma: 'ČSN EN 60204-1 ed.3, čl. 9.3.1' },
   { kod: 'C1', popis: 'Živé části přístupné dotyku — chybí nebo je poškozený kryt rozváděče stroje', norma: 'ČSN EN 60204-1 ed.3, čl. 6.2.2' },
@@ -13424,10 +13424,10 @@ var TYPICKE_ZAVADY_STROJE = [
   { kod: 'C2', popis: 'Nedostatečný průřez vnějšího ochranného vodiče stroje', norma: 'ČSN EN 60204-1 ed.3, tab. 1, čl. 8.2.2' },
   { kod: 'C2', popis: 'Chybí ochrana motoru proti nadměrnému oteplení (motor nad 0,5 kW)', norma: 'ČSN EN 60204-1 ed.3, čl. 7.3' },
   { kod: 'C2', popis: 'Zbytkové napětí se nevybije v požadované době po odpojení', norma: 'ČSN EN 60204-1 ed.3, čl. 18.5' },
-  { kod: 'C2', popis: 'Poškozená izolace nebo mechanická ochrana přívodního kabelu stroje', norma: 'ČSN EN 60204-1 ed.3, čl. 13.5' },
+  { kod: 'C2', popis: 'Poškozená izolace nebo mechanická ochrana přívodního kabelu stroje', norma: 'ČSN EN 60204-1 ed.3, kap. 12 (vodiče a kabely), čl. 13.5' },
   { kod: 'C2', popis: 'Nesprávné barevné provedení ovládacích tlačítek nebo světelných návěstí', norma: 'ČSN EN 60204-1 ed.3, čl. 10.2 a 10.3' },
   { kod: 'C2', popis: 'Chybí označení ochranného vodiče (zelenožlutá) nebo nulového vodiče', norma: 'ČSN EN 60204-1 ed.3, čl. 13.2.2' },
-  { kod: 'C2', popis: 'Chybí výstražné tabulky a bezpečnostní značení na stroji', norma: 'ČSN EN 60204-1 ed.3, čl. 16.1' },
+  { kod: 'C2', popis: 'Chybí výstražné tabulky a bezpečnostní značení na stroji', norma: 'ČSN EN 60204-1 ed.3, čl. 16.2' },
   { kod: 'C2', popis: 'Chybí průvodní technická dokumentace stroje (schéma zapojení, návod)', norma: 'ČSN EN 60204-1 ed.3, čl. 17' },
   { kod: 'C2', popis: 'Ovládací prvky stroje nejsou v dosahu obsluhy nebo jsou nepřístupné', norma: 'ČSN EN 60204-1 ed.3, čl. 10.1.2' },
   // C3 - Doporučení
@@ -14090,8 +14090,8 @@ var STROJE_MERENI_VYCHOZI = [
     tip: 'Chránič bez zpoždění musí vybavit do 300 ms při IΔn (ČSN 33 2000-6 ed.2, příloha NA). U selektivních typů platí jiné meze.' },
   { p: 'unikající proud', j: 'mA', ph: 'např. 0,4',
     tip: 'Trvalý unikající proud stroje za provozu. Měl by být výrazně nižší než IΔn předřazeného chrániče, jinak chránič vypadává bez poruchy.' },
-  { p: 'měření poklesu napětí (4.3.2)', j: 'V', ph: 'např. 6 (≤ 5 % Un)',
-    tip: 'Pokles napětí od místa připojení k nejvzdálenějšímu spotřebiči stroje. Nemá překročit 5 % jmenovitého napětí (ČSN EN 60204-1 ed.3, čl. 4.3.2).' },
+  { p: 'měření poklesu napětí (12.5)', j: 'V', ph: 'např. 6 (≤ 5 % Un)',
+    tip: 'Pokles napětí od místa připojení k nejvzdálenějšímu spotřebiči stroje. Nemá překročit 5 % jmenovitého napětí (ČSN EN 60204-1 ed.3, čl. 12.5).' },
   { n: '18.3: Zkoušky izolačního odporu' },
   { p: 'silové obvody proti sobě L1-L2/L1-L3/L2-L3', j: 'MΩ', ph: '≥ 1 (např. >550)',
     tip: 'Měří se napětím 500 V DC. Nejmenší přípustná hodnota je 1 MΩ (ČSN EN 60204-1 ed.3, čl. 18.3). Před měřením odpojte SPD a citlivou elektroniku.' },
