@@ -4890,18 +4890,17 @@ html.dark .rz-imp-chyby{background:#3a1f1c;border-color:#6b2c25}
     </table>
     <button class="add-row" data-action="addLpsMereni">+ Přidat měření</button>
     <div class="info-box" id="lps-mereni-info" style="margin-top:.75rem;font-size:.76rem">
-      Minimální hodnota zemního odporu jednoho zemniče je menší rovna 10 Ω.<br>
-      ODPOVÍDÁ ČSN EN 62305-3 ed.2, čl. 5.4.1
+      Doporučuje se odpor uzemnění nižší než 10 Ω, je-li to možné (ČSN EN 62305-3 ed.2, čl. 5.4.1). Nejúčinnějším opatřením zůstává pospojování.
     </div>
   </div>
   <div class="scard">
     <div class="scard-title">Metoda měření</div>
     <div class="g2">
       <div class="f"><label>Měření přechodových odporů spojů vodičů</label>
-        <div id="lps-metoda-prechod" style="font-size:.82rem;color:var(--muted);margin-top:.3rem">Naměřený odpor by měl být menší nebo roven 0,2 Ω.<br>ODPOVÍDÁ ČSN EN 62305-3 ed.2, čl. 5.3.5</div>
+        <div id="lps-metoda-prechod" style="font-size:.82rem;color:var(--muted);margin-top:.3rem">Přechodové odpory spojů ≤ 0,2 Ω – doporučení z praxe. U výztuže železobetonu použité jako náhodný svod je 0,2 Ω požadavek normy (ČSN EN 62305-3 ed.2, čl. 5.3.5).</div>
       </div>
       <div class="f"><label>Měření zemních odporů (uzemňovací soustavy)</label>
-        <div id="lps-metoda-zemni" style="font-size:.82rem;color:var(--muted);margin-top:.3rem">Minimální hodnota zemního odporu jednoho zemniče ≤ 10 Ω.<br>ODPOVÍDÁ ČSN EN 62305-3 ed.2, čl. 5.4.1</div>
+        <div id="lps-metoda-zemni" style="font-size:.82rem;color:var(--muted);margin-top:.3rem">Doporučuje se odpor uzemnění nižší než 10 Ω, je-li to možné (ČSN EN 62305-3 ed.2, čl. 5.4.1). Nejúčinnějším opatřením zůstává pospojování.</div>
       </div>
     </div>
   </div>
@@ -13355,25 +13354,32 @@ if (document.readyState === 'loading') document.addEventListener('DOMContentLoad
 else zsLimInit();
 
 // Typické závady pro LPS (hromosvod) — dle ČSN EN 62305-3 ed.2 a ČSN 33 1500.
+// Kód vady „zemní odpor > 10 Ω" — čl. 5.4.1 odpor pod 10 Ω jen doporučuje
+// („je-li to možné"), proto C2. Kdo chce C1, změní jen tuhle konstantu.
+// `overit` = citace ed. 2 ověřená jen přes obsah ed. 3 (ed. 2 nemáme) —
+// ukazuje se jen v nabídce katalogu, do vady ani PDF nejde.
+var LPS_ZEMNI_KOD = 'C2';
+var LPS_OVERIT_ED2 = 'ověřit v ed. 2';
 var TYPICKE_ZAVADY_LPS = [
   // C1 - Nebezpečí
   { kod: 'C1', popis: 'Přerušený svod hromosvodu — bez vodivého spojení s uzemněním', norma: 'ČSN EN 62305-3 ed.2, čl. 5.3' },
-  { kod: 'C1', popis: 'Naměřený zemní odpor zemniče přesahuje povolenou hodnotu (>10 Ω)', norma: 'ČSN EN 62305-3 ed.2, čl. 5.4.1' },
   { kod: 'C1', popis: 'Chybí jímací soustava nebo její podstatná část', norma: 'ČSN EN 62305-3 ed.2, čl. 5.2' },
   { kod: 'C1', popis: 'Nedodržená izolační (bezpečná) vzdálenost „s" mezi LPS a vodivými částmi v objektu', norma: 'ČSN EN 62305-3 ed.2, čl. 6.3' },
   { kod: 'C1', popis: 'Chybí ekvipotenciální pospojování kovových rozvodů vstupujících do objektu', norma: 'ČSN EN 62305-3 ed.2, čl. 6.2' },
-  { kod: 'C1', popis: 'Chybí přepěťová ochrana SPD typu T1 na vstupu napájení', norma: 'ČSN EN 62305-4 ed.2, čl. 5.6' },
+  { kod: 'C1', popis: 'Chybí přepěťová ochrana SPD typu T1 na vstupu napájení', norma: 'ČSN EN 62305-3 ed.2, čl. 6.2; ČSN EN 62305-4 ed.2, kap. 7' },
   // C2 - Potenciálně nebezpečné
-  { kod: 'C2', popis: 'Pokročilá koroze jímačů, svodů nebo spojů', norma: 'ČSN EN 62305-3 ed.2, čl. E.7' },
-  { kod: 'C2', popis: 'Uvolněné nebo poškozené měřicí (zkušební) svorky na svodech', norma: 'ČSN EN 62305-3 ed.2, čl. 5.3.5' },
+  { kod: LPS_ZEMNI_KOD, popis: 'Naměřený zemní odpor zemniče přesahuje doporučenou hodnotu (>10 Ω)', norma: 'ČSN EN 62305-3 ed.2, čl. 5.4.1' },
+  { kod: 'C2', popis: 'Pokročilá koroze jímačů, svodů nebo spojů', norma: 'ČSN EN 62305-3 ed.2, čl. E.5.6.2.2, E.7', overit: LPS_OVERIT_ED2 },
+  { kod: 'C2', popis: 'Uvolněné nebo poškozené měřicí (zkušební) svorky na svodech', norma: 'ČSN EN 62305-3 ed.2, čl. 5.3.6' },
   { kod: 'C2', popis: 'Chybí dokumentace LPS (projekt, výpočet rizika dle ČSN EN 62305-2)', norma: 'NV č. 190/2022 Sb., § 10 písm. c)' },
-  { kod: 'C2', popis: 'Chybí ochrana svodu proti mechanickému poškození v dosahu osob (do 1,8 m)', norma: 'ČSN EN 62305-3 ed.2, čl. 5.3.4' },
+  { kod: 'C2', popis: 'Svod v místě, kde se zdržují osoby (do 3 m), bez opatření proti dotykovému napětí – izolace svodu, zábrana nebo výstraha', norma: 'ČSN EN 62305-3 ed.2, kap. 8', overit: 'ověřit číslo v ed. 2' },
   { kod: 'C2', popis: 'Nedostatečný počet svodů vzhledem k třídě LPS', norma: 'ČSN EN 62305-3 ed.2, tab. 4' },
-  { kod: 'C2', popis: 'Nesprávně provedený přechod mezi materiály (Al × FeZn × Cu) bez antikorozní úpravy', norma: 'ČSN EN 62305-3 ed.2, čl. E.4.3' },
+  { kod: 'C2', popis: 'Nesprávně provedený přechod mezi materiály (Al × FeZn × Cu) bez antikorozní úpravy', norma: 'ČSN EN 62305-3 ed.2, čl. E.5.6.2.2; ČSN 33 2000-5-54 ed.3, čl. 542.2.5', overit: LPS_OVERIT_ED2 },
   // C3 - Doporučení
-  { kod: 'C3', popis: 'Doporučujeme provést výpočet rizika dle ČSN EN 62305-2 ed.2 a ověřit třídu LPS', norma: 'ČSN EN 62305-2 ed.2' },
-  { kod: 'C3', popis: 'Doporučujeme doplnit svodiče přepětí SPD typu T2 v podružných rozváděčích', norma: 'ČSN EN 62305-4 ed.2' },
-  { kod: 'C3', popis: 'Doporučujeme antikorozní ošetření spojů ve venkovním prostředí', norma: 'ČSN EN 62305-3 ed.2, čl. E.4' },
+  { kod: 'C3', popis: 'Doporučujeme provést výpočet rizika dle ČSN EN IEC 62305-2 ed.3 a ověřit třídu LPS', norma: 'ČSN EN IEC 62305-2 ed.3' },
+  { kod: 'C3', popis: 'Doporučujeme doplnit svodiče přepětí SPD typu T2 v podružných rozváděčích', norma: 'ČSN EN 62305-4 ed.2, kap. 7' },
+  { kod: 'C3', popis: 'Doporučujeme mechanickou ochranu svodu v dosahu osob', norma: '' },
+  { kod: 'C3', popis: 'Doporučujeme antikorozní ošetření spojů ve venkovním prostředí', norma: 'ČSN EN 62305-3 ed.2, čl. E.5.6.2.2', overit: LPS_OVERIT_ED2 },
   { kod: 'C3', popis: 'Doporučujeme vést revizní knihu LPS s evidencí prohlídek a měření', norma: 'ČSN 33 1500' }
 ];
 
@@ -13489,7 +13495,7 @@ function addZavada() {
       // Value = index do aktuálního zdroje typických závad
       var globalIdx = zavadySource.indexOf(z);
       o.value = String(globalIdx);
-      o.textContent = z.popis;
+      o.textContent = z.popis + (z.overit && lpsVolbaNormy() !== '62305e3' && aktTyp === 'lps' ? ' · [' + z.overit + ']' : '');
       grp.appendChild(o);
     });
     typSel.appendChild(grp);
@@ -13738,18 +13744,18 @@ var LPS_PROHLIDKA_62305 = [
   ]},
   { s: 'Uzemňovací soustava', items: [
     { t: 'Uspořádání uzemňovací soustavy vhodné pro daný objekt', csn: 'ČSN EN 62305-3 ed.2, čl. 5.4.2' },
-    { t: 'Délka zemničů dle třídy LPS', csn: 'ČSN EN 62305-3 ed.2, čl. 5.4.2.1, E5.4.2.2' },
+    { t: 'Délka zemničů dle třídy LPS', csn: 'ČSN EN 62305-3 ed.2, čl. 5.4.2.2, E.5.4.2.2' },
     { t: 'Použité materiály', csn: 'ČSN EN 62305-3 ed.2, čl. 5.6.2' },
     { t: 'Pasivní ochrana proti korozi', csn: 'ČSN 33 2000-5-54 ed.3' }
   ]},
   { s: 'Ekvipotenciální pospojování — vnější i vnitřní prostory', items: [
     { t: 'Ekvipotenciální pospojování', csn: 'ČSN EN 62305-3 ed.2, čl. 6.2.2' },
     { t: 'Min. průřezy vodičů pospojování', csn: 'ČSN EN 62305-3 ed.2, čl. 6.2.2, tab. 8,9' },
-    { t: 'Provedení uzemnění', csn: 'ČSN EN 62305-4 ed.2, čl. 5.1' },
-    { t: 'Zabezpečena co nejnižší hodnota impedance pospojování', csn: 'ČSN EN 62305-4 ed.2, čl. 5.2' }
+    { t: 'Provedení uzemnění', csn: 'ČSN EN 62305-4 ed.2, čl. 5.2' },
+    { t: 'Zabezpečena co nejnižší hodnota impedance pospojování', csn: 'ČSN EN 62305-4 ed.2, čl. 5.3' }
   ]},
   { s: 'Koordinovaná SPD ochrana', items: [
-    { t: 'SPD koordinovaně umístěny na vstupu vedení do každé zóny', csn: 'ČSN EN 62305-4 ed.2, tab. 4.3' },
+    { t: 'SPD koordinovaně umístěny na vstupu vedení do každé zóny', csn: 'ČSN EN 62305-4 ed.2, kap. 7' },
     { t: 'SPD instalovány tak, aby byla možná jejich revize', csn: 'ČSN EN 62305-3 ed.2, čl. 6.2.1' },
     { t: 'Spojovací vodiče k SPD mají minimální průřez', csn: 'ČSN EN 62305-4 ed.2, tab. 1' }
   ]}
@@ -13937,13 +13943,13 @@ function updateLpsMereniTexts() {
   if (head) head.textContent = is1390 ? 'ČSN 34 1390, čl. 55' : citaceNormy('ČSN EN 62305-3 ed.2, čl. 5.4.1');
   if (info) info.innerHTML = is1390
     ? 'Zemní odpor zemniče jednoho svodu nemá být větší než 20 Ω (čl. 55 b); skupina zemničů spojená nad zemí &lt; 15 Ω (čl. 55 c).<br>ODPOVÍDÁ ČSN 34 1390, čl. 55'
-    : citaceNormy('Minimální hodnota zemního odporu jednoho zemniče je menší rovna 10 Ω.<br>ODPOVÍDÁ ČSN EN 62305-3 ed.2, čl. 5.4.1');
+    : citaceNormy('Doporučuje se odpor uzemnění nižší než 10 Ω, je-li to možné (ČSN EN 62305-3 ed.2, čl. 5.4.1). Nejúčinnějším opatřením zůstává pospojování.');
   if (metPrechod) metPrechod.innerHTML = is1390
     ? 'Naměřený přechodový odpor by měl být menší nebo roven 0,2 Ω (podle ČSN EN 62305-3).'
-    : citaceNormy('Naměřený odpor by měl být menší nebo roven 0,2 Ω.<br>ODPOVÍDÁ ČSN EN 62305-3 ed.2, čl. 5.3.5');
+    : citaceNormy('Přechodové odpory spojů ≤ 0,2 Ω – doporučení z praxe. U výztuže železobetonu použité jako náhodný svod je 0,2 Ω požadavek normy (ČSN EN 62305-3 ed.2, čl. 5.3.5).');
   if (metZemni) metZemni.innerHTML = is1390
     ? 'Zemní odpor zemniče jednoho svodu nemá být větší než 20 Ω (čl. 55 b); skupina zemničů spojená nad zemí &lt; 15 Ω (čl. 55 c).<br>ODPOVÍDÁ ČSN 34 1390, čl. 55'
-    : citaceNormy('Minimální hodnota zemního odporu jednoho zemniče ≤ 10 Ω.<br>ODPOVÍDÁ ČSN EN 62305-3 ed.2, čl. 5.4.1');
+    : citaceNormy('Doporučuje se odpor uzemnění nižší než 10 Ω, je-li to možné (ČSN EN 62305-3 ed.2, čl. 5.4.1). Nejúčinnějším opatřením zůstává pospojování.');
   // Seznam příloh — výchozí text se liší podle zvolené normy
   // (platí jen pokud uživatel ještě nic ručně nenapsal)
   var pril = document.getElementById('f_prilohy');
@@ -17541,7 +17547,7 @@ function generujPDF() {
       '<div style="font-size:8pt;padding:0 2mm;margin-top:3mm;color:#444">' +
       (lpsNorma1390
         ? 'ČSN 34 1390: Zemní odpor zemniče jednoho svodu nemá být větší než 20 Ω (čl. 55 b); skupina zemničů spojená nad zemí &lt; 15 Ω (čl. 55 c).<br>Přechodové odpory spojů vodičů ≤ 0,2 Ω (podle ČSN EN 62305-3).'
-        : citaceNormy('Minimální hodnota zemního odporu jednoho zemniče ≤ 10 Ω dle ČSN EN 62305-3 ed.2, čl. 5.4.1.<br>Přechodové odpory spojů vodičů ≤ 0,2 Ω dle ČSN EN 62305-3 ed.2, čl. 5.3.5.', lpsVolba)) +
+        : citaceNormy('Doporučuje se odpor uzemnění nižší než 10 Ω, je-li to možné (ČSN EN 62305-3 ed.2, čl. 5.4.1). Nejúčinnějším opatřením zůstává pospojování.<br>Přechodové odpory spojů ≤ 0,2 Ω – doporučení z praxe. U výztuže železobetonu použité jako náhodný svod je 0,2 Ω požadavek normy (ČSN EN 62305-3 ed.2, čl. 5.3.5).', lpsVolba)) +
       '</div>' +
       '</div>' + ftr();
     pages.appendChild(pLps);

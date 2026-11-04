@@ -67,7 +67,13 @@ const OPRAVY_TEXTU = [
   ["umístěny ve výšce cca 1,5 m nad zemí, jsou přístupné a označené dle ČSN 34 1390 čl. 50.", "umístěny ve výšce asi 2 m nad zemí, jsou přístupné a označené dle ČSN 34 1390 čl. 45."],
   ["se doporučuje ≤ 15 Ω (ČSN 34 1390 čl. 55).", "se doporučuje ≤ 20 Ω (ČSN 34 1390 čl. 55)."],
   ["s uzemňovací soustavou dle ČSN 34 1390 čl. 62.", "s uzemňovací soustavou dle ČSN 34 1390 čl. 61 až 66."],
-  ["požadavek ≤ 0,2 Ω dle ČSN 34 1390 čl. 124.", "požadavek ≤ 0,2 Ω."]
+  ["požadavek ≤ 0,2 Ω dle ČSN 34 1390 čl. 124.", "požadavek ≤ 0,2 Ω."],
+  // LPS 62305 — prohlídka a patička měření
+  ["Délka zemničů dle třídy LPSČSN EN 62305-3 ed.2, čl. 5.4.2.1, E5.4.2.2Odpovídá", "Délka zemničů dle třídy LPSČSN EN 62305-3 ed.2, čl. 5.4.2.2, E.5.4.2.2Odpovídá"],
+  ["Provedení uzemněníČSN EN 62305-4 ed.2, čl. 5.1Odpovídá", "Provedení uzemněníČSN EN 62305-4 ed.2, čl. 5.2Odpovídá"],
+  ["Zabezpečena co nejnižší hodnota impedance pospojováníČSN EN 62305-4 ed.2, čl. 5.2Odpovídá", "Zabezpečena co nejnižší hodnota impedance pospojováníČSN EN 62305-4 ed.2, čl. 5.3Odpovídá"],
+  ["SPD koordinovaně umístěny na vstupu vedení do každé zónyČSN EN 62305-4 ed.2, tab. 4.3Odpovídá", "SPD koordinovaně umístěny na vstupu vedení do každé zónyČSN EN 62305-4 ed.2, kap. 7Odpovídá"],
+  ["Minimální hodnota zemního odporu jednoho zemniče ≤ 10 Ω dle ČSN EN 62305-3 ed.2, čl. 5.4.1.Přechodové odpory spojů vodičů ≤ 0,2 Ω dle ČSN EN 62305-3 ed.2, čl. 5.3.5.", "Doporučuje se odpor uzemnění nižší než 10 Ω, je-li to možné (ČSN EN 62305-3 ed.2, čl. 5.4.1). Nejúčinnějším opatřením zůstává pospojování.Přechodové odpory spojů ≤ 0,2 Ω – doporučení z praxe. U výztuže železobetonu použité jako náhodný svod je 0,2 Ω požadavek normy (ČSN EN 62305-3 ed.2, čl. 5.3.5)."]
 ];
 const opravyPouzite = new Set(), zlomy = [];
 function opravText(t) {

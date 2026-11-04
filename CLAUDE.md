@@ -629,6 +629,30 @@ Katalog vad strojů: nouzové zastavení `čl. 9.2.3.4.2, 10.7` (9.2.5.4 bylo
 Výchozí sada měření se mění jen pro nové zprávy a pro technika bez vlastní
 uložené sady. Test: `testy/test-normy-60204.js` (6 kontrol).
 
+## Normy – revize LPS podle ČSN EN 62305 (2026-11-04)
+
+Kontrola proti plnému znění ČSN EN IEC 62305-3 ed. 3, -2 ed. 3, 62305-1 ed. 2
+a 62305-4 ed. 2. **62305-3 ed. 2 uživatel nemá** — citace ed. 2 se ověřovaly
+přes obsah ed. 3 (stejná struktura kap. 5 a 6). Co se ověřit nedalo, má
+v katalogu `overit` („ověřit v ed. 2", u kap. 8 „ověřit číslo v ed. 2") —
+**ukazuje se jen v nabídce typických vad** (`· [ověřit v ed. 2]`, ne u volby
+ed. 3), do vady ani PDF nejde.
+
+- **Katalog `TYPICKE_ZAVADY_LPS`:** zemní odpor > 10 Ω je **doporučená**
+  hodnota, kód z konstanty `LPS_ZEMNI_KOD` (C2); SPD T1 `62305-3 6.2;
+  62305-4 kap. 7`; koroze `E.5.6.2.2, E.7`; zkušební svorky `5.3.6`;
+  vada „do 1,8 m" nahrazena vadou dotykového napětí (do 3 m, `kap. 8`) a C3
+  „Doporučujeme mechanickou ochranu svodu v dosahu osob" bez článku; přechod
+  materiálů a antikoroze `E.5.6.2.2` (+ 5-54 542.2.5); výpočet rizika
+  `ČSN EN IEC 62305-2 ed.3`; SPD T2 `62305-4 kap. 7`.
+- **Prohlídka:** délka zemničů `5.4.2.2, E.5.4.2.2`, uzemnění `62305-4 5.2`,
+  impedance pospojování `62305-4 5.3`, SPD do zón `62305-4 kap. 7`.
+- **Nápovědy a patička PDF:** odpor uzemnění „doporučuje se nižší než 10 Ω,
+  je-li to možné (5.4.1), nejúčinnější je pospojování"; 0,2 Ω „doporučení
+  z praxe, u výztuže ŽB požadavek normy (5.3.5)".
+
+Test: `testy/test-normy-lps.js`.
+
 ## Tvorba dokumentace — Protokol o určení vnějších vlivů (blok `TVORBA DOKUMENTACE`)
 
 Zadání uživatele 2026-10-16: čtvrtá karta na úvodu
