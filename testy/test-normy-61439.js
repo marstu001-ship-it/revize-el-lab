@@ -125,6 +125,17 @@ const res = []; const check = (n, ok, d) => res.push((ok ? '✅' : '❌') + ' ' 
   check('příloha D: 12 skupin tab. D.1 (1–12), položky s články, bez štítku „čeká"', D1.sk === '1,2,3,4,5,6,7,8,9,10,11,12' && D1.radky === 24 && !D1.ceka && D1.pozn && D1.pdf, D1.sk + ' / ' + D1.radky);
   check('příloha D: u spojitosti ochranného obvodu (10.5.2, jen Z) nabídka jen zkouška a dokumentace', D1.z54 === ',dokumentace,zkouska', D1.z54);
 
+  // ── drobnosti: ČSN EN 50110-1 ed. 4, ČSN EN 50549-1 ──
+  const dr = await p.evaluate(async () => {
+    novaZprava('stroje'); await new Promise(r => setTimeout(r, 250));
+    magicZaver();
+    const z = document.getElementById('f_zhodnoceni').value;
+    const n = JSON.stringify(NORMY);
+    return { z, n50110: /ČSN EN 50110-1 ed\. 4 — Obsluha a práce na elektrických instalacích/.test(n) && !/50110-1 ed\.3/.test(n),
+      ph: !/50549-1 ed\.2/.test(document.documentElement.innerHTML + renderNormyEditor.toString()) };
+  });
+  check('ČSN EN 50110-1 ed. 4 v textu nové zprávy o kontrole stroje i v seznamu norem', /poučená dle ČSN EN 50110-1 ed\. 4\./.test(dr.z) && dr.n50110, dr.z.slice(0, 80));
+  check('příklad normy „ČSN EN 50549-1" bez neexistujícího ed.2', dr.ph);
   check('bez chyb stránky', !err.length, err.join(' | '));
   console.log(res.join('\n'));
   await b.close();

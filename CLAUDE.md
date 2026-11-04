@@ -696,7 +696,12 @@ EMC, znečištění a kategorie přepětí (`pscTechHtml`).
 - **Příloha D:** úplná tab. D.1 (`PSC_OV_D1`, 12 skupin, 24 řádků se způsoby
   Z / S / H); dřívější klíče (`ko11_x`, `otepleni`, `zkrat`) zůstaly.
 
-Test: `testy/test-normy-61439.js` (17 kontrol). **Upraveno:**
+**Drobnosti (commit „drobnosti"):** `ČSN EN 50110-1 ed. 4 — Obsluha a práce
+na elektrických instalacích` (od 08/2025; ed. 3 zrušena 29. 5. 2026) v seznamu
+norem a v textu převzetí zprávy o kontrole stroje (uložené zprávy beze změny);
+příklad normy v editoru „ČSN EN 50549-1" (vydání 2 v ČR není).
+
+Test: `testy/test-normy-61439.js` (19 kontrol). **Upraveno:**
 `test-rozvadec-dokumenty.js` (11.5, odvozené zkušební napětí, štítky jen
 u dílu 3), `test-rozvadec-faze-otepleni.js` (podmínky s citací, pole teploty).
 
