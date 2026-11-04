@@ -1753,6 +1753,93 @@ html.dark .dk-upozorneni.vyrazne{color:#ffc29a;background:#3d2210;border-color:#
 .dk-souhrn-t{font-family:var(--sans);font-size:.7rem;color:var(--muted)}
 .dk-nabidka-b{margin-top:.35rem}
 .dk-nabidka-b select{width:auto;max-width:100%;font-size:.8rem}
+/* ── Výpočet rizika LPS (DOK_TYPY.rlps) ── */
+.dok-b-fialova,[data-barva="fialova"]{--dok-barva:#6a3d9a}
+html.dark .dok-b-fialova,html.dark [data-barva="fialova"]{--dok-barva:#c9a6ee}
+#screen-dok-form[data-typ="rlps"] .dok-wrap{max-width:1400px}
+.rl-mrizka{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:1.2rem;align-items:start}
+.rl-vys{position:sticky;top:.8rem;border:1px solid var(--border);border-top:4px solid #6a3d9a;background:var(--surface);padding:1rem;max-height:calc(100vh - 1.6rem);overflow:auto}
+@media (max-width:1050px){.rl-mrizka{grid-template-columns:minmax(0,1fr)}.rl-vys{position:static;order:-1;max-height:none}}
+.rl-verdikt{border-radius:3px;padding:.7rem .8rem;margin-bottom:.7rem}
+.rl-v-ok{background:#e9f6ef;border:2px solid #0f7b5f}
+.rl-v-nok{background:#fdecea;border:2px solid #b5291c}
+.rl-v-chybi{background:#fff8e1;border:2px solid #e0a800}
+.rl-v-titul{font-size:1.15rem;font-weight:700;margin-bottom:.4rem}
+.rl-v-ok .rl-v-titul{color:#0b5e48}.rl-v-nok .rl-v-titul{color:#9b2015}
+html.dark .rl-v-ok{background:#123326}html.dark .rl-v-nok{background:#3a1714}html.dark .rl-v-chybi{background:#33290f}
+html.dark .rl-v-ok .rl-v-titul{color:#7fcfae}html.dark .rl-v-nok .rl-v-titul{color:#ff9d8f}
+.rl-r-radek{display:flex;flex-wrap:wrap;gap:.2rem .5rem;font-size:.85rem;line-height:1.5}
+.rl-r-radek>span:first-child{flex:1 1 100%;color:var(--muted);font-size:.75rem}
+.rl-r-radek.nad b{color:#b5291c}
+.rl-r-radek.info{opacity:.75}
+.rl-chyba{display:block;width:100%;text-align:left;background:none;border:0;padding:.3rem 0;color:var(--text);font-size:.85rem;cursor:pointer;text-decoration:underline}
+.rl-hlavni{width:100%;justify-content:center;margin:.3rem 0 .4rem}
+.rl-spocitat{margin-bottom:.6rem}
+.rl-f-volby .f{margin-bottom:.3rem}
+.rl-graf-t{font-size:.78rem;font-weight:600;margin:.5rem 0 .3rem}
+.rl-graf{display:flex;flex-direction:column;gap:.18rem}
+.rl-g-radek{display:grid;grid-template-columns:9.5rem minmax(0,1fr) 3.4rem;gap:.4rem;align-items:center;font-size:.72rem}
+.rl-g-k{color:var(--muted);line-height:1.2;font-size:.68rem;overflow-wrap:anywhere}
+.rl-g-k b{color:var(--text)}
+.rl-g-pas{position:relative;height:12px;background:var(--bg)}
+.rl-g-bar{position:absolute;left:0;top:0;bottom:0;background:#a98bc9}
+.rl-g-radek.nej .rl-g-bar{background:#6a3d9a}
+.rl-g-rt{position:absolute;top:-2px;bottom:-2px;width:0;border-left:2px dashed var(--text)}
+.rl-g-v{text-align:right;font-variant-numeric:tabular-nums}
+.rl-g-leg{font-size:.68rem;color:var(--muted);margin-top:.2rem}
+.rl-porovnani{margin-top:.7rem;font-size:.82rem;padding:.45rem .6rem;border-left:4px solid #0f7b5f;background:var(--bg)}
+.rl-porovnani.nok{border-left-color:#b5291c}
+.rl-zdroj{display:inline-flex;flex-wrap:wrap;align-items:center;gap:.25rem;font-size:.68rem;color:var(--muted);margin-top:.2rem;line-height:1.3}
+.rl-z-zad{color:#2B579A}
+.rl-z-prevz{color:#8a4b00;background:#fff1e0;border:1px solid #f0a35e;padding:.1rem .35rem;border-radius:2px}
+.rl-z-prevz.ok{background:none;border-color:transparent;color:#8a4b00}
+html.dark .rl-z-zad{color:#8fb0e3}html.dark .rl-z-prevz{background:#3d2a12;color:#f0c58f}
+.rl-chip-btn{font-size:.68rem;padding:.1rem .35rem;border:1px solid var(--border-dark);background:var(--surface);color:var(--text);cursor:pointer;border-radius:2px}
+.rl-pole.rl-chybi input{border:2px solid #e0a800;background:#fffbea}
+html.dark .rl-pole.rl-chybi input{background:#33290f}
+.rl-popis{font-size:.72rem;color:var(--muted);margin-top:.2rem;line-height:1.4}
+.rl-check{display:flex!important;align-items:flex-start;gap:.4rem;text-transform:none!important;letter-spacing:0!important;font-family:var(--sans)!important;font-size:.84rem!important;color:var(--text)!important;cursor:pointer;margin:.15rem 0}
+.rl-check input{width:auto!important;margin:.15rem 0 0;flex:0 0 auto}
+.rl-multi{display:flex;flex-direction:column}
+.rl-dlazdice{display:grid;grid-template-columns:repeat(4,minmax(0,1fr));gap:.45rem}
+.rl-dl{display:flex;flex-direction:column;align-items:center;gap:.2rem;padding:.45rem .3rem;border:2px solid var(--border);background:var(--surface);color:var(--muted);cursor:pointer;border-radius:3px;font-size:.76rem;line-height:1.25;text-align:center}
+.rl-dl span{color:var(--text)}
+.rl-dl small{font-size:.68rem}
+.rl-dl.akt{border-color:#6a3d9a;background:#f3ecfa;color:#6a3d9a}
+html.dark .rl-dl.akt{background:#2c2338;color:#c9a6ee}
+.rl-typy{display:grid;grid-template-columns:repeat(auto-fill,minmax(150px,1fr));gap:.6rem;margin:.6rem 0 .9rem}
+.rl-typ{display:flex;flex-direction:column;align-items:center;gap:.35rem;padding:.9rem .5rem;border:2px solid var(--border);background:var(--surface);color:var(--text);cursor:pointer;border-radius:4px;font-size:.88rem;font-weight:600;min-height:96px}
+.rl-typ:hover{border-color:#6a3d9a}
+.rl-typ.akt{border-color:#6a3d9a;background:#f3ecfa}
+html.dark .rl-typ.akt{background:#2c2338}
+.rl-typ-ik{font-size:1.8rem;line-height:1}
+.rl-typ-radek{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;margin-bottom:.7rem}
+.rl-typ-radek .rl-typ-ik{font-size:1.4rem}
+.rl-prevzit-radek{display:flex;flex-wrap:wrap;align-items:center;gap:.5rem;margin-top:.5rem}
+.rl-prevzit-radek .dk-pozn{margin:0}
+.rl-prevzit-radek .dok-mini{white-space:normal;text-align:left;max-width:100%}
+.rl-potvrdit-vse{border-color:#f0a35e!important}
+.rl-prepocet{font-size:.85rem;padding:.45rem 0}
+.rl-vedeni,.rl-zona{border:1px solid var(--border);border-left:4px solid #6a3d9a;background:var(--bg);padding:.8rem .9rem;margin:.7rem 0}
+.rl-vedeni .f input,.rl-vedeni .f select,.rl-zona .f input,.rl-zona .f select{background:var(--surface)}
+.rl-vedeni-hlava{display:flex;flex-wrap:wrap;align-items:center;justify-content:space-between;gap:.4rem;margin-bottom:.4rem}
+.rl-sekce{border-top:1px dashed var(--border);padding-top:.5rem;margin-top:.4rem}
+.rl-sekce-t{font-size:.8rem;font-weight:600;margin-bottom:.3rem;display:flex;flex-wrap:wrap;gap:.4rem;align-items:center}
+.rl-sekce-vn{background:rgba(106,61,154,.05)}
+.rl-akce-radek{display:flex;flex-wrap:wrap;gap:.5rem}
+.rl-akce-radek .add-row{width:auto;flex:0 0 auto}
+.rl-vedeni>.add-row{width:auto;margin:.4rem 0 .7rem}
+.rl-det{margin:.6rem 0}
+.rl-det>summary{cursor:pointer;font-weight:600;font-size:.88rem;padding:.3rem 0}
+details.scard.rl-det>summary{font-size:.95rem}
+.rl-det-obsah{padding-top:.5rem}
+.rl-okno{max-width:720px}
+.rl-okno-obsah{max-height:65vh;overflow:auto}
+.rl-varianta{border:1px solid var(--border);border-left:4px solid #0f7b5f;padding:.6rem .8rem;margin:.6rem 0}
+.rl-var-r{font-size:.82rem;color:var(--muted);margin:.25rem 0 .45rem}
+.rl-var-pozn{font-size:.78rem;color:var(--muted);margin-bottom:.4rem}
+.rl-prev-sk{margin:.6rem 0 .9rem}
+.rl-shoda{font-style:normal;color:#0f7b5f;font-size:.75rem}
 /* ── Rozvaděč DBO — konfigurátor (knihovna vlevo, čelní pohled, vlastnosti vpravo) ── */
 #screen-dok-form[data-typ="rozv"] .dok-wrap,#screen-dok-form[data-typ="psc"] .dok-wrap{max-width:none}
 #screen-dok-form[data-typ="rozv"] #rz-pan-dok,#screen-dok-form[data-typ="psc"] #rz-pan-dok{max-width:1560px;margin:0 auto}
@@ -2392,6 +2479,15 @@ html.dark .rz-imp-chyby{background:#3a1f1c;border-color:#6b2c25}
   /* hlavní akce přes celou šířku */
   .dok-hlavni-akce{display:flex;width:100%;justify-content:center;padding:.85rem 1rem}
   .dok-druha-akce{display:flex;width:100%;justify-content:center;margin:.6rem 0 0;min-height:48px}
+  /* výpočet rizika LPS: výsledek nahoře, dlaždice po dvou */
+  .rl-dlazdice{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .rl-dl{min-height:44px}
+  .rl-typy{grid-template-columns:repeat(2,minmax(0,1fr))}
+  .rl-g-radek{grid-template-columns:6.5rem minmax(0,1fr) 3rem}
+  .rl-chip-btn{min-height:44px;min-width:44px;font-size:.8rem}
+  .rl-chyba{min-height:44px}
+  .rl-akce-radek .add-row{width:100%}
+  .rl-vys{padding:.7rem}
   .rzz-zprava{flex-wrap:wrap;min-height:44px}
   .rzz-z-pod{text-align:left}
   .rzz-lista select,.rzz-rada select{min-height:44px;font-size:16px}
@@ -29426,7 +29522,7 @@ function dokObjNajit(id) {
 }
 function dokObjNazev(id) { var o = id ? dokObjNajit(id) : null; return o ? o.nazev : ''; }
 function dokObjektDok(x) { var id = x && x.data && x.data.objekt; return id && dokObjNajit(id) ? id : ''; }
-function dokObjPopisek(x) { var d = (x && x.data) || {}; return d.oznaceni || x.cislo || 'dokument'; }
+function dokObjPopisek(x) { var d = (x && x.data) || {}; return d.oznaceni || (x.typ === 'rlps' && d.nazev) || x.cislo || 'dokument'; }
 function dokObjSel(id) { return '#dok-seznam .dok-objekt[data-obj="' + String(id).replace(/["\\]/g, '\\$&') + '"]'; }
 
 // Seřazení se zámkem: nejdřív přirozené pořadí, pak se položky, které už
@@ -29482,8 +29578,9 @@ function dokObjSeznamHtml(seznam, q) {
   }), function (o) { return o.id; }, __dokObjZamek && __dokObjZamek.obj);
   var h = '<div class="dok-obj-lista"><button class="dok-katalog-odkaz dok-obj-novy" data-action="tdObjNovy" ' +
     'title="Založit objekt (složku) pro rozvaděče jedné stavby">＋ Nový objekt</button>' +
-    '<span class="dok-obj-tip">' + (dokObjekty().length ? 'Rozvaděč do objektu přetáhněte myší nebo pravým klikem „Přesunout do…".'
-      : 'Rozvaděče jedné stavby můžete dát pohromadě do objektu.') + '</span></div>';
+    '<span class="dok-obj-tip">' + (rozvTyp(__dokTyp) ? (dokObjekty().length ? 'Rozvaděč do objektu přetáhněte myší nebo pravým klikem „Přesunout do…".'
+      : 'Rozvaděče jedné stavby můžete dát pohromadě do objektu.') : (dokObjekty().length ? 'Výpočet do objektu přetáhněte myší, nebo ho zařaďte v jeho hlavičce.'
+      : 'Výpočty a rozvaděče jedné stavby můžete dát pohromadě do objektu.')) + '</span></div>';
   // rozvaděče druhého rozvaděčového typu (DBO / PSC) v témže objektu — jen počet do prázdného objektu
   var jine = {};
   if (rozvTyp(__dokTyp)) DOK.dokumenty.forEach(function (x) { if (x.typ !== __dokTyp && rozvTyp(x.typ)) { var k = dokObjektDok(x); if (k) (jine[k] = jine[k] || []).push(x); } });
@@ -29512,7 +29609,7 @@ function dokObjSkupinaHtml(id, nazev, docs, q, t, jine) {
   h += '<div class="dok-obj-obsah" data-obj="' + esc(id) + '"' + (sbal ? ' hidden' : '') + '>';
   if (!docs.length) h += '<div class="dok-obj-prazdny">' + (jine && jine.length
     ? 'V tomhle seznamu nic — v objektu je ' + esc(dokPocetTvar(jine.length, (DOK_TYPY[jine[0].typ] || t).tvary)) + ' ' + esc((DOK_TYPY[jine[0].typ] || {}).rezim || '') + ' (dlaždice ' + esc((DOK_TYPY[jine[0].typ] || {}).nazev || '') + ').'
-    : 'Prázdný objekt — přetáhněte sem rozvaděč myší, nebo ho zařaďte v jeho hlavičce (pole Objekt).') + '</div>';
+    : 'Prázdný objekt — přetáhněte sem ' + (rozvTyp(__dokTyp) ? 'rozvaděč' : 'dokument') + ' myší, nebo ho zařaďte v jeho hlavičce (pole Objekt).') + '</div>';
   dokObjStrom(docs).forEach(function (r) { h += dokPolozkaHtml(r.x, { hloubka: r.h, pod: dokNapajenText(r.x), bezTypu: true }); });
   return h + '</div>';
 }
@@ -42377,6 +42474,1213 @@ async function obnovaObrazovky(st, draftObnoven) {
   } catch (e) { return; }
   if (st.y) setTimeout(function () { window.scrollTo(0, st.y); }, 60);
 }
+
+// ═══ VÝPOČET RIZIKA LPS — ČSN EN IEC 62305-2 ed. 3 (blok „RIZIKO LPS") ══════
+// Čtvrtý typ Tvorby dokumentace (DOK_TYPY.rlps, číslo RLPS-0001). Data jsou
+// dokument tvorby dokumentace — revize a protokoly vnějších vlivů se JEN ČTOU.
+// Norma je placená: v kódu jsou jen čísla koeficientů a vzorce s odkazem na
+// tabulku / rovnici, popisky jsou vlastními slovy.
+//
+// Model (vše volitelné): d.typ = typ objektu (RL_TYPY), d.v = hodnoty zadané
+// technikem (klíč → text), d.prevz = převzaté z revize / protokolu
+// ({ v, z: odkud, ok: potvrzeno }), d.vedeni = [{ uid, druh, sekce:[{ uid, vn }] }],
+// d.zony = [{ uid, druh, nazev }]. Klíče: globální ('L', 'cd', 'lps'…),
+// vedení 'v.<uid>.peb', sekce 's.<uid>.ll', zóna 'z.<uid>.rt'.
+// Platná hodnota = zadáno → převzato → typ objektu → výchozí podle normy.
+// Výsledek se neukládá, počítá se vždy znovu (rlVypocet).
+// ═══════════════════════════════════════════════════════════════════════
+var RL_RT = 1e-5;                      // přípustné riziko (čl. 7.3)
+var RL_LS_TD = 'revize_el_rlps_td';    // poslední zadané Td (technik pracuje stále v témže regionu)
+
+// Volby: [klíč, popisek, hodnota]. Odkaz na tabulku je u parametru.
+var RL_CD = [['0.25', 'obklopená vyššími objekty nebo stromy', 0.25], ['0.5', 'okolí stejně vysoké nebo nižší', 0.5],
+             ['1', 'osamocená, v okolí nic', 1], ['2', 'osamocená na kopci nebo vyvýšenině', 2]];
+var RL_CE = [['1', 'venkov', 1], ['0.5', 'předměstí', 0.5], ['0.1', 'město', 0.1], ['0.01', 'město s budovami nad 20 m', 0.01]];
+var RL_CI = [['nad', 'nadzemní (venkovní vedení)', 1], ['pod', 'podzemní (kabel v zemi)', 0.3], ['mriz', 'v zemi uvnitř mřížové zemnicí soustavy', 0.01]];
+var RL_PS = [['zdivo', 'dřevo, zdivo', 1], ['zb', 'propojená ŽB nebo kovová konstrukce', 0.5]];
+var RL_LPS = [['0', 'bez LPS', 1], ['IV', 'LPS třídy IV', 0.2], ['III', 'LPS třídy III', 0.1], ['II', 'LPS třídy II', 0.05], ['I', 'LPS třídy I', 0.02],
+              ['I_prir', 'LPS I, přirozené svody z nepřerušené kovové / ŽB konstrukce', 0.01],
+              ['I_kov', 'LPS I, kovová střecha a přirozené prvky', 0.001]];
+var RL_PEB = [['0', 'bez SPD', 1], ['IV', 'SPD pro LPL III–IV', 0.05], ['II', 'SPD pro LPL II', 0.02], ['I', 'SPD pro LPL I', 0.01]];
+var RL_PSPD = [['0', 'bez koordinovaných SPD', 1], ['IV', 'koordinované SPD, LPL III–IV', 0.05], ['II', 'koordinované SPD, LPL II', 0.02],
+               ['I', 'koordinované SPD, LPL I', 0.01], ['L1', 'lepší než LPL I (vyšší proud)', 1e-4], ['L2', 'lepší než LPL I (ještě vyšší proud)', 5e-5],
+               ['L3', 'lepší než LPL I (nejvyšší proud)', 1e-5]];
+// Stínění vedení: [klíč, popisek, CLD, CLI] (tab. B.9)
+var RL_STIN = [['nest', 'nestíněné (nadzemní i podzemní)', 1, 1], ['pen', 'vícenásobně uzemněný PEN', 1, 0.2],
+               ['pod_st_nesp', 'stíněné podzemní, stínění nespojené s přípojnicí', 1, 0.3],
+               ['nad_st_nesp', 'stíněné nadzemní, stínění nespojené s přípojnicí', 1, 0.1],
+               ['st_sp', 'stíněné, stínění spojené s přípojnicí', 1, 0],
+               ['kabel_ochr', 'kabel chránící před bleskem / kovová trubka, spojené', 0, 0],
+               ['zadne', 'optika nebo žádné kovové vedení', 0, 0], ['izol', 'izolační rozhraní (ČSN EN 62305-4)', 0, 0]];
+var RL_RS = [['r20', '5 < Rs ≤ 20 Ω/km'], ['r5', '1 < Rs ≤ 5 Ω/km'], ['r1', 'Rs ≤ 1 Ω/km']];
+var RL_PLD_UW = [0.35, 0.5, 1, 1.5, 2.5, 4, 6, 12];   // tab. B.11 — sloupce Uw [kV]
+var RL_PLD = { r20: [1, 1, 1, 1, 0.95, 0.9, 0.8, 0.4], r5: [1, 1, 0.9, 0.8, 0.6, 0.3, 0.1, 0.02], r1: [1, 0.85, 0.6, 0.4, 0.2, 0.04, 0.02, 0.005] };
+var RL_KS3 = [['nest', 'nestíněný kabel, trasa bez ohledu na smyčky', 1], ['vel05', 'velké smyčky částečně vyloučené', 0.5],
+              ['vel02', 'velké smyčky vyloučené', 0.2], ['smycky', 'smyčky vyloučené', 0.01], ['stin', 'stíněné kabely nebo kovová trubka', 1e-4]];
+var RL_RT_POV = [['zem', 'zemědělská půda, beton', 1e-2], ['mramor', 'mramor, keramika', 1e-3], ['sterk', 'štěrk, koberec', 1e-4], ['asfalt', 'asfalt, linoleum, dřevo', 1e-5]];
+var RL_PAM = [['napisy', 'výstražné nápisy', 0.1], ['izolace', 'izolace svodů', 0.01], ['mriz', 'ekvipotenciální mřížový zemnič (jen krokové napětí)', 0.01],
+              ['prirozeny', 'přirozený LPS', 0.001], ['omezeni', 'omezení přístupu', 0]];
+var RL_RF = [['v0', 'výbuch: zóna 0, 20, pevné výbušniny', 1], ['v1', 'výbuch: zóna 1, 21', 0.1], ['v2', 'výbuch: zóna 2, 22', 1e-3],
+             ['pvys', 'požár vysoký (> 800 MJ/m² nebo hořlavá stavba / střecha)', 0.1], ['pobyc', 'požár obyčejný (400–800 MJ/m²)', 1e-2],
+             ['pniz', 'požár nízký (< 400 MJ/m²)', 1e-3], ['zadny', 'bez rizika požáru i výbuchu', 0]];
+var RL_RP = [['zadne', 'žádná opatření', 1], ['rucni', 'ruční (hasicí přístroje, hydranty, požární úseky, únikové cesty)', 0.5],
+             ['auto', 'automatické hasicí / poplachové zařízení chráněné proti přepětí, hasiči do 10 min', 0.2]];
+var RL_KAT = [['velmi', 'velmi vysoká'], ['vysoka', 'vysoká'], ['normalni', 'normální'], ['nizka', 'nízká']];
+// Ztráty podle kategorie (tab. C.2) — nejvyšší hodnota z rozsahu
+var RL_ZTRATY = { velmi: { LF: 2e-1, LO: 1e-2 }, vysoka: { LF: 1e-1, LO: 1e-3 }, normalni: { LF: 5e-2, LO: 5e-4 }, nizka: { LF: 2e-2, LO: 1e-4 } };
+var RL_FT = [['1', 'FT = 1 za rok', 1], ['0.1', 'FT = 0,1 za rok (kritické vnitřní systémy)', 0.1]];
+
+// Typ objektu = výchozí hodnoty (všechno jde přepsat). Rozhodnutí programu,
+// ne údaj normy — u hodnoty se proto píše „z typu objektu".
+var RL_TYPY = [
+  { k: 'rd', ikona: '🏠', n: 'Rodinný dům', kat: 'nizka', rf: 'pniz', ps: 'zdivo', rt: 'asfalt', tz: 8760 },
+  { k: 'bd', ikona: '🏢', n: 'Bytový dům', kat: 'nizka', rf: 'pobyc', ps: 'zb', rt: 'asfalt', tz: 8760 },
+  { k: 'zem', ikona: '🐄', n: 'Zemědělská stavba', kat: 'nizka', rf: 'pvys', ps: 'zdivo', rt: 'zem', tz: 2920 },
+  { k: 'kanc', ikona: '💼', n: 'Kanceláře', kat: 'normalni', rf: 'pobyc', ps: 'zb', rt: 'asfalt', tz: 2500 },
+  { k: 'skola', ikona: '🏫', n: 'Škola', kat: 'normalni', rf: 'pobyc', ps: 'zb', rt: 'asfalt', tz: 2000 },
+  { k: 'hotel', ikona: '🏨', n: 'Hotel', kat: 'normalni', rf: 'pobyc', ps: 'zb', rt: 'sterk', tz: 8760 },
+  { k: 'obchod', ikona: '🛒', n: 'Obchod', kat: 'normalni', rf: 'pobyc', ps: 'zb', rt: 'mramor', tz: 4000 },
+  { k: 'kostel', ikona: '⛪', n: 'Kostel', kat: 'normalni', rf: 'pvys', ps: 'zdivo', rt: 'mramor', tz: 1000 },
+  { k: 'muzeum', ikona: '🏛', n: 'Muzeum', kat: 'vysoka', rf: 'pobyc', ps: 'zdivo', rt: 'mramor', tz: 3000 },
+  { k: 'nemocnice', ikona: '🏥', n: 'Nemocnice', kat: 'vysoka', rf: 'pobyc', ps: 'zb', rt: 'asfalt', tz: 8760, f: true, ft: '0.1' },
+  { k: 'prumysl', ikona: '🏭', n: 'Průmysl / řídicí provoz', kat: 'vysoka', rf: 'pobyc', ps: 'zb', rt: 'zem', tz: 4380, f: true, ft: '0.1' },
+  { k: 'datac', ikona: '📡', n: 'Datové / telekomunikační centrum', kat: 'vysoka', rf: 'pobyc', ps: 'zb', rt: 'asfalt', tz: 2500, f: true, ft: '0.1' },
+  { k: 'sklad', ikona: '🛢', n: 'Sklad hořlavin', kat: 'normalni', rf: 'pvys', ps: 'zb', rt: 'zem', tz: 2000 },
+  { k: 'vybus', ikona: '💥', n: 'Výbušné prostředí', kat: 'velmi', rf: 'v1', ps: 'zb', rt: 'zem', tz: 2500, f: true, ft: '1' }
+];
+function rlTyp(k) { for (var i = 0; i < RL_TYPY.length; i++) if (RL_TYPY[i].k === k) return RL_TYPY[i]; return null; }
+
+// Popis parametrů: t = popisek, ref = odkaz na normu, o = volby, n = číslo (jednotka), a = ano/ne
+var RL_PAR = {
+  L: { t: 'Délka L', ref: 'rov. A.3', n: 'm' }, W: { t: 'Šířka W', ref: 'rov. A.3', n: 'm' }, H: { t: 'Výška H', ref: 'rov. A.3', n: 'm' },
+  slozity: { t: 'Složitý tvar (vystupující část)', ref: 'rov. A.4', a: 1 },
+  Hp: { t: 'Výška vystupující části Hp', ref: 'rov. A.4', n: 'm' }, Hmin: { t: 'Nejnižší výška Hmin', ref: 'rov. A.4', n: 'm' },
+  cd: { t: 'Okolí budovy CD', ref: 'tab. A.1', o: RL_CD }, ps: { t: 'Konstrukce PS', ref: 'tab. B.4', o: RL_PS },
+  zadani: { t: 'Bouřková činnost zadána jako', o: [['td', 'počet bouřkových dnů Td'], ['ng', 'hustota NG z údajů LLS'], ['nsg', 'NSG z údajů LLS']] },
+  td: { t: 'Bouřkové dny Td', ref: 'NG = 0,1·Td (orientačně, přesněji z LLS)', n: 'dní/rok' },
+  ng: { t: 'Hustota úderů NG', ref: 'rov. A.1', n: '1/km²·rok' }, nsg: { t: 'Hustota bodů úderu NSG', ref: 'rov. A.1', n: '1/km²·rok' },
+  k: { t: 'Koeficient k', ref: 'rov. A.1', n: '' },
+  lps: { t: 'Hromosvod (LPS)', ref: 'tab. B.3', o: RL_LPS },
+  ptws: { t: 'PTWS – varovný systém před bouřkou', ref: 'čl. B (TWS)', n: '' },
+  wm1: { t: 'Šířka oka vnějšího stínění wm1', ref: 'rov. B.7', n: 'm' }, wm2: { t: 'Šířka oka vnitřního stínění wm2', ref: 'rov. B.7', n: 'm' },
+  uwInt: { t: 'Uw vnitřních systémů (pro rM)', ref: 'rov. A.8', n: 'kV' },
+  kat: { t: 'Kategorie ztrát', ref: 'tab. C.2', o: RL_KAT },
+  lo: { t: 'Porucha vnitřních systémů ohrožuje život nebo prostředí', ref: 'tab. C.2', a: 1 },
+  LT: { t: 'LT', ref: 'tab. C.2', n: '' }, LD: { t: 'LD', ref: 'tab. C.2', n: '' }, LF1: { t: 'LF1', ref: 'tab. C.2', n: '' },
+  LF2: { t: 'LF2', ref: 'tab. C.2', n: '' }, LO1: { t: 'LO1', ref: 'tab. C.2', n: '' }, LO2: { t: 'LO2', ref: 'tab. C.2', n: '' },
+  hodnotitF: { t: 'Hodnotit četnost škod F (rozhoduje o potřebě ochrany)', ref: 'čl. 9', a: 1 },
+  ft: { t: 'Přípustná četnost FT', ref: 'čl. 9', o: RL_FT },
+  // vedení
+  uw: { t: 'Odolnost zařízení Uw', ref: 'rov. A.8, A.12', n: 'kV' }, stin: { t: 'Stínění vedení (CLD / CLI)', ref: 'tab. B.9', o: RL_STIN },
+  rs: { t: 'Odpor stínění Rs', ref: 'tab. B.11', o: RL_RS }, peb: { t: 'SPD na vstupu vedení (PEB)', ref: 'tab. B.13', o: RL_PEB },
+  pspd: { t: 'Koordinované SPD uvnitř (PSPD)', ref: 'tab. B.7', o: RL_PSPD }, ks3: { t: 'Vedení vnitřních kabelů KS3', ref: 'tab. B.10', o: RL_KS3 },
+  sous: { t: 'Na konci vedení je sousední budova', ref: 'rov. A.6', a: 1 },
+  sL: { t: 'Sousední budova – délka', ref: 'rov. A.6', n: 'm' }, sW: { t: 'Sousední budova – šířka', ref: 'rov. A.6', n: 'm' },
+  sH: { t: 'Sousední budova – výška', ref: 'rov. A.6', n: 'm' }, scd: { t: 'Okolí sousední budovy CDJ', ref: 'tab. A.1', o: RL_CD },
+  // sekce vedení
+  ll: { t: 'Délka LL', ref: 'příl. A (neznámá → 1000 m)', n: 'm' }, uloz: { t: 'Uložení (CI)', ref: 'tab. A.2', o: RL_CI },
+  ce: { t: 'Prostředí vedení CE', ref: 'tab. A.4', o: RL_CE },
+  rhoVys: { t: 'Měrný odpor půdy ρ > 400 Ωm', ref: 'rov. A.10, pozn. 3', a: 1 }, rho: { t: 'Měrný odpor půdy ρ', ref: 'rov. A.10', n: 'Ωm' },
+  // zóna
+  rt: { t: 'Povrch podlahy / terénu rt', ref: 'tab. B.2', o: RL_RT_POV }, pam: { t: 'Opatření proti dotykovému a krokovému napětí Pam', ref: 'tab. B.1', o: RL_PAM, multi: 1 },
+  rf: { t: 'Riziko požáru / výbuchu rf', ref: 'tab. B.6', o: RL_RF }, rp: { t: 'Protipožární opatření rp', ref: 'tab. B.5', o: RL_RP },
+  liion: { t: 'V zóně jsou Li-ion baterie (rp = 1)', ref: 'tab. B.5', a: 1 },
+  tz: { t: 'Doba přítomnosti osob tz', ref: 'rov. B.14', n: 'h/rok' }, te: { t: 'Doba provozu vnitřních systémů te', ref: 'rov. B.15', n: 'h/rok' },
+  po: { t: 'Pravděpodobnost PO (osoby na střeše)', ref: 'rov. B.3', n: '' }
+};
+
+function rlUid() { return 'rl' + Date.now().toString(36) + Math.random().toString(36).slice(2, 7); }
+function rlOpt(seznam, k) { for (var i = 0; i < seznam.length; i++) if (seznam[i][0] === String(k)) return seznam[i]; return null; }
+function rlCislo(s) {
+  if (s === '' || s == null) return NaN;
+  var t = String(s).trim().replace(/\s+/g, '').replace(',', '.');
+  var m = /^([-+]?\d*\.?\d+)(?:e([-+]?\d+)|·10\^?([-+⁻]?\d+))?$/i.exec(t);
+  if (!m) return NaN;
+  return parseFloat(m[1]) * Math.pow(10, m[2] ? +m[2] : 0);
+}
+
+// Kdo co nastavuje: rozdělení klíče na druh a vlastníka
+function rlKlic(key) {
+  var m = /^([vsz])\.([^.]+)\.(.+)$/.exec(key);
+  return m ? { druh: m[1], uid: m[2], p: m[3] } : { druh: 'g', p: key };
+}
+function rlVedeni(d, uid) { return (d.vedeni || []).filter(function (x) { return x.uid === uid; })[0] || null; }
+function rlVedeniSekce(d, suid) {
+  var r = null;
+  (d.vedeni || []).forEach(function (v) { (v.sekce || []).forEach(function (s) { if (s.uid === suid) r = { v: v, s: s }; }); });
+  return r;
+}
+function rlZona(d, uid) { return (d.zony || []).filter(function (x) { return x.uid === uid; })[0] || null; }
+
+// Výchozí hodnota parametru: { v, z: 'typ' | 'norma', pozn }
+function rlVychozi(d, key) {
+  var k = rlKlic(key), t = rlTyp(d.typ) || RL_TYPY[0], p = k.p;
+  var N = function (v, pozn) { return { v: v, z: 'norma', pozn: pozn || '' }; }, T = function (v) { return { v: v, z: 'typ' }; };
+  if (k.druh === 'g') {
+    switch (p) {
+      case 'cd': return N('1', 'nejnepříznivější z běžných');
+      case 'ps': return T(t.ps);
+      case 'zadani': return N('td');
+      case 'k': return N('2', 'bez údajů z LLS');
+      case 'lps': return N('0');
+      case 'ptws': return N('1', 'bez varovného systému');
+      case 'kat': return T(t.kat);
+      case 'lo': return T(t.lo ? '1' : '');
+      case 'hodnotitF': return T(t.f ? '1' : '');
+      case 'ft': return T(t.ft || '1');
+      case 'slozity': return N('');
+      case 'LT': return N('0.01'); case 'LD': return N('0.1');
+      case 'LF1': case 'LF2': case 'LO1': case 'LO2': {
+        var kat = rlHod(d, 'kat').v, z = RL_ZTRATY[kat] || RL_ZTRATY.nizka;
+        if (p.charAt(1) === 'F') return { v: String(z.LF), z: 'kat' };
+        var lo = (kat === 'velmi' || kat === 'vysoka') || rlHod(d, 'lo').v === '1';
+        return { v: lo ? String(z.LO) : '0', z: 'kat' };
+      }
+    }
+    return N('');
+  }
+  if (k.druh === 'v') {
+    var ved = rlVedeni(d, k.uid) || {};
+    switch (p) {
+      case 'uw': return N(ved.druh === 'tel' ? '1.5' : '2.5', ved.druh === 'tel' ? 'obvyklé u telekomunikací' : 'obvyklé u NN instalace');
+      case 'stin': return N('nest'); case 'rs': return N('r20', 'nejnepříznivější, když Rs neznáte');
+      case 'peb': return N('0'); case 'pspd': return N('0'); case 'ks3': return N('nest');
+      case 'scd': return N('1'); case 'sous': return N('');
+    }
+    return N('');
+  }
+  if (k.druh === 's') {
+    switch (p) {
+      case 'll': return N('', 'délka neznámá – předpoklad 1000 m');
+      case 'uloz': return N('nad'); case 'ce': return N('1', 'nejnepříznivější');
+      case 'rhoVys': return N('');
+    }
+    return N('');
+  }
+  if (k.druh === 'z') {
+    switch (p) {
+      case 'rt': return T(t.rt); case 'rf': return T(t.rf); case 'rp': return N('zadne', 'při nejistotě 1');
+      case 'pam': return N(''); case 'liion': return N('');
+      case 'tz': return T(String(t.tz)); case 'te': return N('8760', 'neví-li se, Pe = 1');
+      case 'po': return N('1', 'upřesněte podle normy');
+    }
+  }
+  return N('');
+}
+
+// Platná hodnota: zadáno → převzato → výchozí. `prepis` = zkusmé hodnoty
+// (návrh ochrany), mají přednost před vším.
+function rlHod(d, key, prepis) {
+  if (prepis && prepis[key] != null) return { v: String(prepis[key]), z: 'navrh' };
+  var v = d.v || {}, pr = d.prevz || {};
+  if (v[key] != null && v[key] !== '__') return { v: String(v[key]), z: 'zadano' };
+  if (pr[key] && pr[key].v != null) return { v: String(pr[key].v), z: 'prevz', zdroj: pr[key].z, ok: !!pr[key].ok };
+  return rlVychozi(d, key);
+}
+
+// ── Výpočet (příloha A, B, tab. 3 a 4) ───────────────────────────────────
+function rlAD(L, W, H) { return L * W + 2 * (3 * H) * (L + W) + Math.PI * Math.pow(3 * H, 2); }
+function rlPLD(stin, rs, uw) {
+  if (stin !== 'st_sp') return 1;   // nestíněné nebo stínění nespojené
+  var r = RL_PLD[rs] || RL_PLD.r20, i = 0;
+  for (var j = 0; j < RL_PLD_UW.length; j++) if (uw >= RL_PLD_UW[j] - 1e-9) i = j;
+  return r[i];
+}
+function rlVal(seznam, k, i) { var o = rlOpt(seznam, k); return o ? o[i == null ? 2 : i] : NaN; }
+
+function rlVypocet(d, prepis) {
+  var H = function (k) { return rlHod(d, k, prepis).v; }, C = function (k) { return rlCislo(H(k)); };
+  var r = { chyby: [], zony: [], vedeni: [] };
+  var L = C('L'), W = C('W'), Hh = C('H');
+  if (!(L > 0)) r.chyby.push({ k: 'L', t: 'Doplňte délku budovy L.' });
+  if (!(W > 0)) r.chyby.push({ k: 'W', t: 'Doplňte šířku budovy W.' });
+  if (!(Hh > 0)) r.chyby.push({ k: 'H', t: 'Doplňte výšku budovy H.' });
+  var zad = H('zadani'), kk = C('k'); if (!(kk > 0)) kk = 2;
+  var NG = NaN, NSG = NaN;
+  if (zad === 'nsg') { NSG = C('nsg'); if (!(NSG > 0)) r.chyby.push({ k: 'nsg', t: 'Doplňte hustotu bodů úderu NSG z údajů LLS.' }); }
+  else if (zad === 'ng') { NG = C('ng'); NSG = kk * NG; if (!(NG > 0)) r.chyby.push({ k: 'ng', t: 'Doplňte hustotu úderů NG z údajů LLS.' }); }
+  else { var td = C('td'); NG = 0.1 * td; NSG = kk * NG; if (!(td > 0)) r.chyby.push({ k: 'td', t: 'Doplňte počet bouřkových dnů Td (v ČR obvykle 15–40 dní za rok).' }); }
+  var slozity = H('slozity') === '1', Hp = C('Hp'), Hmin = C('Hmin');
+  if (slozity && !(Hp > 0 && Hmin > 0)) r.chyby.push({ k: 'Hp', t: 'U složitého tvaru doplňte Hp i Hmin.' });
+  if (r.chyby.length) return r;
+  r.NG = NG; r.NSG = NSG; r.k = kk;
+  r.AD = slozity ? Math.max(rlAD(L, W, Hmin), Math.PI * Math.pow(3 * Hp, 2)) : rlAD(L, W, Hh);
+  r.CD = rlVal(RL_CD, H('cd'));
+  r.ND = NSG * r.AD * r.CD * 1e-6;
+  var PTWS = C('ptws'); if (!(PTWS >= 0)) PTWS = 1;
+  r.PTWS = PTWS;
+  r.PLPS = rlVal(RL_LPS, H('lps'));
+  r.PS = H('lps') !== '0' ? 1 : rlVal(RL_PS, H('ps'));
+  var wm1 = C('wm1'), wm2 = C('wm2');
+  r.KS1 = wm1 > 0 ? Math.min(1, 0.12 * wm1) : 1; r.KS2 = wm2 > 0 ? Math.min(1, 0.12 * wm2) : 1;
+  // vedení
+  var uwMin = Infinity;
+  (d.vedeni || []).forEach(function (ved) {
+    var pre = 'v.' + ved.uid + '.', uw = C(pre + 'uw'); if (!(uw > 0)) uw = ved.druh === 'tel' ? 1.5 : 2.5;
+    var stin = H(pre + 'stin'), ln = { uid: ved.uid, druh: ved.druh, uw: uw, sekce: [], NL: 0, NI: 0, NDJ: 0 };
+    ln.CLD = rlVal(RL_STIN, stin, 2); ln.CLI = rlVal(RL_STIN, stin, 3);
+    ln.PLD = rlPLD(stin, H(pre + 'rs'), uw);
+    ln.PEB = rlVal(RL_PEB, H(pre + 'peb')); ln.PSPD = rlVal(RL_PSPD, H(pre + 'pspd'));
+    ln.KS3 = rlVal(RL_KS3, H(pre + 'ks3'));
+    ln.PMS = Math.pow(r.KS1 * r.KS2 * ln.KS3, 2);
+    ln.rI = 2000 / Math.pow(uw, 1.8);
+    uwMin = Math.min(uwMin, uw);
+    var ctPosl = 1;
+    (ved.sekce || []).forEach(function (s) {
+      var sp = 's.' + s.uid + '.', ll = C(sp + 'll'), llNezn = !(ll > 0); if (llNezn) ll = 1000;
+      var uloz = H(sp + 'uloz'), CI = rlVal(RL_CI, uloz), CE = rlVal(RL_CE, H(sp + 'ce')), CT = s.vn ? 0.2 : 1;
+      var rho = C(sp + 'rho'), vys = uloz !== 'nad' && H(sp + 'rhoVys') === '1' && rho > 400;
+      var AL = vys ? 0.6 * Math.sqrt(rho) * ll : 40 * ll, AI = 2 * ln.rI * ll;
+      var NL = NSG * AL * CI * CE * CT * 1e-6, NI = (1 / kk) * NSG * AI * CI * CE * CT * 1e-6;
+      ln.sekce.push({ uid: s.uid, vn: !!s.vn, ll: ll, llNezn: llNezn, CI: CI, CE: CE, CT: CT, AL: AL, AI: AI, NL: NL, NI: NI, rho: vys ? rho : null });
+      ln.NL += NL; ln.NI += NI; ctPosl = CT;
+    });
+    if (H(pre + 'sous') === '1') {
+      var sL = C(pre + 'sL'), sW = C(pre + 'sW'), sH = C(pre + 'sH');
+      if (sL > 0 && sW > 0 && sH > 0) { ln.ADJ = rlAD(sL, sW, sH); ln.CDJ = rlVal(RL_CD, H(pre + 'scd')); ln.NDJ = NSG * ln.ADJ * ln.CDJ * ctPosl * 1e-6; }
+    }
+    r.vedeni.push(ln);
+  });
+  var uwi = C('uwInt');
+  if (uwi > 0) uwMin = Math.min(uwMin, uwi);
+  if (!isFinite(uwMin)) uwMin = 2.5;
+  r.uwMin = uwMin; r.rM = 350 / uwMin;
+  r.AM = 2 * r.rM * (L + W) + Math.PI * r.rM * r.rM;
+  r.NM = (1 / kk) * NSG * r.AM * 1e-6;
+  // PC, PM — víc vedení (vnitřních systémů) se skládá jako 1 − Π(1 − Pi)
+  var qc = 1, qm = 1;
+  r.vedeni.forEach(function (ln) { qc *= 1 - ln.PSPD * ln.CLD; qm *= 1 - ln.PSPD * ln.PMS; });
+  r.PC = r.vedeni.length ? 1 - qc : 0; r.PM = r.vedeni.length ? 1 - qm : 0;
+  // ztráty
+  r.LT = C('LT'); r.LD = C('LD'); r.LF1 = C('LF1'); r.LF2 = C('LF2'); r.LO1 = C('LO1'); r.LO2 = C('LO2');
+  ['LT', 'LD', 'LF1', 'LF2', 'LO1', 'LO2'].forEach(function (x) { if (!(r[x] >= 0)) r[x] = 0; });
+  r.hodnotitF = H('hodnotitF') === '1'; r.FT = rlVal(RL_FT, H('ft')) || 1;
+  // zóny
+  (d.zony || []).forEach(function (zo) {
+    var zp = 'z.' + zo.uid + '.', Z = { uid: zo.uid, druh: zo.druh || 'vnitrni', nazev: rlZonaNazev(zo) };
+    var tz = C(zp + 'tz'), te = C(zp + 'te');
+    Z.PP = tz >= 0 ? Math.min(1, tz / 8760) : 1; Z.Pe = te >= 0 ? Math.min(1, te / 8760) : 1;
+    Z.rt = rlVal(RL_RT_POV, H(zp + 'rt'));
+    Z.Pam = H(zp + 'pam').split(',').filter(Boolean).reduce(function (a, k) { var v = rlVal(RL_PAM, k); return isNaN(v) ? a : a * v; }, 1);
+    var rfk = H(zp + 'rf');
+    Z.rf = rlVal(RL_RF, rfk);
+    Z.rpVynuceno = /^v/.test(rfk) || H(zp + 'liion') === '1';
+    Z.rp = Z.rpVynuceno ? 1 : rlVal(RL_RP, H(zp + 'rp'));
+    var s = { RAT: 0, RAD: 0, RB1: 0, RB2: 0, RC1: 0, RC2: 0, RM1: 0, RM2: 0, RU: 0, RV1: 0, RV2: 0, RW1: 0, RW2: 0, RZ1: 0, RZ2: 0 };
+    var f = { FC: 0, FM: 0, FW: 0, FZ: 0 };
+    if (Z.druh === 'strecha') {
+      var PO = C(zp + 'po'); if (!(PO >= 0)) PO = 1;
+      Z.PAD = PTWS * Z.Pam * PO * r.PLPS;
+      s.RAD = r.ND * Z.PAD * Z.PP * r.LD;
+    } else {
+      Z.PAT = r.PLPS * Z.Pam * Z.rt * PTWS;
+      s.RAT = r.ND * Z.PAT * Z.PP * r.LT;
+    }
+    if (Z.druh === 'vnitrni') {
+      Z.PB = r.PS * r.PLPS * Z.rf * Z.rp;
+      s.RB1 = r.ND * Z.PB * Z.PP * r.LF1; s.RB2 = r.ND * Z.PB * r.LF2;
+      s.RC1 = r.ND * r.PC * Z.PP * Z.Pe * r.LO1; s.RC2 = r.ND * r.PC * Z.Pe * r.LO2;
+      s.RM1 = r.NM * r.PM * Z.PP * Z.Pe * r.LO1; s.RM2 = r.NM * r.PM * Z.Pe * r.LO2;
+      f.FC = r.ND * r.PC * Z.Pe; f.FM = r.NM * r.PM * Z.Pe;
+      Z.linky = [];
+      r.vedeni.forEach(function (ln) {
+        var NLJ = ln.NL + ln.NDJ;
+        var PU = Z.Pam * ln.PEB * ln.PLD * PTWS * ln.CLD * Z.rt;
+        var PV = ln.PEB * ln.PLD * PTWS * ln.CLD * Z.rf * Z.rp;
+        var PW = ln.PSPD * PTWS * ln.PLD * ln.CLD, PZ = ln.PSPD * PTWS * ln.CLI;
+        Z.linky.push({ uid: ln.uid, PU: PU, PV: PV, PW: PW, PZ: PZ });
+        s.RU += NLJ * PU * Z.PP * r.LT;
+        s.RV1 += NLJ * PV * Z.PP * r.LF1; s.RV2 += NLJ * PV * r.LF2;
+        s.RW1 += NLJ * PW * Z.PP * Z.Pe * r.LO1; s.RW2 += NLJ * PW * Z.Pe * r.LO2;
+        s.RZ1 += ln.NI * PZ * Z.PP * Z.Pe * r.LO1; s.RZ2 += ln.NI * PZ * Z.Pe * r.LO2;
+        f.FW += NLJ * PW * Z.Pe; f.FZ += ln.NI * PZ * Z.Pe;
+      });
+    }
+    Z.s = s;
+    Z.sk = { RA: s.RAT + s.RAD, RB: s.RB1 + s.RB2, RC: s.RC1 + s.RC2, RM: s.RM1 + s.RM2, RU: s.RU, RV: s.RV1 + s.RV2, RW: s.RW1 + s.RW2, RZ: s.RZ1 + s.RZ2 };
+    Z.R = Object.keys(s).reduce(function (a, k) { return a + s[k]; }, 0);
+    Z.f = f; Z.F = Z.druh === 'vnitrni' ? f.FC + f.FM + f.FW + f.FZ : null;
+    r.zony.push(Z);
+  });
+  r.R = r.zony.reduce(function (a, z) { return Math.max(a, z.R); }, 0);
+  var zf = r.zony.filter(function (z) { return z.F != null; });
+  r.F = zf.length ? zf.reduce(function (a, z) { return Math.max(a, z.F); }, 0) : null;
+  r.okR = r.R <= RL_RT * (1 + 1e-9);
+  r.okF = r.F == null || r.F <= r.FT * (1 + 1e-9);
+  r.vyhovuje = r.okR && (!r.hodnotitF || r.okF);
+  r.hlavni = r.zony.filter(function (z) { return z.druh === 'vnitrni'; }).sort(function (a, b) { return b.R - a.R; })[0] || r.zony[0] || null;
+  return r;
+}
+function rlZonaNazev(zo) {
+  if (zo.nazev) return zo.nazev;
+  return zo.druh === 'venku' ? 'Venku do 3 m od budovy' : zo.druh === 'strecha' ? 'Osoby na střeše / terase' : 'Uvnitř budovy';
+}
+
+// ── Návrh ochrany ────────────────────────────────────────────────────────
+// Zkusí kombinace v pořadí náročnosti (SPD na vstupu → koordinované SPD →
+// protipožární opatření → LPS IV…I) a vrátí nejlevnější, které vyhoví.
+// Hodnoty se jen zvyšují (nikdy nesníží současnou ochranu). Varianta s LPS
+// má vždy SPD na vstupu vedení aspoň odpovídající třídy (vyrovnání potenciálů
+// podle ČSN EN 62305-3). Dominované varianty (jiná vyhovující je ve všem
+// stejná nebo levnější) se vynechají.
+var RL_POR_SPD = ['0', 'IV', 'II', 'I'], RL_POR_LPS = ['0', 'IV', 'III', 'II', 'I'], RL_POR_RP = ['zadne', 'rucni', 'auto'];
+function rlLpsSpd(l) { return l === 'III' ? 'IV' : l === '0' ? '0' : l; }
+function rlIdx(por, k) { var i = por.indexOf(k); return i < 0 ? (k === 'I_prir' || k === 'I_kov' ? por.length - 1 : 0) : i; }
+function rlNavrh(d) {
+  var vys = [], ved = d.vedeni || [], zon = (d.zony || []).filter(function (z) { return (z.druh || 'vnitrni') === 'vnitrni'; });
+  var akt = {
+    peb: Math.max.apply(null, [0].concat(ved.map(function (v) { return rlIdx(RL_POR_SPD, rlHod(d, 'v.' + v.uid + '.peb').v); }))),
+    pspd: Math.max.apply(null, [0].concat(ved.map(function (v) { return rlIdx(RL_POR_SPD, rlHod(d, 'v.' + v.uid + '.pspd').v); }))),
+    lps: rlIdx(RL_POR_LPS, rlHod(d, 'lps').v),
+    rp: Math.max.apply(null, [0].concat(zon.map(function (z) { return rlIdx(RL_POR_RP, rlHod(d, 'z.' + z.uid + '.rp').v); })))
+  };
+  var lpsAkt = rlHod(d, 'lps').v, rpLze = zon.some(function (z) {
+    var rf = rlHod(d, 'z.' + z.uid + '.rf').v; return !/^v/.test(rf) && rlHod(d, 'z.' + z.uid + '.liion').v !== '1';
+  });
+  var vse = [];
+  for (var a = akt.peb; a < RL_POR_SPD.length; a++)
+    for (var b = akt.pspd; b < RL_POR_SPD.length; b++)
+      for (var c = akt.lps; c < RL_POR_LPS.length; c++)
+        for (var e = akt.rp; e < (rpLze ? RL_POR_RP.length : akt.rp + 1); e++) {
+          var lps = RL_POR_LPS[c], peb = a;
+          if (c > 0) peb = Math.max(peb, RL_POR_SPD.indexOf(rlLpsSpd(lps)));
+          if (peb !== a) continue;   // tu kombinaci pokryje jiná (se SPD podle třídy LPS)
+          var pr = {};
+          ved.forEach(function (v) {
+            pr['v.' + v.uid + '.peb'] = RL_POR_SPD[Math.max(peb, rlIdx(RL_POR_SPD, rlHod(d, 'v.' + v.uid + '.peb').v))];
+            pr['v.' + v.uid + '.pspd'] = RL_POR_SPD[Math.max(b, rlIdx(RL_POR_SPD, rlHod(d, 'v.' + v.uid + '.pspd').v))];
+          });
+          if (c > akt.lps) pr.lps = lps; else if (c === akt.lps) pr.lps = lpsAkt;
+          zon.forEach(function (z) { pr['z.' + z.uid + '.rp'] = RL_POR_RP[Math.max(e, rlIdx(RL_POR_RP, rlHod(d, 'z.' + z.uid + '.rp').v))]; });
+          var cena = (a - akt.peb) + 10 * (b - akt.pspd) + (e > akt.rp ? (e === 1 ? 50 : 70) : 0) + (c > akt.lps ? 100 + 10 * (c - 1) : 0);
+          vse.push({ st: [a, b, c, e], cena: cena, prepis: pr });
+        }
+  vse.sort(function (x, y) { return x.cena - y.cena; });
+  var ok = [];
+  vse.forEach(function (v) {
+    if (ok.length >= 3) return;
+    if (ok.some(function (o) { return o.st.every(function (s, i) { return s <= v.st[i]; }); })) return;   // dominovaná
+    var r = rlVypocet(d, v.prepis);
+    if (r.chyby.length || !r.vyhovuje) return;
+    v.r = r; v.popis = rlNavrhPopis(v, akt, ved.length); ok.push(v);
+  });
+  return { akt: akt, varianty: ok };
+}
+function rlNavrhPopis(v, akt, nVed) {
+  var t = [], s = v.st, na = nVed > 1 ? ' na všech vedeních' : ' na vstupu vedení';
+  if (s[0] > akt.peb) t.push('SPD na vstupu' + (nVed > 1 ? ' všech vedení' : ' vedení') + ' (LPL ' + (RL_POR_SPD[s[0]] === 'IV' ? 'III–IV' : RL_POR_SPD[s[0]]) + ')');
+  if (s[1] > akt.pspd) t.push('koordinované SPD uvnitř (LPL ' + (RL_POR_SPD[s[1]] === 'IV' ? 'III–IV' : RL_POR_SPD[s[1]]) + ')');
+  if (s[3] > akt.rp) t.push((s[3] === 1 ? 'ruční' : 'automatická') + ' protipožární opatření');
+  if (s[2] > akt.lps) t.push('LPS třídy ' + RL_POR_LPS[s[2]]);
+  if (!t.length) t.push('současný stav vyhovuje – nic měnit není třeba');
+  return { text: t.join(' + '), rp: s[3] > akt.rp, lps: s[2] > akt.lps, na: na };
+}
+
+// Nejnižší třída LPS, se kterou výpočet vyhoví (SPD na vstupu se doplní podle třídy).
+function rlLpsPotreba(d) {
+  for (var i = 0; i < RL_POR_LPS.length; i++) {
+    var l = RL_POR_LPS[i], pr = { lps: l };
+    (d.vedeni || []).forEach(function (v) {
+      var a = rlHod(d, 'v.' + v.uid + '.peb').v;
+      pr['v.' + v.uid + '.peb'] = RL_POR_SPD[Math.max(rlIdx(RL_POR_SPD, a), RL_POR_SPD.indexOf(rlLpsSpd(l)))];
+    });
+    var r = rlVypocet(d, pr);
+    if (!r.chyby.length && r.vyhovuje) return l;
+  }
+  return null;
+}
+
+// ── Formát čísel ─────────────────────────────────────────────────────────
+var RL_SUP = { '-': '⁻', '0': '⁰', '1': '¹', '2': '²', '3': '³', '4': '⁴', '5': '⁵', '6': '⁶', '7': '⁷', '8': '⁸', '9': '⁹' };
+function rlCs(x, mist) { return (Math.round(x * Math.pow(10, mist)) / Math.pow(10, mist)).toLocaleString('cs-CZ', { maximumFractionDigits: mist }); }
+function rlSci(x, mist) {
+  if (x == null || isNaN(x)) return '—';
+  if (x === 0) return '0';
+  if (mist == null) mist = 2;
+  var e = Math.floor(Math.log10(Math.abs(x))), m = x / Math.pow(10, e);
+  if (Math.round(m * Math.pow(10, mist)) >= 10 * Math.pow(10, mist)) { m /= 10; e++; }
+  if (e >= -2 && e <= 3) return rlCs(x, Math.max(0, mist - e));
+  return rlCs(m, mist) + '·10' + String(e).split('').map(function (c) { return RL_SUP[c]; }).join('');
+}
+function rl5(x) { return x == null || isNaN(x) ? '—' : rlCs(x / 1e-5, 3); }   // v jednotkách 10⁻⁵
+
+// ── Typ dokumentu ────────────────────────────────────────────────────────
+DOK_TYPY.rlps = {
+  nazev: 'Výpočet rizika LPS',
+  kratce: 'Riziko LPS',
+  vytvorit: 'Nový výpočet rizika',
+  seznamNadpis: 'Výpočty rizika',
+  ikona: '🌩',
+  prefix: 'RLPS',
+  norma: 'ČSN EN IEC 62305-2 ed. 3',
+  dlazdice: 'Riziko úderu blesku – je ochrana potřeba a jaká (LPS, SPD). ČSN EN IEC 62305-2 ed. 3',
+  tvary: ['výpočet', 'výpočty', 'výpočtů'],
+  barva: 'fialova',
+  objekty: true,
+  popis: 'Výpočet rizika úderu blesku podle ČSN EN IEC 62305-2 ed. 3 — je ochrana potřeba, návrh LPS a SPD, protokol PDF.'
+};
+var __rl = { d: null, vyberTypu: false, det: {}, navrh: null };
+
+DOK_TYPY.rlps.novy = function () {
+  var t = (typeof STORE !== 'undefined' && STORE.technik) || {}, td = '';
+  try { td = localStorage.getItem(RL_LS_TD) || ''; } catch (e) {}
+  var d = {
+    model: 1, cislo: '', typ: '', objekt: '', nazev: '', misto: '',
+    investor: { nazev: '', adresa: '' }, zpracovatel: t.jmeno || '', datum: new Date().toISOString().slice(0, 10),
+    v: {}, prevz: {}, prevzato: {},
+    vedeni: [{ uid: rlUid(), druh: 'nn', sekce: [{ uid: rlUid() }] }],
+    zony: [{ uid: rlUid(), druh: 'vnitrni' }]
+  };
+  if (td) d.prevz.td = { v: td, z: 'naposledy zadané Td', ok: false };
+  return d;
+};
+DOK_TYPY.rlps.cist = function (koren) {
+  var d = dokKopie(__rl.d || {}), c = koren && koren.querySelector('[data-dk="cislo"]');
+  if (c) d.cislo = c.value;
+  return d;
+};
+DOK_TYPY.rlps.polozka = function (d) {
+  var t = rlTyp(d.typ), r = d.typ ? rlVypocet(d) : null;
+  var v = !r ? '' : r.chyby.length ? 'neúplné údaje' : r.vyhovuje ? '✓ vyhovuje (R ≤ RT)' : '✗ ochrana potřeba';
+  return { hlavni: d.nazev || d.misto || '(bez názvu objektu)', pod: [t ? t.n : '', v, d.misto && d.nazev ? d.misto : ''] };
+};
+DOK_TYPY.rlps.hledat = function (d) { var t = rlTyp(d.typ); return [d.nazev, d.misto, d.investor && d.investor.nazev, t && t.n, d.zpracovatel]; };
+
+// ── Formulář ─────────────────────────────────────────────────────────────
+function rlZdrojText(d, key) {
+  var h = rlHod(d, key), par = RL_PAR[rlKlic(key).p] || {};
+  if (h.z === 'zadano') return 'zadáno';
+  if (h.z === 'prevz') return 'převzato: ' + h.zdroj + (h.ok ? '' : ' (nepotvrzeno)');
+  if (h.z === 'typ') return 'z typu objektu';
+  if (h.z === 'kat') return 'z kategorie ztrát';
+  return 'výchozí' + (h.pozn ? ' – ' + h.pozn : '');
+}
+function rlChip(key) {
+  var d = __rl.d, h = rlHod(d, key), par = RL_PAR[rlKlic(key).p] || {}, tit = par.ref ? ' title="' + esc('ČSN EN IEC 62305-2 ed. 3, ' + par.ref) + '"' : '';
+  var kl = ' data-k="' + esc(key) + '"';
+  if (h.z === 'zadano') return '<span class="rl-zdroj rl-z-zad"' + tit + '>zadáno <button class="rl-chip-btn" data-action="tdRlVychozi"' + kl + ' title="Vrátit výchozí hodnotu">↺ výchozí</button></span>';
+  if (h.z === 'prevz') return '<span class="rl-zdroj rl-z-prevz' + (h.ok ? ' ok' : '') + '"' + tit + '>' + esc(h.zdroj) +
+    (h.ok ? ' ✓' : ' <button class="rl-chip-btn" data-action="tdRlPotvrdit"' + kl + ' title="Hodnota sedí — potvrdit">✓ Potvrdit</button>') + '</span>';
+  if (h.z === 'typ') return '<span class="rl-zdroj"' + tit + '>z typu objektu</span>';
+  if (h.z === 'kat') return '<span class="rl-zdroj"' + tit + '>z kategorie ztrát</span>';
+  return '<span class="rl-zdroj"' + tit + '>výchozí' + (h.pozn ? ' – ' + esc(h.pozn) : '') + '</span>';
+}
+function rlVolbyHtml(seznam, akt) {
+  return seznam.map(function (o) { return '<option value="' + esc(o[0]) + '"' + (o[0] === akt ? ' selected' : '') + '>' + esc(o[1]) + '</option>'; }).join('');
+}
+// Jedno pole: popisek, ovládání, štítek zdroje. o.ph = nápověda, o.span, o.popis
+function rlPole(key, o) {
+  o = o || {};
+  var d = __rl.d, k = rlKlic(key), par = RL_PAR[k.p] || {}, h = rlHod(d, key), ctrl;
+  var lab = esc(o.t || par.t) + (par.n ? ' <span class="dk-nepov">[' + esc(par.n) + ']</span>' : '');
+  if (par.a) {
+    return '<div class="f rl-pole rl-ano' + (o.span ? ' ' + o.span : '') + '" data-pole="' + esc(key) + '"><label class="rl-check"><input type="checkbox" data-rl="' + esc(key) + '"' +
+      (h.v === '1' ? ' checked' : '') + '> <span>' + esc(o.t || par.t) + '</span></label>' + rlChip(key) + (o.popis ? '<div class="rl-popis">' + o.popis + '</div>' : '') + '</div>';
+  }
+  if (par.multi) {
+    var vyb = h.v.split(',').filter(Boolean);
+    ctrl = '<div class="rl-multi">' + par.o.map(function (x) {
+      return '<label class="rl-check"><input type="checkbox" data-rl-multi="' + esc(key) + '" value="' + esc(x[0]) + '"' + (vyb.indexOf(x[0]) >= 0 ? ' checked' : '') + '> <span>' + esc(x[1]) + ' (' + rlCs(x[2], 3) + ')</span></label>';
+    }).join('') + '</div>';
+  } else if (par.o) {
+    ctrl = '<select data-rl="' + esc(key) + '">' + rlVolbyHtml(par.o.map(function (x) {
+      return [x[0], x[1] + (typeof x[2] === 'number' && !o.bezCisla ? ' (' + rlSci(x[2], 3) + (x.length > 3 ? ' / ' + rlSci(x[3], 3) : '') + ')' : '')];
+    }), h.v) + '</select>';
+  } else {
+    var hod = (h.z === 'zadano' || h.z === 'prevz') ? h.v : '';
+    var ph = o.ph != null ? o.ph : (h.v !== '' ? String(h.v).replace('.', ',') : '');
+    ctrl = '<input type="text" inputmode="decimal" autocomplete="off" data-rl="' + esc(key) + '" value="' + esc(String(hod).replace('.', ',')) + '"' + (ph ? ' placeholder="' + esc(ph) + '"' : '') + '>';
+  }
+  return '<div class="f rl-pole' + (o.span ? ' ' + o.span : '') + (o.chybi ? ' rl-chybi' : '') + '" data-pole="' + esc(key) + '"><label>' + lab + '</label>' + ctrl + rlChip(key) +
+    (o.popis ? '<div class="rl-popis">' + o.popis + '</div>' : '') + '</div>';
+}
+function rlDet(id, titul, obsah, o) {
+  o = o || {};
+  var ot = __rl.det[id] != null ? __rl.det[id] : !!o.otevreno;
+  return '<details class="rl-det' + (o.trida ? ' ' + o.trida : '') + '" data-rl-det="' + id + '"' + (ot ? ' open' : '') + '><summary>' + titul + '</summary><div class="rl-det-obsah">' + obsah + '</div></details>';
+}
+
+// Náčrtky pro dlaždice okolí a prostředí (jednoduché SVG, bez textu)
+function rlNacrt(druh, k) {
+  var dum = function (x, w, h) { return '<rect x="' + x + '" y="' + (40 - h) + '" width="' + w + '" height="' + h + '" fill="currentColor" opacity=".85"/>'; };
+  var cil = function (x) { return '<rect x="' + x + '" y="24" width="14" height="16" fill="#e8590c"/><path d="M' + (x - 2) + ' 24 L' + (x + 7) + ' 16 L' + (x + 16) + ' 24 Z" fill="#e8590c"/>'; };
+  var g = '<line x1="0" y1="40" x2="80" y2="40" stroke="currentColor" stroke-width="1.2"/>', s = '';
+  if (druh === 'cd') {
+    if (k === '0.25') s = dum(6, 16, 34) + cil(33) + dum(56, 18, 30);
+    else if (k === '0.5') s = dum(8, 16, 16) + cil(33) + dum(56, 16, 14);
+    else if (k === '1') s = cil(33);
+    else { s = cil(33); g = '<path d="M0 40 Q 40 6 80 40" fill="none" stroke="currentColor" stroke-width="1.2"/>'; s = '<g transform="translate(0 -14)">' + cil(33) + '</g>'; }
+  } else {
+    if (k === '1') s = dum(10, 8, 8) + dum(60, 8, 8);
+    else if (k === '0.5') s = dum(6, 10, 12) + dum(20, 10, 10) + dum(48, 10, 12) + dum(62, 12, 10);
+    else if (k === '0.1') s = dum(2, 12, 18) + dum(16, 12, 22) + dum(30, 12, 16) + dum(44, 12, 20) + dum(58, 12, 18);
+    else s = dum(2, 12, 34) + dum(16, 12, 28) + dum(30, 12, 36) + dum(44, 12, 30) + dum(58, 12, 34);
+  }
+  return '<svg viewBox="0 0 80 42" width="80" height="42" aria-hidden="true">' + s + g + '</svg>';
+}
+function rlDlazdice(key, seznam, druh) {
+  var h = rlHod(__rl.d, key), par = RL_PAR[rlKlic(key).p] || {};
+  return '<div class="f rl-pole span3" data-pole="' + esc(key) + '"><label>' + esc(par.t) + '</label><div class="rl-dlazdice">' + seznam.map(function (o) {
+    return '<button type="button" class="rl-dl' + (o[0] === h.v ? ' akt' : '') + '" data-action="tdRlVolba" data-k="' + esc(key) + '" data-v="' + esc(o[0]) + '" aria-pressed="' + (o[0] === h.v) + '">' +
+      rlNacrt(druh, o[0]) + '<span>' + esc(o[1]) + '</span><small>' + (druh === 'cd' ? 'CD' : 'CE') + ' = ' + rlCs(o[2], 2) + '</small></button>';
+  }).join('') + '</div>' + rlChip(key) + '</div>';
+}
+
+function rlTypyHtml(d) {
+  return '<div class="scard rl-typy-karta"><div class="scard-title">🌩 Jaký objekt počítáte?</div>' +
+    '<div class="dk-pozn">Vyberte typ — program podle něj předvyplní kategorii ztrát, riziko požáru, povrch podlahy a dobu přítomnosti osob. Všechno jde potom přepsat.</div>' +
+    '<div class="rl-typy">' + RL_TYPY.map(function (t) {
+      return '<button type="button" class="rl-typ' + (d.typ === t.k ? ' akt' : '') + '" data-action="tdRlTyp" data-typ="' + t.k + '"><span class="rl-typ-ik">' + t.ikona + '</span><span>' + esc(t.n) + '</span></button>';
+    }).join('') + '</div>' +
+    (d.typ ? '<button class="dok-mini" data-action="tdRlTypZpet">← Ponechat ' + esc((rlTyp(d.typ) || {}).n || '') + '</button>' : '') +
+    '<div class="rl-prevzit-radek"><button class="dok-mini" data-action="tdRlPrevzit">📋 Převzít údaje z revize nebo protokolu téhož objektu…</button>' +
+    rlNabidkaPrevzetiText() + '</div></div>';
+}
+function rlNabidkaPrevzetiText() {
+  var n = rlKandidati('lps').filter(function (x) { return x.skore > 0; })[0];
+  return n ? '<span class="dk-pozn">Nalezena revize LPS ' + esc(n.cislo) + ' (' + esc(n.misto) + ').</span>' : '';
+}
+
+DOK_TYPY.rlps.form = function (d) {
+  __rl.d = d;
+  if (!Array.isArray(d.vedeni)) d.vedeni = [];
+  if (!Array.isArray(d.zony) || !d.zony.length) d.zony = [{ uid: rlUid(), druh: 'vnitrni' }];
+  d.v = d.v || {}; d.prevz = d.prevz || {}; d.prevzato = d.prevzato || {};
+  if (!d.typ || __rl.vyberTypu) return '<div class="rl-hlava-cislo"><input type="hidden" data-dk="cislo" value="' + esc(d.cislo) + '"></div>' + rlTypyHtml(d);
+  return '<div class="rl-mrizka"><div class="rl-form">' + rlFormHtml(d) + '</div><aside class="rl-vys" id="rl-vys">' + rlVysledekHtml() + '</aside></div>';
+};
+
+function rlFormHtml(d) {
+  var t = rlTyp(d.typ) || {}, h = '';
+  var nepotvrz = Object.keys(d.prevz || {}).filter(function (k) { return !d.prevz[k].ok && !(d.v && d.v[k] != null); });
+  // 1. objekt
+  h += '<div class="scard"><div class="scard-title">📋 Objekt</div>' +
+    '<div class="rl-typ-radek"><span class="rl-typ-ik">' + t.ikona + '</span> <b>' + esc(t.n) + '</b>' +
+    '<button class="dok-mini" data-action="tdRlTypZmenit" title="Vybrat jiný typ — zadané hodnoty zůstanou">Změnit typ objektu</button></div>' +
+    '<div class="g3">' +
+      '<div class="f"><label>Číslo výpočtu</label><div class="dk-ares"><input type="text" data-dk="cislo" value="' + esc(d.cislo) + '" autocomplete="off">' +
+        '<button class="dok-mini" data-action="tdCisloDalsi" title="Přidělit další volné číslo">⟳</button></div></div>' +
+      '<div class="f"><label>Objekt (složka)</label><select class="rz-objekt" data-rlh="objekt" data-pred="' + esc(d.objekt || '') + '">' + rozvObjektVolby(d.objekt) + '</select></div>' +
+      '<div class="f"><label>Datum</label><input type="date" data-rlh="datum" value="' + esc(d.datum) + '"></div>' +
+      '<div class="f span2"><label>Název objektu</label><input type="text" data-rlh="nazev" value="' + esc(d.nazev) + '" placeholder="Rodinný dům Novákovi" autocomplete="off"></div>' +
+      '<div class="f"><label>Zpracovatel</label><input type="text" data-rlh="zpracovatel" value="' + esc(d.zpracovatel) + '" autocomplete="off"></div>' +
+      '<div class="f span2"><label>Místo (adresa)</label><input type="text" data-rlh="misto" value="' + esc(d.misto) + '" placeholder="Polní 12, Kyjov" autocomplete="off"></div>' +
+      '<div class="f"><label>Investor / vlastník</label><input type="text" data-rlh="investor.nazev" value="' + esc((d.investor || {}).nazev) + '" autocomplete="off"></div>' +
+    '</div>' +
+    '<div class="rl-prevzit-radek"><button class="dok-mini" data-action="tdRlPrevzit" title="Načte třídu LPS, SPD, přípojku a vnější vlivy z dokumentů téhož objektu — jen čte, nic v nich nemění">📋 Převzít z revize nebo protokolu…</button>' +
+      rlPrevzatoText(d) +
+      (nepotvrz.length ? ' <button class="dok-mini rl-potvrdit-vse" data-action="tdRlPotvrditVse">✓ Potvrdit všechny převzaté (' + nepotvrz.length + ')</button>' : '') + '</div>' +
+  '</div>';
+  // 2. budova
+  h += '<div class="scard"><div class="scard-title">🏠 Budova</div><div class="g3">' +
+    rlPole('L', { ph: 'např. 20' }) + rlPole('W', { ph: 'např. 15' }) + rlPole('H', { ph: 'např. 8' }) +
+    rlDlazdice('cd', RL_CD, 'cd') + rlPole('ps', { span: 'span2', popis: rlHod(d, 'lps').v !== '0' ? 'S hromosvodem se počítá PS = 1 (tab. B.4).' : '' }) +
+    '</div>' + rlDet('slozity', 'Složitý tvar (vystupující věž, komín…)', '<div class="g3">' + rlPole('slozity') + rlPole('Hp') + rlPole('Hmin') + '</div>') + '</div>';
+  // 3. bouřky
+  var zad = rlHod(d, 'zadani').v, r0 = rlVypocet(d), NGt = r0.NSG ? 'NG = ' + rlCs(r0.NG || r0.NSG / r0.k, 2) + ' → NSG = ' + rlCs(r0.NSG, 2) + ' úderů/km² za rok' : '';
+  h += '<div class="scard"><div class="scard-title">🌩 Bouřková činnost</div><div class="g3">' + rlPole('zadani') +
+    (zad === 'nsg' ? rlPole('nsg', { ph: 'z údajů LLS' }) : zad === 'ng' ? rlPole('ng', { ph: 'z údajů LLS' }) :
+      rlPole('td', { ph: 'v ČR obvykle 15–40', chybi: !(rlCislo(rlHod(d, 'td').v) > 0), popis: 'Povinné. NG = 0,1·Td je orientační přepočet (v ed. 3 výslovně není) — přesnější je hustota z údajů LLS.' })) +
+    '<div class="f rl-pole"><label>Přepočet</label><div class="rl-prepocet" id="rl-prepocet">' + esc(NGt || '—') + '</div></div>' +
+    '</div>' + rlDet('k', 'Koeficient k (jen s údaji z LLS)', '<div class="g3">' + rlPole('k') + '</div>') + '</div>';
+  // 4. vedení
+  h += '<div class="scard"><div class="scard-title">🔌 Vedení do budovy</div>' +
+    '<div class="dk-pozn">Délku vedení neznáte? Nechte prázdné — počítá se 1000 m, jak norma předpokládá.</div>' +
+    d.vedeni.map(rlVedeniHtml).join('') +
+    (d.vedeni.length ? '' : '<div class="dk-pozn">Bez vnějšího vedení (žádná přípojka ani telefon).</div>') +
+    '<div class="rl-akce-radek"><button class="add-row" data-action="tdRlVedeniPridat" data-druh="tel">＋ telekomunikační / datové vedení</button>' +
+    (d.vedeni.some(function (v) { return v.druh === 'nn'; }) ? '' : '<button class="add-row" data-action="tdRlVedeniPridat" data-druh="nn">＋ elektrická přípojka NN</button>') + '</div></div>';
+  // 5. ochrana
+  h += '<div class="scard"><div class="scard-title">🛡 Ochrana budovy</div><div class="g3">' + rlPole('lps', { span: 'span2' }) + '</div>' +
+    '<div class="dk-pozn">SPD na vstupu a koordinované SPD se nastavují u každého vedení výše.</div></div>';
+  // 6. zóny
+  h += '<div class="scard"><div class="scard-title">👥 Kde jsou osoby (zóny)</div>' + d.zony.map(rlZonaHtml).join('') +
+    '<div class="rl-akce-radek">' +
+    (d.zony.some(function (z) { return z.druh === 'venku'; }) ? '' : '<button class="add-row" data-action="tdRlZonaPridat" data-druh="venku">＋ venku do 3 m od budovy</button>') +
+    (d.zony.some(function (z) { return z.druh === 'strecha'; }) ? '' : '<button class="add-row" data-action="tdRlZonaPridat" data-druh="strecha">＋ osoby na střeše nebo terase</button>') + '</div></div>';
+  // 7. ztráty a pokročilé
+  h += rlDet('ztraty', '📊 Ztráty (tab. C.2) — z typu objektu', '<div class="dk-pozn">Ztráty volí zpracovatel a odpovídá za ně. Výchozí jsou nejvyšší hodnoty z rozsahu.</div><div class="g3">' +
+    rlPole('kat') + rlPole('lo', { span: 'span2' }) + ['LT', 'LD', 'LF1', 'LF2', 'LO1', 'LO2'].map(function (k) { return rlPole(k, { ph: rlSci(rlCislo(rlHod(d, k).v), 2) }); }).join('') + '</div>', { trida: 'scard' });
+  h += rlDet('pokrocile', '⚙ Pokročilé (TWS, stínění budovy, další zóny)', '<div class="g3">' + rlPole('ptws') + rlPole('wm1', { ph: 'bez stínění' }) + rlPole('wm2', { ph: 'bez stínění' }) + rlPole('uwInt', { ph: 'z vedení' }) + '</div>' +
+    '<div class="rl-akce-radek"><button class="add-row" data-action="tdRlZonaPridat" data-druh="vnitrni">＋ další vnitřní zóna</button></div>', { trida: 'scard' });
+  return h;
+}
+function rlPrevzatoText(d) {
+  var p = d.prevzato || {}, t = [];
+  if (p.lps) t.push('revize LPS ' + p.lps.cislo);
+  if (p.el) t.push('revize elektro ' + p.el.cislo);
+  if (p.vv) t.push('protokol ' + p.vv.cislo);
+  return t.length ? '<span class="dk-pozn">Převzato: ' + esc(t.join(', ')) + '</span>' : '';
+}
+function rlVedeniHtml(v, i) {
+  var d = __rl.d, pre = 'v.' + v.uid + '.', stin = rlHod(d, pre + 'stin').v;
+  var nazev = v.druh === 'tel' ? '📞 Telekomunikační / datové vedení' : '⚡ Elektrická přípojka NN';
+  var sek = (v.sekce || []).map(function (s) {
+    var sp = 's.' + s.uid + '.', pod = rlHod(d, sp + 'uloz').v !== 'nad', vys = rlHod(d, sp + 'rhoVys').v === '1';
+    var zem = d.prevzato && d.prevzato.lps && d.prevzato.lps.zemina;
+    return '<div class="rl-sekce' + (s.vn ? ' rl-sekce-vn' : '') + '"><div class="rl-sekce-t">' + (s.vn ? 'VN část s transformátorem VN/NN (CT = 0,2)' : (v.sekce.length > 1 ? 'NN část' : 'Úsek vedení')) +
+      (s.vn ? ' <button class="dok-mini dok-mini-del" data-action="tdRlSekceSmazat" data-uid="' + s.uid + '">🗑 Odebrat VN část</button>' : '') + '</div>' +
+      '<div class="g3">' + rlPole(sp + 'll', { ph: 'neznámá → 1000' }) + rlPole(sp + 'uloz', { bezCisla: true }) +
+      (pod ? rlPole(sp + 'rhoVys', { popis: zem ? 'Revize LPS uvádí zeminu „' + esc(zem) + '"' + (/písč|štěr|kamen/i.test(zem) ? ' — zvažte ρ > 400 Ωm.' : '.') : '' }) + (vys ? rlPole(sp + 'rho', { ph: 'např. 1000' }) : '') : '') +
+      rlDlazdice(sp + 'ce', RL_CE, 'ce') + '</div></div>';
+  }).join('');
+  return '<div class="rl-vedeni" data-ved="' + v.uid + '"><div class="rl-vedeni-hlava"><b>' + nazev + '</b>' +
+    '<button class="dok-mini dok-mini-del" data-action="tdRlVedeniSmazat" data-uid="' + v.uid + '">🗑 Odebrat vedení</button></div>' +
+    sek + (v.druh === 'nn' && !(v.sekce || []).some(function (s) { return s.vn; }) ? '<button class="add-row" data-action="tdRlSekcePridat" data-uid="' + v.uid + '">＋ VN část s transformátorem</button>' : '') +
+    '<div class="g3">' + rlPole(pre + 'uw') + rlPole(pre + 'stin', { span: 'span2' }) + rlPole(pre + 'peb', { span: 'span2' }) + rlPole(pre + 'pspd') + '</div>' +
+    rlDet('v-' + v.uid, 'Podrobnosti vedení (Rs, KS3, sousední budova)', '<div class="g3">' +
+      (stin === 'st_sp' ? rlPole(pre + 'rs') : '<div class="f rl-pole"><label>Odpor stínění Rs</label><div class="dk-pozn">Jen u stíněného vedení se stíněním spojeným s přípojnicí (jinak PLD = 1).</div></div>') +
+      rlPole(pre + 'ks3', { span: 'span2' }) + rlPole(pre + 'sous', { span: 'span3' }) +
+      (rlHod(d, pre + 'sous').v === '1' ? rlPole(pre + 'sL') + rlPole(pre + 'sW') + rlPole(pre + 'sH') + rlPole(pre + 'scd', { span: 'span3' }) : '') + '</div>') +
+  '</div>';
+}
+function rlZonaHtml(z, i) {
+  var d = __rl.d, zp = 'z.' + z.uid + '.', druh = z.druh || 'vnitrni', rf = rlHod(d, zp + 'rf').v, vynuc = /^v/.test(rf) || rlHod(d, zp + 'liion').v === '1';
+  var obsah = '';
+  if (druh === 'vnitrni') {
+    obsah = rlPole(zp + 'rf', { span: 'span2' }) + rlPole(zp + 'rp', { span: 'span3', popis: vynuc ? 'Ve výbušném prostředí a u Li-ion baterií se počítá rp = 1.' : '' }) +
+      rlPole(zp + 'liion', { span: 'span3' }) + rlPole(zp + 'rt', { span: 'span2' }) + rlPole(zp + 'tz') + rlPole(zp + 'te') + rlPole(zp + 'pam', { span: 'span3' });
+  } else if (druh === 'venku') {
+    obsah = rlPole(zp + 'rt', { span: 'span2' }) + rlPole(zp + 'tz') + rlPole(zp + 'pam', { span: 'span3' });
+  } else {
+    obsah = rlPole(zp + 'po') + rlPole(zp + 'tz') + rlPole(zp + 'pam', { span: 'span3' });
+  }
+  return '<div class="rl-zona" data-zona="' + z.uid + '"><div class="rl-vedeni-hlava"><b>' + esc(rlZonaNazev(z)) + '</b>' +
+    (i > 0 ? '<button class="dok-mini dok-mini-del" data-action="tdRlZonaSmazat" data-uid="' + z.uid + '">🗑 Odebrat zónu</button>' : '') + '</div>' +
+    '<div class="g3">' + obsah + '</div></div>';
+}
+
+// ── Výsledek (pravý panel) ───────────────────────────────────────────────
+var RL_SLOZKY = [['RA', 'dotyk a krok (úder do budovy)'], ['RB', 'požár (úder do budovy)'], ['RC', 'porucha systémů (úder do budovy)'],
+  ['RM', 'porucha systémů (úder poblíž budovy)'], ['RU', 'dotyk (úder do vedení)'], ['RV', 'požár (úder do vedení)'],
+  ['RW', 'porucha systémů (úder do vedení)'], ['RZ', 'porucha systémů (úder poblíž vedení)']];
+function rlGrafHtml(Z) {
+  var max = RL_RT;
+  RL_SLOZKY.forEach(function (s) { max = Math.max(max, Z.sk[s[0]]); });
+  var nej = RL_SLOZKY.reduce(function (a, s) { return Z.sk[s[0]] > Z.sk[a] ? s[0] : a; }, 'RA');
+  return '<div class="rl-graf" role="img" aria-label="Složky rizika">' + RL_SLOZKY.map(function (s) {
+    var v = Z.sk[s[0]], w = Math.max(0, v / max * 100);
+    return '<div class="rl-g-radek' + (s[0] === nej && v > 0 ? ' nej' : '') + '"><span class="rl-g-k" title="' + esc(s[1]) + '"><b>' + s[0] + '</b> ' + esc(s[1]) + '</span>' +
+      '<span class="rl-g-pas"><span class="rl-g-bar" style="width:' + rlCs(w, 2).replace(',', '.') + '%"></span><span class="rl-g-rt" style="left:' + (RL_RT / max * 100).toFixed(2) + '%"></span></span>' +
+      '<span class="rl-g-v">' + rl5(v) + '</span></div>';
+  }).join('') + '<div class="rl-g-leg">hodnoty × 10⁻⁵ · svislá čára = RT</div></div>';
+}
+function rlVysledekHtml() {
+  var d = __rl.d, r = rlVypocet(d), h = '';
+  if (r.chyby.length) {
+    return '<div class="rl-verdikt rl-v-chybi"><div class="rl-v-titul">Výpočet čeká na údaje</div>' +
+      r.chyby.map(function (c) { return '<button class="rl-chyba" data-action="tdRlSkoc" data-k="' + esc(c.k) + '">' + esc(c.t) + '</button>'; }).join('') + '</div>' +
+      '<button class="dok-hlavni-akce rl-hlavni" data-action="tdRlSpocitat">🔄 Spočítat</button>';
+  }
+  var zon = r.zony.map(function (z) {
+    return '<div class="rl-r-radek' + (z.R > RL_RT ? ' nad' : '') + '"><span>' + esc(z.nazev) + '</span><b>R = ' + rlSci(z.R, 3) + '</b> <span>' + (z.R > RL_RT ? '>' : '≤') + ' RT = 1·10⁻⁵</span></div>';
+  }).join('');
+  h += '<div class="rl-verdikt ' + (r.vyhovuje ? 'rl-v-ok' : 'rl-v-nok') + '"><div class="rl-v-titul">' +
+    (r.vyhovuje ? '✓ Ochrana vyhovuje — další není potřeba' : '⚠ Ochrana je potřeba') + '</div>' + zon +
+    '<div class="rl-r-radek rl-f' + (r.hodnotitF && !r.okF ? ' nad' : '') + (r.hodnotitF ? '' : ' info') + '"><span>Četnost škod' + (r.hodnotitF ? '' : ' (jen pro informaci)') + '</span><b>F = ' + rlSci(r.F, 3) + '/rok</b> <span>' + (r.okF ? '≤' : '>') + ' FT = ' + rlCs(r.FT, 1) + '</span></div></div>';
+  h += '<div class="rl-f-volby">' + rlPole('hodnotitF') + (r.hodnotitF ? rlPole('ft', { bezCisla: true }) : '') + '</div>';
+  h += '<button class="dok-hlavni-akce rl-hlavni" data-action="tdRlNavrh" title="Vyzkouší SPD, LPS a další opatření a ukáže nejlevnější, která vyhoví">🛡 Navrhnout ochranu</button>';
+  h += '<button class="dok-mini rl-spocitat" data-action="tdRlSpocitat" title="Výsledek se počítá průběžně — tlačítko ho jen znovu ukáže">🔄 Spočítat</button>';
+  if (r.hlavni) h += '<div class="rl-graf-t">Co riziko táhne — ' + esc(r.hlavni.nazev) + '</div>' + rlGrafHtml(r.hlavni);
+  h += rlPorovnaniHtml(d);
+  return h;
+}
+function rlPorovnani(d) {
+  var p = d.prevzato && d.prevzato.lps; if (!p || !p.trida) return null;
+  var min = rlLpsPotreba(d), tr = p.trida;
+  return { cislo: p.cislo, trida: tr, min: min, ok: min != null && RL_POR_LPS.indexOf(tr) >= RL_POR_LPS.indexOf(min) };
+}
+function rlPorovnaniHtml(d) {
+  var c = rlPorovnani(d); if (!c) return '';
+  return '<div class="rl-porovnani ' + (c.ok ? 'ok' : 'nok') + '">Revize ' + esc(c.cislo) + ' uvádí LPS ' + esc(c.trida) + ' – ' +
+    (c.min == null ? 'výpočet nevyhoví ani s LPS I: ✗' : c.min === '0' ? 'výpočet LPS nevyžaduje: ✓' : 'výpočet požaduje nejméně LPS ' + c.min + ': ' + (c.ok ? '✓' : '✗ nedostatečné')) + '</div>';
+}
+function rlObnovitVysledek() {
+  var el = document.getElementById('rl-vys'); if (!el || !__rl.d) return;
+  el.innerHTML = rlVysledekHtml();
+  var p = document.getElementById('rl-prepocet'), r = rlVypocet(__rl.d);
+  if (p) p.textContent = r.NSG ? 'NG = ' + rlCs(r.NG || r.NSG / r.k, 2) + ' → NSG = ' + rlCs(r.NSG, 2) + ' úderů/km² za rok' : '—';
+  document.querySelectorAll('#dok-form-obsah .rl-pole[data-pole]').forEach(function (f) {
+    var k = f.getAttribute('data-pole'), ch = f.querySelector('.rl-zdroj');
+    if (ch && f.closest('.rl-form')) ch.outerHTML = rlChip(k);
+    if (k === 'td') f.classList.toggle('rl-chybi', !(rlCislo(rlHod(__rl.d, 'td').v) > 0));
+  });
+}
+function rlKreslit() {
+  var f = dokForm(); if (!f || !__rl.d) return;
+  var y = window.scrollY;
+  f.innerHTML = DOK_TYPY.rlps.form(__rl.d);
+  window.scrollTo(0, y);
+}
+// Strukturní změna se ZPĚT (Ctrl+Z jde přes zásobník hlášek)
+function rlZmena(popis, fn, toast) {
+  var d = __rl.d, pred = JSON.stringify(d);
+  fn(d);
+  rlKreslit(); dokZmena();
+  if (typeof popis === 'function') popis = popis();
+  if (toast !== false) showToast(popis, { timeout: 7000, actionLabel: '↩ ZPĚT', action: function () {
+    var o = JSON.parse(pred); Object.keys(d).forEach(function (k) { delete d[k]; }); Object.assign(d, o);
+    rlKreslit(); dokZmena();
+  } });
+}
+
+// ── Posluchače ───────────────────────────────────────────────────────────
+function rlJeOtevreny() { return window.__dokOtevreny && window.__dokOtevreny.typ === 'rlps' && __rl.d; }
+function rlNastav(key, v) {
+  var d = __rl.d;
+  if (v === '' && !RL_PAR[rlKlic(key).p].a) delete d.v[key]; else d.v[key] = v;
+  if (key === 'td' && v) { try { localStorage.setItem(RL_LS_TD, v); } catch (e) {} }
+}
+document.addEventListener('input', function (e) {
+  var t = e.target; if (!rlJeOtevreny() || !t || !t.closest || !t.closest('#dok-form-obsah')) return;
+  if (t.hasAttribute('data-rlh')) {
+    var c = t.getAttribute('data-rlh'); if (t.value === '__novy') return;
+    dkNastavCestu(__rl.d, c, t.value); return;
+  }
+  if (t.getAttribute('data-dk') === 'cislo') { __rl.d.cislo = t.value; return; }
+  if (t.matches('input[type=text][data-rl]')) { rlNastav(t.getAttribute('data-rl'), t.value.trim()); rlObnovitVysledek(); }
+});
+document.addEventListener('change', function (e) {
+  var t = e.target; if (!rlJeOtevreny() || !t || !t.closest || !t.closest('#dok-form-obsah')) return;
+  if (t.hasAttribute('data-rl-multi')) {
+    var k = t.getAttribute('data-rl-multi');
+    rlNastav(k, Array.prototype.map.call(dokForm().querySelectorAll('input[data-rl-multi="' + k + '"]:checked'), function (x) { return x.value; }).join(',') || '__');
+    if (__rl.d.v[k] === '__') __rl.d.v[k] = '';
+    rlObnovitVysledek(); return;
+  }
+  if (t.matches('select[data-rl]')) { rlNastav(t.getAttribute('data-rl'), t.value); rlKreslit(); return; }
+  if (t.matches('input[type=checkbox][data-rl]')) { rlNastav(t.getAttribute('data-rl'), t.checked ? '1' : ''); rlKreslit(); return; }
+});
+document.addEventListener('toggle', function (e) {
+  var t = e.target; if (t && t.getAttribute && t.hasAttribute('data-rl-det')) __rl.det[t.getAttribute('data-rl-det')] = t.open;
+}, true);
+
+TD_AKCE.tdRlTyp = function (el) {
+  var k = el.getAttribute('data-typ'), byl = __rl.d.typ;
+  __rl.vyberTypu = false;
+  rlZmena(byl ? 'Typ objektu: ' + rlTyp(k).n + '. Zadané hodnoty zůstaly.' : '', function (d) { d.typ = k; }, !!byl);
+};
+TD_AKCE.tdRlTypZmenit = function () { __rl.vyberTypu = true; rlKreslit(); window.scrollTo(0, 0); };
+TD_AKCE.tdRlTypZpet = function () { __rl.vyberTypu = false; rlKreslit(); };
+TD_AKCE.tdRlVolba = function (el) { rlNastav(el.getAttribute('data-k'), el.getAttribute('data-v')); rlKreslit(); dokZmena(); };
+TD_AKCE.tdRlVychozi = function (el) { var k = el.getAttribute('data-k'); delete __rl.d.v[k]; rlKreslit(); dokZmena(); };
+TD_AKCE.tdRlPotvrdit = function (el) { var p = __rl.d.prevz[el.getAttribute('data-k')]; if (p) p.ok = true; rlKreslit(); dokZmena(); };
+TD_AKCE.tdRlPotvrditVse = function () { Object.keys(__rl.d.prevz).forEach(function (k) { __rl.d.prevz[k].ok = true; }); rlKreslit(); dokZmena(); showToast('Převzaté hodnoty potvrzeny.'); };
+TD_AKCE.tdRlVedeniPridat = function (el) {
+  var dr = el.getAttribute('data-druh');
+  rlZmena(dr === 'tel' ? 'Přidáno telekomunikační vedení.' : 'Přidána elektrická přípojka.', function (d) { d.vedeni.push({ uid: rlUid(), druh: dr, sekce: [{ uid: rlUid() }] }); });
+};
+TD_AKCE.tdRlVedeniSmazat = function (el) {
+  var u = el.getAttribute('data-uid');
+  rlZmena('Vedení odebráno.', function (d) { d.vedeni = d.vedeni.filter(function (v) { return v.uid !== u; }); });
+};
+TD_AKCE.tdRlSekcePridat = function (el) {
+  var u = el.getAttribute('data-uid');
+  rlZmena('Přidána VN část s transformátorem.', function (d) { var v = rlVedeni(d, u); if (v) v.sekce.push({ uid: rlUid(), vn: true }); });
+};
+TD_AKCE.tdRlSekceSmazat = function (el) {
+  var u = el.getAttribute('data-uid');
+  rlZmena('VN část odebrána.', function (d) { d.vedeni.forEach(function (v) { v.sekce = v.sekce.filter(function (s) { return s.uid !== u; }); }); });
+};
+TD_AKCE.tdRlZonaPridat = function (el) {
+  var dr = el.getAttribute('data-druh');
+  rlZmena('Přidána zóna.', function (d) { d.zony.push({ uid: rlUid(), druh: dr, nazev: dr === 'vnitrni' ? 'Vnitřní zóna ' + (d.zony.filter(function (z) { return z.druh === 'vnitrni'; }).length + 1) : '' }); });
+};
+TD_AKCE.tdRlZonaSmazat = function (el) {
+  var u = el.getAttribute('data-uid');
+  rlZmena('Zóna odebrána.', function (d) { d.zony = d.zony.filter(function (z) { return z.uid !== u; }); });
+};
+TD_AKCE.tdRlSkoc = function (el) {
+  var f = dokForm().querySelector('[data-pole="' + el.getAttribute('data-k') + '"]');
+  if (!f) return;
+  var det = f.closest('details'); if (det) det.open = true;
+  f.scrollIntoView({ block: 'center', behavior: 'smooth' });
+  var i = f.querySelector('input,select'); if (i) setTimeout(function () { i.focus({ preventScroll: true }); }, 350);
+};
+TD_AKCE.tdRlSpocitat = function () {
+  var r = rlVypocet(__rl.d);
+  rlObnovitVysledek();
+  if (r.chyby.length) { TD_AKCE.tdRlSkoc({ getAttribute: function () { return r.chyby[0].k; } }); showToast(r.chyby[0].t); return; }
+  var v = document.getElementById('rl-vys'); if (v) v.scrollIntoView({ block: 'start', behavior: 'smooth' });
+  showToast((r.vyhovuje ? '✓ Vyhovuje' : '⚠ Ochrana je potřeba') + ' — R = ' + rlSci(r.R, 3));
+};
+
+// ── Okno (společná stavebnice) ───────────────────────────────────────────
+function rlOkno(id, titul, obsah, akce) {
+  var m = document.getElementById(id);
+  if (!m) {
+    m = document.createElement('div'); m.className = 'modal-overlay'; m.id = id;
+    m.innerHTML = '<div class="modal rl-okno"><div class="modal-title"></div><div class="rl-okno-obsah"></div><div class="modal-actions"></div></div>';
+    document.body.appendChild(m);
+    m.addEventListener('click', function (e) { if (e.target === m) closeModal(id); });
+  }
+  m.querySelector('.modal-title').textContent = titul;
+  m.querySelector('.rl-okno-obsah').innerHTML = obsah;
+  m.querySelector('.modal-actions').innerHTML = akce;
+  m.classList.add('open');
+  return m;
+}
+document.addEventListener('keydown', function (e) {
+  if (e.key !== 'Escape') return;
+  ['modal-rl-navrh', 'modal-rl-prevzit'].forEach(function (id) { var m = document.getElementById(id); if (m && m.classList.contains('open')) closeModal(id); });
+});
+
+// ── Navrhnout ochranu ────────────────────────────────────────────────────
+TD_AKCE.tdRlNavrh = function () {
+  var d = __rl.d, r = rlVypocet(d);
+  if (r.chyby.length) { TD_AKCE.tdRlSpocitat(); return; }
+  var n = __rl.navrh = rlNavrh(d), h = '';
+  if (!n.varianty.length) h = '<div class="dk-upozorneni vyrazne">Žádná kombinace SPD, LPS I–IV a protipožárních opatření nevyhoví. Zkontrolujte vstupy (ztráty, riziko požáru), nebo zvažte další opatření mimo tento výpočet.</div>';
+  else h = '<div class="dk-pozn">Nejlevnější kombinace, které splní R ≤ RT' + (r.hodnotitF ? ' i F ≤ FT' : '') + '. Pořadí podle náročnosti: SPD na vstupu → koordinované SPD → protipožární opatření → LPS IV → I.</div>' +
+    n.varianty.map(function (v, i) {
+      return '<div class="rl-varianta"><div class="rl-var-t"><b>' + (i + 1) + '. ' + esc(v.popis.text) + '</b></div>' +
+        '<div class="rl-var-r">R = ' + rlSci(v.r.R, 3) + ' (' + rl5(v.r.R) + ' × 10⁻⁵)' + (v.r.F != null ? ' · F = ' + rlSci(v.r.F, 3) + '/rok' : '') + '</div>' +
+        (v.popis.lps ? '<div class="rl-var-pozn">Součástí LPS je SPD na vstupu vedení odpovídající třídy (vyrovnání potenciálů podle ČSN EN 62305-3).</div>' : '') +
+        (v.popis.rp ? '<div class="dk-upozorneni">⚠ Protipožární opatření započtěte jen tehdy, když v objektu opravdu jsou a budou udržovaná.</div>' : '') +
+        '<button class="btn btn-gold" data-action="tdRlNavrhPouzit" data-i="' + i + '">Použít tuto variantu</button></div>';
+    }).join('');
+  rlOkno('modal-rl-navrh', '🛡 Návrh ochrany', h, '<button class="btn btn-ghost" data-action="tdRlOknoZavrit" data-id="modal-rl-navrh">Zavřít</button>');
+};
+TD_AKCE.tdRlOknoZavrit = function (el) { closeModal(el.getAttribute('data-id')); };
+TD_AKCE.tdRlNavrhPouzit = function (el) {
+  var v = __rl.navrh && __rl.navrh.varianty[+el.getAttribute('data-i')]; if (!v) return;
+  closeModal('modal-rl-navrh');
+  rlZmena('Použito: ' + v.popis.text + '.', function (d) {
+    Object.keys(v.prepis).forEach(function (k) { if (rlHod(d, k).v !== String(v.prepis[k])) d.v[k] = String(v.prepis[k]); });
+  });
+};
+
+// ── Převzetí z revizí a protokolu vnějších vlivů (jen čtení) ─────────────
+function rlNorm(s) { return String(s || '').toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/\s+/g, ' ').trim(); }
+function rlShoda(a, b) {
+  a = rlNorm(a); b = rlNorm(b); if (!a || !b) return 0;
+  if (a.indexOf(b) >= 0 || b.indexOf(a) >= 0) return 2;
+  var sa = a.split(/[\s,.;/–-]+/).filter(function (w) { return w.length >= 4; });
+  return sa.some(function (w) { return b.indexOf(w) >= 0; }) ? 1 : 0;
+}
+function rlKandidati(druh) {
+  var d = __rl.d || {}, cile = [d.nazev, d.misto, dokObjNazev(d.objekt)].filter(Boolean), out = [];
+  var sk = function (texty) { var m = 0; cile.forEach(function (c) { texty.forEach(function (t) { m = Math.max(m, rlShoda(c, t)); }); }); return m; };
+  if (druh === 'pouvv') {
+    (DOK.dokumenty || []).filter(function (x) { return x.typ === 'pouvv'; }).forEach(function (x) {
+      var dd = x.data || {}; out.push({ id: x.uid, cislo: x.cislo || dd.cislo || '', misto: dd.stavba || dd.misto || '', datum: dd.datum || '', skore: sk([dd.stavba, dd.misto]), x: x });
+    });
+  } else {
+    (typeof archiv !== 'undefined' ? archiv : []).forEach(function (z, i) {
+      if (rzzTypZpravy(z) !== druh || !z.data) return;
+      var D = z.data;
+      out.push({ id: rzzKlic(z, i), cislo: z.ev_cislo || D.ev_cislo || '', misto: D.misto || z.misto || '', adresa: D.adresa || '', datum: rzzDatumZpravy(z), skore: sk([D.misto, z.misto, D.adresa]), z: z });
+    });
+  }
+  return out.sort(function (a, b) { return b.skore - a.skore || String(b.datum).localeCompare(String(a.datum)); });
+}
+TD_AKCE.tdRlPrevzit = function () {
+  var skup = [['lps', 'Revize LPS (třída LPS, SPD, zemina)'], ['elektro', 'Revize elektro (přípojka, SPD v hlavním rozvaděči)'], ['pouvv', 'Protokol o vnějších vlivech (požár, výbuch, osoby)']];
+  var h = '<div class="dk-pozn">Program dokumenty jen přečte, nic v nich nezmění. Převzaté hodnoty se označí a potvrdíte je jedním klikem.</div>' + skup.map(function (s) {
+    var k = rlKandidati(s[0]), pred = k.length && k[0].skore > 0 ? k[0].id : '';
+    return '<div class="rl-prev-sk"><div class="dk-blok-t">' + esc(s[1]) + '</div>' +
+      '<label class="rl-check"><input type="radio" name="rlp-' + s[0] + '" value=""' + (pred ? '' : ' checked') + '> <span>— nepřebírat —</span></label>' +
+      (k.length ? k.slice(0, 30).map(function (x) {
+        return '<label class="rl-check"><input type="radio" name="rlp-' + s[0] + '" value="' + esc(x.id) + '"' + (x.id === pred ? ' checked' : '') + '> <span><b>' + esc(x.cislo || '(bez čísla)') + '</b> · ' +
+          esc(x.misto || '—') + (x.datum ? ' · ' + esc(dokDatumCz(x.datum)) : '') + (x.skore ? ' <em class="rl-shoda">shoda s objektem</em>' : '') + '</span></label>';
+      }).join('') : '<div class="dk-pozn">Žádný dokument tohoto druhu.</div>') + '</div>';
+  }).join('');
+  rlOkno('modal-rl-prevzit', '📋 Převzít údaje téhož objektu', h,
+    '<button class="btn btn-ghost" data-action="tdRlOknoZavrit" data-id="modal-rl-prevzit">Zrušit</button><button class="btn btn-gold" data-action="tdRlPrevzitPotvrdit">✓ Převzít vybrané</button>');
+};
+TD_AKCE.tdRlPrevzitPotvrdit = function () {
+  var m = document.getElementById('modal-rl-prevzit'), vyb = {};
+  ['lps', 'elektro', 'pouvv'].forEach(function (k) { var r = m.querySelector('input[name="rlp-' + k + '"]:checked'); vyb[k] = r ? r.value : ''; });
+  closeModal('modal-rl-prevzit');
+  var co = [];
+  __rl.vyberTypu = false;
+  rlZmena(function () { return co.length ? 'Převzato: ' + co.join(', ') + '. Zkontrolujte oranžově označené hodnoty.' : 'Nic se nepřevzalo.'; },
+    function (d) { co = rlPrevzit(d, vyb); });
+};
+function rlPrevzit(d, vyb) {
+  var co = [], nn = (d.vedeni || []).filter(function (v) { return v.druh === 'nn'; }), z0 = (d.zony || []).filter(function (z) { return (z.druh || 'vnitrni') === 'vnitrni'; })[0];
+  var nastav = function (k, v, z) { d.prevz[k] = { v: String(v), z: z, ok: false }; delete d.v[k]; };   // převzetí nahradí i ručně zadanou hodnotu (ZPĚT ji vrátí)
+  if (vyb.lps) {
+    var k = rlKandidati('lps').filter(function (x) { return x.id === vyb.lps; })[0];
+    if (k) {
+      var L = k.z.data.lps || {}, src = 'revize LPS ' + (k.cislo || '');
+      d.prevzato.lps = { uid: k.id, cislo: k.cislo, trida: L.trida || '', zemina: L.zemina || '', strecha: L.material_strechy || '', typ: L.typ_objektu || '' };
+      if (/^(I|II|III|IV)$/.test(L.trida || '')) { nastav('lps', L.trida, src); co.push('třída LPS ' + L.trida); }
+      if (String(L.spd || '').trim() || /LPZ\s*1/i.test(L.lpz || '')) {
+        nn.forEach(function (v) { nastav('v.' + v.uid + '.peb', L.trida ? rlLpsSpd(L.trida) : 'IV', src + ' – odhad, ověřte LPL SPD'); });
+        if (nn.length) co.push('SPD na vstupu');
+      }
+    }
+  }
+  if (vyb.elektro) {
+    var e = rlKandidati('elektro').filter(function (x) { return x.id === vyb.elektro; })[0];
+    if (e) {
+      var D = e.z.data, src2 = 'revize elektro ' + (e.cislo || ''), rz = (D.rozvadece || [])[0] || {};
+      d.prevzato.el = { uid: e.id, cislo: e.cislo };
+      var pr = [rz.privod, D.zdroj].join(' ');
+      var uloz = /\b(AYKY|CYKY|NAYY|kabel|zemn|v zemi)/i.test(pr) ? 'pod' : /\b(AES|AlFe|venkovn|nadzem|vrchn)/i.test(pr) ? 'nad' : '';
+      if (uloz && nn[0] && nn[0].sekce[0]) { nastav('s.' + nn[0].sekce.filter(function (s) { return !s.vn; })[0].uid + '.uloz', uloz, src2 + ' (přívod: ' + rozvZkratit(String(rz.privod || D.zdroj || ''), 40) + ')'); co.push('uložení přípojky'); }
+      var spd = (rz.mereni || []).some(function (m) { return /\b(SPD|svodi|přepě|prepe|bleskoj)/i.test([m.n, m.typ, m.popis, m.hodnota].join(' ')); });
+      if (spd) nn.forEach(function (v) { if (!d.prevz['v.' + v.uid + '.peb']) { nastav('v.' + v.uid + '.peb', 'IV', src2 + ' – odhad, ověřte, že jde o SPD typu 1'); co.push('SPD v hlavním rozvaděči'); } });
+    }
+  }
+  if (vyb.pouvv) {
+    var p = rlKandidati('pouvv').filter(function (x) { return x.id === vyb.pouvv; })[0];
+    if (p) {
+      var kody = [], src3 = 'protokol ' + (p.cislo || '');
+      ((p.x.data || {}).skupiny || []).forEach(function (g) { Object.keys(g.kody || {}).forEach(function (k) { kody.push(String(g.kody[k])); }); });
+      d.prevzato.vv = { uid: p.id, cislo: p.cislo, kody: kody.filter(function (k, i) { return kody.indexOf(k) === i; }) };
+      var ma = function (k) { return kody.indexOf(k) >= 0; };
+      if (ma('BE3')) { nastav('kat', 'velmi', src3 + ' (BE3)'); if (z0) nastav('z.' + z0.uid + '.rf', 'v1', src3 + ' (BE3) – upřesněte zónu'); co.push('nebezpečí výbuchu'); }
+      else {
+        if (ma('BE2') && z0) { nastav('z.' + z0.uid + '.rf', 'pvys', src3 + ' (BE2)'); co.push('riziko požáru'); }
+        var os = ['BD3', 'BD4', 'BA3'].filter(ma);
+        if (os.length) { nastav('kat', 'vysoka', src3 + ' (' + os.join(', ') + ')'); co.push('kategorie ztrát'); }
+      }
+    }
+  }
+  return co;
+}
+
+// ── Protokol PDF — vektorové listy A4 na šířku s rámem a razítkem ────────
+// Obsah se skládá z položek { h: výška v mm, k: function (x, y) → SVG };
+// stránkovač je skládá na listy (obsah nad razítkem do y = RL_PDF_DOLE).
+var RL_PDF_X = 16, RL_PDF_W = 265, RL_PDF_NAHORE = 17, RL_PDF_DOLE = 160;
+function rlPdfText(x, y, t, o) { return rsText(x, y, t, o); }
+function rlPdfOdst(t, fs, o) {   // odstavec zalomený na šířku
+  o = o || {}; fs = fs || 2.4;
+  var r = rsZalomit(t, o.w || RL_PDF_W, fs, 20), lh = fs * 1.35;
+  return { h: r.length * lh + (o.mezera != null ? o.mezera : 1), k: function (x, y) {
+    return r.map(function (s, i) { return rlPdfText(x + (o.dx || 0), y + fs * 0.9 + i * lh, s, { fs: fs, tucne: o.tucne, barva: o.barva }); }).join('');
+  } };
+}
+function rlPdfNadpis(t) {
+  return { h: 8, drz: true, k: function (x, y) { return rlPdfText(x, y + 5, t, { fs: 3.3, tucne: true }) + rsCara(x, y + 6.4, x + RL_PDF_W, y + 6.4, { w: RS_TENKA }); } };
+}
+// Tabulka: sl = [[šířka, záhlaví, 'end'?]], radky = [[...]]; vrací položky (záhlaví se opakuje)
+function rlPdfTab(sl, radky, o) {
+  o = o || {}; var fs = o.fs || 2.15, lh = fs * 1.3;
+  var bunky = function (r) { return r.map(function (t, i) { return rsZalomit(String(t == null ? '' : t), sl[i][0] - 2.4, fs, 4); }); };
+  var radek = function (r, hlav) {
+    var b = bunky(r), n = Math.max.apply(null, b.map(function (x) { return x.length; })), h = n * lh + 1.6;
+    return { h: h, hlav: hlav, k: function (x, y) {
+      var s = hlav ? rsObd(x, y, RL_PDF_W, h, { fill: '#eeeeee', w: RS_TENKA }) : rsCara(x, y + h, x + RL_PDF_W, y + h, { w: RS_TENKA });
+      var cx = x;
+      b.forEach(function (rr, i) {
+        var w = sl[i][0], zar = sl[i][2];
+        rr.forEach(function (t, j) { s += rlPdfText(zar === 'end' ? cx + w - 1.2 : cx + 1.2, y + fs + 0.4 + j * lh, t, { fs: fs, tucne: hlav || (o.tucnyPosledni && i === b.length - 1), zar: zar }); });
+        cx += w;
+      });
+      return s;
+    } };
+  };
+  var hl = radek(sl.map(function (s) { return s[1]; }), true);
+  var out = [hl];
+  radky.forEach(function (r) { var it = radek(r); it.opak = hl; out.push(it); });
+  out.push({ h: 2.5, k: function () { return ''; } });
+  return out;
+}
+function rlPdfListy(d) {
+  var r = rlVypocet(d), t = rlTyp(d.typ) || {}, tech = (typeof STORE !== 'undefined' && STORE.technik) || {}, P = [];
+  var hod = function (k) { return rlHod(d, k).v; }, zd = function (k) { return rlZdrojText(d, k); }, ref = function (k) { return (RL_PAR[rlKlic(k).p] || {}).ref || ''; };
+  var volba = function (k) { var p = RL_PAR[rlKlic(k).p], o = p && p.o ? rlOpt(p.o, hod(k)) : null; return o ? o[1] : hod(k); };
+  // ── 1. identifikace a výsledek
+  P.push({ h: 13, k: function (x, y) {
+    return rlPdfText(x, y + 5, 'VÝPOČET RIZIKA ÚDERU BLESKU', { fs: 4.6, tucne: true }) +
+      rlPdfText(x, y + 10.5, 'podle ČSN EN IEC 62305-2 ed. 3 (IEC 62305-2:2024) · číslo ' + (d.cislo || '—'), { fs: 2.6 });
+  } });
+  P = P.concat(rlPdfTab([[45, 'Objekt'], [90, ''], [40, 'Zpracovatel'], [90, '']], [
+    ['Název objektu', d.nazev || '—', 'Zpracovatel', d.zpracovatel || tech.jmeno || '—'],
+    ['Místo', d.misto || '—', 'Datum', dokDatumCz(d.datum) || '—'],
+    ['Investor / vlastník', (d.investor || {}).nazev || '—', 'Typ objektu', t.n || '—']
+  ], { fs: 2.3 }).slice(1));
+  if (r.chyby.length) {
+    P.push(rlPdfOdst('Výpočet není úplný: ' + r.chyby.map(function (c) { return c.t; }).join(' '), 3, { tucne: true }));
+  } else {
+    P.push({ h: 15, k: function (x, y) {
+      return rsObd(x, y, RL_PDF_W, 13, { w: 0.5, fill: r.vyhovuje ? '#eef7f1' : '#fdecea' }) +
+        rlPdfText(x + 3, y + 6, r.vyhovuje ? 'OCHRANA VYHOVUJE – DALŠÍ NENÍ POTŘEBA' : 'OCHRANA JE POTŘEBA', { fs: 4.4, tucne: true }) +
+        rlPdfText(x + 3, y + 11, 'R = ' + rlSci(r.R, 3) + (r.okR ? ' ≤ ' : ' > ') + 'RT = 1·10⁻⁵ za rok' +
+          (r.F != null ? '   ·   F = ' + rlSci(r.F, 3) + (r.okF ? ' ≤ ' : ' > ') + 'FT = ' + rlCs(r.FT, 1) + ' za rok' + (r.hodnotitF ? '' : ' (četnost škod jen pro informaci)') : ''), { fs: 2.7 });
+    } });
+    P = P.concat(rlPdfTab([[75, 'Zóna'], [40, 'R', 'end'], [30, 'RT', 'end'], [40, 'F za rok', 'end'], [30, 'FT', 'end'], [50, 'Výsledek']],
+      r.zony.map(function (z) {
+        return [z.nazev, rlSci(z.R, 3), '1·10⁻⁵', z.F != null ? rlSci(z.F, 3) : '—', z.F != null ? rlCs(r.FT, 1) : '—',
+          (z.R <= RL_RT ? 'R vyhovuje' : 'R nevyhovuje') + (z.F != null && r.hodnotitF ? (z.F <= r.FT ? ', F vyhovuje' : ', F nevyhovuje') : '')];
+      })));
+    // graf složek
+    var Z = r.hlavni;
+    if (Z) {
+      var max = RL_RT; RL_SLOZKY.forEach(function (s) { max = Math.max(max, Z.sk[s[0]]); });
+      P.push({ h: 6, drz: true, k: function (x, y) { return rlPdfText(x, y + 4, 'Složky rizika – ' + Z.nazev + ' (× 10⁻⁵, čárkovaně RT)', { fs: 2.6, tucne: true }); } });
+      P.push({ h: RL_SLOZKY.length * 4.2 + 2, k: function (x, y) {
+        var s = '', x1 = x + 80, wb = 150, nej = RL_SLOZKY.reduce(function (a, q) { return Z.sk[q[0]] > Z.sk[a] ? q[0] : a; }, 'RA');
+        RL_SLOZKY.forEach(function (q, i) {
+          var yy = y + i * 4.2, v = Z.sk[q[0]];
+          s += rlPdfText(x, yy + 2.9, q[0] + ' – ' + q[1], { fs: 2.1 });
+          if (v > 0) s += rsObd(x1, yy + 0.6, Math.max(0.3, v / max * wb), 3, { fill: q[0] === nej ? '#555555' : '#b0b0b0', bez: true });
+          s += rlPdfText(x1 + wb + 3, yy + 2.9, rl5(v), { fs: 2.1 });
+        });
+        var xr = x1 + RL_RT / max * wb;
+        return s + rsCara(xr, y, xr, y + RL_SLOZKY.length * 4.2, { w: 0.3, carky: '1 0.8' });
+      } });
+    }
+    // opatření a návrh
+    P.push(rlPdfNadpis('Ochranná opatření ve výpočtu'));
+    var opatr = ['LPS: ' + volba('lps')];
+    (d.vedeni || []).forEach(function (v) {
+      var pre = 'v.' + v.uid + '.';
+      opatr.push((v.druh === 'tel' ? 'Telekomunikační vedení' : 'Přípojka NN') + ': ' + volba(pre + 'peb') + '; ' + volba(pre + 'pspd'));
+    });
+    (d.zony || []).filter(function (z) { return (z.druh || 'vnitrni') === 'vnitrni'; }).forEach(function (z) { opatr.push(rlZonaNazev(z) + ' – protipožární opatření: ' + volba('z.' + z.uid + '.rp')); });
+    opatr.forEach(function (o) { P.push(rlPdfOdst('• ' + o, 2.4, { mezera: 0.3 })); });
+    if (!r.vyhovuje) {
+      var n = rlNavrh(d);
+      P.push(rlPdfNadpis('Navržená ochranná opatření'));
+      if (!n.varianty.length) P.push(rlPdfOdst('Žádná kombinace SPD, LPS I–IV a protipožárních opatření nevyhovuje – nutné další posouzení.', 2.5));
+      n.varianty.forEach(function (v, i) {
+        P.push(rlPdfOdst((i + 1) + '. ' + v.popis.text + ' – R = ' + rlSci(v.r.R, 3) + (v.r.F != null ? ', F = ' + rlSci(v.r.F, 3) : '') +
+          (v.popis.lps ? ' (včetně SPD na vstupu vedení odpovídající třídy)' : '') + (v.popis.rp ? ' – jen pokud opatření v objektu skutečně jsou' : ''), 2.4, { mezera: 0.4 }));
+      });
+    }
+    var por = rlPorovnani(d);
+    if (por) P.push(rlPdfOdst('Porovnání s revizí ' + por.cislo + ': revize uvádí LPS ' + por.trida + ', ' +
+      (por.min == null ? 'výpočet nevyhoví ani s LPS I – NEDOSTATEČNÉ.' : por.min === '0' ? 'výpočet LPS nevyžaduje – VYHOVUJE.' : 'výpočet požaduje nejméně LPS ' + por.min + ' – ' + (por.ok ? 'VYHOVUJE.' : 'NEDOSTATEČNÉ.')), 2.5, { tucne: true }));
+    P.push(rlPdfNadpis('Závěr'));
+    P.push(rlPdfOdst(r.vyhovuje
+      ? 'Při uvedených vstupních údajích a ochranných opatřeních je riziko ztráty lidského života R ≤ RT' + (r.hodnotitF ? ' a četnost škod F ≤ FT' : '') + '. Další ochranná opatření nejsou z hlediska tohoto výpočtu potřeba.'
+      : 'Při uvedených vstupních údajích je riziko R > RT' + (r.hodnotitF && !r.okF ? ' nebo četnost škod F > FT' : '') + '. Objekt je nutné chránit – viz navržená opatření.', 2.6));
+    P.push(rlPdfOdst('Hodnoty převzaté z jiných dokumentů a výchozí hodnoty jsou ve vstupních údajích označeny zdrojem.', 2.2, { barva: '#333' }));
+  }
+  // ── 2. vstupní údaje
+  P.push({ novy: true });
+  P.push(rlPdfNadpis('Vstupní údaje'));
+  var rad = [], R = function (nazev, k, hodnota) { rad.push([nazev, hodnota != null ? hodnota : volba(k), zd(k), ref(k)]); };
+  var cis = function (k, j) { var v = rlCislo(hod(k)); return isNaN(v) ? '—' : rlCs(v, 3) + (j ? ' ' + j : ''); };
+  R('Délka × šířka × výška', 'L', cis('L') + ' × ' + cis('W') + ' × ' + cis('H') + ' m');
+  if (hod('slozity') === '1') R('Složitý tvar Hp / Hmin', 'Hp', cis('Hp') + ' / ' + cis('Hmin') + ' m');
+  R('Okolí', 'cd', volba('cd') + ' (CD = ' + rlCs(r.CD || rlVal(RL_CD, hod('cd')), 2) + ')');
+  R('Konstrukce', 'ps', volba('ps') + ' (PS = ' + rlCs(r.PS != null ? r.PS : 1, 2) + ')');
+  var zad = hod('zadani');
+  if (zad === 'td') R('Bouřkové dny Td', 'td', cis('td') + ' → NG = 0,1·Td = ' + (r.NG ? rlCs(r.NG, 2) : '—') + ' (orientačně)');
+  else R(zad === 'ng' ? 'Hustota úderů NG' : 'NSG z údajů LLS', zad, cis(zad));
+  R('Koeficient k, NSG = k·NG', 'k', rlCs(r.k || 2, 2) + (r.NSG ? ' → NSG = ' + rlCs(r.NSG, 2) : ''));
+  R('Hromosvod (LPS)', 'lps', volba('lps') + ' (PLPS = ' + rlSci(rlVal(RL_LPS, hod('lps')), 3) + ')');
+  R('Varovný systém PTWS', 'ptws', cis('ptws'));
+  if (rlCislo(hod('wm1')) > 0 || rlCislo(hod('wm2')) > 0) R('Stínění budovy wm1 / wm2', 'wm1', cis('wm1') + ' / ' + cis('wm2') + ' m');
+  R('Kategorie ztrát', 'kat', volba('kat') + (hod('lo') === '1' ? ', porucha vnitřních systémů ohrožuje život / prostředí' : ''));
+  ['LT', 'LD', 'LF1', 'LF2', 'LO1', 'LO2'].forEach(function (k) { R('Ztráta ' + k, k, rlSci(rlCislo(hod(k)), 2)); });
+  R('Hodnocení četnosti škod', 'hodnotitF', hod('hodnotitF') === '1' ? 'ano, FT = ' + rlCs(rlVal(RL_FT, hod('ft')) || 1, 1) + ' za rok' : 'ne (jen pro informaci)');
+  (d.vedeni || []).forEach(function (v, vi) {
+    var pre = 'v.' + v.uid + '.', ln = (r.vedeni || [])[vi] || {}, jm = v.druh === 'tel' ? 'Telekom. vedení' : 'Přípojka NN';
+    R(jm + ' – Uw', pre + 'uw', cis(pre + 'uw', 'kV') !== '—' ? cis(pre + 'uw', 'kV') : rlCs(ln.uw || 0, 2) + ' kV');
+    R(jm + ' – stínění', pre + 'stin', volba(pre + 'stin') + ' (CLD = ' + rlCs(rlVal(RL_STIN, hod(pre + 'stin'), 2), 2) + ', CLI = ' + rlCs(rlVal(RL_STIN, hod(pre + 'stin'), 3), 2) + ', PLD = ' + rlCs(ln.PLD != null ? ln.PLD : 1, 3) + ')');
+    R(jm + ' – SPD na vstupu', pre + 'peb', volba(pre + 'peb') + ' (PEB = ' + rlSci(rlVal(RL_PEB, hod(pre + 'peb')), 2) + ')');
+    R(jm + ' – koordinované SPD', pre + 'pspd', volba(pre + 'pspd') + ' (PSPD = ' + rlSci(rlVal(RL_PSPD, hod(pre + 'pspd')), 2) + ')');
+    R(jm + ' – KS3', pre + 'ks3', volba(pre + 'ks3') + ' (' + rlSci(rlVal(RL_KS3, hod(pre + 'ks3')), 2) + ')');
+    (v.sekce || []).forEach(function (s, si) {
+      var sp = 's.' + s.uid + '.', sx = (ln.sekce || [])[si] || {}, sj = jm + (v.sekce.length > 1 ? (s.vn ? ' (VN)' : ' (NN)') : '');
+      R(sj + ' – délka LL', sp + 'll', rlCs(sx.ll || 1000, 0) + ' m' + (sx.llNezn ? ' (neznámá – předpoklad 1000 m)' : ''));
+      R(sj + ' – uložení', sp + 'uloz', volba(sp + 'uloz') + ' (CI = ' + rlCs(sx.CI != null ? sx.CI : 1, 2) + ')' + (sx.rho ? ', ρ = ' + rlCs(sx.rho, 0) + ' Ωm' : ''));
+      R(sj + ' – prostředí', sp + 'ce', volba(sp + 'ce') + ' (CE = ' + rlCs(rlVal(RL_CE, hod(sp + 'ce')), 2) + '), CT = ' + rlCs(s.vn ? 0.2 : 1, 1));
+    });
+    if (hod(pre + 'sous') === '1') R(jm + ' – sousední budova', pre + 'sous', cis(pre + 'sL') + ' × ' + cis(pre + 'sW') + ' × ' + cis(pre + 'sH') + ' m, ' + volba(pre + 'scd'));
+  });
+  if (!(d.vedeni || []).length) rad.push(['Vedení', 'žádné vnější vedení', '', '']);
+  (d.zony || []).forEach(function (z, zi) {
+    var zp = 'z.' + z.uid + '.', jm = rlZonaNazev(z), Z2 = (r.zony || [])[zi] || {};
+    if ((z.druh || 'vnitrni') === 'vnitrni') {
+      R(jm + ' – riziko požáru', zp + 'rf', volba(zp + 'rf') + ' (rf = ' + rlSci(rlVal(RL_RF, hod(zp + 'rf')), 2) + ')');
+      R(jm + ' – protipožární opatření', zp + 'rp', volba(zp + 'rp') + ' (rp = ' + rlCs(Z2.rp != null ? Z2.rp : 1, 2) + (Z2.rpVynuceno ? ', vynuceno 1' : '') + ')');
+      R(jm + ' – doba provozu systémů te', zp + 'te', cis(zp + 'te', 'h') + ' (Pe = ' + rlCs(Z2.Pe != null ? Z2.Pe : 1, 3) + ')');
+    }
+    if ((z.druh || 'vnitrni') !== 'strecha') R(jm + ' – povrch', zp + 'rt', volba(zp + 'rt') + ' (rt = ' + rlSci(rlVal(RL_RT_POV, hod(zp + 'rt')), 2) + ')');
+    else R(jm + ' – PO', zp + 'po', cis(zp + 'po'));
+    R(jm + ' – opatření Pam', zp + 'pam', (hod(zp + 'pam').split(',').filter(Boolean).map(function (k) { return (rlOpt(RL_PAM, k) || [])[1]; }).join(', ') || 'žádná') + ' (Pam = ' + rlSci(Z2.Pam != null ? Z2.Pam : 1, 2) + ')');
+    R(jm + ' – přítomnost osob tz', zp + 'tz', cis(zp + 'tz', 'h') + ' (PP = ' + rlCs(Z2.PP != null ? Z2.PP : 1, 3) + ')');
+  });
+  P = P.concat(rlPdfTab([[70, 'Veličina'], [95, 'Hodnota'], [62, 'Zdroj hodnoty'], [38, 'Odkaz (norma)']], rad));
+  // ── 3. výpočet
+  if (!r.chyby.length) {
+    P.push(rlPdfNadpis('Sběrné oblasti a počet nebezpečných událostí'));
+    var vy = [
+      ['AD', 'L·W + 2·(3H)·(L+W) + π·(3H)²' + (hod('slozity') === '1' ? ', složitý tvar' : ''), 'rov. A.3/A.4', rlSci(r.AD, 3) + ' m²'],
+      ['ND', 'NSG·AD·CD·10⁻⁶', 'rov. A.5', rlSci(r.ND, 3)],
+      ['rM', '350 / Uw (Uw = ' + rlCs(r.uwMin, 2) + ' kV)', 'rov. A.8', rlCs(r.rM, 1) + ' m'],
+      ['AM', '2·rM·(L+W) + π·rM²', 'rov. A.8', rlSci(r.AM, 3) + ' m²'],
+      ['NM', '(1/k)·NSG·AM·10⁻⁶', 'rov. A.7', rlSci(r.NM, 3)]
+    ];
+    r.vedeni.forEach(function (ln, i) {
+      var jm = ln.druh === 'tel' ? 'tel.' : 'NN';
+      ln.sekce.forEach(function (s, j) {
+        var sj = jm + (ln.sekce.length > 1 ? (s.vn ? ' VN' : ' NN') : '');
+        vy.push(['AL (' + sj + ')', s.rho ? '0,6·√ρ·LL' : '40·LL', 'rov. A.10', rlSci(s.AL, 3) + ' m²']);
+        vy.push(['NL (' + sj + ')', 'NSG·AL·CI·CE·CT·10⁻⁶', 'rov. A.9', rlSci(s.NL, 3)]);
+        vy.push(['AI (' + sj + ')', '2·rI·LL, rI = 2000/Uw^1,8 = ' + rlCs(ln.rI, 1) + ' m', 'rov. A.12', rlSci(s.AI, 3) + ' m²']);
+        vy.push(['NI (' + sj + ')', '(1/k)·NSG·AI·CI·CE·CT·10⁻⁶', 'rov. A.11', rlSci(s.NI, 3)]);
+      });
+      if (ln.NDJ) vy.push(['NDJ (' + jm + ')', 'NSG·ADJ·CDJ·CT·10⁻⁶', 'rov. A.6', rlSci(ln.NDJ, 3)]);
+    });
+    vy.push(['PC', 'PSPD·CLD (více vedení: 1 − Π(1 − PC,i))', 'rov. B.5', rlSci(r.PC, 3)]);
+    vy.push(['PM', 'PSPD·(KS1·KS2·KS3)²', 'rov. B.6, B.7', rlSci(r.PM, 3)]);
+    P = P.concat(rlPdfTab([[30, 'Veličina'], [140, 'Vzorec'], [40, 'Odkaz'], [55, 'Hodnota', 'end']], vy));
+    var VZ = { RAT: 'ND·PAT·PP·LT', RAD: 'ND·PAD·PP·LD', RB1: 'ND·PB·PP·LF1', RB2: 'ND·PB·LF2', RC1: 'ND·PC·PP·Pe·LO1', RC2: 'ND·PC·Pe·LO2',
+      RM1: 'NM·PM·PP·Pe·LO1', RM2: 'NM·PM·Pe·LO2', RU: '(NL+NDJ)·PU·PP·LT', RV1: '(NL+NDJ)·PV·PP·LF1', RV2: '(NL+NDJ)·PV·LF2',
+      RW1: '(NL+NDJ)·PW·PP·Pe·LO1', RW2: '(NL+NDJ)·PW·Pe·LO2', RZ1: 'NI·PZ·PP·Pe·LO1', RZ2: 'NI·PZ·Pe·LO2' };
+    r.zony.forEach(function (Z) {
+      P.push(rlPdfNadpis('Složky rizika – ' + Z.nazev + ' (tab. 3)'));
+      var pr = [];
+      if (Z.PAT != null) pr.push(['PAT', 'PLPS·Pam·rt·PTWS', 'rov. B.2', rlSci(Z.PAT, 3)]);
+      if (Z.PAD != null) pr.push(['PAD', 'PTWS·Pam·PO·PLPS', 'rov. B.3', rlSci(Z.PAD, 3)]);
+      if (Z.PB != null) pr.push(['PB', 'PS·PLPS·rf·rp', 'rov. B.4', rlSci(Z.PB, 3)]);
+      (Z.linky || []).forEach(function (q, i) {
+        var jm = r.vedeni[i].druh === 'tel' ? ' (tel.)' : ' (NN)';
+        pr.push(['PU' + jm, 'Pam·PEB·PLD·PTWS·CLD·rt', 'rov. B.10', rlSci(q.PU, 3)]);
+        pr.push(['PV' + jm, 'PEB·PLD·PTWS·CLD·rf·rp', 'rov. B.11', rlSci(q.PV, 3)]);
+        pr.push(['PW' + jm, 'PSPD·PTWS·PLD·CLD', 'rov. B.12', rlSci(q.PW, 3)]);
+        pr.push(['PZ' + jm, 'PSPD·PTWS·CLI', 'rov. B.13', rlSci(q.PZ, 3)]);
+      });
+      Object.keys(Z.s).forEach(function (k) {
+        var ano = Z.druh === 'vnitrni' ? k !== 'RAD' : Z.druh === 'venku' ? k === 'RAT' : k === 'RAD';
+        if (ano) pr.push([k, VZ[k], 'tab. 3', rlSci(Z.s[k], 3)]);
+      });
+      pr.push(['R', 'součet složek', 'rov. 6–8', rlSci(Z.R, 3) + (Z.R <= RL_RT ? ' ≤ RT' : ' > RT')]);
+      if (Z.F != null) {
+        pr.push(['FC / FM', 'ND·PC·Pe / NM·PM·Pe', 'tab. 4', rlSci(Z.f.FC, 3) + ' / ' + rlSci(Z.f.FM, 3)]);
+        pr.push(['FW / FZ', '(NL+NDJ)·PW·Pe / NI·PZ·Pe', 'tab. 4', rlSci(Z.f.FW, 3) + ' / ' + rlSci(Z.f.FZ, 3)]);
+        pr.push(['F', 'FC + FM + FW + FZ', 'čl. 9', rlSci(Z.F, 3) + (Z.F <= r.FT ? ' ≤ FT' : ' > FT')]);
+      }
+      P = P.concat(rlPdfTab([[30, 'Veličina'], [140, 'Vzorec'], [40, 'Odkaz'], [55, 'Hodnota', 'end']], pr));
+    });
+  }
+  P.push(rlPdfOdst('Výpočet podle ČSN EN IEC 62305-2 ed. 3; hodnoty ztrát a koeficientů zvolil zpracovatel.', 2.3, { tucne: true }));
+  // ── stránkování
+  var listy = [[]], y = RL_PDF_NAHORE;
+  P.forEach(function (it, i) {
+    if (it.novy) { if (listy[listy.length - 1].length) { listy.push([]); y = RL_PDF_NAHORE; } return; }
+    var dalsi = P[i + 1], drzi = it.drz && dalsi && !dalsi.novy ? dalsi.h : 0;
+    if (y + it.h + drzi > RL_PDF_DOLE && listy[listy.length - 1].length) {
+      listy.push([]); y = RL_PDF_NAHORE;
+      if (it.opak && !it.hlav) { listy[listy.length - 1].push({ it: it.opak, y: y }); y += it.opak.h; }
+    }
+    listy[listy.length - 1].push({ it: it, y: y }); y += it.h;
+  });
+  var g = rsGeom('A4', false, false), N = listy.length;
+  return listy.map(function (L, i) {
+    var c = { vypracoval: d.zpracovatel || tech.jmeno || '', datum: dokDatumCz(d.datum) || '', akce: d.nazev || d.misto || '', investor: (d.investor || {}).nazev || '',
+              nazev: 'Výpočet rizika LPS', projekt: d.misto || '', zakazka: d.cislo || '', soubor: rlPdfSoubor(d), listu: N };
+    var h = rsRam(g) + rsRazitko(g, c, i + 1);
+    if (i) h += rlPdfText(RL_PDF_X, 14.5, 'Výpočet rizika úderu blesku ' + (d.cislo || '') + ' – pokračování', { fs: 2.2, barva: '#333' });
+    L.forEach(function (q) { h += q.it.k(RL_PDF_X, q.y); });
+    return rsSvgObal(g, h);
+  });
+}
+function rlPdfSoubor(d) {
+  return ((d.cislo || 'RLPS') + '_Riziko_LPS' + (d.nazev ? '_' + d.nazev : '')).replace(/[\\\/:*?"<>|]+/g, '').replace(/\s+/g, '_').slice(0, 80) + '.pdf';
+}
+DOK_TYPY.rlps.pdf = function (d) {
+  return rlPdfListy(d).map(function (svg) { return { cela: '<div class="a4 a4-landscape rz-sch-strana rl-pdf-list" data-vektor="1">' + svg + '</div>' }; });
+};
 
 // Nová verze se načte SAMA, jen když technik nic nedělá (pokyn uživatele
 // 2026-10-19): není otevřená zpráva, dokument ani rozvaděč (obrazovka je

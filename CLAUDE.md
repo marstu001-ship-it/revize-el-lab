@@ -708,6 +708,110 @@ Test: `testy/test-dok-soubor.js` (23 kontrol — dva prohlížeče, protokol
 i rozvaděč s objektem, přetažení i Načíst, přepsat / nechat, ZPĚT,
 otevřený dokument, rozepsaná zpráva, dva soubory naráz, data revizí).
 
+## Tvorba dokumentace: Výpočet rizika LPS (ČSN EN IEC 62305-2 ed. 3, blok „RIZIKO LPS")
+
+Zadání uživatele 2026-11-04, návrh schválen týž den. Čtvrtá dlaždice
+**„Výpočet rizika LPS"** (`DOK_TYPY.rlps`, číslo **`RLPS-0001`**, fialová
+`#6a3d9a` / tmavý `#c9a6ee`, objekty sdílené s rozvaděči). Výsledek: je
+ochrana potřeba a jaká (LPS, SPD), protokol PDF, porovnání s revizí LPS.
+Uživatel to počítá i v **OEZ Prozik (ed. 2)** — odstrašující příklad (prázdná
+pole, Td = 5, výsledek ×100 při jednom nevyplněném poli). Proto **každé pole
+má platnou hodnotu**; povinné jsou jen rozměry budovy a Td (bez výchozí
+hodnoty), chybějící výpočet zastaví srozumitelnou hláškou s odkazem do pole.
+
+**Autorská práva:** norma je placená — v kódu jen čísla koeficientů a vzorce
+s odkazem („tab. B.6", „rov. A.5"), popisky vlastními slovy. Žádné opsané
+odstavce, poznámky ani obrázky.
+
+**Ed. 3 proti ed. 2** (proč se liší od Proziku): jedno riziko R = RL1 + RL2
+proti **RT = 10⁻⁵**, ztráta služeb jako **četnost škod F** proti FT = 1 (0,1
+u kritických systémů), **NSG = k·NG, k = 2** (bez LLS), **bez koeficientu
+paniky hz** (ztráty z kategorie objektu, tab. C.2), **rM = 350/Uw**,
+rI = 2000/Uw^1,8 (ed. 2 měla pevných 500 m). TWS: PTWS = 1 (jen v Pokročilých).
+
+### Datový model (vše volitelné; výsledek se NEUKLÁDÁ, `rlVypocet(d)` vždy znovu)
+`d.typ` (RL_TYPY: rd, bd, zem, kanc, skola, hotel, obchod, kostel, muzeum,
+nemocnice, prumysl, datac, sklad, vybus), `d.v` = **jen co technik zadal**
+(klíč → text), `d.prevz[klíč] = { v, z: odkud, ok: potvrzeno }`,
+`d.prevzato = { lps, el, vv }` (uid a číslo zdroje, u LPS i třída a zemina),
+`d.vedeni = [{ uid, druh: 'nn'|'tel', sekce: [{ uid, vn }] }]`,
+`d.zony = [{ uid, druh: 'vnitrni'|'venku'|'strecha', nazev }]` + hlavička
+(`cislo, objekt, nazev, misto, investor.nazev, zpracovatel, datum`).
+Klíče: globální (`L`, `cd`, `lps`, `kat`, `hodnotitF`…), vedení
+`v.<uid>.peb`, sekce `s.<uid>.ll`, zóna `z.<uid>.rt` (popisy v `RL_PAR`).
+**Platná hodnota (`rlHod`) = zadáno → převzato → typ objektu → kategorie
+ztrát → výchozí podle normy**; u každého pole je štítek zdroje
+(`rlChip`: „zadáno ↺ výchozí", oranžové „revize LPS RE-… ✓ Potvrdit",
+„z typu objektu", „výchozí – …") a v bublině odkaz na tabulku normy.
+Typ objektu předvyplní kategorii ztrát, riziko požáru, PS, povrch, tz
+a F / FT — **rozhodnutí programu, ne údaj normy**, vše přepsatelné.
+
+### Výpočet (`rlVypocet`, tabulky `RL_CD … RL_ZTRATY`)
+Rovnice A.1–A.12, B.2–B.15, tab. 3 a 4 podle zadání (ověřeno přepočtem
+příkladu F.2). Rozhodnutí, která norma (podle zadání) neřeší výslovně:
+- **R se hodnotí po zónách** (R každé zóny ≤ RT), vnitřní zóna má všechny
+  složky kromě RAD, „venku do 3 m" jen RAT, „na střeše" jen RAD (PO
+  výchozí 1 — upřesnit).
+- Víc vedení: RU, RV, RW, RZ se sčítají; **PC a PM = 1 − Π(1 − Pi)**.
+- PLD (tab. B.11) jen u stínění spojeného s přípojnicí, Uw mezi sloupci →
+  nižší sloupec (opatrnější). NDJ bere CT poslední sekce vedení.
+- **AL = 0,6·√ρ·LL jen u podzemního vedení se zaškrtnutým ρ > 400 Ωm a
+  zadaným ρ** (doslova podle zadání; vychází menší než 40·LL do ρ ≈ 4 400 Ωm —
+  ověřit v pozn. 3 k A.10). Zemina z revize LPS je jen připomínka.
+- rp = 1 vynuceně u výbuchu (rf v0–v2) a Li-ion; LO u normální a nízké
+  kategorie jen se zaškrtnutím „porucha vnitřních systémů ohrožuje život".
+- **F se zobrazí vždy, o potřebě ochrany rozhoduje jen se zaškrtnutím
+  „hodnotit četnost škod"** — výchozí ano u nemocnice, průmyslu / řídicího
+  provozu, datového centra (FT 0,1) a výbušného prostředí (FT 1); muzeum ne.
+
+### Obrazovky
+Nový výpočet → **14 dlaždic typu objektu** (a „Převzít údaje…"). Editor:
+vlevo karty Objekt · Budova (CD jako 4 dlaždice s náčrtem) · Bouřková
+činnost (Td povinné, nápověda 15–40, přepočet NG = 0,1·Td „orientačně",
+poslední Td v localStorage `revize_el_rlps_td` → nový výpočet ho nabídne
+jako převzatou hodnotu) · Vedení (karty, výchozí NN 1000 m, „＋ telekom.",
+„＋ VN část s transformátorem", CE jako dlaždice, sbalené Rs / KS3 /
+sousední budova) · Ochrana (LPS) · Zóny · sbalené Ztráty a Pokročilé.
+Vpravo (na telefonu nahoře) **výsledek**: „✓ Ochrana vyhovuje" / „⚠ Ochrana
+je potřeba", R po zónách, F, sloupcový graf složek RA…RZ s čarou RT,
+**hlavní akce „🛡 Navrhnout ochranu"**, „🔄 Spočítat" (přepočet je průběžný).
+Strukturní změny jdou přes `rlZmena` (ZPĚT i Ctrl+Z).
+
+**Navrhnout ochranu** (`rlNavrh`): kombinace SPD na vstupu (PEB, stejná na
+všech vedeních) × koordinované SPD × rp × LPS, jen zvýšení oproti
+současnému stavu; cena = SPD na vstupu → koordinované SPD → ruční (50) /
+automatická (70) protipožární opatření → LPS IV…I (100+). **Varianta s LPS
+má vždy SPD na vstupu aspoň odpovídající třídy** (ČSN EN 62305-3, rozhodnutí
+uživatele). Dominované varianty se vynechají, ukážou se nejvýš 3; rp jen
+s upozorněním „započtěte jen, když opatření opravdu jsou". „Použít" zapíše
+hodnoty jako zadané (ZPĚT).
+
+**Převzetí (jen čtení — data revizí bajtově stejná, test)** `rlPrevzit`:
+okno s revizemi LPS, elektro (archiv) a protokoly vnějších vlivů (DOK),
+předvybraná shoda s názvem / místem / objektem. LPS: třída → PLPS, SPD /
+LPZ 1 → PEB podle třídy („odhad"), zemina → připomínka. Elektro: přívod
+CYKY / AYKY / kabel → podzemní, AES / AlFe / venkovní → nadzemní, řádek
+SPD / svodič v hlavním rozvaděči → PEB III–IV („ověřte typ 1"). Protokol:
+BE3 → kategorie velmi vysoká + rf zóna 1, BE2 → požár vysoký, BD3 / BD4 /
+BA3 → kategorie vysoká. Převzetí nahradí i ručně zadanou hodnotu (ZPĚT ji
+vrátí). **Porovnání s revizí LPS**: nejnižší třída LPS, se kterou výpočet
+vyhoví (`rlLpsPotreba`, SPD doplněné podle třídy) proti třídě v revizi.
+
+**PDF** (`rlPdfListy`): vektorové listy A4 na šířku s `rsRam` a
+`rsRazitko` (svg2pdf, písmo Roboto Condensed — má ⁻ ⁵ ≤, nemá √ ✓): výsledek
+a graf, ochranná opatření, navržená opatření, porovnání, závěr; vstupní údaje
+se **zdrojem a odkazem na normu**; sběrné oblasti, N, P, složky rizika a F
+po zónách; věta „Výpočet podle ČSN EN IEC 62305-2 ed. 3; hodnoty ztrát
+a koeficientů zvolil zpracovatel."
+
+Test: `testy/test-riziko-lps.js` (90 kontrol — každá tabulka koeficientů,
+F.2 nechráněný i chráněný na 1 %, druhý příklad spočtený v testu vlastními
+vzorci, povinné Td, Navrhnout ochranu (nejlevnější = SPD LPL IV na obou
+vedeních) a Ctrl+Z, F/FT podle typu, převzetí z vymyšlené revize LPS,
+elektro a protokolu, zdroje v PDF, otevření uloženého a staršího dokumentu
+beze změny dat, data revizí bajtově stejná, telefon). V `test-mobil.js`
+stavy „riziko LPS – …". Novinky se nedělaly.
+
 ## Rozvaděč DBO — návrh a dokumentace (v9.127; konfigurátor, `DOK_TYPY.rozv`, blok `ROZVADĚČ DBO`)
 
 Zadání uživatele 2026-10-18: technik poskládá rozvaděč

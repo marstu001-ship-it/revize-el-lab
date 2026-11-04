@@ -142,6 +142,13 @@ function pomocnik() {
     dokOtevritSeznam('rozv'); await w(100); TD_AKCE.tdRZRevize(); await w(100);
   };
   M.rozv = async () => { await dokOtevrit(DOK.dokumenty.find(x => x.typ === 'rozv').uid); await w(200); };
+  M.rlps = async (pln) => {
+    await dokNovy('rlps'); await w(100);
+    if (!pln) return;
+    TD_AKCE.tdRlTyp({ getAttribute: () => 'rd' }); await w(100);
+    Object.assign(__rl.d.v, { L: '15', W: '20', H: '6', td: '40' }); rlKreslit(); await w(100);
+    document.getElementById('toast-wrap') && (document.getElementById('toast-wrap').innerHTML = '');
+  };
   M.psc = async () => { await dokOtevrit(DOK.dokumenty.find(x => x.typ === 'psc').uid); await w(200); document.getElementById('toast-wrap') && (document.getElementById('toast-wrap').innerHTML = ''); };
   M.otevri = async (ev) => {
     const i = archiv.findIndex(z => (z.ev_cislo || (z.data && z.data.ev_cislo)) === ev);
@@ -733,6 +740,19 @@ function vsechnyStavy(zalozky) {
   add('rozvaděč PSC – vlastní pole (okno)', 'Tvorba dokumentace', E(async () => {
     await __M.psc(); __rzF.tab = 'skrine'; rozvFiltryVykreslit(); rozvKnihovnaVykreslit(); TD_AKCE.tdRVlastni(); await __M.w(100);
   }), '#modal-rz-polozka');
+  // výpočet rizika LPS (ČSN EN IEC 62305-2 ed. 3)
+  add('riziko LPS – seznam', 'Tvorba dokumentace', E(async () => { dokOtevritSeznam('rlps'); await __M.w(100); }));
+  add('riziko LPS – výběr typu objektu', 'Tvorba dokumentace', E(async () => { await __M.rlps(false); }));
+  add('riziko LPS – formulář s výsledkem a grafem', 'Tvorba dokumentace', E(async () => { await __M.rlps(true); }));
+  add('riziko LPS – vedení, zóny a pokročilé rozbalené', 'Tvorba dokumentace', E(async () => {
+    await __M.rlps(true); TD_AKCE.tdRlVedeniPridat({ getAttribute: () => 'tel' }); TD_AKCE.tdRlZonaPridat({ getAttribute: () => 'venku' });
+    dokForm().querySelectorAll('details').forEach(d => { d.open = true; }); document.getElementById('toast-wrap').innerHTML = ''; await __M.w(100);
+    document.querySelector('.rl-vedeni').scrollIntoView({ block: 'start' }); await __M.w(100);
+  }));
+  add('riziko LPS – chybí Td', 'Tvorba dokumentace', E(async () => { await __M.rlps(true); delete __rl.d.v.td; delete __rl.d.prevz.td; rlKreslit(); await __M.w(100); }));
+  add('riziko LPS – návrh ochrany (okno)', 'Tvorba dokumentace', E(async () => { await __M.rlps(true); TD_AKCE.tdRlNavrh(); await __M.w(150); }), '#modal-rl-navrh');
+  add('riziko LPS – převzít z revize (okno)', 'Tvorba dokumentace', E(async () => { await __M.rlps(true); TD_AKCE.tdRlPrevzit(); await __M.w(150); }), '#modal-rl-prevzit');
+  add('riziko LPS – náhled PDF', 'Tvorba dokumentace', E(async () => { await __M.rlps(true); await dokNahled(); await __M.w(400); }));
   // dialogy
   const D = (id, krok) => add('dialog ' + id, 'Dialogy', krok, '#' + id);
   D('modal-revize', E(async () => { await __M.otevri('RE-26-0101'); showScreen('form'); openModalRevize(); await __M.w(100); }));
