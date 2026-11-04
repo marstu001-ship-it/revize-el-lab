@@ -134,7 +134,7 @@ function pomocnik() {
   }));
   check('nový protokol dostane číslo POUVV-0001', novy.scr && novy.cislo === 'POUVV-0001', novy.cislo);
   check('nový prázdný protokol se do seznamu sám neuloží', novy.ulozeno === 0, String(novy.ulozeno));
-  check('podklady předvyplněné třemi normami', /ČSN 33 2000-5-51 ed\. 3/.test(novy.podklady) && /ČSN 33 2130 ed\. 3/.test(novy.podklady) && /ČSN 33 2000-4-41 ed\. 3/.test(novy.podklady));
+  check('podklady předvyplněné třemi normami', /ČSN 33 2000-5-51 ed\. 3/.test(novy.podklady) && /ČSN 33 2130 ed\. 4/.test(novy.podklady) && /ČSN 33 2000-4-41 ed\. 3/.test(novy.podklady));
   check('obecné zdůvodnění předvyplněné', /^Určení vnějších vlivů je v souladu/.test(novy.zd));
   check('vypracoval předvyplněn z profilu (jen čtení)', novy.vypracoval === 'Jan Vymyšlený', novy.vypracoval);
 
