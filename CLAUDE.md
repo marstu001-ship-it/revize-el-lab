@@ -651,7 +651,15 @@ ed. 3), do vady ani PDF nejde.
   je-li to možné (5.4.1), nejúčinnější je pospojování"; 0,2 Ω „doporučení
   z praxe, u výztuže ŽB požadavek normy (5.3.5)".
 
-Test: `testy/test-normy-lps.js`.
+**Volba „ed. 3" (`62305e3`) cituje s čísly článků** (dřív se vypouštěla):
+`citaceNormy` převádí díl 3 přes ověřenou mapu `CITACE_ED3_CL` / `CITACE_ED3_TAB`
+(5.3.3 tab. 4 → tab. 5, 6.2.2 tab. 8, 9 → tab. 9, 10, kap. 8 → 8.1, příloha
+E → D); co v mapě není, vypíše se bez čísel jako dřív. Díly 1 a 2 → `ČSN EN
+IEC 62305-N ed.3`, **díl 4 zůstává `ČSN EN 62305-4 ed.2` s čísly** (EN IEC
+62305-4:2025 v ČR zatím zavedena není). 1. vydání beze změny (bez čísel).
+Popisky výběru normy uvádějí dobu platnosti, výchozí volba ed. 2 se nemění.
+
+Test: `testy/test-normy-lps.js` (32 kontrol).
 
 ## Tvorba dokumentace — Protokol o určení vnějších vlivů (blok `TVORBA DOKUMENTACE`)
 

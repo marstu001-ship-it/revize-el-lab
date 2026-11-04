@@ -4852,10 +4852,10 @@ html.dark .rz-imp-chyby{background:#3a1f1c;border-color:#6b2c25}
     <div class="f" style="margin-bottom:1rem">
       <label>Revize prováděna podle normy <span style="font-size:.6rem;color:var(--muted)">(přepne kontrolní body i text v PDF)</span></label>
       <select id="lps_prohlidka_norma">
-        <option value="62305" selected>ČSN EN 62305 ed.2 — LPS zřízené od 1. 2. 2009</option>
-        <option value="62305e3">ČSN EN IEC 62305 ed.3 — nové vydání (povinné od 1. 11. 2027)</option>
+        <option value="62305" selected>ČSN EN 62305 ed. 2 – LPS zřízené podle ed. 2 (do 31. 10. 2027)</option>
+        <option value="62305e3">ČSN EN IEC 62305 ed. 3 – nové LPS, povinně od 1. 11. 2027</option>
         <option value="62305v1">ČSN EN 62305, 1. vydání (11/2006) — LPS zřízené zhruba 2009–2011</option>
-        <option value="1390">ČSN 34 1390 — starší LPS (zřízené do 1. 2. 2009)</option>
+        <option value="1390">ČSN 34 1390 – hromosvody zřízené do 1. 2. 2009</option>
       </select>
       <div class="norma-napoveda">
         <strong>Podle čeho vybrat:</strong> rozhoduje, kdy byl hromosvod zřízen.
@@ -13803,17 +13803,60 @@ function lpsVolbaNormy() {
   return (sel && sel.value) || '62305';
 }
 
-// Přepíše citaci z ed.2 na jiné vydání souboru 62305 (ed.3 nebo 1. vydání).
-// Čísla článků a tabulek se přitom VYPOUŠTĚJÍ (rozhodnutí uživatele
-// 2026-08-11): číslování z ed.2 v jiném vydání nemusí platit, takže je
-// poctivější citovat jen normu. Ostatních norem (např. ČSN 33 2000-5-54
-// ed.3 nebo ČSN 34 1390) se to nedotkne.
-var RE_CITACE_ED2 = /ČSN EN 62305-(\d)\s*ed\.\s*2((?:(?:,\s*|\s+)(?:čl\.|tab\.|tabulka)\s*\d+(?:\.\d+)*)*)/g;
+// Přepíše citaci z ed.2 na jiné vydání souboru 62305.
+//  • ed. 3 (`62305e3`): díl 3 přes OVĚŘENOU mapu ed. 2 → ed. 3 (CITACE_ED3_CL
+//    a CITACE_ED3_TAB, plné znění ed. 3 zkontrolováno 2026-11-04; příloha E
+//    z ed. 2 je v ed. 3 příloha D). Citace, jejíž článek v mapě není, se vypíše
+//    bez čísel jako dřív. Díly 1 a 2 → ČSN EN IEC 62305-N ed.3 (bez čísel),
+//    **díl 4 zůstává ČSN EN 62305-4 ed.2 i s čísly** — EN IEC 62305-4:2025
+//    v ČR zatím zavedena není (národní předmluva 62305-3 ed. 3).
+//  • 1. vydání (`62305v1`): čísla článků a tabulek se vypouštějí (rozhodnutí
+//    uživatele 2026-08-11 — číslování z ed. 2 nemusí platit).
+// Ostatních norem (ČSN 33 2000-5-54 ed.3, ČSN 34 1390…) se to nedotkne.
+var RE_CITACE_ED2 = /ČSN EN 62305-(\d)\s*ed\.\s*2((?:(?:,[ \t]*|[ \t]+)(?:(?:čl\.|tab\.|tabulka|kap\.)[ \t]*)?[A-E]?\.?\d+(?:\.\d+)*(?:[ \t]*,[ \t]*\d+(?![.\d]))*)*)/g;
 var CITACE_NAHRADA = { '62305e3': 'ČSN EN IEC 62305-$1 ed.3', '62305v1': 'ČSN EN 62305-$1 (1. vydání)' };
+var CITACE_ED3_CL = { '5.2': '5.2', '5.2.1': '5.2.1', '5.2.2': '5.2.2', '5.2.4': '5.2.4', '5.2.5': '5.2.5', '5.3': '5.3',
+  '5.3.3': '5.3.3', '5.3.4': '5.3.4', '5.3.5': '5.3.5', '5.3.6': '5.3.6', '5.4.1': '5.4.1', '5.4.2': '5.4.2',
+  '5.4.2.2': '5.4.2.2', 'E.5.4.2.2': 'D.5.4.2.2', '5.6.2': '5.6.2', '6.2': '6.2', '6.2.1': '6.2.1', '6.2.2': '6.2.2',
+  '6.3': '6.3', 'kap. 8': '8.1', 'E.5.3.3': 'D.5.3.3', 'E.5.3.4': 'D.5.3.4', 'E.5.6.2.2': 'D.5.6.2.2', 'E.7': 'D.7' };
+var CITACE_ED3_TAB = { '2': '2', '3': '3', '4': '5', '8': '9', '9': '10' };
+// Čísla článků ed. 2 dílu 3 → ed. 3; null = něco v mapě chybí.
+function citaceEd3Clanky(tail) {
+  var re = /(čl\.|tab\.|tabulka|kap\.)?[ \t]*([A-E]?\.?\d+(?:\.\d+)*(?:[ \t]*,[ \t]*\d+(?![.\d]))*)/g, m, druh = 'čl', casti = [], ok = true;
+  while ((m = re.exec(tail))) {
+    if (m[1]) druh = /^tab/.test(m[1]) ? 'tab' : (m[1] === 'kap.' ? 'kap' : 'čl');
+    var cis = m[2].replace(/^E(\d)/, 'E.$1');
+    if (druh === 'tab') {
+      var t = cis.split(/[ \t]*,[ \t]*/).map(function (x) { return CITACE_ED3_TAB[x]; });
+      if (t.some(function (x) { return !x; })) { ok = false; break; }
+      casti.push({ d: 'tab', t: 'tab. ' + t.join(', ') });
+    } else {
+      var k = druh === 'kap' ? 'kap. ' + cis : cis, c = CITACE_ED3_CL[k];
+      if (!c) { ok = false; break; }
+      casti.push({ d: 'čl', t: c });
+    }
+  }
+  if (!ok || !casti.length) return null;
+  var out = '', prev = '';
+  casti.forEach(function (c) {
+    out += ', ' + (c.d === 'tab' ? c.t : (prev === 'čl' ? c.t : 'čl. ' + c.t));
+    prev = c.d;
+  });
+  return out;
+}
 function citaceNormy(text, volba) {
-  var nahrada = CITACE_NAHRADA[volba || lpsVolbaNormy()];
+  volba = volba || lpsVolbaNormy();
+  var nahrada = CITACE_NAHRADA[volba];
   if (!nahrada) return text;              // ed.2 a ČSN 34 1390 zůstávají
-  return String(text || '').replace(RE_CITACE_ED2, nahrada);
+  return String(text || '').replace(RE_CITACE_ED2, function (cela, dil, tail) {
+    if (volba === '62305e3') {
+      if (dil === '4') return cela;       // díl 4 ed. 3 v ČR zatím není
+      var nazev = 'ČSN EN IEC 62305-' + dil + ' ed.3';
+      var cl = dil === '3' && tail ? citaceEd3Clanky(tail) : null;
+      return nazev + (cl || '');
+    }
+    return nahrada.replace('$1', dil);
+  });
 }
 
 // Vrátí aktuální sadu kontrolních bodů podle volby normy.
