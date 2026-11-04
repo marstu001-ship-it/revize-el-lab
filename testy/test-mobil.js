@@ -752,6 +752,13 @@ function vsechnyStavy(zalozky) {
   add('riziko LPS – chybí Td', 'Tvorba dokumentace', E(async () => { await __M.rlps(true); delete __rl.d.v.td; delete __rl.d.prevz.td; rlKreslit(); await __M.w(100); }));
   add('riziko LPS – návrh ochrany (okno)', 'Tvorba dokumentace', E(async () => { await __M.rlps(true); TD_AKCE.tdRlNavrh(); await __M.w(150); }), '#modal-rl-navrh');
   add('riziko LPS – převzít z revize (okno)', 'Tvorba dokumentace', E(async () => { await __M.rlps(true); TD_AKCE.tdRlPrevzit(); await __M.w(150); }), '#modal-rl-prevzit');
+  add('riziko LPS – mapa okresů s vybraným okresem (okno)', 'Tvorba dokumentace', E(async () => {
+    await __M.rlps(true); TD_AKCE.tdRlMapa(); __rlMapa.vyber = 'CZ0722000000'; rlMapaKreslit(); await __M.w(150);
+  }), '#modal-rl-mapa');
+  add('riziko LPS – Td podle okresu, návrh z adresy', 'Tvorba dokumentace', E(async () => {
+    await __M.rlps(true); delete __rl.d.v.td; delete __rl.d.prevz.td; __rl.d.misto = 'Polní 12, Kyjov'; rlKreslit();
+    document.querySelector('.rl-okres-akce').scrollIntoView({ block: 'start' }); await __M.w(100);
+  }));
   add('riziko LPS – náhled PDF', 'Tvorba dokumentace', E(async () => { await __M.rlps(true); await dokNahled(); await __M.w(400); }));
   // dialogy
   const D = (id, krok) => add('dialog ' + id, 'Dialogy', krok, '#' + id);

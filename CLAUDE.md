@@ -815,7 +815,7 @@ Se zvolenou přílohou se uid uloží jen v nastavení tisku zprávy
 připojí na konec PDF (vektorově, nepočítají se do „Počet listů") a do
 seznamu příloh **v PDF** přibude řádek — pole Seznam příloh se nemění.
 
-Test: `testy/test-riziko-lps.js` (97 kontrol — každá tabulka koeficientů,
+Test: `testy/test-riziko-lps.js` (112 kontrol — každá tabulka koeficientů,
 F.2 nechráněný i chráněný na 1 %, druhý příklad spočtený v testu vlastními
 vzorci, povinné Td, Navrhnout ochranu (nejlevnější = SPD LPL IV na obou
 vedeních) a Ctrl+Z, F/FT podle typu, převzetí z vymyšlené revize LPS,
@@ -823,6 +823,58 @@ elektro a protokolu, zdroje v PDF, otevření uloženého a staršího dokumentu
 beze změny dat, data revizí bajtově stejná, telefon). V `test-mobil.js`
 stavy „riziko LPS – …". **Upraveno:** `test-rozvadec-psc.js` (dlaždice
 protokol, DBO, PSC a za nimi výpočet rizika). Novinky se nedělaly.
+
+### Bouřkové dny Td podle okresu (2026-11-04, blok „Bouřkové dny podle okresu")
+
+Zadání uživatele: technik nevěděl, odkud Td vzít. **Výchozí volba „Bouřková
+činnost zadaná jako" = „Td podle místa stavby (okres)"**; NG / NSG z LLS
+zůstávají s vysvětlivkou „jen když máte naměřenou hustotu pro lokalitu
+(EUCLID / ČHMÚ)".
+
+- **Data v kódu** (161 kB celkem, test hlídá < 250 kB):
+  - `RL_OKRESY_CSV` — 77 okresů: kraj, okres, kód, **Td_navrh**, převažující
+    pásmo a podíly pásem 15–20 … 35–40. Odečetl uživatel s Claude strojově
+    z **izokeraunické mapy ČHMÚ (Atlas podnebí Česka 2007)**; Td_navrh =
+    horní mez nejvyššího pásma, které pokrývá aspoň 10 % okresu (bezpečná
+    strana). **Obrázek mapy ČHMÚ v programu není** (autorská práva).
+  - `RL_OKRESY_GEO` — hranice okresů **© ČÚZK, CC BY 4.0** (INSPIRE ÚSJ přes
+    github.com/siwekm/czech-geojson, okresy.json). Zjednodušené vlastním
+    skriptem (scratchpad `geokod/topo.py`): topologie se staví na
+    **přesných** souřadnicích (sdílené hranice mají v datech shodné body),
+    každý sdílený úsek se zjednoduší jednou (Douglas–Peucker 0,002°) → bez
+    děr a překryvů; pak ×10⁴ a delta-kódování (`arcs` = úseky „;", `o[kód]`
+    = kruhy jako odkazy na úseky, záporné = obráceně). **Kvantovat až po
+    zjednodušení** — zaokrouhlení předem rozdrobilo hranice na tisíce úseků.
+  - `RL_OBCE` — jména obcí po okresech (tentýž zdroj, obce.json, bez geometrie).
+- `rlOkresy()` (líně dekóduje), `rlOkresBod(lon, lat)` (sudý–lichý počet
+  průsečíků), `rlOkresZAdresy(text)` — „okres X", nebo jméno obce **jen
+  z poslední části adresy a z částí s PSČ** (ulice „Ulice 5" by našla obec
+  Ulice), i části jména se spojovníkem (Mistřín ze „Svatobořice-Mistřín");
+  víc okresů (Kyjov) = kandidáti, **nic se nevyplní**.
+- **Formulář:** „🗺 Vybrat na mapě" (okno `#modal-rl-mapa`: SVG okresů
+  v 5 pásmech modré, legenda, ＋/− a přiblížení dvěma prsty, klik vybere
+  okres; vedle **Kraj → Okres**; „📍 Moje poloha" jen na vyžádání, poloha se
+  nikam neposílá ani neukládá; patička „Hranice okresů © ČÚZK, CC BY 4.0"),
+  „📍 Moje poloha" i přímo ve formuláři, řádek okresu s krajem a podíly pásem
+  a **návrh z adresy** objektu (místo, převzatá revize): „Okres Uherské
+  Hradiště → Td 30 – použít?" / kandidáti / „nepoznám — vyberte na mapě".
+- **Data:** `d.tdOkres` = kód okresu (volitelné). `rlHod('td')`: zadáno →
+  **okres** (štítek „podle okresu X (mapa ČHMÚ)", `z: 'okres'`) → převzato.
+  Ruční Td přepíše okres (zadáno), ↺ vrátí okres. Starý dokument s ručním Td
+  beze změny (test).
+- **NG = 0,1·Td** — zdroj **ČSN 33 2000-4-443 ed. 3, pozn. 2 k čl. 443.5**
+  (odkaz na IEC 62305-2:2010, čl. A.1), ověřeno v normě uživatelem; přesněji
+  z LLS. Vzorec NG = 0,04·Td^1,25 (ed. 2, Prozik) se nepoužívá.
+- **PDF:** „Td = 30 dní/rok – okres Uherské Hradiště, odečteno
+  z izokeraunické mapy ČHMÚ (Atlas podnebí Česka 2007), horní mez
+  převažujícího pásma." (`rlTdText`).
+
+Test: `test-riziko-lps.js` (+18: 77 okresů s Td a polygonem, bod
+v Uherském Hradišti, adresy Mistřín / Uherské Hradiště / ulice, velikost
+dat, výchozí volba, návrh z adresy bez vyplnění, klik na okres v mapě,
+kraj → okres, ruční přepsání, PDF se zdrojem Td i NG, starý dokument).
+V `test-mobil.js` stavy „riziko LPS – mapa okresů…" a „…Td podle okresu,
+návrh z adresy".
 
 ## Rozvaděč DBO — návrh a dokumentace (v9.127; konfigurátor, `DOK_TYPY.rozv`, blok `ROZVADĚČ DBO`)
 

@@ -273,6 +273,58 @@ async function otiskRevizi(p) {
   check('příloha: odebrání volby vrátí PDF i nastavení zprávy, do výchozích se příloha nedostane', zpet.pril === 0 && !/rlpsPriloha/.test(zpet.tisk + zpet.vych), JSON.stringify(zpet));
   await st.close();
 
+  // ── bouřkové dny podle okresu ─────────────────────────────────────────
+  const okr = await p.evaluate(() => {
+    const O = rlOkresy(), t = q => { const r = rlOkresZAdresy(q); return r ? (r.jiste ? r.jiste.n : 'víc') : null; };
+    const enc = new TextEncoder();
+    return { n: O.seznam.length, kody: O.seznam.every(o => o.td > 0 && o.rings.length && o.rings[0].length > 3 && RL_OKRESY_GEO.o[o.kod]),
+      geoKody: Object.keys(RL_OKRESY_GEO.o).length, uh: (rlOkresBod(17.46, 49.07) || {}).n,
+      mistrin: t('Mistřín'), uhAdr: t('Uherské Hradiště'), ulice: t('Ulice 5, Neexistujícíves'),
+      kb: (enc.encode(RL_OKRESY_CSV).length + enc.encode(JSON.stringify(RL_OKRESY_GEO)).length + enc.encode(RL_OBCE).length) / 1024 };
+  });
+  check('všech 77 okresů má Td a polygon (shoda kódů)', okr.n === 77 && okr.kody && okr.geoKody === 77, JSON.stringify(okr));
+  check('bod 49,07 N 17,46 E leží v okrese Uherské Hradiště', okr.uh === 'Uherské Hradiště', okr.uh);
+  check('adresa „Mistřín" nabídne okres Hodonín', okr.mistrin === 'Hodonín', okr.mistrin);
+  check('adresa „Uherské Hradiště" nabídne okres Uherské Hradiště', okr.uhAdr === 'Uherské Hradiště', okr.uhAdr);
+  check('název ulice se za obec nepovažuje', okr.ulice === null, String(okr.ulice));
+  check('přidaná data (Td, hranice, obce) pod 250 kB', okr.kb < 250, okr.kb.toFixed(1) + ' kB');
+  await p.evaluate(async () => { try { localStorage.removeItem(RL_LS_TD); } catch (e) {} await dokNovy('rlps'); TD_AKCE.tdRlTyp({ getAttribute: () => 'rd' });
+    __rl.d.misto = 'Masarykovo nám. 1, Uherské Hradiště'; Object.assign(__rl.d.v, { L: '15', W: '20', H: '6' }); rlKreslit(); });
+  await w(200);
+  check('výchozí volba: Td podle místa stavby (okres)', await p.evaluate(() => rlHod(__rl.d, 'zadani').v === 'td' && /okres/.test(document.querySelector('[data-rl="zadani"] option:checked').textContent)));
+  check('adresa objektu nabídne „Okres Uherské Hradiště → Td 30 – použít?", nic se nevyplní samo',
+    /Okres Uherské Hradiště → Td 30 – použít\?/.test(await p.textContent('.rl-okres-navrh')) && await p.evaluate(() => !(rlCislo(rlHod(__rl.d, 'td').v) > 0)));
+  await p.click('[data-action="tdRlMapa"]'); await w(300);
+  await p.evaluate(() => { __rlMapa.vyber = ''; rlMapaKreslit(); });
+  await p.locator('#modal-rl-mapa path[data-okres="CZ0722000000"]').click({ position: { x: 12, y: 14 }, force: false }).catch(async () => {
+    const bb = await p.locator('#modal-rl-mapa path[data-okres="CZ0722000000"]').boundingBox(); await p.mouse.click(bb.x + bb.width / 2, bb.y + bb.height / 2); });
+  await w(150);
+  const mInfo = await p.evaluate(() => ({ v: __rlMapa.vyber, t: document.querySelector('#modal-rl-mapa .rlm-info').innerText, b: document.querySelector('[data-action="tdRlMapaPouzit"]').textContent }));
+  check('klik na okres v mapě ukáže název, kraj a podíly pásem', mInfo.v === 'CZ0722000000' && /Uherské Hradiště/.test(mInfo.t) && /Zlínský kraj/.test(mInfo.t) && /25–30 dní: 63 %, 20–25 dní: 37 %/.test(mInfo.t), mInfo.t.replace(/\s+/g, ' '));
+  await p.screenshot({ path: __dirname + '/_beh/rlps/mapa-vyber.png' });
+  await p.click('[data-action="tdRlMapaPouzit"]'); await w(250);
+  const poMape = await p.evaluate(() => { const h = rlHod(__rl.d, 'td'); return { v: h.v, z: h.z, chip: document.querySelector('[data-pole="td"] .rl-zdroj').textContent, okres: __rl.d.tdOkres, info: (document.querySelector('.rl-okres-info') || {}).textContent || '' }; });
+  check('klik na Uherské Hradiště vyplní Td 30 se zdrojem „podle okresu Uherské Hradiště (mapa ČHMÚ)"',
+    poMape.v === '30' && poMape.z === 'okres' && poMape.chip === 'podle okresu Uherské Hradiště (mapa ČHMÚ)' && poMape.okres === 'CZ0722000000', JSON.stringify(poMape));
+  await p.evaluate(() => { delete __rl.d.tdOkres; rlKreslit(); });
+  await p.click('[data-action="tdRlMapa"]'); await w(250);
+  await p.evaluate(() => { __rlMapa.vyber = ''; rlMapaKreslit(); });
+  await p.selectOption('#rlm-kraj', 'Zlínský'); await w(100);
+  await p.selectOption('#rlm-okres', 'CZ0722000000'); await w(100);
+  await p.screenshot({ path: __dirname + '/_beh/rlps/mapa-kraj-okres.png' });
+  await p.click('[data-action="tdRlMapaPouzit"]'); await w(250);
+  check('výběr kraj → okres dá totéž (Td 30, okres Uherské Hradiště)', await p.evaluate(() => { const h = rlHod(__rl.d, 'td'); return h.v === '30' && h.z === 'okres' && __rl.d.tdOkres === 'CZ0722000000'; }));
+  await p.fill('[data-rl="td"]', '33'); await w(150);
+  check('ruční přepsání Td má štítek „zadáno" a okres zůstane v datech', await p.evaluate(() => { const h = rlHod(__rl.d, 'td'); return h.v === '33' && h.z === 'zadano' && __rl.d.tdOkres === 'CZ0722000000'; }));
+  await p.evaluate(() => { delete __rl.d.v.td; rlKreslit(); });
+  await p.evaluate(async () => { await dokNahled(); }); await w(1500);
+  const pdfTd = await p.evaluate(() => document.getElementById('dok-pdf-pages').innerText.replace(/\s+/g, ' '));
+  check('PDF obsahuje zdroj Td (okres, mapa ČHMÚ, horní mez převažujícího pásma)',
+    /Td = 30 dní\/rok – okres Uherské Hradiště, odečteno z izokeraunické mapy ČHMÚ \(Atlas podnebí Česka 2007\), horní mez převažujícího pásma\./.test(pdfTd));
+  check('PDF uvádí zdroj přepočtu NG = 0,1·Td (ČSN 33 2000-4-443 ed. 3)', /ČSN 33 2000-4-443 ed\. 3, pozn\. 2 k čl\. 443\.5/.test(pdfTd));
+  await p.click('[data-action="tdPdfZpet"]'); await w(300);
+  check('starý dokument s ručním Td zůstává zadaný ručně', await p.evaluate(async () => { await dokNacist(); const x = dokNajit('rl-stary'); return rlHod(x.data, 'td').z === 'zadano' && !x.data.tdOkres; }));
+
   // ── telefon 375 px ────────────────────────────────────────────────────
   const m = await b.newContext({ viewport: { width: 375, height: 740 }, isMobile: true, hasTouch: true });
   await m.addInitScript(() => { try { navigator.serviceWorker.register = () => new Promise(() => {}); } catch (e) {} });
