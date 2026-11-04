@@ -2407,12 +2407,29 @@ oteplení", „…odhad instalovaného příkonu Pi (okno)", „…vývod s odha
 
 Zadání uživatele: z Pi vývodů spočítat soudobý příkon Pp, výpočtový proud Ip
 a navrhnout hlavní jistič před elektroměrem. **Jen podle ČSN 33 2130 ed. 4**
-(12/2024, příloha A výpočtové zatížení, příloha B byty) — **plné znění
-nemáme**, proto **žádný koeficient napevno**: výchozí β jsou v **⚙ Nastavení
-konfigurátoru** (jen v prohlížeči, localStorage `revize_el_rz_soud`, jen
-odchylky, „↺ Výchozí β") a jdou **přepsat u rozvaděče**. U každé β se ukazuje
-zdroj; hodnoty z ed. 3 / z podkladů mají štítek **„ověřit v ČSN 33 2130 ed. 4"**.
-Tabulky distributorů se nepoužívají.
+(12/2024, příloha A výpočtové zatížení, příloha B byty). Výchozí β jsou
+v **⚙ Nastavení konfigurátoru** (jen v prohlížeči, localStorage
+`revize_el_rz_soud`, jen odchylky, „↺ Výchozí β") a jdou **přepsat
+u rozvaděče**. U každé β se ukazuje zdroj. Tabulky distributorů se nepoužívají.
+
+**Dávka 2 norem (2026-11-04) — přílohy A a B ověřeny v plném znění:**
+- **Charakter odběru bytu T1–T6** (čl. 8.1.3) místo stupně elektrizace;
+  Pb (A.1): T1, T2 = 7 kW, T3 = 11 kW, T4–T6 zadat. Ukládá se `'T1'`…`'T6'`;
+  starší `stupen: 'A' | 'B' | 'C'` se **nepřepisuje**, jen se zobrazí jako
+  T1 / T3 / zadat (`rzsTypBytu`). Nastavení `pb.T1…T3` (starší `pb.A`, `pb.B`
+  platí dál).
+- **β(n) = tab. B.1** (`RZS_BYTY_TAB`: n = 1–28, 30, 40, 50, 60, 80, 100),
+  jinak Ruscův vzorec βn = β∞ + (1 − β∞)/√n, β∞ = 0,20 zaokrouhleno na
+  setiny; β∞ v Nastavení (`byty.inf`), jiné než 0,20 = vzorec pro všechna n.
+  Limit „nad 34 zadat ručně" zrušen.
+- **cos φ výchozí 0,9** (čl. A.2, bytový odběr) — v listu PDF se uvádí zdroj.
+- **β skupin spotřebičů norma neuvádí** — kuchyně „zpracovatel (praxe)",
+  EV „zpracovatel; … ověřit v ČSN 33 2000-7-722 ed. 3". Štítek „ověřit v ČSN
+  33 2130 ed. 4" už nikde není.
+- Tabulka zkoušek i) cituje `ČSN 33 2130 ed.4, čl. 8.7.3, tab. 7`, výchozí
+  podklady protokolu vnějších vlivů `ČSN 33 2130 ed. 4` (jen nové protokoly).
+
+Test: `testy/test-normy-soudobost.js` (17 kontrol).
 
 **Co v programu bylo (2026-10-29):** soudobost tu nebyla. „Součinitel
 soudobosti RDF" (oddíl Oteplení, `rotRdf`, `tech.rdf`) je jmenovitý

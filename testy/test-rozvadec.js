@@ -2091,8 +2091,8 @@ function pomocnik() {
     v = S(); r.byty = Math.round(v.pp * 1000) / 1000 + '|' + v.byty.beta + '|' + v.byty.pb + '|' + v.byty.overit;
     r.bytyText = document.getElementById('rz-soud-panel').innerText;
     const n2 = document.querySelector('#rz-soud-panel [data-rzs="byty.n"]'); n2.value = '40'; n2.dispatchEvent(new Event('input', { bubbles: true })); await w(100);
-    v = S(); r.byty40 = v.upoz.join() + '|' + v.pp;
-    // Ip 3f/1f a výběr jističe: Pp 14,2 kW, cos φ 0,95 → 21,6 A → 25 A
+    v = S(); r.byty40 = v.byty.beta + '|' + Math.round(v.pp * 1000) / 1000 + '|' + v.upoz.join();
+    // Ip 3f/1f a výběr jističe: Pp 14,2 kW, cos φ 0,9 (ČSN 33 2130 ed. 4, A.2) → 22,8 A → 25 A
     await novy(); V('v-fa-3-B25', 'Dílna', '14,2'); V('v-fa-1-B16', 'Zásuvky garáž'); rozvZmena('t', () => {}); await w(150);
     v = S(); r.ip3 = (Math.round(v.ip * 10) / 10) + '|' + v.navrh + '|' + v.faze;
     r.ukaz2 = document.getElementById('rz-soud-ukaz').textContent;
@@ -2120,12 +2120,12 @@ function pomocnik() {
     r.vPdf = /rz-soud-strana/.test(B);
     const L = rozvSoudListSvg(d1).svg;
     r.list = { nadpis: /VÝPOČET SOUDOBÉHO PŘÍKONU/.test(L), zdroj: /Zdroj β/.test(L), pozn: /Výpočet podle ČSN 33 2130 ed\. 4; koeficienty β zadal zpracovatel\./.test(L),
-      ip: /21,6 A/.test(L), jistic: /3×25 A/.test(L), skut: /NEVYHOVUJE/.test(L), ram: /data-ram="1"/.test(L) && /data-razitko="1"/.test(L),
+      ip: /22,8 A/.test(L), cos: /cos φ = 0,9 \(ČSN 33 2130 ed\. 4, čl\. A\.2/.test(L), jistic: /3×25 A/.test(L), skut: /NEVYHOVUJE/.test(L), ram: /data-ram="1"/.test(L) && /data-razitko="1"/.test(L),
       jednoduche: !/<(foreignObject|image|style)|class=/.test(L) };
     // kuchyně se zdrojem ČSN a odhadem Pi v PDF
     await novy(); const de = V('v-fa-3-B16', 'Varná deska', '7,4'); de.piOdhad = 'Varná deska 7,4 kW'; V('v-fa-1-B10', 'Osvětlení', '0,5'); rozvZmena('t', () => {}); await w(100);
     const L2 = rozvSoudListSvg(D()).svg;
-    r.list2 = /ČSN 33 2130 \(rozsah 0,35–0,5\) – ověřit v ČSN 33 2130 ed\. 4/.test(L2) && /\(odhad\)/.test(L2) && /výchozí bez zdroje – β nezadáno/.test(L2);
+    r.list2 = /zpracovatel \(praxe\)/.test(L2) && !/ověřit v ČSN 33 2130/.test(L2) && /\(odhad\)/.test(L2) && /výchozí bez zdroje – β nezadáno/.test(L2);
     // bez Pi: list se nenabízí a nejde do PDF
     await novy(); V('v-fa-1-B16', 'Zásuvky'); rozvZmena('t', () => {}); await w(100);
     const d0 = D();
@@ -2141,24 +2141,24 @@ function pomocnik() {
     r.stary = !/"soudSk"|"soudBlok"/.test(po) && JSON.stringify(JSON.parse(pred).rady) === JSON.stringify(JSON.parse(po).rady) && !('soudobost' in JSON.parse(po));
     return r;
   });
-  check('soudobost: kuchyně deska 7,4 + trouba 3,5 + myčka 2,2 = 13,1 × 0,4 = 5,24 kW (zdroj ČSN 33 2130, „ověřit v ed. 4")',
-    sd.kuch === '13.1|0.4|5.24' && /ČSN 33 2130/.test(sd.kuchZdroj) && /\|true$/.test(sd.kuchZdroj), sd.kuch + ' / ' + sd.kuchZdroj);
+  check('soudobost: kuchyně deska 7,4 + trouba 3,5 + myčka 2,2 = 13,1 × 0,4 = 5,24 kW (zdroj „zpracovatel (praxe)", bez „ověřit")',
+    sd.kuch === '13.1|0.4|5.24' && /zpracovatel \(praxe\)/.test(sd.kuchZdroj) && /\|false$/.test(sd.kuchZdroj), sd.kuch + ' / ' + sd.kuchZdroj);
   check('soudobost: souhrn v liště „Pp ≈ 5,24 kW → 10 A", panel ve vlastnostech rozvaděče otevřený', !sd.ukazHid && sd.ukaz === 'Pp ≈ 5,24 kW → 10 A' && sd.panelOtevren &&
     /kuchyně/.test(sd.panelText) && /5,24 kW/.test(sd.panelText), sd.ukaz);
   check('soudobost: β z Nastavení konfigurátoru (kuchyně 0,5 → 6,55 kW) — jen v prohlížeči, ne v rozvaděči',
     sd.nast === '6.55|Nastavení konfigurátoru (zadal uživatel)' && /"kuchyne":0\.5/.test(sd.nastLs || '') && !sd.nastVData, sd.nast + ' / ' + sd.nastLs);
   check('soudobost: β přepsané u rozvaděče (0,35 → 4,585 kW) má přednost, uloží se do d.soudobost, kurzor zůstane v poli',
     sd.prep === '4.585|zadáno u rozvaděče|{"beta":{"kuchyne":"0,35"}}' && sd.prepFokus === 'beta.kuchyne', sd.prep);
-  check('soudobost: EV 11 kW β 1,0 („ověřit"), s dynamickým řízením a limitem 3,7 kW → 3,7 kW', sd.ev === '11|1|true' && sd.evLim === '3.7|true', sd.ev + ' / ' + sd.evLim);
+  check('soudobost: EV 11 kW β 1,0 (zdroj zpracovatel), s dynamickým řízením a limitem 3,7 kW → 3,7 kW', sd.ev === '11|1|false' && sd.evLim === '3.7|true', sd.ev + ' / ' + sd.evLim);
   check('soudobost: bojler 2 × TČ 6 nepracují současně → započte se jen TČ (8 → 6 kW), hláška v panelu',
     sd.bezBlok === 8 && /^6\|/.test(sd.blok) && /Bojler 2 \/ -FA2 Tepelné čerpadlo/.test(sd.blok) && sd.blokData && /Bojler 2 kW nezapočten – nepracuje současně s -FA2 Tepelné čerpadlo/.test(sd.blokText), sd.blok);
   check('soudobost: skupina vývodu — odhad z typu/názvu se neukládá, ruční volba ano („podle typu" ji smaže)',
     sd.skBo === 'podle typu (ohřev vody)' && sd.skRucne === 'ostatni' && sd.skZpet === false &&
     sd.predikce === 'kuchyne,ohrev,ev,tc,klima,pradlo,zasuvky,osvetleni', sd.skBo + ' / ' + sd.predikce);
   check('soudobost: rozvaděč bez Pi — panel sbalený, souhrn v liště schovaný', sd.bezPiPanel, '');
-  check('soudobost: více bytů n = 10 × 11 kW (stupeň B) × 0,45 = 49,5 kW, β(n) z tabulky „ověřit v příloze B"; n = 40 → zadat ručně',
-    sd.byty === '49.5|0.45|11|true' && /10 × 11 kW × 0,45 = 49,5 kW/.test(sd.bytyText) && /ověřit v příloze B ed\. 4/.test(sd.bytyText) && /nad 34/.test(sd.byty40), sd.byty + ' / ' + sd.byty40);
-  check('soudobost: Pp 14,2 kW, cos φ 0,95, 3f → Ip 21,6 A → 25 A; 1f → 65 A → 80 A', sd.ip3 === '21.6|25|3f' && sd.ip1 === '65|80|1f' && sd.ukaz2 === 'Pp ≈ 14,2 kW → 25 A', sd.ip3 + ' / ' + sd.ip1 + ' / ' + sd.ukaz2);
+  check('soudobost: více bytů n = 10 × 11 kW (T3) × 0,45 = 49,5 kW, β(n) z tab. B.1; n = 40 → 0,33 (145,2 kW)',
+    sd.byty === '49.5|0.45|11|false' && /10 × 11 kW × 0,45 = 49,5 kW/.test(sd.bytyText) && !/ověřit/.test(sd.bytyText) && sd.byty40 === '0.33|145.2|', sd.byty + ' / ' + sd.byty40);
+  check('soudobost: Pp 14,2 kW, cos φ 0,9, 3f → Ip 22,8 A → 25 A; 1f → 68,6 A → 80 A', sd.ip3 === '22.8|25|3f' && sd.ip1 === '68.6|80|1f' && sd.ukaz2 === 'Pp ≈ 14,2 kW → 25 A', sd.ip3 + ' / ' + sd.ip1 + ' / ' + sd.ukaz2);
   check('soudobost: vývod bez Pi nezapočten s hláškou', sd.bezPi === 1 && /1 vývod bez Pi – nezapočten/.test(sd.panel2), sd.panel2.slice(0, 300));
   check('soudobost: bez hlavního jističe „Použít navržený" → hlavička „3×25 A", pak vyhovuje', sd.pouzitBtn && sd.pouzit === '3×25 A' && sd.poPouz === 'true|25', sd.pouzit + ' / ' + sd.poPouz);
   check('soudobost: ✗ když je skutečný jistič (3×20 A) menší než Ip; nic se samo nemění; klik na souhrn otevře panel',

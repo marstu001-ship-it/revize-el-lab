@@ -4616,7 +4616,7 @@ html.dark .rz-imp-chyby{background:#3a1f1c;border-color:#6b2c25}
           <td style="text-align:center;font-weight:600">i)</td>
           <td>Ověření úbytků napětí</td>
           <td><select id="zk_i" style="width:100%;font-size:.8rem"><option value="Vyhovuje" selected>Vyhovuje</option><option value="Nevyhovuje">Nevyhovuje</option><option value="Neprovedeno">Neprovedeno</option></select></td>
-          <td style="font-size:.72rem;color:var(--muted)">ČSN 33 2000-6 ed.2, čl. 6.4.3.11<br>ČSN 33 2000-5-52 ed.2, čl. 525, tab. G.52.1<br>ČSN 33 2130 ed.4, čl. 4.7.3</td>
+          <td style="font-size:.72rem;color:var(--muted)">ČSN 33 2000-6 ed.2, čl. 6.4.3.11<br>ČSN 33 2000-5-52 ed.2, čl. 525, tab. G.52.1<br>ČSN 33 2130 ed.4, čl. 8.7.3, tab. 7</td>
         </tr>
       </tbody>
     </table>
@@ -30212,7 +30212,7 @@ TD_AKCE.tdVzorJmenoZpet = function () { __dokVzorJmeno = null; closeModal('modal
 // ── Protokol o určení vnějších vlivů — výchozí obsah ─────────────────────
 var DOK_VV_PODKLADY = [
   'ČSN 33 2000-5-51 ed. 3+Z1+Z2 a TNI 33 2000-5-51 – Elektrotechnické instalace budov, část 5-51: Výběr a stavba elektrických zařízení – Všeobecné předpisy',
-  'ČSN 33 2130 ed. 3 – Elektrické instalace nízkého napětí – Vnitřní elektrické rozvody',
+  'ČSN 33 2130 ed. 4 – Elektrické instalace nízkého napětí – Vnitřní elektrické rozvody',
   'ČSN 33 2000-4-41 ed. 3 – Elektrické instalace nízkého napětí – Část 4-41: Ochranná opatření pro zajištění bezpečnosti – Ochrana před úrazem elektrickým proudem'
 ].join('\n');
 var DOK_VV_ZDUVODNENI = 'Určení vnějších vlivů je v souladu s navrženou technologií, technologickými postupy jednotlivých ' +
@@ -32890,10 +32890,14 @@ document.addEventListener('change', function (e) {
 // ═══ ROZVADĚČ — SOUDOBOST: soudobý příkon Pp a návrh hlavního jističe (2026-10-29) ═══
 // Z instalovaných příkonů Pi vývodů: Pp = Σ skupin (Σ Pi × β) − vzájemně
 // blokované vývody (+ n × Pb × β(n) u rozvaděče pro víc bytů), Ip a nejbližší
-// vyšší jistič z řady. Jen podle ČSN 33 2130 ed. 4 (příloha A, B) — PLNÉ ZNĚNÍ
-// NEMÁME, proto žádný koeficient napevno: výchozí β jsou v Nastavení
+// vyšší jistič z řady. Podle ČSN 33 2130 ed. 4 — přílohy A (Pb podle charakteru
+// odběru T1–T6, čl. 8.1.3; cos φ) a B (β(n) pro skupinu bytů, tab. B.1 a Ruscův
+// vzorec) jsou OVĚŘENÉ v plném znění. β skupin spotřebičů (kuchyně, EV…) norma
+// neuvádí — jsou to volby zpracovatele. Výchozí hodnoty jsou v Nastavení
 // konfigurátoru (jen v prohlížeči, localStorage `revize_el_rz_soud`) a jdou
 // přepsat u rozvaděče (d.soudobost.beta). U každé β se ukazuje zdroj.
+// Charakter odběru bytu: nově 'T1'…'T6'; starší data 'A' | 'B' | 'C' (stupeň
+// elektrizace) se nepřepisují, jen se tak zobrazí: A = T1/T2, B = T3, C = zadat.
 // Data (vše volitelné, uloží se až úpravou): vývod x.soudSk (skupina; bez
 // klíče = odhad z typu obvodu / odhadu Pi / názvu), x.soudBlok (['uid',
 // 'sk:skupina'] — „Nepracuje současně s"), rozvaděč d.soudobost = { beta,
@@ -32903,19 +32907,32 @@ var RZS_KLIC = 'revize_el_rz_soud';
 var RZS_OVERIT = 'ověřit v ČSN 33 2130 ed. 4';
 // [klíč, název, výchozí β, zdroj (prázdný = bez zdroje → „β nezadáno"), ověřit]
 var RZS_SKUPINY = [
-  ['kuchyne', 'kuchyně (varná deska, trouba, sporák, myčka)', 0.4, 'ČSN 33 2130 (rozsah 0,35–0,5)', true],
-  ['ev', 'nabíjení EV', 1, 'ČSN 33 2130 – bez dynamického řízení výkonu', true],
+  ['kuchyne', 'kuchyně (varná deska, trouba, sporák, myčka)', 0.4, 'zpracovatel (praxe)'],
+  ['ev', 'nabíjení EV', 1, 'zpracovatel; nabíjecí obvod se dimenzuje na plný proud – ověřit v ČSN 33 2000-7-722 ed. 3'],
   ['osvetleni', 'osvětlení', 1, ''], ['zasuvky', 'zásuvky', 1, ''], ['ohrev', 'ohřev vody (bojler)', 1, ''],
   ['tc', 'tepelné čerpadlo / vytápění', 1, ''], ['klima', 'klimatizace', 1, ''], ['pradlo', 'pračka, sušička', 1, ''],
   ['motory', 'motory', 1, ''], ['ostatni', 'ostatní', 1, '–']
 ];
-// β(n) pro skupinu bytů — ČSN 33 2130 ed. 3 podle podkladů ČVUT [ověřit v příloze B ed. 4]
-var RZS_BYTY_BETA = [null, 1, 0.77, 0.66, 0.6, 0.56, 0.53, 0.5, 0.48, 0.47, 0.45, 0.44, 0.43, 0.42, 0.41, 0.41, 0.4, 0.39, 0.39, 0.38, 0.38,
-  0.37, 0.37, 0.37, 0.36, 0.36, 0.36, 0.35, 0.35, 0.35, 0.33, 0.31, 0.3, 0.3, 0.28];
-var RZS_BYTY_ZDROJ = 'ČSN 33 2130 ed. 3 (podklady ČVUT)';
-var RZS_PB = { A: 7, B: 11 };   // Pp na byt podle stupně elektrizace (kW); C = zadat
+// β(n) pro skupinu bytů — ČSN 33 2130 ed. 4, příloha B, tab. B.1. Pro ostatní n
+// Ruscův vzorec βn = β∞ + (1 − β∞)/√n, β∞ = 0,20 (norma připouští 0,15–0,20,
+// jde změnit v Nastavení; jiné β∞ než 0,20 = vzorec pro všechna n).
+var RZS_BYTY_TAB = { 1: 1, 2: 0.77, 3: 0.66, 4: 0.6, 5: 0.56, 6: 0.53, 7: 0.5, 8: 0.48, 9: 0.47, 10: 0.45, 11: 0.44, 12: 0.43,
+  13: 0.42, 14: 0.41, 15: 0.41, 16: 0.4, 17: 0.39, 18: 0.39, 19: 0.38, 20: 0.38, 21: 0.37, 22: 0.37, 23: 0.37, 24: 0.36, 25: 0.36,
+  26: 0.36, 27: 0.35, 28: 0.35, 30: 0.35, 40: 0.33, 50: 0.31, 60: 0.3, 80: 0.3, 100: 0.28 };
+var RZS_BYTY_ZDROJ = 'ČSN 33 2130 ed. 4, příloha B, tab. B.1';
+var RZS_BYTY_INF = 0.2;
+// Charakter odběru bytu (čl. 8.1.3) a Pb podle přílohy A.1 (kW); T4–T6 = zadat
+var RZS_TYPY_BYTU = [['T1', 'standardní spotřebiče'], ['T2', '+ ohřev vody'], ['T3', '+ vaření a pečení nad 3,5 kW'],
+  ['T4', '+ vytápění, klimatizace'], ['T5', '+ další spotřebiče ovlivňující síť'], ['T6', '+ nabíjení EV']];
+var RZS_PB = { T1: 7, T2: 7, T3: 11 };
 var RZS_RADA = [10, 13, 16, 20, 25, 32, 40, 50, 63, 80, 100, 125];
-var RZS_COS = 0.95;
+var RZS_COS = 0.9;   // ČSN 33 2130 ed. 4, čl. A.2 (bytový odběr)
+var RZS_COS_ZDROJ = 'ČSN 33 2130 ed. 4, čl. A.2 (bytový odběr)';
+// Uložený charakter odběru → T1…T6 (starší 'A' | 'B' | 'C' se jen zobrazí jinak)
+function rzsTypBytu(st) {
+  if (/^T[1-6]$/.test(st || '')) return st;
+  return st === 'A' ? 'T1' : (st === 'C' ? 'T4' : 'T3');
+}
 // druh spotřebiče z dialogu odhadu Pi → skupina
 var RZS_DRUH = { bojler: 'ohrev', sporak: 'kuchyne', deska: 'kuchyne', trouba: 'kuchyne', mycka: 'kuchyne', pracka: 'pradlo', susicka: 'pradlo',
   klima: 'klima', ev: 'ev', tc: 'tc', jiny: 'ostatni' };
@@ -32943,7 +32960,13 @@ function rzsBytyBeta(n, nast) {
   nast = nast || rzsNast();
   var u = nast.byty && rzsKladne(nast.byty[n]);
   if (u != null) return { b: u, zdroj: 'Nastavení konfigurátoru (zadal uživatel)', overit: false };
-  return RZS_BYTY_BETA[n] != null ? { b: RZS_BYTY_BETA[n], zdroj: RZS_BYTY_ZDROJ, overit: true } : null;
+  var inf = nast.byty && rzsKladne(nast.byty.inf);
+  if (inf != null && inf >= 1) inf = null;
+  var vlastniInf = inf != null && Math.abs(inf - RZS_BYTY_INF) > 1e-9;
+  if (!vlastniInf && RZS_BYTY_TAB[n] != null) return { b: RZS_BYTY_TAB[n], zdroj: RZS_BYTY_ZDROJ, overit: false };
+  var bi = vlastniInf ? inf : RZS_BYTY_INF;
+  var b = Math.round((bi + (1 - bi) / Math.sqrt(n)) * 100) / 100;
+  return { b: b, zdroj: 'ČSN 33 2130 ed. 4, příloha B (βn = β∞ + (1 − β∞)/√n, β∞ = ' + rozvCisloText(bi) + ')', overit: false };
 }
 // Skupina vývodu: uložená volba, jinak odhad (neukládá se).
 function rzsBezDiakr(s) { return String(s || '').normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase(); }
@@ -33062,16 +33085,18 @@ function rozvSoudVypocet(d) {
   // Víc bytů na jednom rozvaděči
   var by = s.byty || {};
   if (by.zap) {
-    var n = Math.round(rozvPiCislo(by.n)), st = by.stupen === 'A' || by.stupen === 'C' ? by.stupen : 'B';
-    var pbN = nast.pb && rzsKladne(nast.pb[st]), pb = rzsKladne(by.pb), pbZdroj = pb != null ? (by.pbZ ? 'z výpočtu ' + by.pbZ : 'zadáno u rozvaděče') : '';
-    if (pb == null && st !== 'C') { pb = pbN != null ? pbN : RZS_PB[st]; pbZdroj = 'stupeň elektrizace ' + st + (pbN != null ? ' (Nastavení konfigurátoru)' : ''); }
+    var n = Math.round(rozvPiCislo(by.n)), st = rzsTypBytu(by.stupen);
+    // Nastavení: nové klíče pb.T1…T3, starší pb.A (= T1, T2) a pb.B (= T3)
+    var pbN = nast.pb ? rzsKladne(nast.pb[st]) : null;
+    if (pbN == null && nast.pb) pbN = rzsKladne(nast.pb[st === 'T3' ? 'B' : (st === 'T1' || st === 'T2' ? 'A' : '-')]);
+    var pb = rzsKladne(by.pb), pbZdroj = pb != null ? (by.pbZ ? 'z výpočtu ' + by.pbZ : 'zadáno u rozvaděče') : '';
+    if (pb == null && RZS_PB[st] != null) { pb = pbN != null ? pbN : RZS_PB[st]; pbZdroj = 'charakter odběru ' + st + (pbN != null ? ' (Nastavení konfigurátoru)' : ' (ČSN 33 2130 ed. 4, příloha A.1)'); }
     var bn = rzsKladne(by.beta), bz = null;
     if (bn != null) bz = { b: bn, zdroj: 'zadáno u rozvaděče', overit: false };
     else if (n >= 1) bz = rzsBytyBeta(n, nast);
     r.byty = { n: n, stupen: st, pb: pb, pbZdroj: pbZdroj, beta: bz ? bz.b : null, zdroj: bz ? bz.zdroj : '', overit: bz ? bz.overit : false, pp: null };
     if (!(n >= 1)) r.upoz.push('zadejte počet bytů');
-    else if (pb == null) r.upoz.push('zadejte Pp na byt (stupeň C)');
-    else if (!bz) r.upoz.push('pro ' + n + ' bytů není β v tabulce (nad 34) – zadejte β ručně');
+    else if (pb == null) r.upoz.push('zadejte Pp na byt (charakter odběru ' + st + ')');
     else r.byty.pp = n * pb * bz.b;
   }
   r.pp = r.ppSkupiny - nezap + (r.byty && r.byty.pp ? r.byty.pp : 0);
@@ -33111,10 +33136,11 @@ function rozvSoudPanelHtml() {
       .map(function (q) { var v = rozvSoudVypocet(q.data); return v.pp > 0 ? [q.uid, ((q.data.oznaceni || q.cislo) + ' – ' + rzsKw(v.pp) + ' kW'), rzsKw(v.pp), q.data.oznaceni || q.cislo] : null; }).filter(Boolean);
     return h + '<div class="g3 rz-soud-byty">' +
       '<div class="f"><label>Počet bytů n</label><input type="text" class="rzs-in" data-rzs="byty.n" value="' + esc(by.n || '') + '" inputmode="numeric" placeholder="10" autocomplete="off"></div>' +
-      '<div class="f"><label>Stupeň elektrizace</label><select class="rzs-in" data-rzs="byty.stupen">' +
-        [['A', 'A – ' + rozvCisloText(RZS_PB.A) + ' kW'], ['B', 'B – ' + rozvCisloText(RZS_PB.B) + ' kW'], ['C', 'C – zadat']].map(function (v) {
-          return '<option value="' + v[0] + '"' + ((by.stupen || 'B') === v[0] ? ' selected' : '') + '>' + v[1] + '</option>'; }).join('') + '</select></div>' +
-      '<div class="f"><label>Pp na byt Pb (kW)</label><input type="text" class="rzs-in" data-rzs="byty.pb" value="' + esc(by.pb || '') + '" inputmode="decimal" placeholder="podle stupně" autocomplete="off"></div>' +
+      '<div class="f"><label>Charakter odběru bytu <span class="dk-nepov">(čl. 8.1.3)</span></label><select class="rzs-in" data-rzs="byty.stupen">' +
+        RZS_TYPY_BYTU.map(function (v) {
+          return '<option value="' + v[0] + '"' + (rzsTypBytu(by.stupen) === v[0] ? ' selected' : '') + '>' + v[0] + ' ' + v[1] + ' – ' +
+            (RZS_PB[v[0]] != null ? rozvCisloText(RZS_PB[v[0]]) + ' kW' : 'zadat') + '</option>'; }).join('') + '</select></div>' +
+      '<div class="f"><label>Pp na byt Pb (kW)</label><input type="text" class="rzs-in" data-rzs="byty.pb" value="' + esc(by.pb || '') + '" inputmode="decimal" placeholder="podle charakteru odběru" autocomplete="off"></div>' +
       '<div class="f"><label>β(n) <span class="dk-nepov">(prázdné = tabulka)</span></label><input type="text" class="rzs-in" data-rzs="byty.beta" value="' + esc(by.beta || '') + '" inputmode="decimal" placeholder="z tabulky" autocomplete="off"></div>' +
       (jine.length ? '<div class="f span2"><label>Převzít Pb z výpočtu bytového rozvaděče</label><select class="rzs-prevzit"><option value="">— vyberte —</option>' +
         jine.map(function (q) { return '<option value="' + esc(q[2]) + '" data-n="' + esc(q[3]) + '">' + esc(q[1]) + '</option>'; }).join('') + '</select></div>' : '') +
@@ -33159,7 +33185,7 @@ function rozvSoudPanelHtml() {
   if (r.nezadano.length) up.push('β nezadáno: ' + r.nezadano.map(function (q) { return rzsKratce(q.k); }).join(', ') + ' – počítá se 1,0');
   if (up.length) h += '<div class="rz-soud-upoz">' + up.map(function (t) { return '⚠ ' + esc(t); }).join('<br>') + '</div>';
   h += '<details class="rp-dalsi rz-soud-dalsi"' + (s.byty && s.byty.zap ? ' open' : '') + '><summary>Další nastavení výpočtu</summary>' +
-    '<div class="g2"><div class="f"><label>cos φ</label><input type="text" class="rzs-in" data-rzs="cos" value="' + esc(s.cos || '') + '" placeholder="' + rozvCisloText(RZS_COS) + '" inputmode="decimal" autocomplete="off"></div>' +
+    '<div class="g2"><div class="f"><label title="Výchozí ' + rozvCisloText(RZS_COS) + ' – ' + esc(RZS_COS_ZDROJ) + '">cos φ <span class="dk-nepov">(výchozí ' + rozvCisloText(RZS_COS) + ', čl. A.2)</span></label><input type="text" class="rzs-in" data-rzs="cos" value="' + esc(s.cos || '') + '" placeholder="' + rozvCisloText(RZS_COS) + '" inputmode="decimal" autocomplete="off"></div>' +
     '<div class="f"><label>Přívod</label><select class="rzs-in" data-rzs="faze"><option value="">' + (r.faze === '3f' ? 'trojfázový' : 'jednofázový') + ' (' + esc(r.fazeZdroj) + ')</option>' +
       '<option value="3f"' + (s.faze === '3f' ? ' selected' : '') + '>trojfázový 400 V</option><option value="1f"' + (s.faze === '1f' ? ' selected' : '') + '>jednofázový 230 V</option></select></div></div>' +
     bytyHtml() + '</details>';
@@ -33320,14 +33346,15 @@ function rozvSoudNastaveniHtml() {
       '<input type="text" class="rzs-nast" data-n="' + kl + '" value="' + esc(v != null ? rozvCisloText(v) : '') + '" placeholder="' + esc(ph) + '" inputmode="decimal" autocomplete="off" aria-label="' + esc(label.replace(/<[^>]*>/g, '')) + '"></label>';
   };
   return '<details class="rz-soud-nast"><summary>Soudobost — výchozí součinitele β</summary>' +
-    '<div class="dk-pozn">Výchozí hodnoty pro výpočet soudobého příkonu (ČSN 33 2130 ed. 4, přílohy A a B — plné znění nemáme, ověřte). Prázdné = hodnota programu. Platí jen v tomto prohlížeči; u rozvaděče je jde přepsat.</div>' +
+    '<div class="dk-pozn">Výchozí hodnoty pro výpočet soudobého příkonu. Pb a β(n) bytů podle ČSN 33 2130 ed. 4, přílohy A a B; β skupin spotřebičů norma neuvádí — volí je zpracovatel. Prázdné = hodnota programu. Platí jen v tomto prohlížeči; u rozvaděče je jde přepsat.</div>' +
     RZS_SKUPINY.map(function (s) {
       return pole('beta.' + s[0], '<b>' + esc(rzsKratce(s[0])) + '</b>', rozvCisloText(s[2]), s[3] ? esc(s[3]) + (s[4] ? ' · ' + RZS_OVERIT : '') : 'bez zdroje – doplňte');
     }).join('') +
-    '<div class="dk-blok-t">Pp na byt podle stupně elektrizace (kW)</div>' +
-    pole('pb.A', 'stupeň A', rozvCisloText(RZS_PB.A), '') + pole('pb.B', 'stupeň B', rozvCisloText(RZS_PB.B), '') +
-    '<div class="dk-blok-t">β(n) pro n bytů <small>' + RZS_BYTY_ZDROJ + ' · ověřit v příloze B ed. 4</small></div>' +
-    '<div class="rz-soud-nbyty">' + RZS_BYTY_BETA.map(function (b, n) { return n ? pole('byty.' + n, 'n = ' + n, rozvCisloText(b), '') : ''; }).join('') + '</div>' +
+    '<div class="dk-blok-t">Pp na byt podle charakteru odběru (kW) <small>ČSN 33 2130 ed. 4, příloha A.1</small></div>' +
+    ['T1', 'T2', 'T3'].map(function (k) { return pole('pb.' + k, k, rozvCisloText(RZS_PB[k]), ''); }).join('') +
+    '<div class="dk-blok-t">β(n) pro n bytů <small>' + RZS_BYTY_ZDROJ + '</small></div>' +
+    pole('byty.inf', 'β∞ (0,15–0,20)', rozvCisloText(RZS_BYTY_INF), 'pro n mimo tabulku: βn = β∞ + (1 − β∞)/√n; jiné β∞ než 0,20 = vzorec pro všechna n') +
+    '<div class="rz-soud-nbyty">' + Object.keys(RZS_BYTY_TAB).map(function (n) { return pole('byty.' + n, 'n = ' + n, rozvCisloText(RZS_BYTY_TAB[n]), ''); }).join('') + '</div>' +
     '<button class="dok-mini" data-action="tdRSoudNastVychozi" title="Vrátit výchozí β programu">↺ Výchozí β</button></details>';
 }
 TD_AKCE.tdRSoudNastVychozi = function () {
@@ -33385,7 +33412,7 @@ function rozvSoudListSvg(d) {
   r.blok.forEach(function (q) { radek('Nepracuje současně: ' + q.nazev + ' ' + kw(q.pp) + ' kW nezapočten – blokován s ' + q.s + '.', { fs: 2.2 }); });
   if (r.blok.length) y += 1;
   radek('Pp = ' + (r.byty && r.byty.pp ? kw(r.byty.pp) + ' (byty) + ' : '') + kw(r.ppSkupiny) + (r.nezap ? ' − ' + kw(r.nezap) + ' (nezapočteno)' : '') + ' = ' + kw(r.pp) + ' kW', { tucne: true, fs: 2.8 });
-  radek('cos φ = ' + rozvCisloText(r.cos) + ' · přívod ' + (r.faze === '3f' ? 'trojfázový 400 V' : 'jednofázový 230 V'));
+  radek('cos φ = ' + rozvCisloText(r.cos) + (rzsKladne((d.soudobost || {}).cos) == null ? ' (' + RZS_COS_ZDROJ + ')' : '') + ' · přívod ' + (r.faze === '3f' ? 'trojfázový 400 V' : 'jednofázový 230 V'));
   // písmo PDF (podmnožina Roboto Condensed) nemá √, ✓ ani ✗ — proto 1,732 a slova
   radek('Ip = ' + (r.faze === '3f' ? 'Pp · 1000 / (1,732 · 400 · cos φ)' : 'Pp · 1000 / (230 · cos φ)') + ' = ' + rozvCisloText(Math.round(r.ip * 10) / 10) + ' A', { tucne: true, fs: 2.8 });
   radek('Navržený hlavní jistič (nejbližší vyšší z řady ' + RZS_RADA.join(', ') + ' A): ' + (r.navrh ? rzsJisticText(r) : '—'), { tucne: true });
