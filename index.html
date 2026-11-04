@@ -1758,8 +1758,9 @@ html.dark .dk-upozorneni.vyrazne{color:#ffc29a;background:#3d2210;border-color:#
 html.dark .dok-b-fialova,html.dark [data-barva="fialova"]{--dok-barva:#c9a6ee}
 #screen-dok-form[data-typ="rlps"] .dok-wrap{max-width:1400px}
 .rl-mrizka{display:grid;grid-template-columns:minmax(0,1fr) 380px;gap:1.2rem;align-items:start}
-.rl-vys{position:sticky;top:.8rem;border:1px solid var(--border);border-top:4px solid #6a3d9a;background:var(--surface);padding:1rem;max-height:calc(100vh - 1.6rem);overflow:auto}
-@media (max-width:1050px){.rl-mrizka{grid-template-columns:minmax(0,1fr)}.rl-vys{position:static;order:-1;max-height:none}}
+.rl-vys{position:sticky;top:var(--rl-top,.8rem);border:1px solid var(--border);border-top:4px solid #6a3d9a;background:var(--surface);padding:1rem;
+  max-height:calc(100vh - var(--rl-top,.8rem) - .8rem);overflow:auto;overscroll-behavior:contain}
+@media (max-width:1050px){.rl-mrizka{grid-template-columns:minmax(0,1fr)}.rl-vys{position:static;max-height:none}}
 .rl-verdikt{border-radius:3px;padding:.7rem .8rem;margin-bottom:.7rem}
 .rl-v-ok{background:#e9f6ef;border:2px solid #0f7b5f}
 .rl-v-nok{background:#fdecea;border:2px solid #b5291c}
@@ -43542,7 +43543,22 @@ function rlKreslit() {
   var y = window.scrollY;
   f.innerHTML = DOK_TYPY.rlps.form(__rl.d);
   window.scrollTo(0, y);
+  rlPanelOdsazeni();
 }
+// Lepivý panel výsledku: odsazení shora = skutečná spodní hrana lepivých lišt
+// (oranžová lišta programu + lišta dokumentu), měřená — lišty se zalamují
+// a na telefonu se nelepí. Panel vyšší než okno má vlastní posuvník.
+function rlPanelOdsazeni() {
+  var dole = 0;
+  [document.querySelector('.topbar'), document.querySelector('#screen-dok-form .dok-lista')].forEach(function (el) {
+    if (!el || !el.offsetHeight) return;
+    var cs = getComputedStyle(el);
+    if (cs.position === 'sticky' || cs.position === 'fixed') dole = Math.max(dole, (parseFloat(cs.top) || 0) + el.getBoundingClientRect().height);
+  });
+  document.documentElement.style.setProperty('--rl-top', Math.ceil(dole + 12) + 'px');
+}
+window.addEventListener('resize', function () { if (__rl.d) rlPanelOdsazeni(); });
+DOK_TYPY.rlps.poVykresleni = function () { setTimeout(rlPanelOdsazeni, 0); setTimeout(rlPanelOdsazeni, 300); };   // obrazovka se ukáže až po vykreslení
 // Strukturní změna se ZPĚT (Ctrl+Z jde přes zásobník hlášek)
 function rlZmena(popis, fn, toast) {
   var d = __rl.d, pred = JSON.stringify(d);

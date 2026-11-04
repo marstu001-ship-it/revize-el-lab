@@ -334,6 +334,29 @@ async function otiskRevizi(p) {
   await p.click('[data-action="tdPdfZpet"]'); await w(300);
   check('starý dokument s ručním Td zůstává zadaný ručně', await p.evaluate(async () => { await dokNacist(); const x = dokNajit('rl-stary'); return rlHod(x.data, 'td').z === 'zadano' && !x.data.tdOkres; }));
 
+  // ── panel výsledku při rolování (lepí se pod obě lišty) ──────────────
+  for (const [W, Hh] of [[1366, 768], [1920, 1080]]) {
+    const c2 = await b.newContext({ viewport: { width: W, height: Hh } });
+    await c2.addInitScript(() => { try { navigator.serviceWorker.register = () => new Promise(() => {}); } catch (e) {} });
+    const q = await c2.newPage(); await q.goto(URL); await w(1200);
+    await q.evaluate(async () => { await dokNovy('rlps'); TD_AKCE.tdRlTyp({ getAttribute: () => 'rd' }); Object.assign(__rl.d.v, { L: '15', W: '20', H: '6', td: '30' });
+      TD_AKCE.tdRlVedeniPridat({ getAttribute: () => 'tel' }); rlKreslit(); document.getElementById('toast-wrap').innerHTML = ''; });
+    await w(500);
+    const vys = [];
+    for (const y of [600, 1400, 99999]) {
+      await q.evaluate(y => window.scrollTo(0, y), y); await w(200);
+      vys.push(await q.evaluate(() => {
+        const listy = Math.max(document.querySelector('.topbar').getBoundingClientRect().bottom, document.querySelector('#screen-dok-form .dok-lista').getBoundingClientRect().bottom);
+        const t = document.querySelector('#rl-vys .rl-v-titul').getBoundingClientRect(), pan = document.querySelector('#rl-vys').getBoundingClientRect();
+        return { sy: Math.round(scrollY), listy: Math.round(listy), titulTop: Math.round(t.top), titulDole: Math.round(t.bottom), panDole: Math.round(pan.bottom), vh: innerHeight };
+      }));
+    }
+    check('panel výsledku ' + W + '×' + Hh + ': po odrolování je nadpis výsledku celý vidět pod lištami a panel nepřesahuje okno',
+      vys.every(v => v.titulTop >= v.listy && v.titulDole <= v.vh && v.panDole <= v.vh + 1), JSON.stringify(vys));
+    if (W === 1366) await q.screenshot({ path: __dirname + '/_beh/rlps/panel-1366.png' });
+    await c2.close();
+  }
+
   // ── telefon 375 px ────────────────────────────────────────────────────
   const m = await b.newContext({ viewport: { width: 375, height: 740 }, isMobile: true, hasTouch: true });
   await m.addInitScript(() => { try { navigator.serviceWorker.register = () => new Promise(() => {}); } catch (e) {} });
@@ -342,9 +365,9 @@ async function otiskRevizi(p) {
   await w(300);
   const mob = await t.evaluate(() => ({ sw: document.documentElement.scrollWidth, cw: document.documentElement.clientWidth,
     vysNahore: document.querySelector('#rl-vys').getBoundingClientRect().top < document.querySelector('.rl-form').getBoundingClientRect().top,
-    btn: document.querySelector('.rl-hlavni').getBoundingClientRect().width }));
+    btn: document.querySelector('.rl-hlavni').getBoundingClientRect().width, pos: getComputedStyle(document.querySelector('#rl-vys')).position }));
   check('telefon: žádný vodorovný posun stránky', mob.sw <= mob.cw, mob.sw + ' / ' + mob.cw);
-  check('telefon: výsledek nad formulářem, hlavní akce přes celou šířku', mob.vysNahore && mob.btn > 300, JSON.stringify(mob));
+  check('telefon: výsledek pod formulářem a nelepí se, hlavní akce přes celou šířku', !mob.vysNahore && mob.pos === 'static' && mob.btn > 300, JSON.stringify(mob));
   await t.screenshot({ path: __dirname + '/_beh/rlps/telefon.png' });
 
   check('bez chyb na stránce', !err.length, err.join(' | '));

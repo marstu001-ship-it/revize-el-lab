@@ -812,6 +812,12 @@ výkresům** (schéma, čelní pohled, list soudobosti).
 `dokPdfVykreslit(x, cil, trida)` umí kreslit i do jiného viditelného
 kontejneru (příloha k revizi) — stránky se číslují zvlášť.
 
+**Panel výsledku pod lištou** (2026-11-04): na PC `.rl-vys` drží
+`position:sticky` s `top` = změřená spodní hrana přilepených lišt
+(`rlPanelOdsazeni` → `--rl-top`, při vykreslení i změně okna) a výškou
+nejvýš okno minus lišty (`overflow:auto`). Do 1050 px se nelepí a je pod
+formulářem. Test 1366 × 768 a 1920 × 1080.
+
 **Příloha k revizi LPS** (`rlPrilohaPanelHtml`, `rlPrilohaRevize`,
 `rlPrilohaPripojit`): v panelu tisku **jen u revize LPS a jen když existuje
 výpočet rizika** skupina „Přílohy" s volbou „Přiložit výpočet rizika"
@@ -823,7 +829,7 @@ Se zvolenou přílohou se uid uloží jen v nastavení tisku zprávy
 připojí na konec PDF (strany protokolu na výšku se svým číslováním, nepočítají se do „Počet listů") a do
 seznamu příloh **v PDF** přibude řádek — pole Seznam příloh se nemění.
 
-Test: `testy/test-riziko-lps.js` (114 kontrol — každá tabulka koeficientů,
+Test: `testy/test-riziko-lps.js` (116 kontrol — každá tabulka koeficientů,
 F.2 nechráněný i chráněný na 1 %, druhý příklad spočtený v testu vlastními
 vzorci, povinné Td, Navrhnout ochranu (nejlevnější = SPD LPL IV na obou
 vedeních) a Ctrl+Z, F/FT podle typu, převzetí z vymyšlené revize LPS,
