@@ -4580,7 +4580,7 @@ html.dark .rz-imp-chyby{background:#3a1f1c;border-color:#6b2c25}
           <td style="text-align:center;font-weight:600">d)</td>
           <td>Izolační odpor/impedance podlahy a stěn (nevodivé okolí)</td>
           <td><select id="zk_d" style="width:100%;font-size:.8rem"><option value="Vyhovuje" selected>Vyhovuje</option><option value="Nevyhovuje">Nevyhovuje</option><option value="Neprovedeno">Neprovedeno</option></select></td>
-          <td style="font-size:.72rem;color:var(--muted)">ČSN 33 2000-6 ed.3, čl. 6.4.3.5, příl. B<br>ČSN 33 2000-4-41 ed.3, příloha C</td>
+          <td style="font-size:.72rem;color:var(--muted)">ČSN 33 2000-6 ed.2, čl. 6.4.3.5, příl. B<br>ČSN 33 2000-4-41 ed.3, příloha C</td>
         </tr>
         <tr>
           <td style="text-align:center;font-weight:600">e)</td>
@@ -4598,7 +4598,7 @@ html.dark .rz-imp-chyby{background:#3a1f1c;border-color:#6b2c25}
           <td style="text-align:center;font-weight:600">g)</td>
           <td>Zkouška zapojení přístrojů</td>
           <td><select id="zk_g" style="width:100%;font-size:.8rem"><option value="Vyhovuje" selected>Vyhovuje</option><option value="Nevyhovuje">Nevyhovuje</option><option value="Neprovedeno">Neprovedeno</option></select></td>
-          <td style="font-size:.72rem;color:var(--muted)">ČSN 33 2000-6 ed.2, čl. 61.3.10</td>
+          <td style="font-size:.72rem;color:var(--muted)">ČSN 33 2000-6 ed.2, čl. 6.4.3.6</td>
         </tr>
         <tr>
           <td style="text-align:center;font-weight:600">h)</td>
@@ -4610,7 +4610,7 @@ html.dark .rz-imp-chyby{background:#3a1f1c;border-color:#6b2c25}
           <td style="text-align:center;font-weight:600">ch)</td>
           <td>Funkční a provozní zkouška</td>
           <td><select id="zk_ch" style="width:100%;font-size:.8rem"><option value="Vyhovuje" selected>Vyhovuje</option><option value="Nevyhovuje">Nevyhovuje</option><option value="Neprovedeno">Neprovedeno</option></select></td>
-          <td style="font-size:.72rem;color:var(--muted)">ČSN 33 2000-6 ed.2, čl. 64.3.10</td>
+          <td style="font-size:.72rem;color:var(--muted)">ČSN 33 2000-6 ed.2, čl. 6.4.3.10</td>
         </tr>
         <tr>
           <td style="text-align:center;font-weight:600">i)</td>
@@ -5665,14 +5665,32 @@ html.dark .rz-imp-chyby{background:#3a1f1c;border-color:#6b2c25}
     <div class="modal-title">🔮 Výpočet termínu příští revize</div>
     <div class="f" style="margin-bottom:1rem"><label>Typ objektu</label>
       <select id="m_typ_obj" data-action="updateLhuta">
-        <option value="5">Kanceláře, bytové domy (5 let)</option>
+        <option value="5">Zděné obytné a kancelářské budovy (5 let)</option>
         <option value="3">Školy, hotely, ubytovny (3 roky)</option>
-        <option value="2">Divadla, kina, obchodní domy (2 roky)</option>
-        <option value="1">Pojízdné prostředky, staveniště (1 rok)</option>
+        <option value="2">Prostory pro shromažďování více než 250 osob – divadla, kina, obchodní domy, stanice (2 roky)</option>
+        <option value="1">Pojízdné a převozné prostředky (1 rok)</option>
+        <option value="0.5">Prozatímní zařízení staveniště (0,5 roku)</option>
         <option value="4">Průmyslové provozy – třída II VTEZ (4 roky)</option>
         <option value="2" data-pro="stroje">Stroje a technologická zařízení (2 roky)</option>
+        <optgroup label="Podle prostředí (ČSN 33 1500, tab. 1a)">
+          <option value="5">Prostředí základní, normální (5 let)</option>
+          <option value="3">Prostředí studené, horké, vlhké (3 roky)</option>
+          <option value="1">Prostředí mokré (1 rok)</option>
+          <option value="3">Prostředí se zvýšenou korozní agresivitou (3 roky)</option>
+          <option value="1">Prostředí s extrémní korozní agresivitou (1 rok)</option>
+          <option value="3">Prostředí prašné s prachem nehořlavým (3 roky)</option>
+          <option value="2">Prostředí s otřesy (2 roky)</option>
+          <option value="3">Prostředí s biologickými škůdci (3 roky)</option>
+          <option value="2">Prostředí pasivní s nebezpečím požáru (2 roky)</option>
+          <option value="2">Prostředí pasivní s nebezpečím výbuchu (2 roky)</option>
+          <option value="4">Prostředí venkovní, pod přístřeškem (4 roky)</option>
+        </optgroup>
+        <optgroup label="Hořlavé stavby">
+          <option value="2">Objekty ze stavebních hmot stupně hořlavosti C2, C3 (2 roky)</option>
+        </optgroup>
         <option value="custom">Vlastní lhůta</option>
-      </select></div>
+      </select>
+      <div id="m_typ_pozn" style="font-size:.75rem;color:var(--muted);margin-top:.3rem">Platí nejkratší ze lhůt (čl. 3.8)</div></div>
     <div class="f" id="m_custom_wrap" style="display:none;margin-bottom:1rem">
       <label>Vlastní lhůta (roky)</label><input type="number" id="m_custom_roky" value="3" min="1" max="10" data-action="updateLhuta"></div>
     <div class="f" style="margin-bottom:1rem"><label>Datum zahájení revize</label><input type="date" id="m_datum" data-action="updateLhuta"></div>
@@ -12877,26 +12895,27 @@ function addRcdRow(el) {
 var TYPICKE_ZAVADY = [
   // C1 - Nebezpečí
   { kod: 'C1', popis: 'Izolační odpor je nižší než minimální hodnota stanovená normou', norma: 'ČSN 33 2000-6 ed.2, čl. 6.4.3.3, tab. 6.1' },
-  { kod: 'C1', popis: 'Impedance poruchové smyčky Zsm přesahuje (2/3) × U0/Ia', norma: 'ČSN 33 2000-4-41 ed.3, čl. 411.3.2' },
+  { kod: 'C1', popis: 'Impedance poruchové smyčky Zsm přesahuje (2/3) × U0/Ia', norma: 'ČSN 33 2000-4-41 ed.3, čl. 411.4.4; ČSN 33 2000-6 ed.2, čl. D.6.4.3.7.3' },
   { kod: 'C1', popis: 'Chybí ochranný vodič v obvodu', norma: 'ČSN 33 2000-5-54 ed.3, čl. 543' },
-  { kod: 'C1', popis: 'Vybavovací čas proudového chrániče přesahuje 0,3 s', norma: 'ČSN 33 2000-4-41 ed.3, čl. 415.1' },
+  { kod: 'C1', popis: 'Vybavovací čas proudového chrániče při IΔn přesahuje 0,3 s (typ S 0,5 s)', norma: 'ČSN 33 2000-6 ed.2, příloha NA' },
   { kod: 'C1', popis: 'Neživé části nejsou spojeny s ochranným pospojováním', norma: 'ČSN 33 2000-4-41 ed.3, čl. 411.3.1.2' },
-  { kod: 'C1', popis: 'Propojení vodičů N a PE za proudovým chráničem', norma: 'ČSN 33 2000-4-41 ed.3, čl. 411.4' },
-  { kod: 'C1', popis: 'Zásuvka v prostoru zón 0–1 koupelny bez RCD 30 mA', norma: 'ČSN 33 2000-7-701 ed.3, čl. 701.415' },
+  { kod: 'C1', popis: 'Propojení vodičů N a PE za proudovým chráničem', norma: 'ČSN 33 2000-5-54 ed.3, čl. 543.4.3; ČSN 33 2000-4-41 ed.3, čl. 411.4.5' },
+  { kod: 'C1', popis: 'Obvod v místnosti s vanou nebo sprchou bez proudového chrániče IΔn ≤ 30 mA', norma: 'ČSN 33 2000-7-701, čl. 701.415.1' },
+  { kod: 'C1', popis: 'Zásuvka v nedovolené zóně koupelny (zóna 0, 1 nebo 2)', norma: 'ČSN 33 2000-7-701, čl. 701.512.4' },
+  { kod: 'C1', popis: 'Chybí předložená projektová dokumentace skutečného provedení', norma: 'ČSN 33 2000-6 ed.2/Z2, příloha E (Dokumentace předložená k provedení revize); NV č. 190/2022 Sb., § 10 písm. c)' },
   // C2 - Potenciálně nebezpečné
   { kod: 'C2', popis: 'Chybí nebo je nefunkční označení obvodů v rozváděči', norma: 'ČSN 33 2000-5-51 ed.3, čl. 514' },
-  { kod: 'C2', popis: 'Chybí předložená projektová dokumentace skutečného provedení', norma: 'NV č. 190/2022 Sb., § 10 písm. c)' },
   { kod: 'C2', popis: 'Viditelné poškození izolace kabelů', norma: 'ČSN 33 2000-5-52 ed.2, čl. 521, 522' },
-  { kod: 'C2', popis: 'Chybí protipožární přepážky v místech prostupu vedení', norma: 'ČSN 33 2000-4-42 ed.3, čl. 422.3' },
-  { kod: 'C2', popis: 'Chybí nebo je nefunkční svodič přepětí (SPD)', norma: 'ČSN 33 2000-4-44 ed.3, čl. 443' },
+  { kod: 'C2', popis: 'Chybí protipožární přepážky v místech prostupu vedení', norma: 'ČSN 33 2000-5-52 ed.2, čl. 527.2' },
+  { kod: 'C2', popis: 'Chybí nebo je nefunkční svodič přepětí (SPD), ačkoli je ochrana před přepětím vyžadována', norma: 'ČSN 33 2000-4-443 ed.3, čl. 443.4' },
   { kod: 'C2', popis: 'Nesprávné značení pracovních a ochranných vodičů (N, PE)', norma: 'ČSN EN IEC 60445 ed.6, čl. 6' },
   { kod: 'C2', popis: 'Chybí schéma zapojení rozváděče', norma: 'ČSN 33 2000-5-51 ed.3, čl. 514.5' },
   { kod: 'C2', popis: 'Nedostatečné krytí IP v daném prostředí', norma: 'ČSN EN 60529, ČSN 33 2000-5-51 ed.3' },
   // C3 - Doporučení
   { kod: 'C3', popis: 'Doporučujeme doplnit štítek s identifikačními údaji proudového chrániče', norma: 'ČSN EN 61008-1 ed.3' },
-  { kod: 'C3', popis: 'Doporučujeme pravidelnou kontrolu funkce tlačítka TEST na RCD (1× měsíčně)', norma: 'ČSN 33 2000-6 ed.2, čl. 6.4.3.8' },
+  { kod: 'C3', popis: 'Doporučujeme pravidelnou kontrolu funkce tlačítka TEST na RCD (1× měsíčně)', norma: 'návod výrobce chrániče; ČSN 33 2000-6 ed.2, čl. 6.4.3.10' },
   { kod: 'C3', popis: 'Doporučujeme výměnu opotřebeného krytí zásuvek', norma: 'ČSN 33 2000-5-51 ed.3, čl. 512' },
-  { kod: 'C3', popis: 'Doporučujeme doplnit svodič přepětí T2 na vstupu rozváděče', norma: 'ČSN 33 2000-4-44 ed.3, čl. 443' },
+  { kod: 'C3', popis: 'Doporučujeme doplnit svodič přepětí T2 na vstupu rozváděče', norma: 'ČSN 33 2000-4-443 ed.3, čl. 443.4, 443.5' },
   { kod: 'C3', popis: 'Doporučujeme kontrolu kapacity jističů s ohledem na aktuální odběr', norma: 'ČSN 33 2000-5-52 ed.2, čl. 523, 525' }
 ];
 
@@ -15964,6 +15983,31 @@ function openModalRevize() {
   m.classList.add('open');
 }
 
+// Lhůta z výběru v letech (může být 0,5 — prozatímní zařízení staveniště).
+function revizeLhutaRoky(typ) {
+  if (typ.value === 'custom') return parseInt((document.getElementById('m_custom_roky') || {}).value) || 3;
+  return parseFloat(typ.value) || 0;
+}
+// Termín = datum + lhůta. Celé roky beze změny jako dřív (setFullYear);
+// lhůta kratší než rok se přičítá v měsících (0,5 roku = 6 měsíců) a čl. 3.9
+// (konec roku) se na ni nevztahuje. Den za koncem měsíce (31. 8. + 6 měs.)
+// spadne na poslední den cílového měsíce.
+function revizeTerminZ(datumStr, roky) {
+  var d = new Date(datumStr);
+  if (roky >= 1 && roky === Math.floor(roky)) { d.setFullYear(d.getFullYear() + roky); return d; }
+  var mes = Math.round(roky * 12);
+  var den = d.getDate();
+  d.setDate(1);
+  d.setMonth(d.getMonth() + mes);
+  var posl = new Date(d.getFullYear(), d.getMonth() + 1, 0).getDate();
+  d.setDate(Math.min(den, posl));
+  return d;
+}
+function revizeLhutaText(roky) {
+  if (roky < 1) return Math.round(roky * 12) + ' měsíců';
+  return roky === 1 ? '1 rok' : (roky < 5 ? roky + ' roky' : roky + ' let');
+}
+
 function updateRevizeLhuta() {
   var typ = document.getElementById('m_typ_obj');
   if (!typ) return;
@@ -15971,13 +16015,12 @@ function updateRevizeLhuta() {
   if (cw) cw.style.display = typ.value === 'custom' ? 'block' : 'none';
   var datum = document.getElementById('m_datum');
   if (!datum || !datum.value) return;
-  var roky = typ.value === 'custom' ? (parseInt((document.getElementById('m_custom_roky') || {}).value) || 3) : parseInt(typ.value);
-  var d = new Date(datum.value);
-  d.setFullYear(d.getFullYear() + roky);
+  var roky = revizeLhutaRoky(typ);
+  var d = revizeTerminZ(datum.value, roky);
   var vysl = document.getElementById('m_vysledek');
   if (vysl) {
     vysl.style.display = 'block';
-    var letTxt = roky === 1 ? '1 rok' : (roky < 5 ? roky + ' roky' : roky + ' let');
+    var letTxt = revizeLhutaText(roky);
     vysl.textContent = 'Termín příští revize: ' + d.toLocaleDateString('cs-CZ') + ' (za ' + letTxt + ')';
   }
 }
@@ -15987,9 +16030,8 @@ function potvrditRevize() {
   var datum = document.getElementById('m_datum');
   if (!typ || !datum || !datum.value) { alert('Zadejte datum!'); return; }
 
-  var roky = typ.value === 'custom' ? (parseInt((document.getElementById('m_custom_roky') || {}).value) || 3) : parseInt(typ.value);
-  var d = new Date(datum.value);
-  d.setFullYear(d.getFullYear() + roky);
+  var roky = revizeLhutaRoky(typ);
+  var d = revizeTerminZ(datum.value, roky);
   var fp = document.getElementById('f_pristi');
   if (fp) {
     fp.value = d.toISOString().split('T')[0];
@@ -15999,13 +16041,14 @@ function potvrditRevize() {
   var mm = String(d.getMonth() + 1).padStart(2, '0');
   var lhutaText = '';
   if (aktTyp === 'stroje') {
-    var letStroj = roky === 1 ? '1 rok' : (roky < 5 ? roky + ' roky' : roky + ' let');
+    var letStroj = revizeLhutaText(roky);
     lhutaText = letStroj + ' — do ' + mm + '/' + d.getFullYear() + ' (dle NV č. 378/2001 Sb. a ČSN EN 60204-1 ed.3)';
   } else if (aktPodtyp === 'prumysl') {
     lhutaText = 've smyslu NV č. 190/2022 Sb. dle vypracovaného řádu el. zařízení a plánu revizí provozovatele do konce roku ' + d.getFullYear();
   } else {
-    var letText = roky === 1 ? '1 rok' : (roky < 5 ? roky + ' roky' : roky + ' let');
-    lhutaText = letText + ' — do ' + mm + '/' + d.getFullYear() + ' (dle NV č. 190/2022 Sb. §10 písm. n), ČSN 33 1500 č. 3.9)';
+    var letText = revizeLhutaText(roky);
+    // Čl. 3.9 ČSN 33 1500 platí jen pro lhůty v letech — u 0,5 roku se necituje.
+    lhutaText = letText + ' — do ' + mm + '/' + d.getFullYear() + (roky < 1 ? ' (dle NV č. 190/2022 Sb. §10 písm. n), ČSN 33 1500 tab. 1)' : ' (dle NV č. 190/2022 Sb. §10 písm. n), ČSN 33 1500 č. 3.9)');
   }
   if (fl) {
     fl.value = lhutaText;
@@ -17390,12 +17433,12 @@ function generujPDF() {
     a: 'ČSN 33 2000-6 ed.2, čl. 6.4.3.2; ČSN 33 2000-4-41 ed.3, čl. 411.3.1.2, čl. 415.2',
     b: 'ČSN 33 2000-6 ed.2, čl. 6.4.3.3 a tabulka č. 6.1',
     c: 'ČSN 33 2000-6 ed.2, čl. 6.4.3.4; ČSN 33 2000-4-41 ed.3, čl. 414, čl. 413; ČSN EN 61140 ed.3 čl. 6.5, 6.7, 6.8',
-    d: 'ČSN 33 2000-6 ed.3, čl. 6.4.3.5, příl. B; ČSN 33 2000-4-41 ed.3, příloha C',
+    d: 'ČSN 33 2000-6 ed.2, čl. 6.4.3.5, příl. B; ČSN 33 2000-4-41 ed.3, příloha C',
     e: 'ČSN 33 2000-6 ed.2, čl. 6.4.3.7; ČSN 33 2000-4-41 ed.3, čl. 411; ČSN EN 61140 ed.3, čl. 5.3.6',
     f: 'ČSN 33 2000-6 ed.2, čl. 6.4.3.8, příloha NA; ČSN 33 2000-4-41 ed.3, čl. 415.1, čl. 415.2',
-    g: 'ČSN 33 2000-6 ed.2, čl. 61.3.10',
+    g: 'ČSN 33 2000-6 ed.2, čl. 6.4.3.6',
     h: 'ČSN 33 2000-6 ed.2, čl. 6.4.3.9',
-    ch: 'ČSN 33 2000-6 ed.2, čl. 64.3.10',
+    ch: 'ČSN 33 2000-6 ed.2, čl. 6.4.3.10',
     i: 'ČSN 33 2000-6 ed.2, čl. 6.4.3.11; ČSN 33 2000-5-52 ed.2, čl. 525, tab. G.52.1'
   };
   var zkRows = '';
@@ -28877,12 +28920,12 @@ var DOK_TYPY = {
     seznamNadpis: 'Vytvořené protokoly',
     ikona: '🌦',
     prefix: 'POUVV',
-    norma: 'ČSN 33 2000-5-51 ed.3',
-    dlazdice: 'Dle ČSN 33 2000-5-51 ed.3',
+    norma: 'ČSN 33 2000-5-51 ed.3+Z1+Z2 a TNI 33 2000-5-51',
+    dlazdice: 'Dle ČSN 33 2000-5-51 ed.3+Z1+Z2 a TNI 33 2000-5-51',
     tvary: ['protokol', 'protokoly', 'protokolů'],
     vzory: true,                     // má vzory skupin prostorů a katalog kódů
     barva: 'modra',                  // barva dlaždice a záhlaví (DOK_BARVY)
-    popis: 'Určení vnějších vlivů komisí podle ČSN 33 2000-5-51 ed.3 — prostory, kódy vlivů, zdůvodnění, podpisy komise.'
+    popis: 'Určení vnějších vlivů komisí podle ČSN 33 2000-5-51 ed.3+Z1+Z2 a TNI 33 2000-5-51 — prostory, kódy vlivů, zdůvodnění, podpisy komise.'
   }
 };
 
@@ -29941,7 +29984,7 @@ document.addEventListener('keydown', function (e) {
 function dokVzorySpravaVykreslit() {
   var info = document.getElementById('dok-katalog-info');
   if (info) {
-    info.innerHTML = (DOK_VV_KATALOG_OVERENO ? '' : '⚠ Katalog kódů čeká na kontrolu s normou ČSN 33 2000-5-51 ed.3 · ') +
+    info.innerHTML = (DOK_VV_KATALOG_OVERENO ? '' : '⚠ Katalog kódů čeká na kontrolu s normou ČSN 33 2000-5-51 ed.3+Z1+Z2 a TNI 33 2000-5-51 · ') +
       '<button class="dok-katalog-odkaz" data-action="tdKatalog">zobrazit katalog kódů</button>';
   }
   var box = document.getElementById('dok-vzory');
@@ -29975,7 +30018,7 @@ function dokKodVysv(k) { var t = dokVvTrida(k); return t && t.op ? 'krytí / opa
 function dokKodyHtml(kody) {
   kody = kody || {};
   var upoz = DOK_VV_KATALOG_OVERENO ? '' :
-    '<span class="dk-katalog-pozn" title="Katalog kódů je návrh podle podkladu — čeká na kontrolu s ČSN 33 2000-5-51 ed.3">⚠ katalog čeká na kontrolu s normou</span>';
+    '<span class="dk-katalog-pozn" title="Katalog kódů je návrh podle podkladu — čeká na kontrolu s ČSN 33 2000-5-51 ed.3+Z1+Z2 a TNI 33 2000-5-51">⚠ katalog čeká na kontrolu s normou</span>';
   return '<div class="dk-kody"><div class="dk-kody-hlava"><span>Kódy vnějších vlivů</span>' + upoz +
     '<button class="dok-mini" data-action="tdKatalog" title="Celý katalog tříd s vysvětlivkami">📖 Katalog</button></div>' +
     DOK_VV_SKUPINY.map(function (s) {
@@ -30018,7 +30061,7 @@ document.addEventListener('change', function (e) {
 function dokKatalogOtevrit() {
   var box = document.getElementById('dok-katalog-obsah');
   if (box) box.innerHTML = (DOK_VV_KATALOG_OVERENO ? '' :
-    '<div class="dok-katalog-info">⚠ Návrh podle podkladu — čeká na kontrolu s normou ČSN 33 2000-5-51 ed.3. ' +
+    '<div class="dok-katalog-info">⚠ Návrh podle podkladu — čeká na kontrolu s normou ČSN 33 2000-5-51 ed.3+Z1+Z2 a TNI 33 2000-5-51. ' +
     'Do PDF jdou jen kódy; texty tříd jsou nápověda v programu.</div>') +
     DOK_VV_SKUPINY.map(function (s) {
       return '<div class="dk-blok-t">' + s.id + ') ' + esc(s.nazev) + '</div>' +
@@ -30164,14 +30207,14 @@ TD_AKCE.tdVzorJmenoNovy = function () { dokVzorUlozit('novy'); };
 TD_AKCE.tdVzorJmenoZpet = function () { __dokVzorJmeno = null; closeModal('modal-dok-vzor-jmeno'); };
 // ── Protokol o určení vnějších vlivů — výchozí obsah ─────────────────────
 var DOK_VV_PODKLADY = [
-  'ČSN 33 2000-5-51 ed. 3 – Elektrotechnické instalace budov, část 5-51: Výběr a stavba elektrických zařízení – Všeobecné předpisy',
+  'ČSN 33 2000-5-51 ed. 3+Z1+Z2 a TNI 33 2000-5-51 – Elektrotechnické instalace budov, část 5-51: Výběr a stavba elektrických zařízení – Všeobecné předpisy',
   'ČSN 33 2130 ed. 3 – Elektrické instalace nízkého napětí – Vnitřní elektrické rozvody',
   'ČSN 33 2000-4-41 ed. 3 – Elektrické instalace nízkého napětí – Část 4-41: Ochranná opatření pro zajištění bezpečnosti – Ochrana před úrazem elektrickým proudem'
 ].join('\n');
 var DOK_VV_ZDUVODNENI = 'Určení vnějších vlivů je v souladu s navrženou technologií, technologickými postupy jednotlivých ' +
   'objektů, stavebního řešení a atmosférickými vlivy v dané lokalitě s přihlédnutím na mikroklima, které je ovlivněno ' +
   'použitými technologiemi a činnostmi.';
-var DOK_VV_VETA = 'Podle ČSN 33 2000-5-51 ed.3 jsou stanoveny vnější vlivy pro objekty, uvedené v bodu B, následovně:';
+var DOK_VV_VETA = 'Podle ČSN 33 2000-5-51 ed.3+Z1+Z2 a TNI 33 2000-5-51 jsou stanoveny vnější vlivy pro objekty, uvedené v bodu B, následovně:';
 
 function pouvvSkupinaNova() { return { uid: dokUid(), prostory: [], vzor: '', kody: {}, pozn: '' }; }
 
@@ -30857,7 +30900,7 @@ function dokPdfFirma(f) {
 DOK_TYPY.pouvv.pdf = function (d) {
   var B = [], tr = function (l, v) { return '<tr><td class="l">' + l + '</td><td>' + (v || '—') + '</td></tr>'; };
   B.push({ html: '<div class="dok-pdf-titul"><div class="t1">Protokol o určení vnějších vlivů</div>' +
-    '<div class="t2">podle ČSN 33 2000-5-51 ed.3</div>' + (d.cislo ? '<div class="t3">č. ' + esc(d.cislo) + '</div>' : '') + '</div>' });
+    '<div class="t2">podle ČSN 33 2000-5-51 ed.3+Z1+Z2 a TNI 33 2000-5-51</div>' + (d.cislo ? '<div class="t3">č. ' + esc(d.cislo) + '</div>' : '') + '</div>' });
   var p = d.projektant || {}, proj = [[p.titul, p.jmeno].filter(Boolean).join(' '),
     p.evidence ? 'č. evidence: ' + p.evidence : '', p.obor ? 'obor autorizace: ' + p.obor : ''].filter(Boolean).map(esc).join(', ');
   var t = '<table class="dok-pdf-tab">' + tr('Investor', dokPdfFirma(d.investor)) +

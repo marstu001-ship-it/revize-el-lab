@@ -570,6 +570,41 @@ nedělala (pokyn uživatele).
 i otevřené z archivu a znovu uložené; zmrazený čas a náhoda) je ve verzi
 před funkcí a po ní **bajtově shodný** (archiv i `getData()`, sha256).
 
+## Normy – opravy citací, dávka 1: revize (2026-11-04)
+
+Uživatel nechal citace zkontrolovat proti plnému znění ČSN 33 2000-6 ed.2
+(+Z1, Z2), 4-41 ed.3, 5-51 ed.3+Z1+Z2, 5-52 ed.2, 5-54 ed.3, 33 1500,
+7-701 ed.2, ČSN EN 61140 ed.3 a 4-443 ed.3. **Opravují se jen nahlášená
+místa; data (uložené zprávy, vady ve zprávách) se nemění** — mění se katalog,
+popisky a texty skládané za běhu.
+
+- **Tabulka zkoušek a–i** (formulář i `zkCsn` v PDF): d) `ČSN 33 2000-6 ed.2`
+  (ed.3 neexistuje), g) `čl. 6.4.3.6`, ch) `čl. 6.4.3.10`. Mění se i PDF
+  starých zpráv (citace se skládá za běhu) — záměr. `porovnani2.js` má
+  seznam `OPRAVY_TEXTU` a záměrně změněné řetězce vypíše.
+- **Katalog `TYPICKE_ZAVADY`:** Zs → `411.4.4; 6 ed.2 D.6.4.3.7.3` (bublina
+  meze Zs ji bere z katalogu), čas RCD → `6 ed.2, příloha NA` (popis s typem S),
+  N+PE → `5-54 543.4.3; 4-41 411.4.5`, koupelna rozdělena na dvě vady
+  (`701.415.1`, `701.512.4`, **bez vydání** — kontrola proběhla proti ed.2),
+  chybějící dokumentace skutečného provedení **C1** (Z2 příloha E), přepážky
+  `5-52 ed.2, 527.2`, SPD `4-443 ed.3, 443.4` / `443.4, 443.5`, tlačítko TEST
+  `návod výrobce; 6.4.3.10`.
+- **Lhůty v dialogu „Výpočet termínu"** (ČSN 33 1500 tab. 1 a 1a):
+  staveniště 0,5 roku = **+6 měsíců** (`revizeTerminZ`, čl. 3.9 se nepoužije,
+  31. 8. → 28. 2.), pojízdné a převozné 1 rok, přejmenované shromažďovací
+  prostory a zděné budovy, skupiny „Podle prostředí (tab. 1a)" a „Hořlavé
+  stavby", poznámka „Platí nejkratší ze lhůt (čl. 3.8)". Celé roky se počítají
+  **jako dřív** (datum + N let, na konec roku program nezaokrouhluje).
+  Průmysl 4 roky a stroje 2 roky zůstaly — ověří se s NV 190/2022.
+- **Protokol vnějších vlivů:** kde citoval jen „ČSN 33 2000-5-51 ed.3",
+  je `ČSN 33 2000-5-51 ed.3+Z1+Z2 a TNI 33 2000-5-51` (národní přílohy jsou
+  od 07/2022 v TNI) — dlaždice, popis, titul PDF, věta u skupin, výchozí
+  podklady a upozornění katalogu.
+
+Test: `testy/test-normy.js` (34 kontrol — formulář i PDF, katalog, bublina Zs,
+lhůty, starší zpráva bajtově proti předchozí verzi). **Upraveno:**
+`test-dokumentace.js` (dlaždice a věta s TNI).
+
 ## Tvorba dokumentace — Protokol o určení vnějších vlivů (blok `TVORBA DOKUMENTACE`)
 
 Zadání uživatele 2026-10-16: čtvrtá karta na úvodu

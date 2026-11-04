@@ -36,6 +36,20 @@ async function otisk(page, v) {
   }, v);
 }
 
+// Záměrně opravené citace norem (FUNKCE: Normy – opravy citací, dávka 1).
+// Ve staré verzi se v textu PDF nahradí novým zněním, takže se porovnání
+// zastaví jen na jiném rozdílu. Které se opravdu uplatnily, se vypíše.
+const OPRAVY_TEXTU = [
+  ['ČSN 33 2000-6 ed.3, čl. 6.4.3.5, příl. B', 'ČSN 33 2000-6 ed.2, čl. 6.4.3.5, příl. B'],
+  ['ČSN 33 2000-6 ed.2, čl. 61.3.10', 'ČSN 33 2000-6 ed.2, čl. 6.4.3.6'],
+  ['ČSN 33 2000-6 ed.2, čl. 64.3.10', 'ČSN 33 2000-6 ed.2, čl. 6.4.3.10']
+];
+const opravyPouzite = new Set();
+function opravText(t) {
+  OPRAVY_TEXTU.forEach(([a, b]) => { if (t.includes(a)) { opravyPouzite.add(a + ' → ' + b); t = t.split(a).join(b); } });
+  return t;
+}
+
 (async () => {
   const varianty = [
     { jmeno:'elektro / rodinný dům', typ:'elektro', podtyp:'dum' },
@@ -61,6 +75,7 @@ async function otisk(page, v) {
   let vse = true;
   for (const v of varianty) {
     const a = await otisk(stara.p, v);
+    a.text = opravText(a.text);
     const c = await otisk(nova.p, v);
     const shodaText = a.text === c.text, shodaData = a.data === c.data, shodaKap = a.kap === c.kap;
     const ok = shodaText && shodaData && shodaKap && a.stran === c.stran;
@@ -90,6 +105,7 @@ async function otisk(page, v) {
     }
   }
   console.log(res.join('\n'));
+  console.log('\nzáměrně změněné řetězce v PDF (' + opravyPouzite.size + '):' + (opravyPouzite.size ? '\n   ' + [...opravyPouzite].join('\n   ') : ' žádné'));
   console.log('\nchyby stránky — stará: ' + (stara.err.length ? stara.err.join(' | ') : 'žádné') +
               ', nová: ' + (nova.err.length ? nova.err.join(' | ') : 'žádné'));
   console.log(vse && !nova.err.length ? '\n✅ VŠECHNY VARIANTY ELEKTRO I LPS SE CHOVAJÍ IDENTICKY'

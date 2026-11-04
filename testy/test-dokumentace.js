@@ -69,7 +69,7 @@ function pomocnik() {
   }));
   check('karta otevře nejdřív dlaždice typů dokumentů (ne seznam)', dl.akt === 'screen-dokumentace', dl.akt);
   check('dlaždice se skládají z DOK_TYPY, vzhled jako karty na úvodu', dl.typy.split(',')[0] === 'pouvv' && dl.vzhled, dl.typy);
-  check('dlaždice: název, popis normy a počet uložených', /Protokol o určení vnějších vlivů/i.test(dl.text) && /Dle ČSN 33 2000-5-51 ed\.3/.test(dl.text) && /Zatím žádný uložený/.test(dl.text), dl.text.replace(/\n/g, ' | '));
+  check('dlaždice: název, popis normy a počet uložených', /Protokol o určení vnějších vlivů/i.test(dl.text) && /Dle ČSN 33 2000-5-51 ed\.3\+Z1\+Z2 a TNI 33 2000-5-51/.test(dl.text) && /Zatím žádný uložený/.test(dl.text), dl.text.replace(/\n/g, ' | '));
   check('dlaždice „připravuje se" nejsou', !/připravuje/i.test(dl.text));
   const uvod = await p.evaluate(() => {
     const b = document.querySelector('#screen-dokumentace .dok-drobky [data-action="tdUvod"]');
@@ -282,7 +282,7 @@ function pomocnik() {
   const T6 = r6.text;
   check('PDF: titul a číslo v záhlaví každé strany', /PROTOKOL O URČENÍ VNĚJŠÍCH VLIVŮ/i.test(T6) && (T6.match(/č\. POUVV-0001/g) || []).length >= r6.n, r6.n + ' stran');
   check('PDF: kódy skupin jako řádky a) b) c)', /a\) Vnější vlivy: AA5, AB5, AC1, AD1/.test(T6) && /a\) Vnější vlivy: AA5, AB5, AC1, AD3, AE1, AF1, AG2, AH2/.test(T6) && /b\) Využití: BA1, BC1, BD1, BE1/.test(T6) && /c\) Konstrukce budov: CA1, CB1/.test(T6));
-  check('PDF: věta podle ČSN 33 2000-5-51 ed.3 u každé skupiny', (T6.match(/Podle ČSN 33 2000-5-51 ed\.3 jsou stanoveny vnější vlivy pro objekty, uvedené v bodu B, následovně:/g) || []).length === 2);
+  check('PDF: věta podle ČSN 33 2000-5-51 ed.3+Z1+Z2 a TNI u každé skupiny', (T6.match(/Podle ČSN 33 2000-5-51 ed\.3\+Z1\+Z2 a TNI 33 2000-5-51 jsou stanoveny vnější vlivy pro objekty, uvedené v bodu B, následovně:/g) || []).length === 2);
   check('PDF: prostory a poznámka', /101 – Kancelář/.test(T6) && /105 – Umývárna/.test(T6) && /ČSN 33 2000-7-701/.test(T6));
   check('PDF: vysvětlivky kódů v PDF NEJSOU', !/\+5 až \+40 °C|Teplota okolí|zanedbatelný|krytí|IPX|běžné \(laici\)|nehořlavé/.test(T6));
   check('PDF: podpisové řádky předsedy, člena komise a vypracovatele', /Předseda komise/.test(T6) && /Člen komise/.test(T6) && /Vypracoval\s+Jan Vymyšlený/.test(T6));
