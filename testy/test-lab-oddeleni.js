@@ -258,6 +258,11 @@ async function snimek(p) {
     const soOstry = await surova.evaluate(() => ({ ostry: localStorage.getItem('revize_el_rz_soud'), lab: localStorage.getItem('revize_lab_rz_soud') }));
     check('soudobost: výchozí β jen v revize_lab_rz_soud, revize_el_rz_soud ostrého programu nedotčený',
       so.beta && so.beta.kuchyne === 0.45 && /0\.45/.test(soOstry.lab || '') && soOstry.ostry === null, JSON.stringify(soOstry));
+    // výpočet rizika LPS: poslední zadané Td (localStorage revize_el_rlps_td)
+    await lab.evaluate(() => localStorage.setItem(RL_LS_TD, '27'));
+    const td = await surova.evaluate(() => ({ ostry: localStorage.getItem('revize_el_rlps_td'), lab: localStorage.getItem('revize_lab_rlps_td') }));
+    check('riziko LPS: poslední Td jen v revize_lab_rlps_td, revize_el_rlps_td ostrého programu nedotčený',
+      td.lab === '27' && td.ostry === null, JSON.stringify(td));
     await surova.evaluate(() => localStorage.removeItem('revize_el_rz_info'));   // ať ho neshodí kontrola „žádný klíč revize_el_…"
     // návrat na obrazovku po načtení stránky (sessionStorage revize_el_obnova)
     const ob = await lab.evaluate(() => { obnovaZapsat(); return { klice: Object.keys(sessionStorage).join(','), cte: !!sessionStorage.getItem('revize_el_obnova') }; });
