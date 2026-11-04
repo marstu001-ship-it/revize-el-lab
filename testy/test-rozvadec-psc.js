@@ -397,9 +397,9 @@ const presahy = (p, svg) => p.evaluate(svg => {
   const ov = await p.evaluate(() => { const d = dokNajit(__dokOtevreny.uid).data; return { ov: d.ov, ot: d.otepleni,
     polozky: Array.from(dokForm().querySelectorAll('.rz-ov-tab tr[data-ov] td:first-child')).map(t => t.innerText).join(' | '),
     vychozi: Array.from(dokForm().querySelectorAll('.rz-ov-tab select[data-dk^="ov.z."]')).filter(s => !s.value).length }; });
-  check('5b ověření návrhu: charakteristiky jen z protokolu + oteplení a zkratová odolnost, výchozí prázdné; volný řádek se uloží',
-    /Stupeň krytí krytu/.test(ov.polozky) && /Dielektrické vlastnosti/.test(ov.polozky) && /Oteplení/.test(ov.polozky) && /Zkratová odolnost/.test(ov.polozky) && !/Zapojení, provozní/.test(ov.polozky) &&
-    ov.vychozi === 8 && ov.ov.z.ko11_2 === 'dokumentace' && ov.ov.volne && ov.ov.volne[0].nazev === 'EMC' && ov.ov.volne[0].zp === 'zkouska' && ov.ov.dokCislo === 'VA-0815',
+  check('5b ověření návrhu: úplná tab. D.1 (24 řádků), výchozí prázdné; volný řádek se uloží',
+    /Stupeň krytí \(IP\)/.test(ov.polozky) && /Výdržné napětí průmyslového kmitočtu/.test(ov.polozky) && /Meze oteplení/.test(ov.polozky) && /Zkratová odolnost/.test(ov.polozky) && /Elektromagnetická kompatibilita/.test(ov.polozky) && !/Zapojení, provozní/.test(ov.polozky) &&
+    ov.vychozi === 22 && ov.ov.z.ko11_2 === 'dokumentace' && ov.ov.volne && ov.ov.volne[0].nazev === 'EMC' && ov.ov.volne[0].zp === 'zkouska' && ov.ov.dokCislo === 'VA-0815',
     JSON.stringify(ov.ov).slice(0, 300));
   await p.evaluate(() => document.querySelector('#rz-pan-dok [data-oddil="overeni"]').scrollIntoView({ block: 'start' })); await w(150);
   await p.screenshot({ path: path.join(__dirname, '_beh', 'psc-overeni-navrhu.png') });
@@ -556,7 +556,7 @@ const presahy = (p, svg) => p.evaluate(svg => {
     /ČSN EN IEC 61439-1 ed\. 3 \(EN IEC 61439-1:2021\)/.test(pd.t) && /ČSN EN IEC 61439-2 ed\. 3 \(EN IEC 61439-2:2021\)/.test(pd.t) && !/61439-3/.test(pd.t), (pd.t.match(/4\. Předmět[^\n]*\n?[^\n]*/) || [''])[0]);
   check('5b prohlášení bod 7: odkaz na přílohu „Ověření návrhu" a oteplení ověřené odvozením', /příloha „Ověření návrhu"/.test(pd.t) && /oteplení ověřeno odvozením od ověřeného referenčního návrhu výrobce systému \(VA-0815\)/.test(pd.t), '');
   check('5b stránka Ověření návrhu: systém, dokument „… č. VA-0815, ze dne 1. 3. 2025", způsoby ověření a volný řádek EMC', /Výrobce A, řada VA-P/.test(pd.t) && /VA-0815, ze dne 1\. 3\. 2025/.test(pd.t) &&
-    /Stupeň krytí krytu\s+dokumentace výrobce systému/.test(pd.t) && /EMC\s+zkouška/.test(pd.t), '');
+    /Stupeň krytí \(IP\) \(čl\. 10\.3\)\s+dokumentace výrobce systému/.test(pd.t) && /příloha D, tab\. D\.1/.test(pd.t) && /EMC\s+zkouška/.test(pd.t), '');
   check('5b technické údaje a KO: Icw, Ipk, forma, normy -2 ed. 3', /Krátkodobá výdržnost Icw\s+25 kA, 1 s/.test(pd.t) && /Forma vnitřního oddělení\s+forma 2b/.test(pd.t) &&
     /kusové ověření dle čl\. 11 ČSN EN IEC 61439-1 ed\. 3 a ČSN EN IEC 61439-2 ed\. 3/.test(pd.t), '');
   await p.evaluate(() => TD_AKCE.tdPdfZpet()); await w(300);
