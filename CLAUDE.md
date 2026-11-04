@@ -810,7 +810,8 @@ vzorci, povinné Td, Navrhnout ochranu (nejlevnější = SPD LPL IV na obou
 vedeních) a Ctrl+Z, F/FT podle typu, převzetí z vymyšlené revize LPS,
 elektro a protokolu, zdroje v PDF, otevření uloženého a staršího dokumentu
 beze změny dat, data revizí bajtově stejná, telefon). V `test-mobil.js`
-stavy „riziko LPS – …". Novinky se nedělaly.
+stavy „riziko LPS – …". **Upraveno:** `test-rozvadec-psc.js` (dlaždice
+protokol, DBO, PSC a za nimi výpočet rizika). Novinky se nedělaly.
 
 ## Rozvaděč DBO — návrh a dokumentace (v9.127; konfigurátor, `DOK_TYPY.rozv`, blok `ROZVADĚČ DBO`)
 

@@ -108,7 +108,7 @@ const presahy = (p, svg) => p.evaluate(svg => {
   dl.tmave = await p.evaluate(() => window.__info());
   await p.evaluate(() => document.documentElement.classList.remove('dark')); await w(700);
   const T = (typ, m) => (dl[m || 'svetle'].find(x => x.typ === typ) || {});
-  check('tři dlaždice: protokol, DBO, PSC', dl.svetle.map(x => x.typ).join() === 'pouvv,rozv,psc', dl.svetle.map(x => x.typ).join());
+  check('dlaždice: protokol, DBO, PSC (a za nimi výpočet rizika LPS)', dl.svetle.map(x => x.typ).join() === 'pouvv,rozv,psc,rlps', dl.svetle.map(x => x.typ).join());
   check('text dlaždice DBO doslova', T('rozv').text.includes('Rozvodnice pro obsluhu laiky (byty, domy, kanceláře) – do 250 A, vývody do 125 A. ČSN EN IEC 61439-3'), T('rozv').text);
   check('text dlaždice PSC doslova', T('psc').text.includes('Výkonové rozvaděče – nad 250 A nebo s obsluhou jen poučenou osobou. ČSN EN IEC 61439-2'), T('psc').text);
   check('barvy: protokol modrý, DBO zelený, PSC oranžový (okraj i nadpis)', T('pouvv').okraj === 'rgb(43, 87, 154)' && T('rozv').okraj === 'rgb(15, 123, 95)' &&
