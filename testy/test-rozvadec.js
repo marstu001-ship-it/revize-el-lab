@@ -2157,7 +2157,7 @@ function pomocnik() {
     sd.predikce === 'kuchyne,ohrev,ev,tc,klima,pradlo,zasuvky,osvetleni', sd.skBo + ' / ' + sd.predikce);
   check('soudobost: rozvaděč bez Pi — panel sbalený, souhrn v liště schovaný', sd.bezPiPanel, '');
   check('soudobost: více bytů n = 10 × 11 kW (T3) × 0,45 = 49,5 kW, β(n) z tab. B.1; n = 40 → 0,33 (145,2 kW)',
-    sd.byty === '49.5|0.45|11|false' && /10 × 11 kW × 0,45 = 49,5 kW/.test(sd.bytyText) && !/ověřit/.test(sd.bytyText) && sd.byty40 === '0.33|145.2|', sd.byty + ' / ' + sd.byty40);
+    sd.byty === '49.5|0.45|11|false' && /10 × 11 kW × 0,45 = 49,5 kW/.test(sd.bytyText) && !/ověřit/.test(sd.bytyText) && /^0\.33\|145\.2\|/.test(sd.byty40) && !/ručně/.test(sd.byty40), sd.byty + ' / ' + sd.byty40);
   check('soudobost: Pp 14,2 kW, cos φ 0,9, 3f → Ip 22,8 A → 25 A; 1f → 68,6 A → 80 A', sd.ip3 === '22.8|25|3f' && sd.ip1 === '68.6|80|1f' && sd.ukaz2 === 'Pp ≈ 14,2 kW → 25 A', sd.ip3 + ' / ' + sd.ip1 + ' / ' + sd.ukaz2);
   check('soudobost: vývod bez Pi nezapočten s hláškou', sd.bezPi === 1 && /1 vývod bez Pi – nezapočten/.test(sd.panel2), sd.panel2.slice(0, 300));
   check('soudobost: bez hlavního jističe „Použít navržený" → hlavička „3×25 A", pak vyhovuje', sd.pouzitBtn && sd.pouzit === '3×25 A' && sd.poPouz === 'true|25', sd.pouzit + ' / ' + sd.poPouz);
