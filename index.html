@@ -3500,7 +3500,7 @@ html.dark .rz-imp-chyby{background:#3a1f1c;border-color:#6b2c25}
       <ol style="margin:.3rem 0 0 1.4rem;padding:0">
         <li>Při LPS revizi na titulní straně zaškrtněte v seznamu norem <strong>ČSN 34 1390</strong></li>
         <li>Nebo na tabu „4. Prohlídka LPS" v dropdownu „Revize prováděna podle normy"</li>
-        <li>Vše ostatní (Třída → kategorie obyčejný/zesílený/zvláštní, kontrolní body, doporučené odpory ≤ 15 Ω, normativní odkazy v PDF) se přepne samo</li>
+        <li>Vše ostatní (Třída → kategorie obyčejný/zesílený/zvláštní, kontrolní body, zemní odpor svodu ≤ 20 Ω, normativní odkazy v PDF) se přepne samo</li>
       </ol>
     </div>
   </div>
@@ -13379,26 +13379,30 @@ var TYPICKE_ZAVADY_LPS = [
 
 // Typické závady pro LPS podle ČSN 34 1390 (starší hromosvody).
 // Norma neznala SPD třídy T1/T2, LPZ zóny ani výpočet rizika.
+// Kód vady „zemní odpor svodu > 20 Ω“ — čl. 55 b) říká „nemá být“ a připouští
+// výjimku, proto C2. Kdo chce C1, změní jen tuhle konstantu.
+var LPS1390_ZEMNI_KOD = 'C2';
 var TYPICKE_ZAVADY_LPS_1390 = [
   // C1 - Nebezpečí
-  { kod: 'C1', popis: 'Přerušený svod hromosvodu — bez vodivého spojení s uzemněním', norma: 'ČSN 34 1390, čl. 46' },
-  { kod: 'C1', popis: 'Zemní odpor jednotlivého svodu přesahuje doporučenou hodnotu (>15 Ω)', norma: 'ČSN 34 1390, čl. 55' },
-  { kod: 'C1', popis: 'Chybí jímací zařízení nebo jeho podstatná část (hřebenové vedení, jímací tyče)', norma: 'ČSN 34 1390, čl. 35' },
-  { kod: 'C1', popis: 'Nedodržena bezpečná vzdálenost jímačů/svodů od hořlavých částí objektu', norma: 'ČSN 34 1390, čl. 42, 51' },
-  { kod: 'C1', popis: 'Chybí pospojování kovových částí vstupujících do objektu', norma: 'ČSN 34 1390, čl. 62' },
-  { kod: 'C1', popis: 'Nedostatečný počet svodů vzhledem ke kategorii hromosvodu', norma: 'ČSN 34 1390, čl. 46' },
+  { kod: 'C1', popis: 'Přerušený svod hromosvodu — bez vodivého spojení s uzemněním', norma: 'ČSN 34 1390, čl. 51' },
+  { kod: 'C1', popis: 'Chybí jímací zařízení nebo jeho podstatná část (hřebenové vedení, jímací tyče)', norma: 'ČSN 34 1390, čl. 16, 17' },
+  { kod: 'C1', popis: 'Nedodržena bezpečná vzdálenost jímačů/svodů od hořlavých částí objektu', norma: 'ČSN 34 1390, čl. 35' },
+  { kod: 'C1', popis: 'Chybí pospojování kovových částí vstupujících do objektu', norma: 'ČSN 34 1390, čl. 61 až 66' },
+  { kod: 'C1', popis: 'Nedostatečný počet svodů', norma: 'ČSN 34 1390, čl. 32' },
   // C2 - Potenciálně nebezpečné
-  { kod: 'C2', popis: 'Pokročilá koroze jímačů, svodů nebo spojů', norma: 'ČSN 34 1390, čl. 124' },
-  { kod: 'C2', popis: 'Uvolněné, nepřístupné nebo poškozené zkušební (měřicí) svorky na svodech', norma: 'ČSN 34 1390, čl. 50' },
+  { kod: LPS1390_ZEMNI_KOD, popis: 'Zemní odpor zemniče jednoho svodu přesahuje 20 Ω', norma: 'ČSN 34 1390, čl. 55 b)' },
+  { kod: 'C2', popis: 'Zemní odpor skupiny zemničů spojené nad zemí není menší než 15 Ω', norma: 'ČSN 34 1390, čl. 55 c)' },
+  { kod: 'C2', popis: 'Pokročilá koroze jímačů, svodů nebo spojů', norma: 'ČSN 34 1390, čl. 21 až 24, 54' },
+  { kod: 'C2', popis: 'Uvolněné, nepřístupné nebo poškozené zkušební (měřicí) svorky na svodech', norma: 'ČSN 34 1390, čl. 45' },
   { kod: 'C2', popis: 'Chybí dokumentace hromosvodu (projekt, zápisy z předchozích revizí)', norma: 'NV č. 190/2022 Sb., § 10 písm. c)' },
-  { kod: 'C2', popis: 'Chybí ochranný úhelník svodu v dosahu osob (do 1,8 m nad zemí)', norma: 'ČSN 34 1390, čl. 52' },
-  { kod: 'C2', popis: 'Přechodový odpor spojů větší než 0,2 Ω', norma: 'ČSN 34 1390, čl. 124' },
-  { kod: 'C2', popis: 'Nesprávně provedený přechod mezi materiály (Al × FeZn × Cu) bez antikorozní úpravy', norma: 'ČSN 34 1390 + ČSN 33 2000-5-54 ed.3' },
+  { kod: 'C2', popis: 'Chybí ochranný úhelník svodu v dosahu osob (do výšky asi 1,7 m nad zemí)', norma: 'ČSN 34 1390, čl. 38 b)' },
+  { kod: 'C2', popis: 'Přechodový odpor spojů větší než 0,2 Ω', norma: 'ČSN 34 1390, čl. 41 až 44 (provedení spojů); mez 0,2 Ω podle ČSN EN 62305-3' },
+  { kod: 'C2', popis: 'Nesprávně provedený přechod mezi materiály (Al × FeZn × Cu) bez antikorozní úpravy', norma: 'ČSN 34 1390, čl. 42; ČSN 33 2000-5-54 ed.3, čl. 542.2.5' },
   // C3 - Doporučení
   { kod: 'C3', popis: 'Doporučujeme rekonstrukci hromosvodu dle současné normy ČSN EN 62305', norma: 'ČSN EN 62305-1 ed.2' },
-  { kod: 'C3', popis: 'Doporučujeme doplnit přepěťovou ochranu v hlavním rozváděči', norma: 'ČSN 34 1390' },
-  { kod: 'C3', popis: 'Doporučujeme antikorozní ošetření spojů ve venkovním prostředí', norma: 'ČSN 34 1390 + ČSN 33 2000-5-54 ed.3' },
-  { kod: 'C3', popis: 'Doporučujeme vést revizní knihu hromosvodu s evidencí prohlídek a měření', norma: 'ČSN 33 1500, ČSN 34 1390, čl. 129' }
+  { kod: 'C3', popis: 'Doporučujeme doplnit přepěťovou ochranu v hlavním rozváděči', norma: 'ČSN 33 2000-4-443 ed.3, čl. 443.4, 443.5' },
+  { kod: 'C3', popis: 'Doporučujeme antikorozní ošetření spojů ve venkovním prostředí', norma: 'ČSN 34 1390, čl. 54; ČSN 33 2000-5-54 ed.3, čl. 542.2.5' },
+  { kod: 'C3', popis: 'Doporučujeme vést revizní knihu hromosvodu s evidencí prohlídek a měření', norma: 'ČSN 33 1500; ČSN 34 1390, čl. 201' }
 ];
 
 // Popis instalace u revize stroje. Používá ho magicPopis() i knihovna
@@ -13757,30 +13761,30 @@ var LPS_PROHLIDKA_62305 = [
 // dle charakteru objektu) a jednodušší geometrické požadavky.
 var LPS_PROHLIDKA_1390 = [
   { s: 'Jímací zařízení', items: [
-    { t: 'Provedení jímacího zařízení (hřebenové vedení, jímací tyče, náhodné jímače)', csn: 'ČSN 34 1390, čl. 35–41' },
-    { t: 'Uspořádání jímacího vedení po obvodu střechy a ochrana vyčnívajících částí', csn: 'ČSN 34 1390, čl. 36' },
-    { t: 'Vzdálenosti jímačů od hořlavých stavebních hmot', csn: 'ČSN 34 1390, čl. 42' },
-    { t: 'Stav a koroze jímacích vodičů a spojů', csn: 'ČSN 34 1390, čl. 124' }
+    { t: 'Provedení jímacího zařízení (hřebenové vedení, jímací tyče, náhodné jímače)', csn: 'ČSN 34 1390, čl. 16 až 19' },
+    { t: 'Uspořádání jímacího vedení po obvodu střechy a ochrana vyčnívajících částí', csn: 'ČSN 34 1390, čl. 17, 18' },
+    { t: 'Vzdálenosti jímačů od hořlavých stavebních hmot', csn: 'ČSN 34 1390, čl. 35' },
+    { t: 'Stav a koroze jímacích vodičů a spojů', csn: 'ČSN 34 1390, čl. 21 až 24, 54' }
   ]},
   { s: 'Svody', items: [
-    { t: 'Počet svodů (obvykle min. 2, v rozích objektu)', csn: 'ČSN 34 1390, čl. 46' },
-    { t: 'Vzdálenost svodů od hořlavých částí budovy', csn: 'ČSN 34 1390, čl. 51' },
-    { t: 'Zkušební svorky — umístění ≈ 1,5 m nad zemí, označení', csn: 'ČSN 34 1390, čl. 50' },
-    { t: 'Mechanická ochrana svodu v dosahu osob', csn: 'ČSN 34 1390, čl. 52' },
-    { t: 'Celistvost a stav spojů svodů', csn: 'ČSN 34 1390, čl. 124' }
+    { t: 'Počet svodů (1 na 15 m hřebene, resp. 30 m obvodu)', csn: 'ČSN 34 1390, čl. 32' },
+    { t: 'Vzdálenost svodů od hořlavých částí budovy', csn: 'ČSN 34 1390, čl. 35' },
+    { t: 'Zkušební svorky — asi 2 m nad zemí, přístupné', csn: 'ČSN 34 1390, čl. 45' },
+    { t: 'Mechanická ochrana svodu v dosahu osob', csn: 'ČSN 34 1390, čl. 38 b) (do výšky asi 1,7 m)' },
+    { t: 'Celistvost a stav spojů svodů', csn: 'ČSN 34 1390, čl. 41 až 44' }
   ]},
   { s: 'Uzemňovací soustava', items: [
-    { t: 'Uzemnění jednotlivých svodů (doporučeno ≤ 15 Ω)', csn: 'ČSN 34 1390, čl. 55' },
-    { t: 'Celkový zemní odpor soustavy', csn: 'ČSN 34 1390, čl. 55' },
-    { t: 'Materiál a průřez zemničů (FeZn, Cu)', csn: 'ČSN 34 1390, čl. 56' },
-    { t: 'Hloubka uložení zemničů', csn: 'ČSN 34 1390, čl. 57' },
+    { t: 'Uzemnění jednotlivých svodů (≤ 20 Ω)', csn: 'ČSN 34 1390, čl. 55 b)' },
+    { t: 'Skupina zemničů spojená nad zemí (< 15 Ω)', csn: 'ČSN 34 1390, čl. 55 c)' },
+    { t: 'Materiál a průřez zemničů (FeZn, Cu)', csn: 'ČSN 34 1390, čl. 53' },
+    { t: 'Hloubka uložení zemničů', csn: 'ČSN 34 1390, čl. 53 b)' },
     { t: 'Antikorozní ošetření nadzemních částí', csn: 'ČSN 33 2000-5-54 ed.3 (doporučeno)' }
   ]},
   { s: 'Ekvipotenciální pospojování a další požadavky', items: [
-    { t: 'Pospojování kovových částí vstupujících do objektu', csn: 'ČSN 34 1390, čl. 62' },
-    { t: 'Provedení svorkových spojů a jejich přístupnost', csn: 'ČSN 34 1390, čl. 123' },
-    { t: 'Celistvost LPS, přechodové odpory (≤ 0,2 Ω)', csn: 'ČSN 34 1390, čl. 124' },
-    { t: 'Dokumentace LPS a zápisy z předchozích revizí', csn: 'ČSN 34 1390, čl. 129' }
+    { t: 'Pospojování kovových částí vstupujících do objektu', csn: 'ČSN 34 1390, čl. 61 až 66' },
+    { t: 'Provedení svorkových spojů a jejich přístupnost', csn: 'ČSN 34 1390, čl. 41 až 45' },
+    { t: 'Celistvost LPS, přechodové odpory (≤ 0,2 Ω)', csn: 'ČSN 34 1390, čl. 41 až 44; mez 0,2 Ω podle ČSN EN 62305-3' },
+    { t: 'Dokumentace LPS a zápisy z předchozích revizí', csn: 'ČSN 34 1390, čl. 12, 201' }
   ]}
 ];
 
@@ -13932,13 +13936,13 @@ function updateLpsMereniTexts() {
   var metZemni = document.getElementById('lps-metoda-zemni');
   if (head) head.textContent = is1390 ? 'ČSN 34 1390, čl. 55' : citaceNormy('ČSN EN 62305-3 ed.2, čl. 5.4.1');
   if (info) info.innerHTML = is1390
-    ? 'Doporučená hodnota zemního odporu jednotlivých svodů ≤ 15 Ω.<br>ODPOVÍDÁ ČSN 34 1390, čl. 55'
+    ? 'Zemní odpor zemniče jednoho svodu nemá být větší než 20 Ω (čl. 55 b); skupina zemničů spojená nad zemí &lt; 15 Ω (čl. 55 c).<br>ODPOVÍDÁ ČSN 34 1390, čl. 55'
     : citaceNormy('Minimální hodnota zemního odporu jednoho zemniče je menší rovna 10 Ω.<br>ODPOVÍDÁ ČSN EN 62305-3 ed.2, čl. 5.4.1');
   if (metPrechod) metPrechod.innerHTML = is1390
-    ? 'Naměřený přechodový odpor by měl být menší nebo roven 0,2 Ω.<br>ODPOVÍDÁ ČSN 34 1390, čl. 124'
+    ? 'Naměřený přechodový odpor by měl být menší nebo roven 0,2 Ω (podle ČSN EN 62305-3).'
     : citaceNormy('Naměřený odpor by měl být menší nebo roven 0,2 Ω.<br>ODPOVÍDÁ ČSN EN 62305-3 ed.2, čl. 5.3.5');
   if (metZemni) metZemni.innerHTML = is1390
-    ? 'Doporučená hodnota zemního odporu jednoho svodu ≤ 15 Ω.<br>ODPOVÍDÁ ČSN 34 1390, čl. 55'
+    ? 'Zemní odpor zemniče jednoho svodu nemá být větší než 20 Ω (čl. 55 b); skupina zemničů spojená nad zemí &lt; 15 Ω (čl. 55 c).<br>ODPOVÍDÁ ČSN 34 1390, čl. 55'
     : citaceNormy('Minimální hodnota zemního odporu jednoho zemniče ≤ 10 Ω.<br>ODPOVÍDÁ ČSN EN 62305-3 ed.2, čl. 5.4.1');
   // Seznam příloh — výchozí text se liší podle zvolené normy
   // (platí jen pokud uživatel ještě nic ručně nenapsal)
@@ -14633,7 +14637,7 @@ function magicPopis() {
 
     stroje: POPIS_STROJE,
 
-    lps1390: 'Jedná se o vnější systém ochrany před bleskem (hromosvod), který byl zřízen do 1. 2. 2009 a je posuzován dle ČSN 34 1390 (Předpisy pro ochranu před bleskem).\n\nJÍMACÍ ZAŘÍZENÍ — provedeno jako hřebenové vedení po obvodu střechy, doplněné jímacími tyčemi na vyčnívajících částech objektu (komín, STA). Materiál FeZn ⌀ 8 mm. Vzdálenost jímacího vedení od hořlavých částí střechy vyhovuje požadavkům ČSN 34 1390 čl. 42.\n\nSVODY — celkem osazeny v rozích a po obvodu objektu, rovnoměrně rozmístěné. Materiál FeZn. V dosahu osob (do výšky 1,8 m) jsou svody opatřeny ochranným úhelníkem proti mechanickému poškození. Zkušební (měřicí) svorky jsou umístěny ve výšce cca 1,5 m nad zemí, jsou přístupné a označené dle ČSN 34 1390 čl. 50.\n\nUZEMŇOVACÍ SOUSTAVA — jednotlivé zemniče připojené ke svodům. Materiál FeZn pásek, uložení v hloubce cca 0,8 m. Měření zemního odporu u jednotlivých svodů se doporučuje ≤ 15 Ω (ČSN 34 1390 čl. 55).\n\nEKVIPOTENCIÁLNÍ POSPOJOVÁNÍ — kovové části vstupující do objektu (vodovod, plyn) jsou propojeny s uzemňovací soustavou dle ČSN 34 1390 čl. 62.\n\nCelistvost spojů byla ověřena měřením přechodových odporů — požadavek ≤ 0,2 Ω dle ČSN 34 1390 čl. 124.'
+    lps1390: 'Jedná se o vnější systém ochrany před bleskem (hromosvod), který byl zřízen do 1. 2. 2009 a je posuzován dle ČSN 34 1390 (Předpisy pro ochranu před bleskem).\n\nJÍMACÍ ZAŘÍZENÍ — provedeno jako hřebenové vedení po obvodu střechy, doplněné jímacími tyčemi na vyčnívajících částech objektu (komín, STA). Materiál FeZn ⌀ 8 mm. Vzdálenost jímacího vedení od hořlavých částí střechy vyhovuje požadavkům ČSN 34 1390 čl. 35.\n\nSVODY — celkem osazeny v rozích a po obvodu objektu, rovnoměrně rozmístěné. Materiál FeZn. V dosahu osob (do výšky asi 1,7 m, čl. 38) jsou svody opatřeny ochranným úhelníkem proti mechanickému poškození. Zkušební (měřicí) svorky jsou umístěny ve výšce asi 2 m nad zemí, jsou přístupné a označené dle ČSN 34 1390 čl. 45.\n\nUZEMŇOVACÍ SOUSTAVA — jednotlivé zemniče připojené ke svodům. Materiál FeZn pásek, uložení v hloubce cca 0,8 m. Měření zemního odporu u jednotlivých svodů se doporučuje ≤ 20 Ω (ČSN 34 1390 čl. 55).\n\nEKVIPOTENCIÁLNÍ POSPOJOVÁNÍ — kovové části vstupující do objektu (vodovod, plyn) jsou propojeny s uzemňovací soustavou dle ČSN 34 1390 čl. 61 až 66.\n\nCelistvost spojů byla ověřena měřením přechodových odporů — požadavek ≤ 0,2 Ω.'
   };
   var klic;
   if (aktTyp === 'stroje') {
@@ -14857,7 +14861,7 @@ var TYPY_TEXTU = {
     { nazev: 'Byt', text: 'Jedná se o bytovou jednotku v bytovém domě. Bytová jednotka je ve druhém nadzemním podlaží vlevo. Bytový dům je postaven z cihel. Hlavní přívod z elektroměrového rozváděče, který je nainstalovaný na společné chodbě bytového domu je proveden kabelem CYKY-J 4x10, společně s hlavním přívodem je uložen vodič pospojování v barevné kombinaci žel/žlutá průřezu 10 mm².\n\nBytový rozváděč RB je nainstalován ve vstupní chodbě bytové jednotky. Kabelové rozvody jsou uloženy pod omítkou a v podlahách. Přípojnice pospojování pro BJ je nainstalována v šachtě přístupné z WC.\n\nSpojitost ochranných vodičů dle čl. 6.4.3.2 ČSN 33 2000-6 ed.2 a připojení k neživým částem, byla ověřena měřením elektrického odporu u:\na) ochranných vodičů včetně vodičů ochranného pospojování;\nb) neživých částí.\n\nRp doplňujícího ochranného pospojování v koupelně vyhověly ČSN 33 2000-4-41 ed.3, čl. 415.2. Odpor R mezi neživými částmi současně přístupnými dotyku a cizími vodivými částmi splnil podmínku: R ≤ 50V/Ia.\n\nV rozváděči BD vedle hlavního jističe je osazena přepěťová ochrana stupně T2 (C) pro síť TN-C typ OEZ SVC-350—3PEN - MZ pro výbojový proud 20 kA (8/20 μs) pro předpokládané nízké účinky bleskového proudu. Délka vodičů přívodu a vývodu z přepěťové ochrany je 45 cm. Při měření izolačních odporů instalace byly SPD odpojeny.\n\nZásuvkové obvody jsou jištěny jističi charakteristiky B a chráněny proudovými chrániči s IΔn = 30 mA.\n\nElektrické zařízení v umývacím prostoru a v ochranném prostoru sporáku (varné desky) jsou řešeny dle požadavků ČSN 33 2130 ed.4 čl. 8.8. Uložení elektrických rozvodů je provedeno v instalačních zónách — ČSN 33 2130 ed.4 čl. 8.10.3.\n\nElektrické zařízení v prostorech s vanou nebo sprchou je provedeno dle požadavků ČSN 33 2000-7-701 ed.3.' },
     { nazev: 'Průmyslový objekt', text: 'Jedná se o rozsáhlý průmyslový objekt s vlastní trafostanicí, která je mimo výrobní objekt u příjezdové komunikace. V trafostanici je nainstalován hlavní rozváděč RH, ze kterého jsou napájeny podružné rozváděče výrobního objektu, administrativní budovy, šaten a technického zázemí.\n\nKabelové rozvody jsou uloženy v zemi — v případě pravidelné revize je vhodné uvést, že stav kabelů a uzemňovací soustavy uložených v zemi nebylo možné zkontrolovat, protože jsou nepřístupné. Kabely jsou uloženy na lávkách, v drátěných nosných systémech a elektroinstalačních ohebných trubkách.\n\n— V rozvodně VN/NN je nainstalována přípojnice MET — hlavní uzemňovací svorka, ke které jsou připojeny:\n— vodiče ochranného pospojování;\n— uzemňovací přívody;\n— neživé části zařízení — nádoba transformátoru;\n— ochranné vodiče;\n— cizí vodivé části vstupující do objektu.\n\nSpojitost ochranných vodičů dle čl. 6.4.3.2 ČSN 33 2000-6 ed.2 a připojení k neživým částem, byla ověřena měřením elektrického odporu u:\na) ochranných vodičů včetně vodičů ochranného pospojování;\nb) neživých částí.\n\nV rozváděči RH vedle hlavního jističe je osazen svodič bleskových proudů. V podružných rozváděčích osazeny SPD.\n\nElektrické zařízení v umývacím prostoru a v ochranném prostoru sporáku (varné desky) jsou řešeny dle požadavků ČSN 33 2130 ed.4 čl. 8.8.\n\nElektrické zařízení v prostorech s vanou nebo sprchou je provedeno dle požadavků ČSN 33 2000-7-701 ed.3.' },
     { nazev: 'Hromosvod – ČSN EN 62305', text: 'Jedná se o vnější systém ochrany před bleskem (LPS) na střeše objektu rodinného domu. Třída LPS odpovídá výpočtu rizika dle ČSN EN 62305-2 ed.2.\n\nJÍMACÍ SOUSTAVA — je provedena pomocí jímacích tyčí a propojovacího vedení AlMgSi ⌀ 8 mm na střeše. Jímače jsou rozmístěny tak, aby celá střecha objektu spadala do jejich ochranného prostoru (metoda valící se koule / ochranného úhlu / mřížové soustavy dle ČSN EN 62305-3 ed.2 čl. 5.2).\n\nSVODY — napojeny na jímací soustavu a vyvedeny po fasádě objektu k zemi. Materiál: AlMgSi ⌀ 8 mm. V dosahu osob (do výšky 1,8 m nad zemí) jsou svody chráněny ochranným úhelníkem proti mechanickému poškození. Měřicí (zkušební) svorky jsou umístěny ve výšce cca 1,5 m nad zemí, jsou přístupné a označené.\n\nUZEMŇOVACÍ SOUSTAVA — typu B (základový zemnič — uzavřená smyčka v betonu základů, FeZn pásek 30×4 mm). Slouží i jako společný zemnič pro elektroinstalaci. Spojení na svody je provedeno přes měřicí svorky.\n\nEKVIPOTENCIÁLNÍ POSPOJOVÁNÍ — všechny kovové části vstupující do objektu (vodovodní přípojka, plynovod, technologie) jsou propojeny na hlavní uzemňovací svornici (MET) v objektu.\n\nVNITŘNÍ OCHRANA PŘED PŘEPĚTÍM — instalována kombinovaná přepěťová ochrana SPD typu T1+T2 v hlavním rozváděči objektu pro koordinovanou ochranu dle ČSN EN 62305-4 ed.2.\n\nIzolační (bezpečné) vzdálenosti „s" mezi LPS a vodivými částmi uvnitř objektu byly ověřeny vizuálně a vyhovují požadavkům ČSN EN 62305-3 ed.2 čl. 6.3.' },
-    { nazev: 'Hromosvod – ČSN 34 1390', text: 'Jedná se o vnější systém ochrany před bleskem (hromosvod), který byl zřízen do 1. 2. 2009 a je posuzován dle ČSN 34 1390 (Předpisy pro ochranu před bleskem).\n\nJÍMACÍ ZAŘÍZENÍ — provedeno jako hřebenové vedení po obvodu střechy, doplněné jímacími tyčemi na vyčnívajících částech objektu (komín, STA). Materiál FeZn ⌀ 8 mm. Vzdálenost jímacího vedení od hořlavých částí střechy vyhovuje požadavkům ČSN 34 1390 čl. 42.\n\nSVODY — celkem osazeny v rozích a po obvodu objektu, rovnoměrně rozmístěné. Materiál FeZn. V dosahu osob (do výšky 1,8 m) jsou svody opatřeny ochranným úhelníkem proti mechanickému poškození. Zkušební (měřicí) svorky jsou umístěny ve výšce cca 1,5 m nad zemí, jsou přístupné a označené dle ČSN 34 1390 čl. 50.\n\nUZEMŇOVACÍ SOUSTAVA — jednotlivé zemniče připojené ke svodům. Materiál FeZn pásek, uložení v hloubce cca 0,8 m. Měření zemního odporu u jednotlivých svodů se doporučuje ≤ 15 Ω (ČSN 34 1390 čl. 55).\n\nEKVIPOTENCIÁLNÍ POSPOJOVÁNÍ — kovové části vstupující do objektu (vodovod, plyn) jsou propojeny s uzemňovací soustavou dle ČSN 34 1390 čl. 62.\n\nCelistvost spojů byla ověřena měřením přechodových odporů — požadavek ≤ 0,2 Ω dle ČSN 34 1390 čl. 124.' },
+    { nazev: 'Hromosvod – ČSN 34 1390', text: 'Jedná se o vnější systém ochrany před bleskem (hromosvod), který byl zřízen do 1. 2. 2009 a je posuzován dle ČSN 34 1390 (Předpisy pro ochranu před bleskem).\n\nJÍMACÍ ZAŘÍZENÍ — provedeno jako hřebenové vedení po obvodu střechy, doplněné jímacími tyčemi na vyčnívajících částech objektu (komín, STA). Materiál FeZn ⌀ 8 mm. Vzdálenost jímacího vedení od hořlavých částí střechy vyhovuje požadavkům ČSN 34 1390 čl. 35.\n\nSVODY — celkem osazeny v rozích a po obvodu objektu, rovnoměrně rozmístěné. Materiál FeZn. V dosahu osob (do výšky asi 1,7 m, čl. 38) jsou svody opatřeny ochranným úhelníkem proti mechanickému poškození. Zkušební (měřicí) svorky jsou umístěny ve výšce asi 2 m nad zemí, jsou přístupné a označené dle ČSN 34 1390 čl. 45.\n\nUZEMŇOVACÍ SOUSTAVA — jednotlivé zemniče připojené ke svodům. Materiál FeZn pásek, uložení v hloubce cca 0,8 m. Měření zemního odporu u jednotlivých svodů se doporučuje ≤ 20 Ω (ČSN 34 1390 čl. 55).\n\nEKVIPOTENCIÁLNÍ POSPOJOVÁNÍ — kovové části vstupující do objektu (vodovod, plyn) jsou propojeny s uzemňovací soustavou dle ČSN 34 1390 čl. 61 až 66.\n\nCelistvost spojů byla ověřena měřením přechodových odporů — požadavek ≤ 0,2 Ω.' },
     { nazev: 'Bytový dům — společné prostory', text: 'Jedná se o elektrické zařízení společných prostor bytového domu. Objekt je připojen k distribuční síti prostřednictvím přípojkové skříně, ze které je provedeno hlavní domovní vedení (HDV) kabelem CYKY-J 4x25. HDV je vedeno v instalační šachtě a napájí elektroměrové rozváděče umístěné na chodbách jednotlivých podlaží. V elektroměrovém rozváděči v 1. NP je osazen elektroměr společné spotřeby s hlavním jističem.\n\nZ rozváděče společné spotřeby RS jsou napájeny obvody: osvětlení schodiště a chodeb (ovládané tlačítky přes schodišťový automat), osvětlení sklepních prostor a kočárkárny, zásuvkové obvody společných prostor, zvonkové tablo a domovní dorozumívací zařízení, společná televizní anténa (STA) a osvětlení vstupu do objektu.\n\n— V objektu je nainstalována přípojnice MET — hlavní uzemňovací svorka, ke které jsou připojeny:\n— vodiče ochranného pospojování;\n— uzemňovací přívody;\n— ochranné vodiče;\n— cizí vodivé části vstupující do objektu (vodovodní a plynovodní přípojka).\n\nSpojitost ochranných vodičů dle čl. 6.4.3.2 ČSN 33 2000-6 ed.2 a připojení k neživým částem, byla ověřena měřením elektrického odporu u:\na) ochranných vodičů včetně vodičů ochranného pospojování;\nb) neživých částí.\n\nKabelové rozvody společných prostor jsou uloženy pod omítkou a v instalačních lištách. Stoupací vedení je vedeno v instalační šachtě přístupné z chodeb jednotlivých podlaží.\n\nV rozváděči RS je osazena přepěťová ochrana stupně T2 (C) pro síť TN-C. Při měření izolačních odporů instalace byly SPD odpojeny.\n\nZásuvkové obvody společných prostor jsou jištěny jističi charakteristiky B a chráněny proudovými chrániči s IΔn = 30 mA. Osvětlení je provedeno LED svítidly s odpovídajícím krytím IP. Uložení elektrických rozvodů je provedeno v instalačních zónách — ČSN 33 2130 ed.4 čl. 8.10.3.\n\nElektrická zařízení jednotlivých bytových jednotek (od bytových rozváděčů), elektroměry a výtah nejsou předmětem této revize.' },
     { nazev: 'Stroj – ČSN EN 60204-1 ed.3', text: POPIS_STROJE }
   ],
@@ -17536,7 +17540,7 @@ function generujPDF() {
         : '<div style="font-size:9pt;padding:0 2mm;color:#666">Měření zemních odporů nebylo zadáno.</div>') +
       '<div style="font-size:8pt;padding:0 2mm;margin-top:3mm;color:#444">' +
       (lpsNorma1390
-        ? 'Doporučená hodnota zemního odporu jednotlivých svodů ≤ 15 Ω dle ČSN 34 1390, čl. 55.<br>Přechodové odpory spojů vodičů ≤ 0,2 Ω dle ČSN 34 1390, čl. 124.'
+        ? 'ČSN 34 1390: Zemní odpor zemniče jednoho svodu nemá být větší než 20 Ω (čl. 55 b); skupina zemničů spojená nad zemí &lt; 15 Ω (čl. 55 c).<br>Přechodové odpory spojů vodičů ≤ 0,2 Ω (podle ČSN EN 62305-3).'
         : citaceNormy('Minimální hodnota zemního odporu jednoho zemniče ≤ 10 Ω dle ČSN EN 62305-3 ed.2, čl. 5.4.1.<br>Přechodové odpory spojů vodičů ≤ 0,2 Ω dle ČSN EN 62305-3 ed.2, čl. 5.3.5.', lpsVolba)) +
       '</div>' +
       '</div>' + ftr();

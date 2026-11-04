@@ -605,6 +605,22 @@ Test: `testy/test-normy.js` (34 kontrol — formulář i PDF, katalog, bublina Z
 lhůty, starší zpráva bajtově proti předchozí verzi). **Upraveno:**
 `test-dokumentace.js` (dlaždice a věta s TNI).
 
+## Normy – ČSN 34 1390, dávka 2 (2026-11-04)
+
+Citace u starších hromosvodů se kontrolovaly proti plnému znění ČSN 34 1390.
+Čísla článků v `TYPICKE_ZAVADY_LPS_1390`, `LPS_PROHLIDKA_1390`, nápovědách
+měření, patičce měření v PDF a vzorových popisech teď odpovídají obsahu
+(16–19 jímače, 32 počet svodů, 35 vzdálenost od krytiny, 38 b) úhelník do asi
+1,7 m, 41–45 spoje a zkušební svorka asi 2 m, 51 uzemnění, 53 zemniče,
+54 koroze, 55 b) **20 Ω na svod**, 55 c) skupina **< 15 Ω**, 61–66 pospojování,
+201 revize). Vada „zemní odpor svodu > 20 Ω" má kód z konstanty
+`LPS1390_ZEMNI_KOD` (C2 — norma říká „nemá být"). Mez přechodového odporu
+0,2 Ω ČSN 34 1390 neuvádí — cituje se „podle ČSN EN 62305-3". **Naměřené
+zemní odpory program nebarví** (nic se nevyhodnocuje). Uložené zprávy
+a vady v nich se nemění.
+
+Test: `testy/test-normy-1390.js` (39 kontrol).
+
 ## Tvorba dokumentace — Protokol o určení vnějších vlivů (blok `TVORBA DOKUMENTACE`)
 
 Zadání uživatele 2026-10-16: čtvrtá karta na úvodu
