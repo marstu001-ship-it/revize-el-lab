@@ -386,14 +386,14 @@ async function priprava(p) {
     const met = document.querySelector('.rz-ko-metoda');
     return { radky: tr.map(r => r.getAttribute('data-cl') + ':' + r.getAttribute('data-zp')).join(','), nazvy: tr.map(r => r.children[1].childNodes[0].textContent.trim()).join('|'),
       vysl: tr.map(r => r.querySelector('select').value).join(','), metody: Array.from(met.options).map(o => o.value).join(','),
-      au: document.querySelector('[data-dk="ko.a.u"]').value, auPh: document.querySelector('[data-dk="ko.a.u"]').placeholder, at: document.querySelector('[data-dk="ko.a.t"]').value,
+      au: document.querySelector('[data-dk="ko.a.u"]').value, ui: document.querySelector('[data-dk="ko.ui"]').value, tab8: document.getElementById('rz-ko-tab8').textContent, auPh: document.querySelector('[data-dk="ko.a.u"]').placeholder, at: document.querySelector('[data-dk="ko.a.t"]').value,
       iso: ['l1', 'l2', 'l3', 'n'].map(k => document.querySelector('[data-dk="ko.b.' + k + '"]').value).join(''),
       ceka: Array.from(document.querySelectorAll('#rz-pan-dok .rz-ceka')).map(c => c.closest('label, td, th, div').textContent.replace(/čeká na ověření v ČSN/, '').trim()) };
   });
   check('protokol: 9 položek čl. 11.2–11.10 se způsobem S / S/P / P podle podkladu', ko.radky === '11.2:S,11.3:S/P,11.4:S/P,11.5:S,11.6:S/P,11.7:S,11.8:P,11.9:P,11.10:P' &&
-    ko.nazvy === 'Stupeň krytí krytu|Vzdušné vzdálenosti a povrchové cesty|Ochrana před úrazem el. proudem a celistvost ochranných obvodů|Zabudování spínacích přístrojů a komponent|Vnitřní elektrické obvody a spoje|Svorky pro vnější vodiče|Mechanická funkce|Dielektrické vlastnosti|Zapojení, provozní vlastnosti a funkce', ko.radky);
-  check('výsledky prázdné, zkušební napětí nepředvyplněné (nápověda tab. 8), doba 1 s, izolační odpory prázdné', ko.vysl === ',,,,,,,,' && ko.au === '' && /tab\. 8/.test(ko.auPh) &&
-    ko.at === '1' && ko.iso === '', JSON.stringify(ko).slice(0, 200));
+    ko.nazvy === 'Stupeň krytí krytu|Vzdušné vzdálenosti a povrchové cesty|Ochrana před úrazem el. proudem a celistvost ochranných obvodů|Vestavění vestavných součástí|Vnitřní elektrické obvody a spoje|Svorky pro vnější vodiče|Mechanická funkce|Dielektrické vlastnosti|Zapojení, provozní vlastnosti a funkce', ko.radky);
+  check('výsledky prázdné, Ui 400 V → zkušební napětí 1 890 V podle tab. 8 (odvozené), doba 1 s, izolační odpory prázdné', ko.vysl === ',,,,,,,,' && ko.ui === '400' && ko.au === '1890' && /Tab\. 8/.test(ko.tab8) &&
+    ko.at === '1' && ko.iso === '', JSON.stringify({ vysl: ko.vysl, ui: ko.ui, au: ko.au, at: ko.at, iso: ko.iso, t8: ko.tab8.slice(0, 40) }));
   check('metoda B (izolační odpor) nabídnuta — hlavní vypínač 40 A, Un 400 V', ko.metody === ',A,B', ko.metody);
   await p.click('[data-action="tdRKoS"]'); await w(150);
   const koS = await p.evaluate(() => Array.from(document.querySelectorAll('.rz-ko-tab tr[data-cl]')).map(r => r.querySelector('select').value || '-').join(','));
@@ -427,8 +427,9 @@ async function priprava(p) {
     /11\.2\s+Stupeň krytí krytu\s+S\s+vyhovuje/.test(kp.text) && /11\.8\s+Mechanická funkce\s+P\s*\n/.test(kp.text) &&
     /L1–PE 0,5 MΩ, L2–PE >200 MΩ, L3–PE 1 MΩ, N–PE …… \(kritérium ≥ 1 MΩ\)/.test(kp.text) && /Vymyšlený tester VT-1, výr\. č\. VV-123/.test(kp.text) &&
     /Zapojení provedl/.test(kp.text) && /Zkoušku provedl \(zkušební technik\)\s+Petr Vymyšlený/.test(kp.text) && /S = prohlídka, P = zkouška/.test(kp.text), '');
-  check('štítky „čeká na ověření v ČSN" ve formuláři (RoHS, třída II, IP, IK, umístění, znečištění, rozměry, 11.4, tab. 8, kvalifikace), v PDF ne',
-    ko.ceka.length >= 9 && !/čeká na ověření/.test(kp.text), ko.ceka.join(' | '));
+  check('štítky „čeká na ověření v ČSN" jen u údajů dílu 3 (umístění, znečištění, rozměry, RDF DBO); RoHS, třída II, IP, IK, 11.4, tab. 8 a kvalifikace ověřené; v PDF ne',
+    ['Umístění', 'Stupeň znečištění', 'Rozměry v × š × h (mm)', 'Součinitel soudobosti RDF'].every(t => ko.ceka.indexOf(t) !== -1) &&
+    !ko.ceka.some(t => /RoHS|třídy II|Krytí|Odolnost IK|Ochrana před úrazem|Zkušební napětí|Kvalifikace/.test(t)) && !/čeká na ověření/.test(kp.text), ko.ceka.join(' | '));
   await p.screenshot({ path: BEH + '/rz-dok-protokol.png' });
 
   // ── 7. technické údaje a celé PDF ─────────────────────────────────────

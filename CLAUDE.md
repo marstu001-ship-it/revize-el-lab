@@ -661,6 +661,45 @@ Popisky výběru normy uvádějí dobu platnosti, výchozí volba ed. 2 se nemě
 
 Test: `testy/test-normy-lps.js` (32 kontrol).
 
+## Normy – konfigurátor rozvaděčů podle ČSN EN IEC 61439-1/-2 ed. 3, dávka 3 (2026-11-04)
+
+Údaje se štítkem „čeká na ověření v ČSN", které jsou teď ověřené v plném znění
+61439-1 ed. 3 a 61439-2 ed. 3, štítek ztratily a mají citaci. **Ponechaly ho
+údaje dílu 3 (DBO)** — ČSN EN IEC 61439-3 ed. 2 uživatel nemá: RDF pro DBO
+(0,8 / 0,7 / 0,6 / 0,5), meze DBO 250 A / 125 A, umístění, stupeň znečištění
+a rozměry v technických údajích DBO; u PSC vnější provedení, připojení F / D / W,
+EMC, znečištění a kategorie přepětí (`pscTechHtml`).
+
+- **Kusové ověření:** 11.4 bez štítku, nepovinná pole `ko.pe.i` (A) a `ko.pe.r`
+  (Ω) — zkouška podle 10.5.2, jen porovnání ≥ 10 A, ≤ 0,1 Ω (`rozvPeStav`);
+  odvozená poznámka „prohlídkou; šroubové spoje – namátková kontrola utažení".
+  11.5 „Vestavění vestavných součástí". 11.9 A: **`ko.ui`** (Ui rozvaděče,
+  odvozené 400 V / 1f 250 V) → **zkušební napětí z tab. 8** (`ROZV_TAB8`,
+  `rozvTab8`; odvozené, ukládá se prázdné; při psaní Ui se přepočítá, jen když
+  ho technik nepřepsal). Citace 11.9 u doby, vybavovacího proudu a metody B.
+- **Štítek:** Un a fn jsou na štítku vždy (čl. 6.1 e, f — i bez rozšířené
+  části); IP a IK v technických údajích mají poznámku „na štítku nepovinné
+  (čl. 6.1)". Značka třídy II podle čl. 8.4.4 a) — výchozí podle třídy ochrany
+  (`rozvTridaIIZnak`, zaškrtávátko s `data-odv`, ukládá se jen odchylka);
+  třída II s krytím horším než IP2XC → upozornění (`rozvIp2xc`, čl. 8.4.4 c).
+  RoHS a kvalifikace (NV 194/2022) bez štítku.
+- **Oteplení:** podmínky s citací 10.10.4.1 (35 °C — 7.1.1, 80 % In — e),
+  125 % vodiče — f, ruční potvrzení `otepleni.vodice125`, výsledek neblokuje).
+  Místo „přístroje pro 55 °C" pole **`otepleni.tmax`** (nejnižší maximální
+  provozní teplota vzduchu přístrojů) a `otepleni.okoli` (výchozí 35 °C):
+  dovolené oteplení = tmax − okolí (10.10.4.2.1). Starší `okoli55: true` =
+  55 °C potvrzeno (data se nepřepisují); bez hodnoty výchozí 55 °C „ověřte
+  u výrobce" a výsledek zůstává neúplný jako dřív. Nové klíče se ukládají jen
+  vyplněné. PSC: činitel předpokládaného zatížení (tab. 101, čl. 5.4 dílu 2),
+  motorové vývody (typ obvodu motor, MS) 0,8 / nad 100 kW 1,0 a do počtu
+  hlavních obvodů se nepočítají.
+- **Příloha D:** úplná tab. D.1 (`PSC_OV_D1`, 12 skupin, 24 řádků se způsoby
+  Z / S / H); dřívější klíče (`ko11_x`, `otepleni`, `zkrat`) zůstaly.
+
+Test: `testy/test-normy-61439.js` (17 kontrol). **Upraveno:**
+`test-rozvadec-dokumenty.js` (11.5, odvozené zkušební napětí, štítky jen
+u dílu 3), `test-rozvadec-faze-otepleni.js` (podmínky s citací, pole teploty).
+
 ## Tvorba dokumentace — Protokol o určení vnějších vlivů (blok `TVORBA DOKUMENTACE`)
 
 Zadání uživatele 2026-10-16: čtvrtá karta na úvodu

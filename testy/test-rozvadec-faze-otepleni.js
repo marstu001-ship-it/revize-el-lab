@@ -160,11 +160,12 @@ const w = ms => new Promise(r => setTimeout(r, ms));
   const o0 = await p.evaluate(() => {
     const odd = document.querySelector('[data-oddil="otepleni"]'), ods = Array.from(document.querySelectorAll('#rz-pan-dok [data-oddil]')).map(x => x.getAttribute('data-oddil'));
     return { ods, radky: odd.querySelectorAll('.rot-tab tr[data-uid]').length, chybi: odd.querySelectorAll('.rot-tab tr.rot-chybi').length, vys: odd.querySelector('#rot-vysledek').innerText,
-      ceka: odd.querySelectorAll('.dk-ceka, [class*="ceka"]').length, sum: odd.querySelector('summary').textContent };
+      ceka: odd.querySelectorAll('.dk-ceka, [class*="ceka"]').length, podm: odd.querySelector('.rot-podm').textContent, th: odd.querySelector('.rot-tab th[title]').getAttribute('title'), sum: odd.querySelector('summary').textContent };
   });
   check('oddíl „Oteplení" mezi Technickými údaji a Prohlášením', o0.ods.indexOf('otepleni') === o0.ods.indexOf('tech') + 1 && o0.ods.indexOf('prohl') === o0.ods.indexOf('otepleni') + 1, o0.ods.join(','));
   check('bez Pv: 3 oranžové řádky „doplňte Pv", výsledek neúplné', o0.radky === 3 && o0.chybi === 3 && /Neúplné – chybí: Pv u 3 přístrojů,/.test(o0.vys), o0.vys);
-  check('podmínky, 0,8 In a RDF mají štítek „čeká na ověření v ČSN"', o0.ceka >= 3, o0.ceka);
+  check('podmínky a 0,8 In citují čl. 10.10.4.1 (ověřeno, bez štítku); štítek má jen RDF DBO a výchozí 55 °C („ověřte u výrobce")',
+    o0.ceka === 2 && /čl\. 10\.10\.4\.1/.test(o0.podm) && /35 °C \(čl\. 7\.1\.1\)/.test(o0.podm) && /125 %/.test(o0.podm) && o0.th === 'čl. 10.10.4.1 e)', o0.ceka + ' ' + o0.podm.slice(0, 80));
   const pvVyp = async (sel, v) => { await p.fill(sel, v); await w(80); };
   const uids = await p.evaluate(() => ['-QH1', '-FA1', '-FA2'].map(o => __T.naj(o).uid));
   await pvVyp('.rot-pv[data-uid="' + uids[0] + '"]', '1,5');
@@ -178,12 +179,12 @@ const w = ms => new Promise(r => setTimeout(r, ms));
   check('Pv při Inc = Pv × póly × (Inc/In)²: QM 0,375 W (Inc 20 A), FA1 0,5 W (Ib 8), FA2 1,125 W (Ib 12)',
     o1.r.join('|') === '0.375|0.5|1.125' && o1.inc.join('|') === '20|8|12', o1.r.join('|') + ' / ' + o1.inc.join('|'));
   check('Pv se uložilo do kopie přístroje, knihovna beze změny', o1.kopie === 2 && (o1.knih === '' || o1.knih == null), JSON.stringify([o1.kopie, o1.knih]));
-  check('bez Penc a 55 °C: neúplné, chybí Penc i prohlášení o 55 °C', o1.stav === 'neuplne' && /Penc/.test(o1.vys) && /55 °C/.test(o1.vys), o1.vys);
+  check('bez Penc a teploty přístrojů: neúplné, chybí Penc i nejnižší maximální provozní teplota přístrojů', o1.stav === 'neuplne' && /Penc/.test(o1.vys) && /maximální provozní teplota/.test(o1.vys), o1.vys);
   await p.evaluate(() => { __T.dk('[data-dk="otepleni.pevne"]', '3'); __T.dk('[data-dk="otepleni.penc"]', '10'); });
   await w(150);
   const o2 = await p.evaluate(() => ({ vys: document.getElementById('rot-vysledek').innerText, stav: rozvOteplVypocet(__T.cist()).stav }));
-  check('Penc zadané, 55 °C nezaškrtnuté → pořád neúplné', o2.stav === 'neuplne' && /55 °C/.test(o2.vys) && !/Penc skříně —|chybí:.*Penc/.test(o2.vys), o2.vys);
-  await p.check('[data-dk="otepleni.okoli55"]'); await w(200);
+  check('Penc zadané, teplota přístrojů nezadaná → pořád neúplné', o2.stav === 'neuplne' && /maximální provozní teplota/.test(o2.vys) && !/Penc skříně —|chybí:.*Penc/.test(o2.vys), o2.vys);
+  await p.fill('[data-dk="otepleni.tmax"]', '55'); await w(200);
   const o3 = await p.evaluate(() => { const v = rozvOteplVypocet(__T.cist()); return { vys: document.getElementById('rot-vysledek').innerText, v: [v.sumPv, v.prirW, v.pevne, v.celkem, v.rezerva, v.rezervaPct].map(x => Math.round(x * 1000) / 1000) }; });
   check('ΣPv 2 W + přirážka 50 % 1 W + pevné 3 W = 6 W ≤ Penc 10 W → vyhovuje, rezerva 4 W (40 %)',
     o3.v.join('|') === '2|1|3|6|4|40' && /✓ Vyhovuje — rezerva 4 W \(40 %\)/.test(o3.vys) && /= 6 W/.test(o3.vys), o3.vys.replace(/\n/g, ' '));
@@ -239,8 +240,8 @@ const w = ms => new Promise(r => setTimeout(r, ms));
     nad.stav === 'nelze' && /platí jen pro jeden prostor do 630 A – ověřte jinak/.test(nad.txt) && !nad.tab && !nad.pdf && !nad.vyber, JSON.stringify({ s: nad.stav, t: nad.tab, p: nad.pdf, v: nad.vyber }));
   // uložená data: jen zadané, odvozené prázdné
   const ul = await p.evaluate(async () => { await dokUlozitOtevreny(); const x = DOK.dokumenty.filter(z => z.typ === 'rozv' && z.data.oznaceni === 'RO1')[0]; return x.data.otepleni; });
-  check('v datech oteplení jen zadané hodnoty (pevné 3, Penc 10, 55 °C), přirážka/RDF/výsledek ne',
-    ul && ul.pevne === '3' && ul.penc === '10' && ul.okoli55 === true && !ul.prirazka && !ul.rdfRezim && !('vysledek' in ul) && !ul.inc, JSON.stringify(ul));
+  check('v datech oteplení jen zadané hodnoty (pevné 3, Penc 10, 55 °C), přirážka/RDF/okolí 35/výsledek ne',
+    ul && ul.pevne === '3' && ul.penc === '10' && ul.tmax === '55' && !ul.okoli && !ul.prirazka && !ul.rdfRezim && !('vysledek' in ul) && !ul.inc, JSON.stringify(ul));
 
   // ── 3b. transformátor, zdroj, zásuvka (2026-10-22): bez In se nesčítá, Pv jen z dat ──
   const tz = await p.evaluate(async () => {
