@@ -159,7 +159,7 @@ const res = []; const check = (n, ok, d) => res.push((ok ? '✅' : '❌') + ' ' 
   check('po kliknutí přibude právě jedna vada C1', po.n === 1 && po.kod === 'C1', JSON.stringify(po));
   check('popis = položka C1 z katalogu + obvody', /^Impedance poruchové smyčky Zsm přesahuje \(2\/3\) × U0\/Ia — obvody: RH: č\. 2 Zásuvky kuchyně \(Zs 2,50 Ω, mez 1,91 Ω\); RH: č\. 6 Pračka \(Zs 3,00 Ω, mez 1,91 Ω\)\.$/.test(po.popis), po.popis);
   check('oranžový obvod (Koupelna) ve vadě není', po.popis.indexOf('Koupelna') === -1);
-  check('norma z katalogu', /411\.3\.2/.test(po.norma), po.norma);
+  check('norma z katalogu (411.4.4 a D.6.4.3.7.3)', /411\.4\.4; ČSN 33 2000-6 ed\.2, čl\. D\.6\.4\.3\.7\.3/.test(po.norma), po.norma);
   check('zpráva je označená jako změněná', po.dirty);
   check('po přidání se nabídka schová (vada už obvody jmenuje)', po.nabidka.every(d => d === 'none'), JSON.stringify(po.nabidka));
 
