@@ -2348,6 +2348,19 @@ html.dark .rz-imp-chyby{background:#3a1f1c;border-color:#6b2c25}
 .dok-pdf-podpisy th{text-align:left;font-weight:600;border-bottom:.5pt solid #000;padding:1mm 2mm}
 .dok-pdf-podpisy td{border-bottom:.5pt solid #999;padding:6mm 2mm 1mm;vertical-align:bottom}
 .dok-pdf-podpisy td.podpis{width:55mm}
+/* výpočet rizika — protokol PDF (textový dokument na výšku) */
+.rl-pdf-tab{width:100%;border-collapse:collapse;font-size:8.6pt;table-layout:fixed;margin:0 0 2mm}
+.rl-pdf-tab.mala{font-size:8pt}
+.rl-pdf-tab th{text-align:left;font-weight:600;background:#eee;border:.5pt solid #666;padding:1mm 1.5mm}
+.rl-pdf-tab td{border:.5pt solid #999;padding:.8mm 1.5mm;vertical-align:top;overflow-wrap:anywhere}
+.rl-pdf-tab .num{text-align:right}
+.rl-pdf-tab tr.tucne td{font-weight:700}
+.rl-pdf-verdikt{border:1pt solid #000;padding:2mm 3mm;margin:0 0 2mm}
+.rl-pdf-verdikt.ok{background:#eef7f1}.rl-pdf-verdikt.nok{background:#fdecea}
+.rl-pdf-verdikt .v1{font-size:12.5pt;font-weight:700;text-transform:uppercase}
+.rl-pdf-verdikt .v2{font-size:9.5pt;margin-top:1mm}
+.rl-pdf-graf{display:block;margin:1mm 0 2mm}
+.dok-pdf-p.rl-pdf-tucne{font-weight:700}
 /* ═══ MOBIL ═══════════════════════════════════════════════════════════════
    Telefon na výšku (≤ 600 px) a telefon na šířku (dotyk + výška ≤ 500 px).
    Platí JEN tady — verze pro PC se tím nemění ani o pixel (hlídá
@@ -30910,13 +30923,16 @@ function dokPdfStranka(x, naSirku, zahlavi) {
   p.style.minHeight = '0';
   p.innerHTML = '<div class="dok-pdf-zahlavi"><span>' + esc(zl) + '</span><span>' + esc(zp) + '</span></div>' +
     '<div class="dok-pdf-obsah"></div>' +
-    '<div class="dok-pdf-paticka"><span>' + esc(d.stavba || '') + '</span><span class="dok-pdf-strana"></span></div>';
+    '<div class="dok-pdf-paticka"><span>' + esc(d.stavba || (x.typ === 'rlps' ? d.nazev || d.misto : '') || '') + '</span><span class="dok-pdf-strana"></span></div>';
   return p;
 }
 
-function dokPdfVykreslit(x) {
-  var box = document.getElementById('dok-pdf-pages');
-  showScreen('dok-pdf');   // ve skryté obrazovce mají prvky nulovou výšku
+// `cil` (nepovinné): kreslí do jiného, už viditelného kontejneru (příloha
+// k revizní zprávě) — stránky se číslují zvlášť a dostanou třídu `trida`.
+function dokPdfVykreslit(x, cil, trida) {
+  var box = cil ? document.createElement('div') : document.getElementById('dok-pdf-pages');
+  if (cil) cil.appendChild(box);
+  else showScreen('dok-pdf');   // ve skryté obrazovce mají prvky nulovou výšku
   box.innerHTML = '';
   var ns = !!DOK_TYPY[x.typ].naSirku, zahl = null;
   var limit = (ns ? 210 : 297) * 96 / 25.4 + 0.5;
@@ -30979,6 +30995,11 @@ function dokPdfVykreslit(x) {
     var c = s.querySelector('.dok-pdf-strana');   // listy výkresu mají číslo v razítku
     if (c) c.textContent = 'Strana ' + (i + 1) + ' / ' + str2.length;
   });
+  if (cil) {
+    while (box.firstChild) { var c = box.firstChild; if (c.classList && trida) c.classList.add(trida); cil.insertBefore(c, box); }
+    cil.removeChild(box);
+    return;
+  }
   var navic = DOK_TYPY[x.typ].pdfNavic ? DOK_TYPY[x.typ].pdfNavic(x, box) : 0;   // strany bez číslování (popisky pod přístroje)
   var info = document.getElementById('dok-pdf-info');
   if (info) info.textContent = DOK_TYPY[x.typ].nazev + (x.data && x.data.cislo ? ' · ' + x.data.cislo : '') +
@@ -43752,119 +43773,85 @@ function rlPrevzit(d, vyb) {
   return co;
 }
 
-// ── Protokol PDF — vektorové listy A4 na šířku s rámem a razítkem ────────
-// Obsah se skládá z položek { h: výška v mm, k: function (x, y) → SVG };
-// stránkovač je skládá na listy (obsah nad razítkem do y = RL_PDF_DOLE).
-var RL_PDF_X = 16, RL_PDF_W = 265, RL_PDF_NAHORE = 17, RL_PDF_DOLE = 160;
-function rlPdfText(x, y, t, o) { return rsText(x, y, t, o); }
-function rlPdfOdst(t, fs, o) {   // odstavec zalomený na šířku
-  o = o || {}; fs = fs || 2.4;
-  var r = rsZalomit(t, o.w || RL_PDF_W, fs, 20), lh = fs * 1.35;
-  return { h: r.length * lh + (o.mezera != null ? o.mezera : 1), k: function (x, y) {
-    return r.map(function (s, i) { return rlPdfText(x + (o.dx || 0), y + fs * 0.9 + i * lh, s, { fs: fs, tucne: o.tucne, barva: o.barva }); }).join('');
-  } };
+// ── Protokol PDF — textový dokument A4 na výšku (jako protokol o vnějších
+// vlivech): bloky pro společný stránkovač tvorby dokumentace (záhlaví
+// s číslem, „Strana i / N", podpis na konci). Výkresový rám a razítko
+// patří jen výkresům (schéma, čelní pohled), ne protokolu.
+function rlPdfTabHtml(hlav, radky, o) {
+  o = o || {};
+  return '<table class="rl-pdf-tab' + (o.trida ? ' ' + o.trida : '') + '">' + (o.cols ? '<colgroup>' + o.cols.map(function (w) { return '<col style="width:' + w + '">'; }).join('') + '</colgroup>' : '') +
+    '<tr>' + hlav.map(function (h, i) { return '<th' + (o.prava && o.prava.indexOf(i) >= 0 ? ' class="num"' : '') + '>' + esc(h) + '</th>'; }).join('') + '</tr>' +
+    radky.map(function (r) {
+      return '<tr' + (r.tucne ? ' class="tucne"' : '') + '>' + r.map(function (c, i) { return '<td' + (o.prava && o.prava.indexOf(i) >= 0 ? ' class="num"' : '') + '>' + esc(c == null ? '' : String(c)) + '</td>'; }).join('') + '</tr>';
+    }).join('') + '</table>';
 }
-function rlPdfNadpis(t) {
-  return { h: 8, drz: true, k: function (x, y) { return rlPdfText(x, y + 5, t, { fs: 3.3, tucne: true }) + rsCara(x, y + 6.4, x + RL_PDF_W, y + 6.4, { w: RS_TENKA }); } };
+function rlPdfGrafSvg(Z) {
+  var max = RL_RT; RL_SLOZKY.forEach(function (s) { max = Math.max(max, Z.sk[s[0]]); });
+  var nej = RL_SLOZKY.reduce(function (a, q) { return Z.sk[q[0]] > Z.sk[a] ? q[0] : a; }, 'RA');
+  var W = 178, x1 = 74, wb = 84, rh = 5.2, h = '';
+  RL_SLOZKY.forEach(function (q, i) {
+    var y = i * rh, v = Z.sk[q[0]];
+    h += '<text x="0" y="' + (y + 3.6) + '" font-size="2.9" fill="#000"><tspan font-weight="bold">' + q[0] + '</tspan> – ' + esc(q[1]) + '</text>';
+    h += '<rect x="' + x1 + '" y="' + (y + 0.9) + '" width="' + wb + '" height="3.2" fill="#f0f0f0"/>';
+    if (v > 0) h += '<rect x="' + x1 + '" y="' + (y + 0.9) + '" width="' + Math.max(0.3, v / max * wb).toFixed(2) + '" height="3.2" fill="' + (q[0] === nej ? '#555' : '#b0b0b0') + '"/>';
+    h += '<text x="' + W + '" y="' + (y + 3.6) + '" font-size="2.9" text-anchor="end" fill="#000">' + rl5(v) + '</text>';
+  });
+  var xr = (x1 + RL_RT / max * wb).toFixed(2), H = RL_SLOZKY.length * rh;
+  h += '<line x1="' + xr + '" y1="0" x2="' + xr + '" y2="' + H + '" stroke="#000" stroke-width="0.35" stroke-dasharray="1 0.8"/>';
+  return '<svg class="rl-pdf-graf" viewBox="0 0 ' + W + ' ' + H + '" width="' + W + 'mm" height="' + H + 'mm" font-family="DM Sans, Arial, sans-serif">' + h + '</svg>';
 }
-// Tabulka: sl = [[šířka, záhlaví, 'end'?]], radky = [[...]]; vrací položky (záhlaví se opakuje)
-function rlPdfTab(sl, radky, o) {
-  o = o || {}; var fs = o.fs || 2.15, lh = fs * 1.3;
-  var bunky = function (r) { return r.map(function (t, i) { return rsZalomit(String(t == null ? '' : t), sl[i][0] - 2.4, fs, 4); }); };
-  var radek = function (r, hlav) {
-    var b = bunky(r), n = Math.max.apply(null, b.map(function (x) { return x.length; })), h = n * lh + 1.6;
-    return { h: h, hlav: hlav, k: function (x, y) {
-      var s = hlav ? rsObd(x, y, RL_PDF_W, h, { fill: '#eeeeee', w: RS_TENKA }) : rsCara(x, y + h, x + RL_PDF_W, y + h, { w: RS_TENKA });
-      var cx = x;
-      b.forEach(function (rr, i) {
-        var w = sl[i][0], zar = sl[i][2];
-        rr.forEach(function (t, j) { s += rlPdfText(zar === 'end' ? cx + w - 1.2 : cx + 1.2, y + fs + 0.4 + j * lh, t, { fs: fs, tucne: hlav || (o.tucnyPosledni && i === b.length - 1), zar: zar }); });
-        cx += w;
-      });
-      return s;
-    } };
-  };
-  var hl = radek(sl.map(function (s) { return s[1]; }), true);
-  var out = [hl];
-  radky.forEach(function (r) { var it = radek(r); it.opak = hl; out.push(it); });
-  out.push({ h: 2.5, k: function () { return ''; } });
-  return out;
-}
-function rlPdfListy(d) {
-  var r = rlVypocet(d), t = rlTyp(d.typ) || {}, tech = (typeof STORE !== 'undefined' && STORE.technik) || {}, P = [];
+function rlPdfBloky(d) {
+  var r = rlVypocet(d), t = rlTyp(d.typ) || {}, tech = (typeof STORE !== 'undefined' && STORE.technik) || {}, B = [];
   var hod = function (k) { return rlHod(d, k).v; }, zd = function (k) { return rlZdrojText(d, k); }, ref = function (k) { return (RL_PAR[rlKlic(k).p] || {}).ref || ''; };
   var volba = function (k) { var p = RL_PAR[rlKlic(k).p], o = p && p.o ? rlOpt(p.o, hod(k)) : null; return o ? o[1] : hod(k); };
-  // ── 1. identifikace a výsledek
-  P.push({ h: 13, k: function (x, y) {
-    return rlPdfText(x, y + 5, 'VÝPOČET RIZIKA ÚDERU BLESKU', { fs: 4.6, tucne: true }) +
-      rlPdfText(x, y + 10.5, 'podle ČSN EN IEC 62305-2 ed. 3 (IEC 62305-2:2024) · číslo ' + (d.cislo || '—'), { fs: 2.6 });
-  } });
-  P = P.concat(rlPdfTab([[45, 'Objekt'], [90, ''], [40, 'Zpracovatel'], [90, '']], [
-    ['Název objektu', d.nazev || '—', 'Zpracovatel', d.zpracovatel || tech.jmeno || '—'],
-    ['Místo', d.misto || '—', 'Datum', dokDatumCz(d.datum) || '—'],
-    ['Investor / vlastník', (d.investor || {}).nazev || '—', 'Typ objektu', t.n || '—']
-  ], { fs: 2.3 }).slice(1));
+  var tr = function (l, v) { return '<tr><td class="l">' + l + '</td><td>' + (v || '—') + '</td></tr>'; };
+  var H = function (txt) { B.push({ html: '<div class="dok-pdf-h">' + esc(txt) + '</div>', drz: true }); };
+  var P = function (txt, tr2) { B.push({ html: '<p class="dok-pdf-p' + (tr2 ? ' ' + tr2 : '') + '">' + esc(txt) + '</p>' }); };
+  B.push({ html: '<div class="dok-pdf-titul"><div class="t1">Výpočet rizika úderu blesku</div>' +
+    '<div class="t2">podle ČSN EN IEC 62305-2 ed. 3 (IEC 62305-2:2024)</div>' + (d.cislo ? '<div class="t3">č. ' + esc(d.cislo) + '</div>' : '') + '</div>' });
+  B.push({ html: '<table class="dok-pdf-tab">' + tr('Název objektu', esc(d.nazev)) + tr('Místo', esc(d.misto)) +
+    tr('Investor / vlastník', esc((d.investor || {}).nazev)) + tr('Typ objektu', esc(t.n)) +
+    tr('Zpracovatel', esc(d.zpracovatel || tech.jmeno)) + tr('Datum', esc(dokDatumCz(d.datum))) + '</table>' });
   if (r.chyby.length) {
-    P.push(rlPdfOdst('Výpočet není úplný: ' + r.chyby.map(function (c) { return c.t; }).join(' '), 3, { tucne: true }));
+    H('Výsledek');
+    P('Výpočet není úplný: ' + r.chyby.map(function (c) { return c.t; }).join(' '), 'rl-pdf-tucne');
   } else {
-    P.push({ h: 15, k: function (x, y) {
-      return rsObd(x, y, RL_PDF_W, 13, { w: 0.5, fill: r.vyhovuje ? '#eef7f1' : '#fdecea' }) +
-        rlPdfText(x + 3, y + 6, r.vyhovuje ? 'OCHRANA VYHOVUJE – DALŠÍ NENÍ POTŘEBA' : 'OCHRANA JE POTŘEBA', { fs: 4.4, tucne: true }) +
-        rlPdfText(x + 3, y + 11, 'R = ' + rlSci(r.R, 3) + (r.okR ? ' ≤ ' : ' > ') + 'RT = 1·10⁻⁵ za rok' +
-          (r.F != null ? '   ·   F = ' + rlSci(r.F, 3) + (r.okF ? ' ≤ ' : ' > ') + 'FT = ' + rlCs(r.FT, 1) + ' za rok' + (r.hodnotitF ? '' : ' (četnost škod jen pro informaci)') : ''), { fs: 2.7 });
-    } });
-    P = P.concat(rlPdfTab([[75, 'Zóna'], [40, 'R', 'end'], [30, 'RT', 'end'], [40, 'F za rok', 'end'], [30, 'FT', 'end'], [50, 'Výsledek']],
-      r.zony.map(function (z) {
-        return [z.nazev, rlSci(z.R, 3), '1·10⁻⁵', z.F != null ? rlSci(z.F, 3) : '—', z.F != null ? rlCs(r.FT, 1) : '—',
-          (z.R <= RL_RT ? 'R vyhovuje' : 'R nevyhovuje') + (z.F != null && r.hodnotitF ? (z.F <= r.FT ? ', F vyhovuje' : ', F nevyhovuje') : '')];
-      })));
-    // graf složek
-    var Z = r.hlavni;
-    if (Z) {
-      var max = RL_RT; RL_SLOZKY.forEach(function (s) { max = Math.max(max, Z.sk[s[0]]); });
-      P.push({ h: 6, drz: true, k: function (x, y) { return rlPdfText(x, y + 4, 'Složky rizika – ' + Z.nazev + ' (× 10⁻⁵, čárkovaně RT)', { fs: 2.6, tucne: true }); } });
-      P.push({ h: RL_SLOZKY.length * 4.2 + 2, k: function (x, y) {
-        var s = '', x1 = x + 80, wb = 150, nej = RL_SLOZKY.reduce(function (a, q) { return Z.sk[q[0]] > Z.sk[a] ? q[0] : a; }, 'RA');
-        RL_SLOZKY.forEach(function (q, i) {
-          var yy = y + i * 4.2, v = Z.sk[q[0]];
-          s += rlPdfText(x, yy + 2.9, q[0] + ' – ' + q[1], { fs: 2.1 });
-          if (v > 0) s += rsObd(x1, yy + 0.6, Math.max(0.3, v / max * wb), 3, { fill: q[0] === nej ? '#555555' : '#b0b0b0', bez: true });
-          s += rlPdfText(x1 + wb + 3, yy + 2.9, rl5(v), { fs: 2.1 });
-        });
-        var xr = x1 + RL_RT / max * wb;
-        return s + rsCara(xr, y, xr, y + RL_SLOZKY.length * 4.2, { w: 0.3, carky: '1 0.8' });
-      } });
+    H('Výsledek');
+    B.push({ html: '<div class="rl-pdf-verdikt ' + (r.vyhovuje ? 'ok' : 'nok') + '"><div class="v1">' + (r.vyhovuje ? 'Ochrana vyhovuje – další není potřeba' : 'Ochrana je potřeba') + '</div>' +
+      '<div class="v2">R = ' + rlSci(r.R, 3) + (r.okR ? ' ≤ ' : ' > ') + 'RT = 1·10⁻⁵ za rok' +
+      (r.F != null ? ' · F = ' + rlSci(r.F, 3) + (r.okF ? ' ≤ ' : ' > ') + 'FT = ' + rlCs(r.FT, 1) + ' za rok' + (r.hodnotitF ? '' : ' (četnost škod jen pro informaci)') : '') + '</div></div>' });
+    B.push({ html: rlPdfTabHtml(['Zóna', 'R', 'RT', 'F za rok', 'FT', 'Výsledek'], r.zony.map(function (z) {
+      return [z.nazev, rlSci(z.R, 3), '1·10⁻⁵', z.F != null ? rlSci(z.F, 3) : '—', z.F != null ? rlCs(r.FT, 1) : '—',
+        (z.R <= RL_RT ? 'R vyhovuje' : 'R nevyhovuje') + (z.F != null && r.hodnotitF ? (z.F <= r.FT ? ', F vyhovuje' : ', F nevyhovuje') : '')];
+    }), { prava: [1, 2, 3, 4], cols: ['30%', '14%', '10%', '14%', '8%', '24%'] }) });
+    if (r.hlavni) {
+      B.push({ html: '<div class="dok-pdf-h2">Složky rizika – ' + esc(r.hlavni.nazev) + ' (× 10⁻⁵, čárkovaně RT)</div>', drz: true });
+      B.push({ html: rlPdfGrafSvg(r.hlavni) });
     }
-    // opatření a návrh
-    P.push(rlPdfNadpis('Ochranná opatření ve výpočtu'));
-    var opatr = ['LPS: ' + volba('lps')];
-    (d.vedeni || []).forEach(function (v) {
-      var pre = 'v.' + v.uid + '.';
-      opatr.push((v.druh === 'tel' ? 'Telekomunikační vedení' : 'Přípojka NN') + ': ' + volba(pre + 'peb') + '; ' + volba(pre + 'pspd'));
-    });
-    (d.zony || []).filter(function (z) { return (z.druh || 'vnitrni') === 'vnitrni'; }).forEach(function (z) { opatr.push(rlZonaNazev(z) + ' – protipožární opatření: ' + volba('z.' + z.uid + '.rp')); });
-    opatr.forEach(function (o) { P.push(rlPdfOdst('• ' + o, 2.4, { mezera: 0.3 })); });
+    H('Ochranná opatření ve výpočtu');
+    var op = ['LPS: ' + volba('lps')];
+    (d.vedeni || []).forEach(function (v) { var pre = 'v.' + v.uid + '.'; op.push((v.druh === 'tel' ? 'Telekomunikační vedení' : 'Přípojka NN') + ': ' + volba(pre + 'peb') + '; ' + volba(pre + 'pspd')); });
+    (d.zony || []).filter(function (z) { return (z.druh || 'vnitrni') === 'vnitrni'; }).forEach(function (z) { op.push(rlZonaNazev(z) + ' – protipožární opatření: ' + volba('z.' + z.uid + '.rp')); });
+    B.push({ html: '<ul class="dok-pdf-ul">' + op.map(function (x) { return '<li>' + esc(x) + '</li>'; }).join('') + '</ul>' });
     if (!r.vyhovuje) {
       var n = rlNavrh(d);
-      P.push(rlPdfNadpis('Navržená ochranná opatření'));
-      if (!n.varianty.length) P.push(rlPdfOdst('Žádná kombinace SPD, LPS I–IV a protipožárních opatření nevyhovuje – nutné další posouzení.', 2.5));
-      n.varianty.forEach(function (v, i) {
-        P.push(rlPdfOdst((i + 1) + '. ' + v.popis.text + ' – R = ' + rlSci(v.r.R, 3) + (v.r.F != null ? ', F = ' + rlSci(v.r.F, 3) : '') +
-          (v.popis.lps ? ' (včetně SPD na vstupu vedení odpovídající třídy)' : '') + (v.popis.rp ? ' – jen pokud opatření v objektu skutečně jsou' : ''), 2.4, { mezera: 0.4 }));
-      });
+      H('Navržená ochranná opatření');
+      if (!n.varianty.length) P('Žádná kombinace SPD, LPS I–IV a protipožárních opatření nevyhovuje – nutné další posouzení.');
+      else B.push({ html: '<ol class="dok-pdf-ul">' + n.varianty.map(function (v) {
+        return '<li>' + esc(v.popis.text + ' – R = ' + rlSci(v.r.R, 3) + (v.r.F != null ? ', F = ' + rlSci(v.r.F, 3) : '') +
+          (v.popis.lps ? ' (včetně SPD na vstupu vedení odpovídající třídy)' : '') + (v.popis.rp ? ' – jen pokud opatření v objektu skutečně jsou' : '')) + '</li>';
+      }).join('') + '</ol>' });
     }
     var por = rlPorovnani(d);
-    if (por) P.push(rlPdfOdst('Porovnání s revizí ' + por.cislo + ': revize uvádí LPS ' + por.trida + ', ' +
-      (por.min == null ? 'výpočet nevyhoví ani s LPS I – NEDOSTATEČNÉ.' : por.min === '0' ? 'výpočet LPS nevyžaduje – VYHOVUJE.' : 'výpočet požaduje nejméně LPS ' + por.min + ' – ' + (por.ok ? 'VYHOVUJE.' : 'NEDOSTATEČNÉ.')), 2.5, { tucne: true }));
-    P.push(rlPdfNadpis('Závěr'));
-    P.push(rlPdfOdst(r.vyhovuje
+    if (por) P('Porovnání s revizí ' + por.cislo + ': revize uvádí LPS ' + por.trida + ', ' +
+      (por.min == null ? 'výpočet nevyhoví ani s LPS I – NEDOSTATEČNÉ.' : por.min === '0' ? 'výpočet LPS nevyžaduje – VYHOVUJE.' : 'výpočet požaduje nejméně LPS ' + por.min + ' – ' + (por.ok ? 'VYHOVUJE.' : 'NEDOSTATEČNÉ.')), 'rl-pdf-tucne');
+    H('Závěr');
+    P(r.vyhovuje
       ? 'Při uvedených vstupních údajích a ochranných opatřeních je riziko ztráty lidského života R ≤ RT' + (r.hodnotitF ? ' a četnost škod F ≤ FT' : '') + '. Další ochranná opatření nejsou z hlediska tohoto výpočtu potřeba.'
-      : 'Při uvedených vstupních údajích je riziko R > RT' + (r.hodnotitF && !r.okF ? ' nebo četnost škod F > FT' : '') + '. Objekt je nutné chránit – viz navržená opatření.', 2.6));
-    P.push(rlPdfOdst('Hodnoty převzaté z jiných dokumentů a výchozí hodnoty jsou ve vstupních údajích označeny zdrojem.', 2.2, { barva: '#333' }));
+      : 'Při uvedených vstupních údajích je riziko R > RT' + (r.hodnotitF && !r.okF ? ' nebo četnost škod F > FT' : '') + '. Objekt je nutné chránit – viz navržená opatření.');
   }
-  // ── 2. vstupní údaje
-  P.push({ novy: true });
-  P.push(rlPdfNadpis('Vstupní údaje'));
+  // vstupní údaje
+  H('Vstupní údaje');
   var rad = [], R = function (nazev, k, hodnota) { rad.push([nazev, hodnota != null ? hodnota : volba(k), zd(k), ref(k)]); };
   var cis = function (k, j) { var v = rlCislo(hod(k)); return isNaN(v) ? '—' : rlCs(v, 3) + (j ? ' ' + j : ''); };
   R('Délka × šířka × výška', 'L', cis('L') + ' × ' + cis('W') + ' × ' + cis('H') + ' m');
@@ -43909,10 +43896,10 @@ function rlPdfListy(d) {
     R(jm + ' – opatření Pam', zp + 'pam', (hod(zp + 'pam').split(',').filter(Boolean).map(function (k) { return (rlOpt(RL_PAM, k) || [])[1]; }).join(', ') || 'žádná') + ' (Pam = ' + rlSci(Z2.Pam != null ? Z2.Pam : 1, 2) + ')');
     R(jm + ' – přítomnost osob tz', zp + 'tz', cis(zp + 'tz', 'h') + ' (PP = ' + rlCs(Z2.PP != null ? Z2.PP : 1, 3) + ')');
   });
-  P = P.concat(rlPdfTab([[70, 'Veličina'], [95, 'Hodnota'], [62, 'Zdroj hodnoty'], [38, 'Odkaz (norma)']], rad));
-  // ── 3. výpočet
+  B.push({ html: rlPdfTabHtml(['Veličina', 'Hodnota', 'Zdroj hodnoty', 'Odkaz (norma)'], rad, { cols: ['24%', '36%', '24%', '16%'], trida: 'mala' }), delit: true });
+  // výpočet
   if (!r.chyby.length) {
-    P.push(rlPdfNadpis('Sběrné oblasti a počet nebezpečných událostí'));
+    H('Sběrné oblasti a počet nebezpečných událostí');
     var vy = [
       ['AD', 'L·W + 2·(3H)·(L+W) + π·(3H)²' + (hod('slozity') === '1' ? ', složitý tvar' : ''), 'rov. A.3/A.4', rlSci(r.AD, 3) + ' m²'],
       ['ND', 'NSG·AD·CD·10⁻⁶', 'rov. A.5', rlSci(r.ND, 3)],
@@ -43920,9 +43907,9 @@ function rlPdfListy(d) {
       ['AM', '2·rM·(L+W) + π·rM²', 'rov. A.8', rlSci(r.AM, 3) + ' m²'],
       ['NM', '(1/k)·NSG·AM·10⁻⁶', 'rov. A.7', rlSci(r.NM, 3)]
     ];
-    r.vedeni.forEach(function (ln, i) {
+    r.vedeni.forEach(function (ln) {
       var jm = ln.druh === 'tel' ? 'tel.' : 'NN';
-      ln.sekce.forEach(function (s, j) {
+      ln.sekce.forEach(function (s) {
         var sj = jm + (ln.sekce.length > 1 ? (s.vn ? ' VN' : ' NN') : '');
         vy.push(['AL (' + sj + ')', s.rho ? '0,6·√ρ·LL' : '40·LL', 'rov. A.10', rlSci(s.AL, 3) + ' m²']);
         vy.push(['NL (' + sj + ')', 'NSG·AL·CI·CE·CT·10⁻⁶', 'rov. A.9', rlSci(s.NL, 3)]);
@@ -43933,12 +43920,13 @@ function rlPdfListy(d) {
     });
     vy.push(['PC', 'PSPD·CLD (více vedení: 1 − Π(1 − PC,i))', 'rov. B.5', rlSci(r.PC, 3)]);
     vy.push(['PM', 'PSPD·(KS1·KS2·KS3)²', 'rov. B.6, B.7', rlSci(r.PM, 3)]);
-    P = P.concat(rlPdfTab([[30, 'Veličina'], [140, 'Vzorec'], [40, 'Odkaz'], [55, 'Hodnota', 'end']], vy));
+    var K = { cols: ['16%', '50%', '14%', '20%'], prava: [3], trida: 'mala' };
+    B.push({ html: rlPdfTabHtml(['Veličina', 'Vzorec', 'Odkaz', 'Hodnota'], vy, K), delit: true });
     var VZ = { RAT: 'ND·PAT·PP·LT', RAD: 'ND·PAD·PP·LD', RB1: 'ND·PB·PP·LF1', RB2: 'ND·PB·LF2', RC1: 'ND·PC·PP·Pe·LO1', RC2: 'ND·PC·Pe·LO2',
       RM1: 'NM·PM·PP·Pe·LO1', RM2: 'NM·PM·Pe·LO2', RU: '(NL+NDJ)·PU·PP·LT', RV1: '(NL+NDJ)·PV·PP·LF1', RV2: '(NL+NDJ)·PV·LF2',
       RW1: '(NL+NDJ)·PW·PP·Pe·LO1', RW2: '(NL+NDJ)·PW·Pe·LO2', RZ1: 'NI·PZ·PP·Pe·LO1', RZ2: 'NI·PZ·Pe·LO2' };
     r.zony.forEach(function (Z) {
-      P.push(rlPdfNadpis('Složky rizika – ' + Z.nazev + ' (tab. 3)'));
+      H('Složky rizika – ' + Z.nazev + ' (tab. 3)');
       var pr = [];
       if (Z.PAT != null) pr.push(['PAT', 'PLPS·Pam·rt·PTWS', 'rov. B.2', rlSci(Z.PAT, 3)]);
       if (Z.PAD != null) pr.push(['PAD', 'PTWS·Pam·PO·PLPS', 'rov. B.3', rlSci(Z.PAD, 3)]);
@@ -43954,44 +43942,27 @@ function rlPdfListy(d) {
         var ano = Z.druh === 'vnitrni' ? k !== 'RAD' : Z.druh === 'venku' ? k === 'RAT' : k === 'RAD';
         if (ano) pr.push([k, VZ[k], 'tab. 3', rlSci(Z.s[k], 3)]);
       });
-      pr.push(['R', 'součet složek', 'rov. 6–8', rlSci(Z.R, 3) + (Z.R <= RL_RT ? ' ≤ RT' : ' > RT')]);
+      var rr = ['R', 'součet složek', 'rov. 6–8', rlSci(Z.R, 3) + (Z.R <= RL_RT ? ' ≤ RT' : ' > RT')]; rr.tucne = true; pr.push(rr);
       if (Z.F != null) {
         pr.push(['FC / FM', 'ND·PC·Pe / NM·PM·Pe', 'tab. 4', rlSci(Z.f.FC, 3) + ' / ' + rlSci(Z.f.FM, 3)]);
         pr.push(['FW / FZ', '(NL+NDJ)·PW·Pe / NI·PZ·Pe', 'tab. 4', rlSci(Z.f.FW, 3) + ' / ' + rlSci(Z.f.FZ, 3)]);
-        pr.push(['F', 'FC + FM + FW + FZ', 'čl. 9', rlSci(Z.F, 3) + (Z.F <= r.FT ? ' ≤ FT' : ' > FT')]);
+        var rf = ['F', 'FC + FM + FW + FZ', 'čl. 9', rlSci(Z.F, 3) + (Z.F <= r.FT ? ' ≤ FT' : ' > FT')]; rf.tucne = true; pr.push(rf);
       }
-      P = P.concat(rlPdfTab([[30, 'Veličina'], [140, 'Vzorec'], [40, 'Odkaz'], [55, 'Hodnota', 'end']], pr));
+      B.push({ html: rlPdfTabHtml(['Veličina', 'Vzorec', 'Odkaz', 'Hodnota'], pr, K), delit: true });
     });
   }
-  P.push(rlPdfOdst('Výpočet podle ČSN EN IEC 62305-2 ed. 3; hodnoty ztrát a koeficientů zvolil zpracovatel.', 2.3, { tucne: true }));
-  // ── stránkování
-  var listy = [[]], y = RL_PDF_NAHORE;
-  P.forEach(function (it, i) {
-    if (it.novy) { if (listy[listy.length - 1].length) { listy.push([]); y = RL_PDF_NAHORE; } return; }
-    var dalsi = P[i + 1], drzi = it.drz && dalsi && !dalsi.novy ? dalsi.h : 0;
-    if (y + it.h + drzi > RL_PDF_DOLE && listy[listy.length - 1].length) {
-      listy.push([]); y = RL_PDF_NAHORE;
-      if (it.opak && !it.hlav) { listy[listy.length - 1].push({ it: it.opak, y: y }); y += it.opak.h; }
-    }
-    listy[listy.length - 1].push({ it: it, y: y }); y += it.h;
-  });
-  var g = rsGeom('A4', false, false), N = listy.length;
-  return listy.map(function (L, i) {
-    var c = { vypracoval: d.zpracovatel || tech.jmeno || '', datum: dokDatumCz(d.datum) || '', akce: d.nazev || d.misto || '', investor: (d.investor || {}).nazev || '',
-              nazev: 'Výpočet rizika LPS', projekt: d.misto || '', zakazka: d.cislo || '', soubor: rlPdfSoubor(d), listu: N };
-    var h = rsRam(g) + rsRazitko(g, c, i + 1);
-    if (i) h += rlPdfText(RL_PDF_X, 14.5, 'Výpočet rizika úderu blesku ' + (d.cislo || '') + ' – pokračování', { fs: 2.2, barva: '#333' });
-    L.forEach(function (q) { h += q.it.k(RL_PDF_X, q.y); });
-    return rsSvgObal(g, h);
-  });
+  P('Výpočet podle ČSN EN IEC 62305-2 ed. 3; hodnoty ztrát a koeficientů zvolil zpracovatel.', 'rl-pdf-tucne');
+  // podpis na konci (jako protokol o vnějších vlivech)
+  B.push({ html: '<p class="dok-pdf-p" style="margin-top:5mm">Vypracoval: ' + esc(d.zpracovatel || tech.jmeno || '—') +
+    ' &nbsp;·&nbsp; V ' + esc(tech.mesto || '……………') + ' dne ' + esc(dokDatumCz(d.datum) || '……………') + '</p>', drz: true });
+  B.push({ html: '<table class="dok-pdf-podpisy"><tr><th>Funkce</th><th>Jméno a příjmení</th><th>Podpis</th></tr>' +
+    '<tr><td>Zpracovatel</td><td>' + esc(d.zpracovatel || tech.jmeno || '') + '</td><td class="podpis"></td></tr></table>' });
+  return B;
 }
 function rlTdText(d) {
   var h = rlHod(d, 'td'), td = rlCislo(h.v);
   if (h.z === 'okres') return 'Td = ' + h.okres.td + ' dní/rok – okres ' + h.okres.n + ', odečteno z izokeraunické mapy ČHMÚ (Atlas podnebí Česka 2007), horní mez převažujícího pásma.';
   return td > 0 ? 'Td = ' + rlCs(td, 1) + ' dní/rok' : '—';
-}
-function rlPdfSoubor(d) {
-  return ((d.cislo || 'RLPS') + '_Riziko_LPS' + (d.nazev ? '_' + d.nazev : '')).replace(/[\\\/:*?"<>|]+/g, '').replace(/\s+/g, '_').slice(0, 80) + '.pdf';
 }
 // ── Příloha k revizní zprávě LPS ─────────────────────────────────────────
 // V panelu tisku revize LPS (jen když existuje výpočet rizika) volba
@@ -44011,13 +43982,8 @@ function rlPrilohaRevize(D, t) {
   return x ? { x: x, text: rlPrilohaText(x) } : null;
 }
 function rlPrilohaPripojit(pages, pr) {
-  rlPdfListy(pr.x.data || {}).forEach(function (svg) {
-    var el = document.createElement('div');
-    el.className = 'a4 a4-landscape rz-sch-strana rl-pdf-list rl-priloha';
-    el.setAttribute('data-vektor', '1');
-    el.innerHTML = svg;
-    pages.appendChild(el);
-  });
+  var x = pr.x;
+  dokPdfVykreslit({ uid: x.uid, typ: 'rlps', cislo: x.cislo, data: x.data || {} }, pages, 'rl-priloha');
 }
 function rlPrilohaPanelHtml(t) {
   if (aktTyp !== 'lps') return '';
@@ -44033,9 +43999,7 @@ function rlPrilohaPanelHtml(t) {
     }).join('') + '</select></label>' +
     '<div class="tisk-pozn2" style="margin:-.2rem 0 .5rem">Listy výpočtu z Tvorby dokumentace se připojí na konec PDF a do seznamu příloh.</div>';
 }
-DOK_TYPY.rlps.pdf = function (d) {
-  return rlPdfListy(d).map(function (svg) { return { cela: '<div class="a4 a4-landscape rz-sch-strana rl-pdf-list" data-vektor="1">' + svg + '</div>' }; });
-};
+DOK_TYPY.rlps.pdf = function (d) { return rlPdfBloky(d); };
 
 // Nová verze se načte SAMA, jen když technik nic nedělá (pokyn uživatele
 // 2026-10-19): není otevřená zpráva, dokument ani rozvaděč (obrazovka je

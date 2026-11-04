@@ -797,12 +797,20 @@ BA3 → kategorie vysoká. Převzetí nahradí i ručně zadanou hodnotu (ZPĚT 
 vrátí). **Porovnání s revizí LPS**: nejnižší třída LPS, se kterou výpočet
 vyhoví (`rlLpsPotreba`, SPD doplněné podle třídy) proti třídě v revizi.
 
-**PDF** (`rlPdfListy`): vektorové listy A4 na šířku s `rsRam` a
-`rsRazitko` (svg2pdf, písmo Roboto Condensed — má ⁻ ⁵ ≤, nemá √ ✓): výsledek
-a graf, ochranná opatření, navržená opatření, porovnání, závěr; vstupní údaje
-se **zdrojem a odkazem na normu**; sběrné oblasti, N, P, složky rizika a F
-po zónách; věta „Výpočet podle ČSN EN IEC 62305-2 ed. 3; hodnoty ztrát
-a koeficientů zvolil zpracovatel."
+**PDF** (`rlPdfBloky`, 2026-11-04 — **protokol není výkres**, pokyn
+uživatele): textový dokument **A4 na výšku** ve stylu protokolu o vnějších
+vlivech přes společný stránkovač `dokPdfVykreslit` (záhlaví „Výpočet rizika
+LPS · č. RLPS-…", patička s názvem objektu a „Strana i / N", tabulky
+`delit` se dělí po řádcích se záhlavím): titul, identifikace, výsledek
+(rámeček, tabulka zón, graf složek jako jednoduché SVG), ochranná opatření,
+navržená opatření, porovnání s revizí, závěr; vstupní údaje se **zdrojem
+a odkazem na normu**; sběrné oblasti, N, P, složky rizika a F po zónách;
+věta „Výpočet podle ČSN EN IEC 62305-2 ed. 3; hodnoty ztrát a koeficientů
+zvolil zpracovatel."; na konci „Vypracoval … V … dne …" a podpisová
+tabulka. **Výkresový rám a razítko (`rsRam`, `rsRazitko`) zůstávají jen
+výkresům** (schéma, čelní pohled, list soudobosti).
+`dokPdfVykreslit(x, cil, trida)` umí kreslit i do jiného viditelného
+kontejneru (příloha k revizi) — stránky se číslují zvlášť.
 
 **Příloha k revizi LPS** (`rlPrilohaPanelHtml`, `rlPrilohaRevize`,
 `rlPrilohaPripojit`): v panelu tisku **jen u revize LPS a jen když existuje
@@ -812,10 +820,10 @@ PDF revize je znak po znaku stejné a data zprávy taky (test proti verzi bez
 přílohy na STARA_PORT, při přenosu pustit se `STARA=<předchozí vydání>`).**
 Se zvolenou přílohou se uid uloží jen v nastavení tisku zprávy
 (`D.tisk.rlpsPriloha`, do výchozích nastavení tisku nejde), listy výpočtu se
-připojí na konec PDF (vektorově, nepočítají se do „Počet listů") a do
+připojí na konec PDF (strany protokolu na výšku se svým číslováním, nepočítají se do „Počet listů") a do
 seznamu příloh **v PDF** přibude řádek — pole Seznam příloh se nemění.
 
-Test: `testy/test-riziko-lps.js` (112 kontrol — každá tabulka koeficientů,
+Test: `testy/test-riziko-lps.js` (114 kontrol — každá tabulka koeficientů,
 F.2 nechráněný i chráněný na 1 %, druhý příklad spočtený v testu vlastními
 vzorci, povinné Td, Navrhnout ochranu (nejlevnější = SPD LPL IV na obou
 vedeních) a Ctrl+Z, F/FT podle typu, převzetí z vymyšlené revize LPS,

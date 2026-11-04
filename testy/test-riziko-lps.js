@@ -198,10 +198,19 @@ async function otiskRevizi(p) {
 
   // ── PDF se zdroji hodnot ──────────────────────────────────────────────
   await p.click('[data-action="tdNahled"]'); await w(1200);
-  const pdf = await p.evaluate(() => ({ n: document.querySelectorAll('#dok-pdf-pages .a4[data-vektor]').length, t: Array.from(document.querySelectorAll('#dok-pdf-pages svg')).map(s => s.textContent).join(' '),
-    ram: document.querySelectorAll('#dok-pdf-pages [data-ram]').length, raz: document.querySelectorAll('#dok-pdf-pages [data-razitko]').length,
-    sir: Array.from(document.querySelectorAll('#dok-pdf-pages .a4')).every(a => a.classList.contains('a4-landscape')) }));
-  check('PDF: vektorové listy na šířku s rámem a razítkem', pdf.n >= 2 && pdf.ram === pdf.n && pdf.raz === pdf.n && pdf.sir, pdf.n + ' listů');
+  const pdf = await p.evaluate(() => {
+    const st = Array.from(document.querySelectorAll('#dok-pdf-pages .a4'));
+    return { n: st.length, t: document.getElementById('dok-pdf-pages').innerText.replace(/\s+/g, ' '),
+      ram: document.querySelectorAll('#dok-pdf-pages [data-ram], #dok-pdf-pages [data-razitko], #dok-pdf-pages [data-vektor]').length,
+      vyska: st.every(a => !a.classList.contains('a4-landscape') && a.classList.contains('a4-dok')),
+      strany: st.map(a => (a.querySelector('.dok-pdf-strana') || {}).textContent || ''),
+      zahl: st.every(a => /Výpočet rizika LPS/.test((a.querySelector('.dok-pdf-zahlavi') || {}).textContent || '')),
+      vejde: st.every(a => a.getBoundingClientRect().height <= 297 * 96 / 25.4 + 1),
+      podpis: !!document.querySelector('#dok-pdf-pages .a4:last-child .dok-pdf-podpisy') };
+  });
+  check('PDF: textový dokument A4 na výšku, bez výkresového rámu a razítka', pdf.n >= 2 && pdf.vyska && pdf.ram === 0, pdf.n + ' stran, rám ' + pdf.ram);
+  check('PDF: záhlaví s číslem na každé straně a „Strana x / y"', pdf.zahl && pdf.strany.every((t, i) => t === 'Strana ' + (i + 1) + ' / ' + pdf.n), pdf.strany.join(' | '));
+  check('PDF: žádná strana nepřetéká a na konci je podpis', pdf.vejde && pdf.podpis);
   ['Zdroj hodnoty', 'zadáno', 'z typu objektu', 'převzato: revize LPS RE-26-9901', 'tab. A.1', 'rov. A.5', 'Složky rizika', 'Porovnání s revizí RE-26-9901',
    'Výpočet podle ČSN EN IEC 62305-2 ed. 3; hodnoty ztrát a koeficientů zvolil zpracovatel.'].forEach(s => check('PDF obsahuje „' + s + '"', pdf.t.includes(s)));
   await p.click('[data-action="tdPdfZpet"]'); await w(300);
@@ -245,7 +254,7 @@ async function otiskRevizi(p) {
     const data = getData(); delete data.uid; delete data.timestamp;   // čas uložení se liší vždy
     const pages = document.getElementById('pdf-pages');
     return { html: Array.from(pages.querySelectorAll('.a4:not(.rl-priloha)')).map(a => a.outerHTML).join(''), n: pages.querySelectorAll('.a4').length,
-      pril: pages.querySelectorAll('.a4.rl-priloha[data-vektor]').length, text: pages.innerText, data: JSON.stringify(data), tisk: JSON.stringify(data.tisk),
+      pril: pages.querySelectorAll('.a4.rl-priloha.a4-dok').length, text: pages.innerText, data: JSON.stringify(data), tisk: JSON.stringify(data.tisk),
       volba: !!document.getElementById('tisk-rlps') };
   }, vybrat);
   const st = await b.newContext({ viewport: { width: 1366, height: 900 } });
@@ -262,7 +271,7 @@ async function otiskRevizi(p) {
   check('příloha: bez zaškrtnutí je PDF revize znak po znaku stejné jako ve verzi bez přílohy', bez.html === stara.html && bez.n === stara.n, bez.n + ' / ' + stara.n + ' ' + rozdil(bez.html, stara.html));
   check('příloha: bez zaškrtnutí jsou data zprávy stejná jako ve verzi bez přílohy', bez.data === stara.data, rozdil(bez.data, stara.data));
   const s = await zprava(p, uidRl);
-  check('příloha: se zaškrtnutím se listy výpočtu připojí na konec PDF (vektorově)', s.pril >= 2 && s.n === bez.n + s.pril, s.n + ' = ' + bez.n + ' + ' + s.pril);
+  check('příloha: se zaškrtnutím se strany protokolu připojí na konec PDF', s.pril >= 2 && s.n === bez.n + s.pril, s.n + ' = ' + bez.n + ' + ' + s.pril);
   check('příloha: v seznamu příloh v PDF přibude řádek', /Výpočet rizika úderu blesku RLPS-\d+/.test(s.text) && /Protokol o měření zemničů/.test(s.text));
   check('příloha: pole Seznam příloh ve zprávě se nezměnilo, volba je jen v nastavení tisku', JSON.parse(s.data).prilohy === 'Protokol o měření zemničů' && JSON.parse(s.tisk).rlpsPriloha === uidRl, s.tisk);
   const zpet = await p.evaluate(async () => {
