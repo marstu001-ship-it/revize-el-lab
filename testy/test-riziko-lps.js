@@ -126,8 +126,8 @@ async function otiskRevizi(p) {
   // ── Navrhnout ochranu ─────────────────────────────────────────────────
   await p.click('[data-action="tdRlNavrh"]'); await w(250);
   const nav = await p.$$eval('#modal-rl-navrh .rl-var-t', e => e.map(x => x.textContent));
-  check('Navrhnout ochranu: nejlevnější = SPD LPL IV na obou vedeních', /^1\. SPD na vstupu všech vedení \(LPL III–IV\)$/.test(nav[0] || ''), nav.join(' | '));
-  check('návrh nabízí nejvýš 3 nedominované varianty', nav.length >= 1 && nav.length <= 3 && !nav.slice(1).some(t => /SPD na vstupu všech vedení \(LPL (II|I)\)$/.test(t)), nav.join(' | '));
+  check('Navrhnout ochranu: nejlevnější = SPD LPL IV na obou vedeních', /^1\. SPD na vstupu na všech vedeních \(LPL III–IV\)$/.test(nav[0] || ''), nav.join(' | '));
+  check('návrh nabízí nejvýš 3 nedominované varianty', nav.length >= 1 && nav.length <= 3 && !nav.slice(1).some(t => /SPD na vstupu na všech vedeních \(LPL (II|I)\)$/.test(t)), nav.join(' | '));
   await p.click('#modal-rl-navrh [data-action="tdRlNavrhPouzit"][data-i="0"]'); await w(250);
   const chr = await p.evaluate(() => { const r = rlVypocet(__rl.d), Z = r.zony[0]; return { sk: Z.sk, R: r.R, vyh: r.vyhovuje, t: document.querySelector('.rl-v-titul').textContent }; });
   check('F.2 chráněný (PEB 0,05): RB = 0,062·10⁻⁵', blizko(chr.sk.RB, 0.062e-5), String(chr.sk.RB));

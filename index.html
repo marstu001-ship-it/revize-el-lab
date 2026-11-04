@@ -1840,6 +1840,9 @@ details.scard.rl-det>summary{font-size:.95rem}
 .rl-var-pozn{font-size:.78rem;color:var(--muted);margin-bottom:.4rem}
 .rl-prev-sk{margin:.6rem 0 .9rem}
 .rl-shoda{font-style:normal;color:#0f7b5f;font-size:.75rem}
+.tisk-rlps{display:block}
+.tisk-rlps span{display:block;margin-bottom:.25rem}
+.tisk-rlps select{width:100%;max-width:100%;min-width:0}
 /* ── Rozvaděč DBO — konfigurátor (knihovna vlevo, čelní pohled, vlastnosti vpravo) ── */
 #screen-dok-form[data-typ="rozv"] .dok-wrap,#screen-dok-form[data-typ="psc"] .dok-wrap{max-width:none}
 #screen-dok-form[data-typ="rozv"] #rz-pan-dok,#screen-dok-form[data-typ="psc"] #rz-pan-dok{max-width:1560px;margin:0 auto}
@@ -42835,8 +42838,8 @@ function rlIdx(por, k) { var i = por.indexOf(k); return i < 0 ? (k === 'I_prir' 
 function rlNavrh(d) {
   var vys = [], ved = d.vedeni || [], zon = (d.zony || []).filter(function (z) { return (z.druh || 'vnitrni') === 'vnitrni'; });
   var akt = {
-    peb: Math.max.apply(null, [0].concat(ved.map(function (v) { return rlIdx(RL_POR_SPD, rlHod(d, 'v.' + v.uid + '.peb').v); }))),
-    pspd: Math.max.apply(null, [0].concat(ved.map(function (v) { return rlIdx(RL_POR_SPD, rlHod(d, 'v.' + v.uid + '.pspd').v); }))),
+    peb: ved.length ? Math.min.apply(null, ved.map(function (v) { return rlIdx(RL_POR_SPD, rlHod(d, 'v.' + v.uid + '.peb').v); })) : 0,
+    pspd: ved.length ? Math.min.apply(null, ved.map(function (v) { return rlIdx(RL_POR_SPD, rlHod(d, 'v.' + v.uid + '.pspd').v); })) : 0,
     lps: rlIdx(RL_POR_LPS, rlHod(d, 'lps').v),
     rp: Math.max.apply(null, [0].concat(zon.map(function (z) { return rlIdx(RL_POR_RP, rlHod(d, 'z.' + z.uid + '.rp').v); })))
   };
@@ -42868,18 +42871,26 @@ function rlNavrh(d) {
     if (ok.some(function (o) { return o.st.every(function (s, i) { return s <= v.st[i]; }); })) return;   // dominovaná
     var r = rlVypocet(d, v.prepis);
     if (r.chyby.length || !r.vyhovuje) return;
-    v.r = r; v.popis = rlNavrhPopis(v, akt, ved.length); ok.push(v);
+    v.r = r; v.popis = rlNavrhPopis(d, v); ok.push(v);
   });
   return { akt: akt, varianty: ok };
 }
-function rlNavrhPopis(v, akt, nVed) {
-  var t = [], s = v.st, na = nVed > 1 ? ' na všech vedeních' : ' na vstupu vedení';
-  if (s[0] > akt.peb) t.push('SPD na vstupu' + (nVed > 1 ? ' všech vedení' : ' vedení') + ' (LPL ' + (RL_POR_SPD[s[0]] === 'IV' ? 'III–IV' : RL_POR_SPD[s[0]]) + ')');
-  if (s[1] > akt.pspd) t.push('koordinované SPD uvnitř (LPL ' + (RL_POR_SPD[s[1]] === 'IV' ? 'III–IV' : RL_POR_SPD[s[1]]) + ')');
-  if (s[3] > akt.rp) t.push((s[3] === 1 ? 'ruční' : 'automatická') + ' protipožární opatření');
-  if (s[2] > akt.lps) t.push('LPS třídy ' + RL_POR_LPS[s[2]]);
+function rlNavrhPopis(d, v) {
+  var t = [], ved = d.vedeni || [], pr = v.prepis, lpl = function (k) { return 'LPL ' + (k === 'IV' ? 'III–IV' : k); };
+  var jm = function (x) { return x.druh === 'tel' ? 'telekomunikačním vedení' : 'přípojce NN'; };
+  ['peb', 'pspd'].forEach(function (co) {
+    var zm = ved.filter(function (x) { var k = 'v.' + x.uid + '.' + co; return pr[k] && pr[k] !== rlHod(d, k).v; });
+    if (!zm.length) return;
+    var urov = pr['v.' + zm[0].uid + '.' + co];
+    var kde = zm.length === ved.length ? (ved.length > 1 ? ' na všech vedeních' : '') : ' na ' + zm.map(jm).join(' a ');
+    t.push((co === 'peb' ? 'SPD na vstupu' : 'koordinované SPD uvnitř') + kde + ' (' + lpl(urov) + ')');
+  });
+  var rp = (d.zony || []).some(function (z) { var k = 'z.' + z.uid + '.rp'; return pr[k] && pr[k] !== rlHod(d, k).v; });
+  if (rp) t.push((v.st[3] === 1 ? 'ruční' : 'automatická') + ' protipožární opatření');
+  var lps = pr.lps && pr.lps !== rlHod(d, 'lps').v;
+  if (lps) t.push('LPS třídy ' + pr.lps);
   if (!t.length) t.push('současný stav vyhovuje – nic měnit není třeba');
-  return { text: t.join(' + '), rp: s[3] > akt.rp, lps: s[2] > akt.lps, na: na };
+  return { text: t.join(' + '), rp: rp, lps: lps };
 }
 
 // Nejnižší třída LPS, se kterou výpočet vyhoví (SPD na vstupu se doplní podle třídy).
@@ -43345,7 +43356,7 @@ TD_AKCE.tdRlNavrh = function () {
         (v.popis.rp ? '<div class="dk-upozorneni">⚠ Protipožární opatření započtěte jen tehdy, když v objektu opravdu jsou a budou udržovaná.</div>' : '') +
         '<button class="btn btn-gold" data-action="tdRlNavrhPouzit" data-i="' + i + '">Použít tuto variantu</button></div>';
     }).join('');
-  rlOkno('modal-rl-navrh', '🛡 Návrh ochrany', h, '<button class="btn btn-ghost" data-action="tdRlOknoZavrit" data-id="modal-rl-navrh">Zavřít</button>');
+  rlOkno('modal-rl-navrh', '🛡 Návrh ochrany', h, '<button class="dok-mini" data-action="tdRlOknoZavrit" data-id="modal-rl-navrh">Zavřít</button>');
 };
 TD_AKCE.tdRlOknoZavrit = function (el) { closeModal(el.getAttribute('data-id')); };
 TD_AKCE.tdRlNavrhPouzit = function (el) {
@@ -43392,7 +43403,7 @@ TD_AKCE.tdRlPrevzit = function () {
       }).join('') : '<div class="dk-pozn">Žádný dokument tohoto druhu.</div>') + '</div>';
   }).join('');
   rlOkno('modal-rl-prevzit', '📋 Převzít údaje téhož objektu', h,
-    '<button class="btn btn-ghost" data-action="tdRlOknoZavrit" data-id="modal-rl-prevzit">Zrušit</button><button class="btn btn-gold" data-action="tdRlPrevzitPotvrdit">✓ Převzít vybrané</button>');
+    '<button class="dok-mini" data-action="tdRlOknoZavrit" data-id="modal-rl-prevzit">Zrušit</button><button class="btn btn-gold" data-action="tdRlPrevzitPotvrdit">✓ Převzít vybrané</button>');
 };
 TD_AKCE.tdRlPrevzitPotvrdit = function () {
   var m = document.getElementById('modal-rl-prevzit'), vyb = {};
