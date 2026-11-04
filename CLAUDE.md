@@ -804,7 +804,18 @@ se **zdrojem a odkazem na normu**; sběrné oblasti, N, P, složky rizika a F
 po zónách; věta „Výpočet podle ČSN EN IEC 62305-2 ed. 3; hodnoty ztrát
 a koeficientů zvolil zpracovatel."
 
-Test: `testy/test-riziko-lps.js` (90 kontrol — každá tabulka koeficientů,
+**Příloha k revizi LPS** (`rlPrilohaPanelHtml`, `rlPrilohaRevize`,
+`rlPrilohaPripojit`): v panelu tisku **jen u revize LPS a jen když existuje
+výpočet rizika** skupina „Přílohy" s volbou „Přiložit výpočet rizika"
+(výpočty seřazené podle shody s místem revize). **Bez volby se nic nemění —
+PDF revize je znak po znaku stejné a data zprávy taky (test proti verzi bez
+přílohy na STARA_PORT, při přenosu pustit se `STARA=<předchozí vydání>`).**
+Se zvolenou přílohou se uid uloží jen v nastavení tisku zprávy
+(`D.tisk.rlpsPriloha`, do výchozích nastavení tisku nejde), listy výpočtu se
+připojí na konec PDF (vektorově, nepočítají se do „Počet listů") a do
+seznamu příloh **v PDF** přibude řádek — pole Seznam příloh se nemění.
+
+Test: `testy/test-riziko-lps.js` (97 kontrol — každá tabulka koeficientů,
 F.2 nechráněný i chráněný na 1 %, druhý příklad spočtený v testu vlastními
 vzorci, povinné Td, Navrhnout ochranu (nejlevnější = SPD LPL IV na obou
 vedeních) a Ctrl+Z, F/FT podle typu, převzetí z vymyšlené revize LPS,

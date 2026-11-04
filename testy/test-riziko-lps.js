@@ -227,6 +227,52 @@ async function otiskRevizi(p) {
   await p.evaluate(async () => { archiv.splice(0, archiv.length, ...archiv.filter(z => !/^rl-test/.test(z.uid))); await saveStore(); });
   check('data revizí po práci s výpočty bajtově stejná jako na začátku', await otiskRevizi(p) === otisk0);
 
+  // ── příloha k revizní zprávě LPS (porovnání s verzí bez přílohy na STARA_PORT) ──
+  const STARA = 'http://127.0.0.1:' + (process.env.STARA_PORT || 8902) + '/index.html';
+  const zprava = async (pg, vybrat) => pg.evaluate(async (vybrat) => {
+    const D = { typ: 'lps', podtyp: 'lps', ev_cislo: 'RE-26-9950', misto: 'Vymyšlený dům, Polní 99, Kyjov', adresa: 'Polní 99, Kyjov',
+      zahajeni: '2026-05-01', ukonceni: '2026-05-01', vypracovani: '2026-05-01', provozovatel: 'Jan Vymyšlený', prilohy: 'Protokol o měření zemničů',
+      lps: { trida: 'III', typ_objektu: 'pro bytové účely', prohlidka_norma: '62305' } };
+    aktTyp = 'lps'; aktPodtyp = 'lps'; novaZprava('lps'); nacistData(D);
+    const cekej = () => new Promise(r => { window.__pdfHotovoCb = r; generujPDF(); setTimeout(r, 6000); });
+    await cekej(); await new Promise(r => setTimeout(r, 300));
+    if (vybrat) {
+      const sel = document.getElementById('tisk-rlps');
+      if (!sel) return { chybi: true };
+      sel.value = vybrat; sel.dispatchEvent(new Event('change', { bubbles: true }));
+      await new Promise(r => { window.__pdfHotovoCb = r; setTimeout(r, 6000); }); await new Promise(r => setTimeout(r, 300));
+    }
+    const data = getData(); delete data.uid; delete data.timestamp;   // čas uložení se liší vždy
+    const pages = document.getElementById('pdf-pages');
+    return { html: Array.from(pages.querySelectorAll('.a4:not(.rl-priloha)')).map(a => a.outerHTML).join(''), n: pages.querySelectorAll('.a4').length,
+      pril: pages.querySelectorAll('.a4.rl-priloha[data-vektor]').length, text: pages.innerText, data: JSON.stringify(data), tisk: JSON.stringify(data.tisk),
+      volba: !!document.getElementById('tisk-rlps') };
+  }, vybrat);
+  const st = await b.newContext({ viewport: { width: 1366, height: 900 } });
+  await st.addInitScript(() => { try { navigator.serviceWorker.register = () => new Promise(() => {}); } catch (e) {} });
+  const sp = await st.newPage(); await sp.goto(STARA); await sp.waitForTimeout(1200);
+  await sp.evaluate(() => { STORE.technik = { jmeno: 'Jan Vymyšlený', mesto: 'Kyjov' }; saveStore(); });
+  await p.evaluate(() => { STORE.technik = { jmeno: 'Jan Vymyšlený', mesto: 'Kyjov' }; saveStore(); });
+  const stara = await zprava(sp, '');
+  await p.evaluate(() => showScreen('home')); await w(200);
+  const uidRl = await p.evaluate(async () => { await dokNacist(); return DOK.dokumenty.find(x => x.typ === 'rlps' && x.data && x.data.nazev !== undefined).uid; });
+  const rozdil = (x, y) => { let i = 0; while (i < x.length && x[i] === y[i]) i++; return i >= x.length && x.length === y.length ? '' : '…' + x.slice(Math.max(0, i - 60), i + 60) + ' ≠ ' + y.slice(Math.max(0, i - 60), i + 60); };
+  const bez = await zprava(p, '');
+  check('příloha: v panelu tisku revize LPS je volba „Přiložit výpočet rizika"', bez.volba);
+  check('příloha: bez zaškrtnutí je PDF revize znak po znaku stejné jako ve verzi bez přílohy', bez.html === stara.html && bez.n === stara.n, bez.n + ' / ' + stara.n + ' ' + rozdil(bez.html, stara.html));
+  check('příloha: bez zaškrtnutí jsou data zprávy stejná jako ve verzi bez přílohy', bez.data === stara.data, rozdil(bez.data, stara.data));
+  const s = await zprava(p, uidRl);
+  check('příloha: se zaškrtnutím se listy výpočtu připojí na konec PDF (vektorově)', s.pril >= 2 && s.n === bez.n + s.pril, s.n + ' = ' + bez.n + ' + ' + s.pril);
+  check('příloha: v seznamu příloh v PDF přibude řádek', /Výpočet rizika úderu blesku RLPS-\d+/.test(s.text) && /Protokol o měření zemničů/.test(s.text));
+  check('příloha: pole Seznam příloh ve zprávě se nezměnilo, volba je jen v nastavení tisku', JSON.parse(s.data).prilohy === 'Protokol o měření zemničů' && JSON.parse(s.tisk).rlpsPriloha === uidRl, s.tisk);
+  const zpet = await p.evaluate(async () => {
+    const sel = document.getElementById('tisk-rlps'); sel.value = ''; sel.dispatchEvent(new Event('change', { bubbles: true }));
+    await new Promise(r => { window.__pdfHotovoCb = r; setTimeout(r, 6000); }); await new Promise(r => setTimeout(r, 300));
+    tiskUlozitVychozi(); return { tisk: JSON.stringify(getData().tisk), vych: JSON.stringify(STORE.tisk), pril: document.querySelectorAll('#pdf-pages .rl-priloha').length };
+  });
+  check('příloha: odebrání volby vrátí PDF i nastavení zprávy, do výchozích se příloha nedostane', zpet.pril === 0 && !/rlpsPriloha/.test(zpet.tisk + zpet.vych), JSON.stringify(zpet));
+  await st.close();
+
   // ── telefon 375 px ────────────────────────────────────────────────────
   const m = await b.newContext({ viewport: { width: 375, height: 740 }, isMobile: true, hasTouch: true });
   await m.addInitScript(() => { try { navigator.serviceWorker.register = () => new Promise(() => {}); } catch (e) {} });

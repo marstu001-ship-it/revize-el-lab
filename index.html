@@ -16793,6 +16793,8 @@ function titulkaVejit(p1) {
 function generujPDF() {
   var D = getData();
   var pdfOpts = tiskNastaveni(D);
+  var rlPril = rlPrilohaRevize(D, pdfOpts);   // výpočet rizika LPS přiložený k revizi LPS (jen se zaškrtnutím)
+  if (rlPril) D.prilohy = (D.prilohy ? String(D.prilohy).replace(/\s+$/, '') + '\n' : '') + rlPril.text;
   var pages = document.getElementById('pdf-pages');
   if (!pages) return;
   pages.innerHTML = '';
@@ -18055,6 +18057,7 @@ function generujPDF() {
     // AŽ NAKONEC — přečíslování mění text v hlavičce i „Počet listů",
     // takže výška titulky je známá teprve teď.
     titulkaVejit(pages.querySelector('.a4-titulni'));
+    if (rlPril) rlPrilohaPripojit(pages, rlPril);
 
     // Stánkování běží až v `requestAnimationFrame`, takže kdo potřebuje
     // HOTOVÉ stránky (hromadný tisk), musí počkat právě sem. Jednorázové
@@ -28282,6 +28285,7 @@ function renderTiskPanel() {
         '📌 Použít i pro příští zprávy — ' + esc(typInfo(aktTyp).label) + '</button>'
       : '') +
 
+    rlPrilohaPanelHtml(t) +
     '<div class="tisk-skupina">Podpis</div>' +
     '<label class="tisk-check' + (maRazitko ? '' : ' tisk-nedostupne') + '">' +
       '<input type="checkbox" id="tisk-razitko"' + (t.razitko ? ' checked' : '') +
@@ -28319,6 +28323,7 @@ function tiskPanelZmena(e) {
   else if (el.id === 'tisk-fotek') z.fotekNaRadek = parseInt(el.value, 10);
   else if (el.id === 'tisk-razitko') z.razitko = el.checked;
   else if (el.id === 'tisk-podpis') z.podpis = el.checked;
+  else if (el.id === 'tisk-rlps') { if (el.value) z.rlpsPriloha = el.value; else delete z.rlpsPriloha; }
   else {
     // Texty nejsou nastavení tisku, ale POLE ZPRÁVY — panel do nich jen
     // píše. Díky tomu se ukládají, archivují i zálohují beze změny a
@@ -28370,6 +28375,7 @@ function tiskBarva(el) {
 
 function tiskUlozitVychozi() {
   STORE.tisk = Object.assign({}, tiskNastaveni());
+  delete STORE.tisk.rlpsPriloha;   // příloha patří jedné zprávě, ne všem
   window.__tiskZpravy = {};      // zpráva už se od profilu neliší
   saveStore();
   renderTiskPanel();
@@ -43677,6 +43683,46 @@ function rlPdfListy(d) {
 }
 function rlPdfSoubor(d) {
   return ((d.cislo || 'RLPS') + '_Riziko_LPS' + (d.nazev ? '_' + d.nazev : '')).replace(/[\\\/:*?"<>|]+/g, '').replace(/\s+/g, '_').slice(0, 80) + '.pdf';
+}
+// ── Příloha k revizní zprávě LPS ─────────────────────────────────────────
+// V panelu tisku revize LPS (jen když existuje výpočet rizika) volba
+// „Přiložit výpočet rizika". Bez volby se nic nemění — PDF revize je
+// bajtově stejné a do dat zprávy se nic nezapíše (test). Se zvolenou
+// přílohou se uid výpočtu uloží jen v nastavení tisku té zprávy
+// (`D.tisk.rlpsPriloha`), listy výpočtu se připojí na konec PDF a do
+// seznamu příloh v PDF přibude řádek (pole zprávy se nemění).
+function rlPrilohaDok(uid) { return (DOK.dokumenty || []).filter(function (x) { return x.uid === uid && x.typ === 'rlps'; })[0] || null; }
+function rlPrilohaText(x) {
+  var d = x.data || {};
+  return 'Výpočet rizika úderu blesku ' + (x.cislo || d.cislo || '') + ' (ČSN EN IEC 62305-2 ed. 3)';
+}
+function rlPrilohaRevize(D, t) {
+  if (!D || (D.typ || aktTyp) !== 'lps' || !t || !t.rlpsPriloha) return null;
+  var x = rlPrilohaDok(t.rlpsPriloha);
+  return x ? { x: x, text: rlPrilohaText(x) } : null;
+}
+function rlPrilohaPripojit(pages, pr) {
+  rlPdfListy(pr.x.data || {}).forEach(function (svg) {
+    var el = document.createElement('div');
+    el.className = 'a4 a4-landscape rz-sch-strana rl-pdf-list rl-priloha';
+    el.setAttribute('data-vektor', '1');
+    el.innerHTML = svg;
+    pages.appendChild(el);
+  });
+}
+function rlPrilohaPanelHtml(t) {
+  if (aktTyp !== 'lps') return '';
+  var docs = (DOK.dokumenty || []).filter(function (x) { return x.typ === 'rlps'; });
+  if (!docs.length) return '';
+  var misto = gv('f_misto');
+  docs.sort(function (a, b) { return rlShoda(misto, (b.data || {}).misto || (b.data || {}).nazev) - rlShoda(misto, (a.data || {}).misto || (a.data || {}).nazev) || cisloPorovnat(b.cislo, a.cislo); });
+  return '<div class="tisk-skupina">Přílohy</div>' +
+    '<label class="tisk-radek tisk-rlps"><span>Přiložit výpočet rizika</span><select id="tisk-rlps">' +
+    '<option value="">— nepřikládat —</option>' + docs.map(function (x) {
+      var d = x.data || {};
+      return '<option value="' + esc(x.uid) + '"' + (t.rlpsPriloha === x.uid ? ' selected' : '') + '>' + esc((x.cislo || '') + ' · ' + (d.nazev || d.misto || '')) + '</option>';
+    }).join('') + '</select></label>' +
+    '<div class="tisk-pozn2" style="margin:-.2rem 0 .5rem">Listy výpočtu z Tvorby dokumentace se připojí na konec PDF a do seznamu příloh.</div>';
 }
 DOK_TYPY.rlps.pdf = function (d) {
   return rlPdfListy(d).map(function (svg) { return { cela: '<div class="a4 a4-landscape rz-sch-strana rl-pdf-list" data-vektor="1">' + svg + '</div>' }; });
