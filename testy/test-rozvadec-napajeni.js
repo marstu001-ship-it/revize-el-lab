@@ -270,6 +270,76 @@ async function stranka(ctx, url, err) {
     await ctxM.close();
   }
 
+  // ── 7. svorková lišta, přípojnice, obecné položky (commit 2) ───────────
+  const sv = await p.evaluate(async () => {
+    const n = __T.naj, r = {};
+    const kn = id => rozvKnihPolozka(id);
+    r.polozky = ['v-x-svork', 'v-x-prip-n', 'v-x-prip-pe', 'v-fu-3-1451-50', 'v-fu-1-1451-50', 'v-spd-2-31'].map(id => !!kn(id)).join();
+    r.fu50 = [kn('v-fu-3-1451-50').In, kn('v-fu-3-1451-50').sirka, kn('v-fu-1-1451-50').sirka].join('|');
+    r.hledat = rozvKnihovnaVse().filter(it => it.druh !== 'skrin' && rozvNorm([it.nazev].join(' ')).indexOf('3+1') !== -1).map(it => it.nazev).join();
+    const v0 = rozvVolnoCelkem(__rz);
+    // řada 3: vývodové svorky -X4…X46 (43 ks), přípojnice N za -FI1 a PE
+    const sk = rozvVlozit('v-x-svork', 2, __rz.rady[2].prvky.length);
+    const pn = rozvVlozit('v-x-prip-n', 2, __rz.rady[2].prvky.length), pe = rozvVlozit('v-x-prip-pe', 2, __rz.rady[2].prvky.length);
+    rozvVybrat(sk.uid, false); await __T.w(30);
+    const pc = document.querySelector('#rz-vlastnosti [data-rp2="pocet"]'); pc.value = '43'; pc.dispatchEvent(new Event('input', { bubbles: true })); await __T.w(30);
+    sk.ozn = '-X4'; rozvPohledVykreslit();
+    r.rozsah = rozvSvorkyRozsah(sk); r.sirka = sk.p.sirka; r.dalsi = rozvDalsiOzn('X');
+    r.svg = /-X4…X46/.test(document.querySelector('#rz-pohled .rz-svg').textContent) && /43 ks/.test(document.querySelector('#rz-pohled .rz-svg').textContent);
+    // přípojnice N: volba „Napájen z" → -FI1
+    rozvVybrat(pn.uid, false); await __T.w(30);
+    const nsel = document.querySelector('#rz-vlastnosti [data-rp2="nadr"]'); r.nVolba = !!nsel;
+    if (nsel) { nsel.value = n('-FI1').uid; nsel.dispatchEvent(new Event('change', { bubbles: true })); await __T.w(30); }
+    r.nNadr = pn.nadr === n('-FI1').uid;
+    r.fiDeti = rozvDeti(n('-FI1').uid).length;   // 20 jističů + přípojnice N
+    r.fiFaze = rozvFazeSouhrn(__rz.rady).vyvodu;
+    // řada 3 jako svorková lišta: nepočítá se do volného místa ani přeplnění
+    const vPred = rozvVolnoCelkem(__rz);
+    sk.p.pocet = 90; sk.p.sirka = rozvSvorkySirka(90);
+    r.preplnPred = rozvPreplnene(__rz).length;
+    __rz.vyber = null; rozvVlastnostiVykreslit();
+    const zatrh = document.querySelector('#rz-vlastnosti .rz-svorky-rada[data-rada="2"]'); zatrh.checked = true; zatrh.dispatchEvent(new Event('change', { bubbles: true })); await __T.w(50);
+    const vPo = rozvVolnoCelkem(__rz);
+    r.volno = [v0.celkem, vPred.celkem, vPo.celkem].join('|'); r.preplnPo = rozvPreplnene(__rz).length;
+    r.lista = /svorková lišta/.test(document.querySelector('#rz-pohled .rz-svg').textContent) && !/Řada 3: přeplněno/.test(document.querySelector('#rz-pohled .rz-svg').textContent);
+    r.dataSv = __T.cist().rady[2].svorky === true;
+    sk.p.pocet = 43; sk.p.sirka = rozvSvorkySirka(43); rozvPohledVykreslit();
+    // přívodní svorky -X1…X3 před hlavním vypínačem
+    const pr = rozvVlozit('v-x-svork', 2, 0); pr.p.pocet = 3; pr.p.sirka = rozvSvorkySirka(3); pr.privodni = true; pr.ozn = '-X1';
+    const d = __T.cist(), L = rozvSchemaListy(d), svg1 = L[1].svg;
+    r.privod = svg1.indexOf('>-X1…X3<') !== -1;
+    r.seznam = DOK_TYPY.rozv.pdf(Object.assign({}, d, { dokVyber: { schema: false, tech: false, prohl: false, ko: false } })).map(q => q.html || '').join('');
+    r.seznamX = (r.seznam.match(/<td class="c">-X4…X46<\/td>/g) || []).length === 1 && /43 ks · 2,5–4 mm²/.test(r.seznam);
+    // 11.7: s přípojnicí PE bez poznámky, bez ní s poznámkou
+    r.ko117s = /V návrhu chybí přípojnice \/ svorky PE/.test(rozvDokHtml(d));
+    const d2 = JSON.parse(JSON.stringify(d)); d2.rady.forEach(rr => rr.prvky = rr.prvky.filter(x => x.p.prip !== 'PE'));
+    r.ko117bez = /V návrhu chybí přípojnice \/ svorky PE – aspoň 2 svorky pro ochranné pospojování \(čl\. 8\.8\)\./.test(rozvDokHtml(d2));
+    // úklid
+    [sk, pn, pe, pr].forEach(x => { const q = rozvNajit(x.uid); if (q) __rz.rady[q.r].prvky.splice(q.i, 1); });
+    delete __rz.rady[2].svorky; rozvNadrazeneAuto(); rozvPohledVykreslit(); rozvVlastnostiVykreslit(); dokZmena();
+    return r;
+  });
+  check('knihovna: svorkovnice, přípojnice N/PE, pojistkové odpojovače 14×51 50 A (4,5 / 1,5 M), svodič T2 3+1', sv.polozky === 'true,true,true,true,true,true' && sv.fu50 === '50|4.5|1.5', sv.polozky + ' ' + sv.fu50);
+  check('knihovna: hledání „3+1" najde „Svodič přepětí T2 3+1"', /Svodič přepětí T2 3\+1/.test(sv.hledat), sv.hledat);
+  check('svorkovnice: počet 43 → -X4…X46, šířka 43 × 6 mm v modulech, další -X47', sv.rozsah === '-X4…X46' && sv.sirka === 15 && sv.dalsi === '-X47' && sv.svg, [sv.rozsah, sv.sirka, sv.dalsi, sv.svg].join(' '));
+  check('přípojnice N: volba „Napájen z" → -FI1; do fází se nepočítá', sv.nVolba && sv.nNadr && sv.fiDeti === 21 && sv.fiFaze === 44, sv.fiDeti + ' / ' + sv.fiFaze);
+  check('svorková lišta: řada se nepočítá do volného místa (96 → 72 M) ani přeplnění, v pohledu „svorková lišta", v datech rady[2].svorky', sv.volno === '96|96|72' && sv.preplnPred === 1 && sv.preplnPo === 0 && sv.lista && sv.dataSv, sv.volno + ' ' + sv.preplnPred + '/' + sv.preplnPo);
+  check('schéma: přívodní svorky -X1…X3 na přívodu před -QH1', sv.privod);
+  check('seznam přístrojů: svorkovnice jedna řádka -X4…X46 s počtem', sv.seznamX);
+  check('kusové ověření 11.7: bez přípojnice PE poznámka „V návrhu chybí přípojnice / svorky PE…", s ní ne', !sv.ko117s && sv.ko117bez);
+  // import CSV ve formátu knihovny výrobců (vymyšlené řádky, SPD bez pólů)
+  const csv = await p.evaluate(() => {
+    const t = 'druh;kategorie;nazev;vyrobce;rada;typ;poly;in;charakteristika;trida_spd;up;sirka_moduly;overeno\n' +
+      'pristroj;QM;Vypínač 3P 63 A (dříve vyráběný);Výrobce A;R1;A-63/3;3;63;;;;3;ne\n' +
+      'pristroj;FU;Pojistkový odpojovač 3P 14×51;Výrobce A;R1;A-LR603;3;50;;;;4,5;ne\n' +
+      'pristroj;SPD;Svodič T2 275 V;Výrobce B;S1;B-SLP-275 V/1;1;;;T2;1,5;1;ne\n' +
+      'pristroj;SPD;Svodič N-PE;Výrobce B;S1;B-SLP-NPE V/1;;;;T2;1,5;1;ne\n' +
+      'pristroj;SPD;Svodič T2 3+1;Výrobce B;S1;B-SLP-275 V/3+1;3+N;;;T2;1,5;4;ne\n';
+    const r = rozvImportRozebrat(t, 'vyrobci.csv');
+    return { pol: (r.polozky || []).length, chyby: (r.chyby || []).length, typy: (r.polozky || []).map(x => x.typ).join(',') };
+  });
+  check('import CSV: 5 řádků bez chyb, i SPD s prázdnými póly', csv.pol === 5 && csv.chyby === 0, JSON.stringify(csv));
+
   // ── starý rozvaděč z předchozí verze: data, schéma, PDF beze změny ─────
   {
     const ctxS = await kontext(b), errS = [];

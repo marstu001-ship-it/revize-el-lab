@@ -182,7 +182,7 @@ function pomocnik() {
   await p.click('#rz-filtry-hlavni .rz-skup[data-k="jine"]'); f.jine = await p.evaluate(() => Array.from(new Set(Array.from(document.querySelectorAll('#rz-seznam .rz-ikona')).map(x => x.textContent))).sort().join());
   await p.evaluate(() => TD_AKCE.tdRFiltrZrusit());
   await p.evaluate(() => __T.filtr('q', 'rcbo c16')); f.q = await p.evaluate(() => Array.from(document.querySelectorAll('#rz-seznam .rz-polozka b')).map(x => x.textContent).join());
-  await p.evaluate(() => __T.filtr('q', 'svodič')); f.qNic = await p.evaluate(() => document.getElementById('rz-seznam').innerText);
+  await p.evaluate(() => __T.filtr('q', 'kávovar')); f.qNic = await p.evaluate(() => document.getElementById('rz-seznam').innerText);
   await p.evaluate(() => { TD_AKCE.tdRFiltrZrusit(); __T.filtr('overene', true); }); f.over = await p.evaluate(() => __T.nalezeno());
   await p.evaluate(() => TD_AKCE.tdRFiltrZrusit());
   check('skříně: výrobce, počet řad, modulů v řadě, provedení a materiál jsou vidět vždy', f.skrineViditelne === 'vyrobce,rady,modulu,provedeni,material', f.skrineViditelne);

@@ -614,7 +614,7 @@ const presahy = (p, svg) => p.evaluate(svg => {
     check('DBO: PDF návrhu stejné jako ve předchozí verzi', A.pdf === B.pdf, A.pdf === B.pdf ? '' : rozdil(A.pdf, B.pdf));
     // dávka 4 norem (ČSN EN IEC 61439-3 ed. 2): záměrné doplňky Dokumentů DBO se z porovnání vyjmou (hlídá je test-rozvadec.js)
     const bezD4 = t => t.replace(/<div id="rz-dbo-upoz">(?:<div class="[^"]*">[^<]*<\/div>)*<\/div>/g, '')
-      .replace(/<div class="dk-nepov rz-ko-nap">[^<]*<\/div>/g, '').replace(/<option value="C"[^>]*>[^<]*<\/option>/g, '')
+      .replace(/<div class="dk-nepov rz-ko-nap(?: rz-ko-pe)?">[^<]*<\/div>/g, '').replace(/<option value="C"[^>]*>[^<]*<\/option>/g, '')
       .replace(/<label class="teren-radek rz-zatrh"><input type="checkbox" data-dk="otepleni\.evRizeni"[^>]*> [^<]*<\/label>/g, '')
       .replace(/ <span class="rz-ceka"[^>]*>[^<]*<\/span>/g, '').replace(/ <span class="dk-nepov">ČSN EN IEC 61439-3 ed\. 2, čl\. 5\.4, tab\. 101<\/span>/g, '')
       .replace(/(data-dk="tech\.(?:ik|znec)") placeholder="[^"]*"/g, '$1');

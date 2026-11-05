@@ -2912,6 +2912,29 @@ chránič.
   vypínačem (`rozvSvorkyRozsah`: „-X1…X3"). Pojistka: volitelné **`x.vlozka`**
   („40 gG", „Vložka (A, char.)" v Dalších údajích) → „vložka 40 gG" ve schématu.
 
+**Svorková lišta, přípojnice, obecné položky (commit 2):**
+- Řada jako **svorková lišta** (`rady[i].svorky = true`, zaškrtávátka „Svorkové
+  lišty" ve vlastnostech bez výběru): nepočítá se do volného místa ani
+  přeplnění (`rozvVolnoCelkem`, `rozvPreplnene`), do fází ani oteplení (`rfVse`)
+  ani soudobosti (`rzsVyvody`); v pohledu šedý podklad a „svorková lišta".
+  **Poloviční výšku nemá** — výšku řady počítá `rozvRadaY` napříč pohledem,
+  tažením, 3D i PDF; měnit ji by sáhlo do všech starých rozvaděčů.
+- Obecné položky (kategorie X, neověřené): **Svorkovnice – řadové svorky
+  (počet)**, **Přípojnice N / PE (počet svorek)** — `p.svorky`, `p.pocet`
+  (výchozí 10), `p.prurez`, `p.prip` ('N' / 'PE'); šířka = počet × 6 mm
+  v modulech (`rozvSvorkySirka`). Označení s rozsahem `-X4…X46` (pohled,
+  osazení, seznam — jedna řádka s „43 ks · průřez"); `rozvDalsiOzn` a
+  přečíslování počítají celý rozsah. Přípojnice N má volbu „Napájen z" (N1 za
+  chráničem). Svorkovnice: **„Přívodní svorky (před hlavním vypínačem)"**
+  (`x.privodni`) → schéma. Pojistkové odpojovače 14×51 50 A 3P (4,5 M) a 1P
+  (1,5 M), **Svodič přepětí T2 3+1**.
+- Kusové ověření 11.7 (DBO): bez přípojnice / svorek PE nenápadná poznámka
+  „V návrhu chybí přípojnice / svorky PE – aspoň 2 svorky pro ochranné
+  pospojování (čl. 8.8)." (`rozvMaPe`, jen formulář).
+- Knihovna výrobců `knihovna_vyrobcu_v9.csv` (OEZ ASN, Hager LR603, Saltek SLP)
+  se do repozitáře **nedává** — test importuje syntetické CSV se stejnými
+  sloupci (i SPD s prázdnými póly).
+
 Test: `testy/test-rozvadec-napajeni.js` (vzorek RS2 `testy/rozvadec-rs2.js`;
 model, panel, režim Napájení skutečnou myší, klik a klik, rámeček, Ctrl+Z,
 kontextové menu, telefon 360 px, schéma, fáze, starý rozvaděč proti

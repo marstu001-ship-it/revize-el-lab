@@ -575,6 +575,11 @@ function vsechnyStavy(zalozky) {
     await __M.rozv(); const x = __rz.rady[1].prvky[0]; __rz.vyber = x.uid; rozvPohledVykreslit(); rozvVlastnostiVykreslit();
     document.querySelector('#rz-vlastnosti .rp-napaji-deti').scrollIntoView({ block: 'start' }); await __M.w(100);
   }));
+  add('rozvaděč – svorkovnice ve vlastnostech a svorkové lišty', 'Tvorba dokumentace', E(async () => {
+    await __M.rozv(); const x = rozvVlozit('v-x-svork', 2, __rz.rady[2].prvky.length); __rz.rady[2].svorky = true;
+    __rz.vyber = x.uid; rozvPohledVykreslit(); rozvVlastnostiVykreslit();
+    document.querySelector('#rz-vlastnosti .rp-svorkovnice').scrollIntoView({ block: 'start' }); await __M.w(100);
+  }));
   // předloha z fotky: vymyšlená „fotka" řady nakreslená na plátno, jen v paměti
   const fotka = `(() => { const c = document.createElement('canvas'); c.width = 900; c.height = 600; const g = c.getContext('2d');
     g.fillStyle = '#777'; g.fillRect(0, 0, 900, 600); for (let m = 0; m < 12; m++) { g.fillStyle = '#fff'; g.fillRect(90 + m * 60 + 2, 220, 56, 180); }
