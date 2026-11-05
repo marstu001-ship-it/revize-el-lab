@@ -10305,7 +10305,8 @@ var NORMY = {
       { id: 'csn2000554', t: 'ČSN 33 2000-5-54 ed.3 — Uzemnění a ochranné vodiče', od: 'od 08/2012', c: false },
       { id: 'csn2000551', t: 'ČSN 33 2000-5-51 ed.3 +Z1+Z2 — Výběr a stavba el. zařízení', od: 'od 2010 · Z2 2016', c: false },
       { id: 'csn2000552', t: 'ČSN 33 2000-5-52 ed.2 — Elektrické rozvody', od: 'od 06/2012', c: false },
-      { id: 'csn2000701', t: 'ČSN 33 2000-7-701 ed.3 — Prostory s vanou nebo sprchou', od: 'od 02/2007', c: false },
+      { id: 'csn2000701', t: 'ČSN 33 2000-7-701 ed.3 — Prostory s vanou nebo sprchou', od: 'od 07/2025', c: false },
+      { id: 'csn2000701e2', t: 'ČSN 33 2000-7-701 ed.2 — Prostory s vanou nebo sprchou (souběžně do 6. 12. 2027)', od: '09/2007 – 12/2027', c: false },
       { id: 'csn641z1', t: 'ČSN 33 2000-4-41 ed.2 + Z1 — starší instalace', od: '2000 – 02/2018', c: false, neplatna: true },
       { id: 'csn50110', t: 'ČSN EN 50110-1 ed. 4 — Obsluha a práce na elektrických instalacích', od: 'od 08/2025', c: false },
       { id: 'csn60445', t: 'ČSN EN IEC 60445 ed.6 — Označování svorek a vodičů', od: 'od 11/2018', c: false },
@@ -12899,8 +12900,8 @@ var TYPICKE_ZAVADY = [
   { kod: 'C1', popis: 'Vybavovací čas proudového chrániče při IΔn přesahuje 0,3 s (typ S 0,5 s)', norma: 'ČSN 33 2000-6 ed.2, příloha NA' },
   { kod: 'C1', popis: 'Neživé části nejsou spojeny s ochranným pospojováním', norma: 'ČSN 33 2000-4-41 ed.3, čl. 411.3.1.2' },
   { kod: 'C1', popis: 'Propojení vodičů N a PE za proudovým chráničem', norma: 'ČSN 33 2000-5-54 ed.3, čl. 543.4.3; ČSN 33 2000-4-41 ed.3, čl. 411.4.5' },
-  { kod: 'C1', popis: 'Obvod v místnosti s vanou nebo sprchou bez proudového chrániče IΔn ≤ 30 mA', norma: 'ČSN 33 2000-7-701, čl. 701.415.1' },
-  { kod: 'C1', popis: 'Zásuvka v nedovolené zóně koupelny (zóna 0, 1 nebo 2)', norma: 'ČSN 33 2000-7-701, čl. 701.512.4' },
+  { kod: 'C1', popis: 'Obvod v místnosti s vanou nebo sprchou bez proudového chrániče IΔn ≤ 30 mA', norma: 'ČSN 33 2000-7-701 ed.2, čl. 701.415.1; ed.3, čl. 701.415.101' },
+  { kod: 'C1', popis: 'Zásuvka v nedovolené zóně koupelny (v zóně 0 žádná, v zónách 1 a 2 jen obvody SELV nebo PELV)', norma: 'ČSN 33 2000-7-701 ed.2, čl. 701.512.4; ed.3, čl. 701.512.2.4.101' },
   { kod: 'C1', popis: 'Chybí předložená projektová dokumentace skutečného provedení', norma: 'ČSN 33 2000-6 ed.2/Z2, příloha E (Dokumentace předložená k provedení revize); NV č. 190/2022 Sb., § 10 písm. c)' },
   // C2 - Potenciálně nebezpečné
   { kod: 'C2', popis: 'Chybí nebo je nefunkční označení obvodů v rozváděči', norma: 'ČSN 33 2000-5-51 ed.3, čl. 514' },
@@ -29192,7 +29193,7 @@ function dokVvKody(seznam) {
   return o;
 }
 var DOK_VV_VZORY_SKUPINY = ['Bydlení', 'Bytový dům', 'Technické prostory', 'Administrativa a výroba', 'Venkovní'];
-var DOK_VV_ZONY_701 = 'Prostory umýváren a sprchovacích koutů jsou určeny dle ČSN 33 2000-7-701 zóny dle obrázku 701 A-f: ' +
+var DOK_VV_ZONY_701 = 'Prostory umýváren a sprchovacích koutů jsou určeny dle ČSN 33 2000-7-701 zóny dle čl. 701.30 (ed.2: obrázky 701.1 a 701.2; ed.3: čl. 701.30.102 až 701.30.104, obrázky 1 až 11): ' +
   'AD4 vliv stříkající vody všemi směry v prostoru sprch. koutu a 600 mm kolem vstupu se závěsem, ' +
   'AD2 do vzdálenosti 2,4 m od hranice AD4.';
 var DOK_VV_VZORY_VESTAVENE = [

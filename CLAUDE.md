@@ -578,7 +578,8 @@ Podrobnosti po dávkách jsou v oddílech níž. **Do repozitáře jdou jen čí
 
 - **Ověřeno:** ČSN 33 2000-6 ed.2 (+Z1, Z2), 4-41 ed.3, 5-51 ed.3+Z1+Z2
   (+ TNI 33 2000-5-51), 5-52 ed.2, 5-54 ed.3, 4-443 ed.3, ČSN 33 1500
-  (tab. 1 a 1a), 7-701 ed.2, ČSN EN 61140 ed.3; ČSN 34 1390; ČSN 33 2130 ed.4
+  (tab. 1 a 1a), 7-701 ed.2 a **ed.3** (06/2025, dávka 4), ČSN EN 61140 ed.3;
+  **ČSN 33 1600 ed.2 + Z1 + Z2 (+ Z2/Opr. 2)** (dávka 4); ČSN 34 1390; ČSN 33 2130 ed.4
   (přílohy A, B, čl. 8.1.3, 8.7.3); ČSN EN 60204-1 ed.3; ČSN EN IEC 62305-3
   ed.3, -2 ed.3, ČSN EN 62305-1 ed.2, -4 ed.2; ČSN EN IEC 61439-1 ed.3
   a 61439-2 ed.3; ČSN EN 50110-1 ed.4.
@@ -586,9 +587,6 @@ Podrobnosti po dávkách jsou v oddílech níž. **Do repozitáře jdou jen čí
   - **ČSN EN IEC 61439-3 ed.2 (díl 3, DBO)** — RDF DBO, meze 250 A / 125 A,
     umístění, znečištění, rozměry DBO; u PSC vnější provedení, F / D / W, EMC,
     znečištění, kategorie přepětí,
-  - **ČSN 33 2000-7-701 ed.3** — koupelnové vady se citují bez vydání,
-    kontrola proběhla proti ed.2,
-  - **ČSN 33 1600 ed.2 Z1 / Z2** — lhůty spotřebičů (tab. 1),
   - **dvě citace přílohy E ČSN EN 62305-3 ed.2** (čl. E.5.6.2.2 a E.7 —
     ed.2 uživatel nemá, ověřeno jen přes obsah ed.3) a číslo kap. 8 v ed.2.
 - **Zásada: uložené zprávy a rozvaděče se nepřepisují.** Opravy mění katalog,
@@ -614,7 +612,7 @@ popisky a texty skládané za běhu.
 - **Katalog `TYPICKE_ZAVADY`:** Zs → `411.4.4; 6 ed.2 D.6.4.3.7.3` (bublina
   meze Zs ji bere z katalogu), čas RCD → `6 ed.2, příloha NA` (popis s typem S),
   N+PE → `5-54 543.4.3; 4-41 411.4.5`, koupelna rozdělena na dvě vady
-  (`701.415.1`, `701.512.4`, **bez vydání** — kontrola proběhla proti ed.2),
+  (`701.415.1`, `701.512.4`; od dávky 4 s oběma vydáními — viz níž),
   chybějící dokumentace skutečného provedení **C1** (Z2 příloha E), přepážky
   `5-52 ed.2, 527.2`, SPD `4-443 ed.3, 443.4` / `443.4, 443.5`, tlačítko TEST
   `návod výrobce; 6.4.3.10`.
@@ -633,6 +631,33 @@ popisky a texty skládané za běhu.
 Test: `testy/test-normy.js` (34 kontrol — formulář i PDF, katalog, bublina Zs,
 lhůty, starší zpráva bajtově proti předchozí verzi). **Upraveno:**
 `test-dokumentace.js` (dlaždice a věta s TNI).
+
+## Normy – ČSN 33 2000-7-701 ed. 3 a ČSN 33 1600 ed. 2 + Z1 + Z2, dávka 4 (2026-11-05)
+
+Plné znění dodal uživatel: **ČSN 33 2000-7-701 ed. 3** (06/2025; ed. 2 ze 09/2007
+platí souběžně do 6. 12. 2027) a **ČSN 33 1600 ed. 2** se Z1 (04/2021), Z2 (09/2021)
+a Z2/Opr. 2 (02/2022). Data se nemění — jen katalog, seznam norem a předvyplňovaný
+text nových protokolů.
+
+- **Seznam norem:** `csn2000701` (ed.3) `od 07/2025`; nová `csn2000701e2` (ed.2,
+  souběžně do 6. 12. 2027, nezaškrtnutá) pro instalace zřízené podle ed.2.
+  Předvolby `dum` / `byt` beze změny. Do PDF jdou názvy norem, takže se PDF nemění.
+- **Katalog:** RCD 30 mA → `ČSN 33 2000-7-701 ed.2, čl. 701.415.1; ed.3, čl.
+  701.415.101` (ed.3 platí i pro obvody procházející zónou 1 nebo 2); zásuvka
+  v zóně → popis „(v zóně 0 žádná, v zónách 1 a 2 jen obvody SELV nebo PELV)",
+  `ed.2, čl. 701.512.4; ed.3, čl. 701.512.2.4.101` (701.512.4 v ed.3 není).
+- **Protokol vnějších vlivů** (`DOK_VV_ZONY_701`): „obrázek 701 A-f" (v žádném
+  vydání není) → „čl. 701.30 (ed.2: obrázky 701.1 a 701.2; ed.3: čl. 701.30.102
+  až 701.30.104, obrázky 1 až 11)". Určení AD4 / AD2 je zpracovatele, beze změny.
+  Uložené protokoly mají text uložený a nemění se (test).
+- **ČSN 33 1600 ed.2 + Z1 + Z2** — ověřeno bez změny kódu: skupiny A–E (kap. 4),
+  tab. 1 podle Z2, pozn. 6 k tab. 1 (prodlužovací a odpojitelné přívody s ochranným
+  vodičem → lhůty třídy I) a vysvětlivky ve vzoru protokolu. Volba lhůt 6/12/24
+  měsíců je ze vzoru technika a schválil ji uživatel.
+
+Test: `testy/test-normy.js` (38 kontrol — seznam norem, obě vady, zóny, starý
+protokol se „701 A-f" a stará zpráva s `csn2000701` bajtově beze změny).
+**Upraveno:** `test-dokumentace.js` (text zón vzoru koupelny).
 
 ## Normy – ČSN 34 1390, dávka 2 (2026-11-04)
 
@@ -5261,11 +5286,9 @@ další. Testy na zavírání jsou proto tři (výběr, Esc, klepnutí jinam).
 - **Třída ochrany** (`SPOTR_TRIDY`) — I / II / III podle ČSN EN 61140,
   poznámka o prodlužovacích přívodech je z legendy, položka 8).
 - **Skupina A–E** (`SPOTR_SKUPINY_VOLBY`) — ČSN 33 1600 ed.2 kap. 4.
-  ⚠️ **Znění NENÍ opsané z normy** — sandbox na `csnonline.agentura-cas.cz`
-  nesmí (viz oddíl u v9.51). Je to popis podle obecné znalosti té tabulky;
-  vzor od kolegy ho potvrzuje jen zčásti (kancelářská technika = E,
-  trafopáječka = C). **Uživatel byl upozorněn, ať si znění ověří** —
-  skupina určuje lhůtu, takže špatný popis by vedl ke špatnému termínu.
+  **Ověřeno proti plnému znění ČSN 33 1600 ed.2 + Z1 + Z2 (dávka 4 norem,
+  2026-11-05)** — skupiny A–E (kap. 4), tab. 1 podle Z2 a vysvětlivky vzoru.
+  Popisy jsou vlastními slovy, text normy se neopisuje.
 - **Test hlídá, že žádná nabízená volba nezůstala bez vysvětlení** — přidat
   volbu do `SPOTR_SLOUPCE` a zapomenout na nápovědu tedy neprojde.
 

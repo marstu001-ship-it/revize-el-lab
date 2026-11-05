@@ -455,7 +455,7 @@ function pomocnik() {
     check('vzor „' + nazev + '": kódy, texty B, upozornění', r.nazev === nazev && r.skupina === skupina && kodyOk && textyOk && upozOk,
       [r.nazev, r.skupina, kodyOk ? 'kódy OK' : 'kódy ' + r.kody, textyOk ? 'texty OK' : 'texty ' + r.popis.slice(0, 40), upozOk ? 'upoz OK' : 'upoz ' + r.upoz.slice(0, 60)].join(' · '));
   });
-  check('koupelna: poznámka o zónách ČSN 33 2000-7-701 zůstala', /ČSN 33 2000-7-701 zóny dle obrázku 701 A-f/.test(vz.out[1].pozn));
+  check('koupelna: poznámka o zónách ČSN 33 2000-7-701 zůstala', /ČSN 33 2000-7-701 zóny dle čl\. 701\.30 \(ed\.2: obrázky 701\.1 a 701\.2; ed\.3: čl\. 701\.30\.102 až 701\.30\.104, obrázky 1 až 11\)/.test(vz.out[1].pozn));
 
   // upozornění nejde do PDF ani do dat protokolu
   const upPdf = await p.evaluate(async () => {
