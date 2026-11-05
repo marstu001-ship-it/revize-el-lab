@@ -787,6 +787,7 @@ function vsechnyStavy(zalozky) {
   }));
   S[S.length - 1].koren = '#modal-vlozit-mereni';
   D('modal-sp-pristroje', E(async () => { await __M.otevri('RSP-26-0001'); showScreen('form'); spotrPristrojeOtevrit(); await __M.w(100); }));
+  D('modal-sp-lhuty', E(async () => { await __M.otevri('RSP-26-0001'); showScreen('form'); spotrLhutyOtevrit(); await __M.w(100); }));
   D('modal-vnorit', E(async () => { showScreen('home'); otevritVnoritModal(0); await __M.w(100); }));
   D('modal-dok-vzor', E(async () => { await __M.dok(); TD_AKCE.tdVzorZeSkupiny(document.querySelector('.dk-skupina [data-action="tdVzorZeSkupiny"]')); await __M.w(100); }));
   D('modal-dok-vlozit', E(async () => { await __M.dok(); dokVlozitDialog(document.querySelector('.dk-skupina')); await __M.w(100); }));

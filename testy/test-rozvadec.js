@@ -2389,10 +2389,11 @@ function pomocnik() {
     const nov = await p.evaluate(() => {
       const k = [...document.querySelectorAll('#screen-novinky .scard')].filter(c => /Výměna výkresů s CAD/.test(c.textContent))[0];
       const maxD = [...document.querySelectorAll('#screen-novinky [data-nov-datum]')].map(c => c.getAttribute('data-nov-datum')).sort().pop();
-      return { je: !!k, datum: k && k.getAttribute('data-nov-datum'), prvni: k && k === document.querySelector('#screen-novinky .scard[data-nov-datum]'), maxD, text: k ? k.textContent : '',
+      const vse = [...document.querySelectorAll('#screen-novinky .scard[data-nov-datum]')], ix = vse.indexOf(k);
+      return { je: !!k, datum: k && k.getAttribute('data-nov-datum'), nadStarsi: vse.slice(0, ix).filter(c => c.getAttribute('data-nov-datum') < k.getAttribute('data-nov-datum')).length, maxD, text: k ? k.textContent : '',
         tl: [document.getElementById('dok-pdf-dxf').textContent.trim(), DOK_TYPY.rozv.zCad] };
     });
-    check('CAD Novinky: karta „Výměna výkresů s CAD" nahoře s datem 2026-11-02 a návodem (Stáhnout / Načíst, Uložit jako DXF, barvy náhledu, DWG a SVG ne)', nov.je && nov.datum === '2026-11-02' && nov.prvni && nov.maxD === '2026-11-02' &&
+    check('CAD Novinky: karta „Výměna výkresů s CAD" s datem 2026-11-02, nad ní nic staršího, a návodem (Stáhnout / Načíst, Uložit jako DXF, barvy náhledu, DWG a SVG ne)', nov.je && nov.datum === '2026-11-02' && nov.nadStarsi === 0 &&
       nov.text.includes(nov.tl[0]) && /Načíst výkres z CAD \(DXF\)/.test(nov.text) && /Uložit jako → DXF – AutoCAD/.test(nov.text) && /oranžové jsou odhad/.test(nov.text) && /DWG ani SVG ne/.test(nov.text) && nov.tl[1] === true, nov.datum);
     await p.evaluate(() => { showScreen('novinky'); const k = [...document.querySelectorAll('#screen-novinky .scard')].filter(c => /Výměna výkresů s CAD/.test(c.textContent))[0]; k.scrollIntoView({ block: 'start' }); window.scrollBy(0, -70); });
     await w(200); await p.screenshot({ path: path.join(BEH, 'cad-novinky.png') });

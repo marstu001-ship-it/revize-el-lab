@@ -973,6 +973,30 @@ html.dark .sp-sheet{background:#f7f6f2}
 .sp-lista-vlevo{display:flex;flex-direction:column;gap:.2rem;min-width:260px;flex:1}
 .sp-lista-vpravo{display:flex;gap:1rem;align-items:flex-end}
 .sp-barvy-obal{display:flex;flex-direction:column;gap:.25rem}
+.sp-lhuta-karta{margin:0 auto .8rem;max-width:1400px;border:1px solid var(--border);border-radius:6px;background:var(--surface);padding:.55rem .8rem;font-size:.84rem}
+.sp-lk-hlava{display:flex;flex-wrap:wrap;gap:.3rem .7rem;align-items:baseline;margin-bottom:.35rem}
+.sp-lk-norma{font-family:var(--mono);font-size:.6rem;color:var(--muted)}
+.sp-lk-odkaz{background:none;border:0;padding:0;color:var(--accent2);cursor:pointer;font:inherit;text-decoration:underline;margin-left:auto}
+.sp-lk-radek{display:flex;flex-wrap:wrap;gap:.4rem 1.2rem;align-items:flex-end}
+.sp-lk-pole{display:flex;flex-direction:column;gap:.2rem;min-width:240px}
+.sp-lk-pole span{font-family:var(--mono);font-size:.6rem;letter-spacing:.08em;text-transform:uppercase;color:var(--muted)}
+.sp-lk-pole select{padding:.35rem .5rem;font-size:.82rem;border:1px solid var(--border-dark);border-radius:4px;background:var(--bg);color:var(--text)}
+.sp-lk-zvolena{color:var(--muted);font-size:.8rem;flex:1;min-width:200px}
+.sp-lk-navrh{margin-top:.45rem;display:flex;flex-wrap:wrap;gap:.3rem .8rem;align-items:center}
+.sp-lk-pozn{color:var(--muted);font-size:.78rem;margin-top:.2rem}
+.sp-lk-upoz{margin-top:.35rem;padding:.35rem .55rem;border-radius:4px;background:#fff3e0;color:#8a4b00;border-left:3px solid #e08a00}
+.sp-lk-info{margin-top:.35rem;color:var(--muted);font-size:.8rem}
+html.dark .sp-lk-upoz{background:#3a2a12;color:#f0c27a}
+.sp-tab1{border-collapse:collapse;width:100%;font-size:.8rem;margin:.3rem 0 .6rem}
+.sp-tab1 th,.sp-tab1 td{border:1px solid var(--border-dark);padding:.25rem .35rem;text-align:center}
+.sp-tab1 td.l,.sp-tab1 th.l{text-align:left}
+.sp-tab1 .sp-t1-rad td{background:rgba(43,87,154,.10)}
+.sp-tab1 td.sp-t1-bunka{background:rgba(43,87,154,.32);font-weight:700}
+.sp-tab1 th.sp-t1-sl{background:rgba(43,87,154,.20)}
+.sp-lhuty-modal h4{margin:.7rem 0 .25rem;font-size:.9rem}
+.sp-lhuty-modal ul{margin:.2rem 0 .4rem 1.1rem;padding:0;font-size:.84rem}
+.sp-lhuty-modal p{margin:.2rem 0 .4rem;font-size:.84rem}
+.sp-tab1-ram{overflow-x:auto}
 .sp-barvy{display:flex;gap:.25rem}
 .sp-barva{width:22px;height:22px;border:1px solid var(--border-dark);border-radius:3px;
   cursor:pointer;padding:0}
@@ -2646,6 +2670,15 @@ html.dark .rz-imp-chyby{background:#3a1f1c;border-color:#6b2c25}
      takže psaní do hledacího pole panelu by zprávu značkovalo jako
      změněnou a nabízelo ji k uložení.
 ═══════════════════════════════════════════════ -->
+<div class="modal-overlay" id="modal-sp-lhuty">
+  <div class="modal sp-lhuty-modal" style="max-width:860px">
+    <div class="modal-title">ⓘ Kdy jaká lhůta? <span class="sp-lk-norma">ČSN 33 1600 ed.2/Z2, tabulka 1</span></div>
+    <div id="sp-lhuty-obsah"></div>
+    <div class="modal-actions">
+      <button class="btn btn-gold" data-action="spotrLhutyZavrit">Zavřít</button>
+    </div>
+  </div>
+</div>
 <div class="modal-overlay" id="modal-sp-pristroje">
   <div class="modal" style="max-width:900px">
     <div class="modal-title">🔧 Měřicí přístroje</div>
@@ -2778,6 +2811,18 @@ html.dark .rz-imp-chyby{background:#3a1f1c;border-color:#6b2c25}
     <button type="button" class="nov-lupa-x" data-action="novinkyHledatZrusit" title="Zrušit hledání (Esc)">✕</button>
   </div>
   <div id="nov-hledat-info" class="nov-lupa-info"></div>
+
+  <div class="scard" data-nov-datum="2026-11-05">
+    <div class="scard-title">🔌 Spotřebiče – lhůty podle ČSN 33 1600 Z2 <span class="nov-datum">5. 11. 2026</span></div>
+    <div style="font-size:.85rem;line-height:1.7">
+      <ul style="margin:.3rem 0 0 1.4rem;padding:0">
+        <li>Lhůta opakovaných revizí nabízí všechny lhůty z tabulky 1 ve znění změny Z2: <strong>3, 6, 12, 24, 48 a 96 měsíců</strong>, u každé je napsané, kdy platí.</li>
+        <li>Nad protokolem zvolte <strong>Spotřebiče na protokolu</strong> (držené v ruce / ostatní / smíšené) a program z vyplněných skupin a tříd <strong>navrhne lhůtu</strong>. Tlačítkem <strong>Použít návrh</strong> ji nastavíte a datum příští revize se přepočítá — samo se nic nemění.</li>
+        <li>Když je zvolená lhůta <strong>delší, než tabulka dovoluje</strong>, ukáže se oranžové upozornění s důvodem (jen na obrazovce, do PDF nejde).</li>
+        <li><strong>ⓘ Kdy jaká lhůta?</strong> vysvětlí tabulku 1, rozdíl revize a zkoušky, skupiny A–E, držené v ruce × ostatní a zvláštní případy z poznámek k tabulce.</li>
+      </ul>
+    </div>
+  </div>
 
   <div class="scard" data-nov-datum="2026-11-02">
     <div class="scard-title">📐 Výměna výkresů s CAD (Schémata CAD, AutoCAD) <span class="nov-datum">2. 11. 2026</span></div>
@@ -4354,9 +4399,12 @@ html.dark .rz-imp-chyby{background:#3a1f1c;border-color:#6b2c25}
   <div class="g3">
     <div class="f"><label>Lhůta opakovaných revizí</label>
       <select id="f_sp_lhuta" data-action="spotrLhutaZmena">
+        <option value="3">1× za 3 měsíce</option>
         <option value="6">1× za 6 měsíců</option>
         <option value="12">1× za 12 měsíců</option>
         <option value="24" selected>1× za 24 měsíců</option>
+        <option value="48">1× za 48 měsíců</option>
+        <option value="96">1× za 96 měsíců</option>
       </select></div>
     <div class="f span2" style="justify-content:flex-end">
       <div id="sp-lhuta-info" style="font-size:.78rem;color:var(--muted);padding-bottom:.45rem"></div>
@@ -4970,6 +5018,21 @@ html.dark .rz-imp-chyby{background:#3a1f1c;border-color:#6b2c25}
     <strong>Co vidíte, to se vytiskne.</strong> Vyplňujete rovnou hotový protokol —
     PDF bude vypadat stejně. Šedý text v poli je <strong>nápověda, ne hodnota</strong>;
     prázdné buňky se vytisknou jako <span style="font-family:var(--mono)">---</span>.
+  </div>
+  <div class="sp-lhuta-karta" id="sp-lhuta-karta">
+    <div class="sp-lk-hlava"><b>🔌 Lhůta opakovaných revizí</b> <span class="sp-lk-norma">ČSN 33 1600 ed.2/Z2, tabulka 1</span>
+      <button type="button" class="sp-lk-odkaz ro-ok" data-action="spotrLhutyOtevrit">ⓘ Kdy jaká lhůta?</button></div>
+    <div class="sp-lk-radek">
+      <label class="sp-lk-pole"><span>Spotřebiče na protokolu</span>
+        <select id="f_sp_druh">
+          <option value="">— nevyplněno —</option>
+          <option value="ruka">držené v ruce (nářadí, fény, žehličky…)</option>
+          <option value="ostatni">ostatní nepřipevněné (počítače, kopírky, lednice…)</option>
+          <option value="smisene">smíšené – použije se přísnější sloupec</option>
+        </select></label>
+      <div class="sp-lk-zvolena" id="sp-lk-zvolena"></div>
+    </div>
+    <div id="sp-lk-navrh"></div>
   </div>
   <div id="spotrebice-list"></div>
 </div>
@@ -21860,7 +21923,125 @@ function archivMistoBunka(z, maly) {
 // Lhůty opakovaných revizí dle ČSN 33 1600 ed.2 – Z2, tabulka 1. Ve vzoru
 // je lhůta **jedna pro celý protokol** („Všechny spotřebiče zde uvedené mají
 // lhůty 1x za N měsíců") — spotřebiče s jinou lhůtou patří na jiný protokol.
-var SPOTR_LHUTY = ['6', '12', '24'];
+var SPOTR_LHUTY = ['3', '6', '12', '24', '48', '96'];
+// Tabulka 1 ve znění Z2 — jen čísla (měsíce), text normy se neopisuje.
+// zr / zo = opakovaná zkouška (držené v ruce / ostatní), rr / ro = opakovaná revize.
+// Skupina A: zkouška před vydáním provozovateli nebo uživateli, pak podle skupiny užívání.
+var SPOTR_TAB1_Z2 = {
+  hlavicka: 'ČSN 33 1600 ed.2/Z2, tabulka 1',
+  radky: [
+    { sk: 'B', tr: 'I',       zr: 3,  zo: 6,  rr: 12, ro: 24 },
+    { sk: 'B', tr: 'II, III', zr: 6,  zo: 6,  rr: 24, ro: 24 },
+    { sk: 'C', tr: 'I',       zr: 6,  zo: 24, rr: 24, ro: 96 },
+    { sk: 'C', tr: 'II, III', zr: 12, zo: 24, rr: 48, ro: 96 },
+    { sk: 'D', tr: 'I, II, III', zr: 12, zo: 24, rr: 48, ro: 96 },
+    { sk: 'E', tr: 'I, II, III', zr: 12, zo: 24, rr: 48, ro: 96 }
+  ]
+};
+// Kdy podle tab. 1 která lhůta platí (vlastními slovy).
+var SPOTR_LHUTY_POPIS = {
+  '3':  'opakovaná zkouška: skupina B, třída I, držené v ruce',
+  '6':  'zkouška B (ostatní tř. I, tř. II a III), zkouška C tř. I držené v ruce',
+  '12': 'revize B tř. I držené v ruce; zkouška C tř. II/III, D a E držené v ruce',
+  '24': 'revize B (tř. I ostatní, tř. II/III), revize C tř. I držené v ruce; zkouška C, D, E ostatní',
+  '48': 'revize C tř. II/III, D a E držené v ruce',
+  '96': 'revize C, D a E ostatní (u C třídy I jen ostatní)'
+};
+var SPOTR_DRUHY = { ruka: 'držené v ruce', ostatni: 'ostatní' };
+function spotrTab1Radek(sk, tr) {
+  return SPOTR_TAB1_Z2.radky.filter(function(x) { return x.sk === sk && x.tr.split(', ').indexOf(tr) !== -1; })[0] || null;
+}
+function spotrSklon(n, a, b, c) { return n === 1 ? a : (n >= 2 && n <= 4) ? b : c; }
+// Návrh lhůty revize z vyplněných řádků: nejkratší lhůta ze všech řádků podle
+// skupiny, třídy a druhu. PP = držené v ruce (pozn. 7) a třída I (pozn. 6);
+// OP se nezapočítává (lhůta jako spotřebič, se kterým se používá — pozn. 7).
+function spotrLhutaNavrh(S) {
+  S = S || {};
+  var druh = S.druh || '', r = { lhuta: null, bezSk: 0, bezTr: 0, skA: 0, op: 0, bezDruhu: !druh, pro: null, sl: null, radek: null };
+  (S.seznam || []).forEach(function(x) {
+    var sest = x.sestava || '';
+    if (sest === 'OP') { r.op++; return; }
+    if (!x.skupina) { r.bezSk++; return; }
+    if (x.skupina === 'A') { r.skA++; return; }
+    var pp = sest === 'PP', tr = pp ? 'I' : (x.trida || '');
+    if (!tr) { r.bezTr++; return; }
+    var rad = spotrTab1Radek(x.skupina, tr); if (!rad) return;
+    var sl = (pp || druh !== 'ostatni') ? 'ruka' : 'ostatni';
+    var m = sl === 'ruka' ? rad.rr : rad.ro;
+    if (r.lhuta == null || m < r.lhuta) {
+      r.lhuta = m; r.sl = sl; r.radek = rad;
+      r.pro = 'skupina ' + x.skupina + ', třída ' + tr + ', ' + SPOTR_DRUHY[sl] + (pp ? ' (prodlužovací přívod)' : '');
+    }
+  });
+  return r;
+}
+function spotrLhutaKartaObnovit() {
+  var box = document.getElementById('sp-lk-navrh'), zv = document.getElementById('sp-lk-zvolena');
+  var lh = document.getElementById('f_sp_lhuta'); if (!box || !lh) return;
+  var S = collectSpotrebiceData(), n = spotrLhutaNavrh(S), cur = parseInt(lh.value, 10);
+  if (zv) zv.textContent = 'Zvoleno 1× za ' + lh.value + ' měsíců — ' + (SPOTR_LHUTY_POPIS[lh.value] || '');
+  var h = '';
+  if (n.lhuta != null) {
+    h += '<div class="sp-lk-navrh"><span>Návrh podle ČSN 33 1600 Z2, tab. 1: <b>1× za ' + n.lhuta + ' měsíců</b>' +
+      (n.bezDruhu ? ' <span class="sp-lk-pozn">(počítáno jako držené v ruce – upřesněte druh)</span>' : '') + '</span>' +
+      (n.lhuta !== cur ? '<button type="button" class="btn btn-gold" style="padding:.3rem .8rem;font-size:.8rem" data-action="spotrLhutaPouzit">Použít návrh</button>' : '<span class="sp-lk-pozn">✓ zvolená lhůta odpovídá návrhu</span>') + '</div>';
+  } else h += '<div class="sp-lk-navrh"><span class="sp-lk-pozn">Návrh lhůty: doplňte u spotřebičů skupinu a třídu.</span></div>';
+  var bez = n.bezSk + n.bezTr;
+  if (bez) h += '<div class="sp-lk-pozn">' + bez + ' ' + spotrSklon(bez, 'spotřebič', 'spotřebiče', 'spotřebičů') + ' bez skupiny' + (n.bezTr ? ' nebo třídy' : '') +
+    ' – lhůtu nelze navrhnout (vysvětlivka 7, čl. 7.1 h).</div>';
+  if (n.skA) h += '<div class="sp-lk-pozn">Skupina A (' + n.skA + '): lhůta podle skupiny, ve které spotřebič skutečně používá nájemce — do návrhu se nezahrnuje.</div>';
+  if (n.op) h += '<div class="sp-lk-pozn">Odpojitelný přívod OP (' + n.op + '): lhůta jako spotřebič, se kterým se používá (pozn. 7) — do návrhu se nezapočítává.</div>';
+  if (n.lhuta != null && cur > n.lhuta)
+    h += '<div class="sp-lk-upoz">Zvolená lhůta je delší, než dovoluje ČSN 33 1600 Z2, tab. 1 pro: ' + esc(n.pro) + ' (' + n.lhuta + ' měsíců).</div>';
+  else if (n.lhuta != null && cur < n.lhuta)
+    h += '<div class="sp-lk-info">Kratší lhůta je dovolena – např. při používání nářadí víc než asi 250 h za rok (pozn. 4) nebo podle analýzy rizik (pozn. 11).</div>';
+  box.innerHTML = h;
+}
+// „Použít návrh" — jen na klepnutí, nikdy samo; přepočítá datum příští revize.
+function spotrLhutaPouzit() {
+  var lh = document.getElementById('f_sp_lhuta'); if (!lh || window.__formReadOnly) return;
+  var n = spotrLhutaNavrh(collectSpotrebiceData()); if (n.lhuta == null) return;
+  lh.value = String(n.lhuta);
+  lh.dispatchEvent(new Event('input', { bubbles: true }));
+  lh.dispatchEvent(new Event('change', { bubbles: true }));
+}
+function spotrLhutyOtevrit() {
+  var m = document.getElementById('modal-sp-lhuty'), o = document.getElementById('sp-lhuty-obsah'); if (!m || !o) return;
+  var n = spotrLhutaNavrh(collectSpotrebiceData()), rad = n.radek, sl = n.sl;
+  var tab = '<div class="sp-tab1-ram"><table class="sp-tab1"><tr><th rowspan="2" class="l">Skupina</th><th rowspan="2">Třída</th>' +
+    '<th colspan="2">Opakovaná zkouška (měsíce)</th><th colspan="2">Opakovaná revize (měsíce)</th></tr>' +
+    '<tr><th>držené v ruce</th><th>ostatní</th><th' + (sl === 'ruka' ? ' class="sp-t1-sl"' : '') + '>držené v ruce</th><th' + (sl === 'ostatni' ? ' class="sp-t1-sl"' : '') + '>ostatní</th></tr>' +
+    '<tr><td class="l">A</td><td>–</td><td colspan="4" class="l">před vydáním provozovateli nebo uživateli, pak podle skupiny užívání</td></tr>' +
+    SPOTR_TAB1_Z2.radky.map(function(x) {
+      var akt = x === rad;
+      return '<tr' + (akt ? ' class="sp-t1-rad"' : '') + '><td class="l">' + x.sk + '</td><td>' + x.tr + '</td><td>' + x.zr + '</td><td>' + x.zo + '</td>' +
+        '<td' + (akt && sl === 'ruka' ? ' class="sp-t1-bunka"' : '') + '>' + x.rr + '</td><td' + (akt && sl === 'ostatni' ? ' class="sp-t1-bunka"' : '') + '>' + x.ro + '</td></tr>';
+    }).join('') + '</table></div>' +
+    '<div class="sp-lk-pozn">„Držené v ruce" zahrnuje i ruční elektrické nářadí.' + (rad ? ' Zvýrazněno: aktuální návrh (' + esc(n.pro) + ', ' + n.lhuta + ' měsíců).' : '') + '</div>';
+  o.innerHTML = tab +
+    '<h4>Revize, nebo zkouška?</h4><ul>' +
+      '<li>Opakovanou <b>revizi</b> dělá revizní technik.</li>' +
+      '<li>Opakovanou <b>zkoušku</b> (ČSN EN 50699) smí dělat i pracovník s kvalifikací podle § 6 vyhl. 50/1978 Sb. se školením podle Z2, příloha E.2 — má kratší lhůty.</li>' +
+      '<li>Když termíny připadnou na stejnou dobu, revize splní i zkoušku (poznámka pod tabulkou 1).</li>' +
+      '<li>Protokol v programu je protokol o <b>revizi</b>.</li></ul>' +
+    '<h4>Skupiny A–E (kap. 4)</h4><ul>' +
+      ['A', 'B', 'C', 'D', 'E'].map(function(k) { return '<li><b>' + k + '</b> – ' + esc(SPOTR_SKUPINY_VOLBY[k]) + '</li>'; }).join('') + '</ul>' +
+    '<h4>Držené v ruce, nebo ostatní? (čl. 3.2.2, 3.2.4, 3.2.5)</h4><ul>' +
+      '<li><b>Držené v ruce:</b> vrtačka, bruska, fén, žehlička, varná konvice.</li>' +
+      '<li><b>Ostatní:</b> PC, monitor, tiskárna, lednice, mikrovlnka.</li>' +
+      '<li>Vrtačka ve stojanu je pořád nepřipevněný spotřebič (Z2, pozn. 1 k 3.2.3).</li></ul>' +
+    '<h4>Zvláštní případy (poznámky k tabulce 1)</h4><ul>' +
+      '<li>První revize nejpozději do konce lhůty od uvedení do provozu (pozn. 1).</li>' +
+      '<li>Sklad nebo konzervace déle než 12 měsíců → před použitím zkouška (pozn. 2, 3).</li>' +
+      '<li>Nářadí používané víc než asi 250 h za rok → kratší lhůty místním předpisem (pozn. 4).</li>' +
+      '<li>Dlouhodobý pronájem → lhůty platí také (pozn. 5).</li>' +
+      '<li>Prodlužovací přívody s ochranným vodičem → lhůty třídy I, počítají se jako držené v ruce; odpojitelný přívod jako spotřebič, se kterým se používá (pozn. 6, 7).</li>' +
+      '<li>Spotřebiče v záruce jen bez zásahu do konstrukce, termín od uvedení do provozu (pozn. 8, 9).</li>' +
+      '<li>Jiné lhůty lze stanovit na základě analýzy rizik (pozn. 11).</li></ul>' +
+    '<h4>Proč je lhůta jedna pro celý protokol?</h4>' +
+    '<p>Tak to má vzor protokolu („Všechny spotřebiče zde uvedené mají lhůty 1x za N měsíců"). Spotřebiče s jinou lhůtou patří na samostatný protokol.</p>';
+  m.classList.add('open');
+}
 
 // Sloupce tabulky. `k` = klíč v datech, `h` = hlavička, `sirka` = poměrová
 // šířka (mm ze vzoru; převádí se na %), `ph` = šedá nápověda v poli (do PDF
@@ -22602,6 +22783,8 @@ function collectSpotrebiceData() {
       if (!prazdny) out.seznam.push(r);      // úplně prázdný řádek se neukládá
     });
   }
+  var druh = aktTyp === 'spotrebice' ? gv('f_sp_druh') : '';   // nové pole — do dat jen, když ho technik vybral
+  if (druh) out.druh = druh;
   return out;
 }
 
@@ -22609,6 +22792,8 @@ function restoreSpotrebiceData(S) {
   S = S || {};
   var lh = document.getElementById('f_sp_lhuta');
   if (lh) lh.value = SPOTR_LHUTY.indexOf(String(S.lhuta)) >= 0 ? String(S.lhuta) : '24';
+  var dr = document.getElementById('f_sp_druh');
+  if (dr) dr.value = SPOTR_DRUHY[S.druh] || S.druh === 'smisene' ? S.druh : '';
   var D = { spotrebice: S, ev_cislo: gv('f_ev_cislo'), misto: gv('f_misto'),
             zahajeni: gv('f_zahajeni'), pristi: gv('f_pristi'),
             provozovatel: gv('f_provozovatel'), vypracovani: gv('f_vypracovani'),
@@ -22672,6 +22857,7 @@ function spotrLhutaZmena(jenDopocet) {
     }
   }
   spotrObnovitOkoli();
+  spotrLhutaKartaObnovit();
 }
 
 // Přístroje se u spotřebičů needitují na vlastním kroku — otevře se
@@ -28804,6 +28990,9 @@ document.addEventListener('click', function(e) {
     case 'vlozitSymbol': vlozitSymbol(el); break;
     case 'spotrJedenNahled': spotrJedenNahled(el); break;
     case 'spotrPristrojeOtevrit': spotrPristrojeOtevrit(); break;
+    case 'spotrLhutyOtevrit': spotrLhutyOtevrit(); break;
+    case 'spotrLhutyZavrit': closeModal('modal-sp-lhuty'); break;
+    case 'spotrLhutaPouzit': spotrLhutaPouzit(); break;
     case 'spotrPristrojeZavrit': spotrPristrojeZavrit(); break;
     case 'spotrebiceRezim': spotrebiceRezim(); break;
     case 'spotrebiceNahledZpet': spotrebiceNahledZpet(); break;
@@ -28835,6 +29024,7 @@ document.addEventListener('change', function(e) {
   if (action === 'updZavadaKod') updZavadaKod(el);
   if (el.id === 'f_druh') updateDuvodMimoradne();
   if (el.id === 'f_sp_lhuta' && aktTyp === 'spotrebice') spotrLhutaZmena(false);
+  if (aktTyp === 'spotrebice' && (el.id === 'f_sp_druh' || (el.closest && el.closest('#spotrebice-list')))) spotrLhutaKartaObnovit();
   if (el.id === 'f_zahajeni' && aktTyp === 'spotrebice') spotrLhutaZmena(true);
   if (el.id === 'lps_jimaci') updateLpsMrizka();
   if (el.id === 'f_stroje_rozsah') strojeAktualizovatRozsah();

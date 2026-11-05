@@ -3723,6 +3723,44 @@ instalace"). Ostatní karty sedí — některé nejsou úplné, ale nelžou.
 Hlídá to `test-novinky-pravda.js` (8 kontrol — i to, že tab a přepínač,
 na které karty odkazují, v programu opravdu existují).
 
+## Spotřebiče — lhůty podle ČSN 33 1600 ed.2/Z2, tabulka 1, s vysvětlením (2026-11-05)
+
+Zadání uživatele: dosud jen 6/12/24 měsíců ze vzoru kolegy; tab. 1 ve znění Z2
+má u revizí i 48 a 96 měsíců a u zkoušek 3 měsíce. **Data se nemění** — uložené
+protokoly (i `lhuta` 6/12/24, bez `druh`) se otevřou a vytisknou bajtově stejně.
+
+- **`SPOTR_TAB1_Z2`** — jediná konstanta s čísly tab. 1 (zkouška / revize ×
+  držené v ruce / ostatní, skupiny B–E, A „před vydáním, pak podle skupiny
+  užívání"). Text normy se neopisuje; vysvětlení vlastními slovy s číslem poznámky.
+- **`SPOTR_LHUTY` = 3, 6, 12, 24, 48, 96** (výchozí 24), `SPOTR_LHUTY_POPIS` = kdy
+  která platí. Nadpis karty, PDF i text „1x N měsíců" beze změny.
+- **Karta `#sp-lhuta-karta`** nad protokolem (mimo list → do PDF nejde):
+  volba **„Spotřebiče na protokolu"** `f_sp_druh` (`ruka` / `ostatni` /
+  `smisene`, výchozí nevyplněno; do dat `S.druh` jen po výběru a jen u zprávy
+  o spotřebičích), popisek zvolené lhůty, **návrh** `spotrLhutaNavrh(S)` =
+  nejkratší lhůta revize ze všech řádků podle skupiny, třídy a druhu:
+  PP = držené v ruce a třída I (pozn. 6, 7), OP se nezapočítává (pozn. 7),
+  skupina A se nezapočítává (lhůta podle skupiny u nájemce), řádek bez skupiny
+  nebo třídy se přeskočí a spočítá („2 spotřebiče bez skupiny – lhůtu nelze
+  navrhnout"), bez druhu = sloupec „držené v ruce" s poznámkou, smíšené =
+  přísnější sloupec. **„Použít návrh"** jen na klepnutí (lhůta + přepočet
+  příští revize přes `spotrLhutaZmena`). Delší než návrh = oranžové upozornění
+  s důvodem, kratší = šedá informace (pozn. 4, 11), rovná = nic.
+- **„ⓘ Kdy jaká lhůta?"** → `#modal-sp-lhuty` (`spotrLhutyOtevrit`): tab. 1 se
+  zvýrazněným řádkem a sloupcem aktuálního návrhu, revize × zkouška
+  (ČSN EN 50699, § 6 vyhl. 50/1978 Sb., Z2 příloha E.2), skupiny A–E, držené
+  v ruce × ostatní (čl. 3.2.2, 3.2.4, 3.2.5, Z2 pozn. 1 k 3.2.3), zvláštní
+  případy (pozn. 1–11), proč je lhůta jedna pro celý protokol. Tlačítko má
+  `ro-ok` (jen čte).
+- **Karta v Novinkách** „🔌 Spotřebiče – lhůty podle ČSN 33 1600 Z2"
+  (5. 11. 2026) — o ni si řekl uživatel v zadání.
+
+Test: `testy/test-spotrebice-lhuty.js` (31 kontrol — návrh pro všechny
+kombinace ze zadání, upozornění, Použít návrh, PDF bez karty, překryv i na
+360 px, starý protokol bajtově proti předchozí verzi, Novinky). V `test-mobil.js`
+stav „dialog modal-sp-lhuty". **Upraveno:** `test-rozvadec.js` (karta CAD
+v Novinkách už není nahoře — kontroluje se, že nad ní není nic staršího).
+
 ## Protokol jen pro JEDEN spotřebič (v9.78)
 
 Nápad uživatele 2026-09-18 podle **ILLKO Studia** (poslal snímek jejich
