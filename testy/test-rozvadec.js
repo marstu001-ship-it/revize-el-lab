@@ -667,7 +667,9 @@ function pomocnik() {
   });
   check('klepnutí na přístroj ho vybere, vlastnosti se zapíšou a hned ukážou v pohledu', sel.vybrany && /^Zásuvky – obývací pokoj, TV\|L2\|CYKY-O\|true\|true$/.test(sel.data) &&
     /Zásuvky – obý/.test(sel.svg), sel.data);
-  check('nadřazený chránič jde změnit ručně (nabídka: automaticky, žádný, chrániče)', /^automaticky — -FI1 \| žádný \(přímo z přívodu\) \| -FI1 \(řada 2\) \| -FI2 \(řada 3\)$/.test(sel.volby), sel.volby);
+  // „Napájen z" (2026-11-05, dřív „Nadřazený chránič"): automaticky, přímo z hlavního vypínače, napájecí přístroje v pořadí pohledu (bez sebe a hlavního vypínače)
+  check('napájení jde změnit ručně (nabídka: automaticky, přímo z hlavního vypínače, napájecí přístroje)', /^automaticky — -FI1 \| přímo z hlavního vypínače \| /.test(sel.volby) &&
+    /-FI1 Chránič 40 A\/30 mA 4P/.test(sel.volby) && /-FI2 Chránič/.test(sel.volby) && !/-QH1/.test(sel.volby) && !/-FA4 /.test(sel.volby), sel.volby);
   check('smazaný ručně zvolený chránič → zpátky automaticky', sel.poSmazani === 'false|true', sel.poSmazani);
   // klávesy: Delete, Ctrl+Z, šipky, Ctrl+D, přečíslovat
   await p.evaluate(() => { document.activeElement && document.activeElement.blur(); __rz.vyber = __rz.rady[1].prvky[2].uid; rozvPohledVykreslit(); rozvVlastnostiVykreslit(); });
@@ -961,8 +963,8 @@ function pomocnik() {
   check('Ctrl+klik přidá přístroj, Shift+klik vybere úsek od posledního kliknutého, Ctrl+klik vybraný ubere', s1 === 'A1,A3' && s2 === 'A3,A4,A5,A6' && s3 === 'A3,A5,A6', [s1, s2, s3].join(' | '));
   check('Shift+klik v pohledu neoznačí text stránky (označený text by Chrome začal táhnout a tažení přístroje by se zrušilo)', bezTextu);
   check('Shift+klik úsek přes řady zleva doprava, shora dolů', s4 === 'A12,A13,A14,A15,A16,A17,A18,A19,A20,A21,B0,B1', s4);
-  check('vlastnosti výběru: „Vybráno 3 přístroje", fáze, nadřazený chránič, přesun, smazat', /Vybráno 3 přístroje/.test(pan) && /Fáze všem vybraným/i.test(pan) &&
-    /Nadřazený chránič/i.test(pan) && /Přesunout jinam/.test(pan) && /Smazat vybrané \(3\)/.test(pan), pan.replace(/\n/g, ' | ').slice(0, 200));
+  check('vlastnosti výběru: „Vybráno 3 přístroje", fáze, napájení, přesun, smazat', /Vybráno 3 přístroje/.test(pan) && /Fáze všem vybraným/i.test(pan) &&
+    /Napájen z/i.test(pan) && /Přesunout jinam/.test(pan) && /Smazat vybrané \(3\)/.test(pan), pan.replace(/\n/g, ' | ').slice(0, 200));
   // klik do prázdna výběr zruší
   await p.evaluate(() => document.querySelectorAll('.toast').forEach(t => t.remove())); const pz = await p.evaluate(() => __T.bod(0, 8, RZG.H + 9)); await p.mouse.click(pz.x, pz.y); await w(120); const s5 = await sel();
   check('klik do prázdného místa výběr zruší', s5 === '', s5);

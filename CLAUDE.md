@@ -2863,6 +2863,60 @@ s ovládáním…", „…prvek mimo rozvaděč…" a „…list ovládacích ob
 `test-rozvadec-psc.js` (šablona 51 sloupců, DBO porovnání bez tlačítka
 ⚡ Ovládání). Novinky se nedělaly.
 
+### Napájení — kdo koho napájí (2026-11-05, blok „ROZVADĚČ — REŽIM NAPÁJENÍ")
+
+Připomínka uživatele: skutečný rozvaděč RS2 (škola) nešel v programu
+zreprodukovat — pojistkový odpojovač před svodičem, jističe přímo z hlavního
+vypínače, chránič se dvaceti jističi. Do v1.57 smělo `x.nadr` ukazovat jen na
+chránič.
+
+- **Data se nemění, jen rozšiřuje význam `x.nadr` / `x.nadrRucne`:** `nadr` =
+  uid **kteréhokoli napájecího přístroje** (`ROZV_NAPAJECI`: QM, QS, QF, FA, FU,
+  FI, FIFA, AFDD, MS), `''` = přímo z hlavního vypínače. Hlavní vypínač
+  (`rozvKoren` = první QM / výslovně hlavní) `nadr` nemá; podřízený QM ano.
+  Starý rozvaděč má `nadr` ∈ chránič ∪ '' — chová se, kreslí a počítá **beze
+  změny** (test proti předchozí verzi: data, schéma, oteplení, fáze,
+  soudobost, PDF, DXF).
+- **Automatika se nemění** (`rozvNadrazeneAuto`: jistič pod chráničem vlevo
+  v řadě). Ruční volba má přednost, dokud nadřazený existuje, je napájecí a
+  nevznikl by kruh; smazaný nadřazený → děti zpátky na automatiku.
+- Pomocníci na jednom místě: `rozvDeti`, `rozvPotomci`, `rozvNadrazeny`,
+  `rozvLzeNapajet` (ne sebe, ne potomka, ne REZ / PRISL / VNEJSI / X — kromě
+  přípojnice N `p.prip === 'N'`), `rozvRodice` (kdo napájí jiné, bez svorek),
+  `rozvNapajeniUpoz` (In podřazeného > nadřazeného mimo SPD, 3f pod 1f, SPD nad
+  „max. předjištění N A" z poznámky knihovny — jen upozornění v panelu).
+- **Panel:** volba **„Napájen z"** (dřív „Nadřazený chránič") u všeho kromě
+  kořenového QM, REZ, PRISL, VNEJSI a X: automaticky / přímo z hlavního
+  vypínače / napájecí přístroje v pořadí čelního pohledu bez sebe a potomků
+  (`rozvNapajeciPopis`: „-FU1 Pojistkový odpojovač 50 A 3P"). U nadřazeného
+  řádek **„→ napájí: -SPD1, -FA25…FA44"** (`rozvOznRada`). Totéž ve výběru víc.
+  Změna jde přes `rozvZmena` (ZPĚT, Ctrl+Z) — `rozvNapajeniNastavit`.
+- **Režim 🔗 Napájení** (tlačítko v liště čelního pohledu, `__rz.napRezim`, jen
+  v paměti): šipky `rozvNapSvg` od spodní hrany nadřazeného k horní hraně dětí,
+  sousední děti v řadě jednou šipkou se sběrnicí, každý nadřazený vlastní barva,
+  napájení z hlavního vypínače tence šedě a výchozí skryté. **Tažení myší**
+  A → B (čára, nepřípustný cíl červeně), **klik a klik** (`rozvNapKlik`: napájející,
+  pak přidat / ubrat napájené; Esc / klik do prázdna konec), **rámeček +
+  „Napájet z…"**, pravý klik / dlouhé podržení na šipce (Odpojit, Vrátit na
+  automatiku). Přesouvání tažením je v režimu vypnuté. Do PDF nic.
+- **Fáze, oteplení, soudobost:** napájecí přístroj větve se nepočítá, počítají
+  se jeho koncové vývody (`rozvRodice`) — u starých dat žádný takový není.
+  Oteplení: Inc nadřazeného = jeho potomci (u chrániče jako dřív).
+- **Schéma** (`rsModel` = strom): chránič a jeho jističe **přesně jako dřív**;
+  skupina pod jiným přístrojem (`model.hlavy`, `rsHlavaHtml` — značka na úrovni
+  chrániče, sběrnice skupiny, N můstek jen u RCD); **řetěz** (přístroj, který
+  není chránič, s jediným dítětem bez dětí, např. FU → SPD) v jednom sloupci
+  (`model.retez`); **podskupina** ve skupině s vlastní sběrnicí a přechodem
+  (`model.pod`, `vPod`); hlubší úroveň **zploštěle** s poznámkou „z -FAx · název"
+  (`model.zplost`). Přívodní svorky (`x.privodni`) na přívodu před hlavním
+  vypínačem (`rozvSvorkyRozsah`: „-X1…X3"). Pojistka: volitelné **`x.vlozka`**
+  („40 gG", „Vložka (A, char.)" v Dalších údajích) → „vložka 40 gG" ve schématu.
+
+Test: `testy/test-rozvadec-napajeni.js` (vzorek RS2 `testy/rozvadec-rs2.js`;
+model, panel, režim Napájení skutečnou myší, klik a klik, rámeček, Ctrl+Z,
+kontextové menu, telefon 360 px, schéma, fáze, starý rozvaděč proti
+`STARA_PORT`). **Upraveno:** `test-rozvadec.js` (volba „Napájen z").
+
 ### Výměna výkresů s CAD — export a import DXF (2026-11-02, bloky „ROZVADĚČ — VÝMĚNA S CAD")
 
 Zadání uživatele: technici kreslí ve Schématech CAD (Elmer), který ukládá
