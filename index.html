@@ -32921,7 +32921,7 @@ function rozvPrvekSvg(d, x, y, o) {
   var fs = (w < 10 ? 2.4 : 3.4) * sk;
   if (d.ozn) h += '<text x="' + rozvZaokr(x + w / 2) + '" y="' + rozvZaokr(y + (5 + dz * 3) * sk) + '" font-size="' + rozvZaokr(fs) + '" font-weight="700" text-anchor="middle" fill="#111">' +
     esc(rozvZkratit(rozvJeSvorkovnice(p) ? rozvSvorkyRozsah(d) : d.ozn, Math.max(2, Math.floor(w / (fs * 0.56))))) + '</text>';
-  var celo = rozvCelo(p).filter(Boolean);
+  var celo = rozvVlozkaText(d) ? [rozvVlozkaText(d)] : rozvCelo(p).filter(Boolean);   // pojistka: vložka, je-li zadaná
   celo.forEach(function (t, j) {
     var f2 = (w < 10 ? 2.2 : (celo.length > 1 ? 3.2 : 3.9)) * sk;
     h += '<text x="' + rozvZaokr(x + w / 2) + '" y="' + rozvZaokr(y + (9.6 + dz * 2.4 + j * 3.6 + (j === 0 && celo.length === 1 ? 0.4 : 0)) * sk) + '" font-size="' + rozvZaokr(f2) + '" font-weight="' + (j === 0 ? 700 : 400) +
@@ -34540,10 +34540,22 @@ function rozvRodice(rady) {
   rozvPrvkyVse(rady).forEach(function (y) { if (y.nadr && y.p.kat !== 'X' && y.nadr !== y.uid) m[y.nadr] = 1; });
   return m;
 }
+// Pojistková vložka (x.vlozka, „40 gG"): proud, text „40 A gG", proud pro kontroly (2026-11-06).
+function rozvVlozkaA(x) { var m = /(\d+(?:[.,]\d+)?)/.exec(String((x && x.vlozka) || '')); return m ? +m[1].replace(',', '.') : ''; }
+function rozvVlozkaText(x) {
+  var v = String((x && x.vlozka) || '').trim(); if (!v || !x.p || x.p.kat !== 'FU') return '';
+  var m = /^(\d+(?:[.,]\d+)?)\s*A?\s*(.*)$/i.exec(v);
+  return m ? m[1] + ' A' + (m[2] ? ' ' + m[2] : '') : v;
+}
+function rozvInEff(x) { return x && x.p && x.p.kat === 'FU' && rozvVlozkaA(x) !== '' ? rozvVlozkaA(x) : rfNum(x.p.In); }
+function rozvVlozkaUpoz(x) {
+  var v = x && x.p && x.p.kat === 'FU' ? rozvVlozkaA(x) : '', In = v !== '' ? rfNum(x.p.In) : '';
+  return v !== '' && In !== '' && v > In ? 'Vložka ' + rozvCisloText(v) + ' A je větší než jmenovitý proud odpojovače ' + rozvCisloText(In) + ' A.' : '';
+}
 // Upozornění k napájení (jen panel, nic neblokuje).
 function rozvNapajeniUpoz(x, rady) {
   var r = rozvNadrazeny(x, rady), a = []; if (!r) return a;
-  var In = rfNum(x.p.In), Ir = rfNum(r.p.In);
+  var In = rozvInEff(x), Ir = rozvInEff(r);
   if (x.p.kat !== 'SPD' && In !== '' && Ir !== '' && In > Ir) a.push('jmenovitý proud ' + rozvCisloText(In) + ' A je větší než u nadřazeného ' + (r.ozn || '') + ' (' + rozvCisloText(Ir) + ' A)');
   if (rsTrif(x.p) && /^(1|1\+N|2)$/.test(String(r.p.poly || ''))) a.push('třífázový přístroj pod jednofázovým ' + (r.ozn || ''));
   if (x.p.kat === 'SPD' && (r.p.kat === 'FA' || r.p.kat === 'FU')) {
@@ -34674,7 +34686,8 @@ function rozvVlastnostiVykreslit() {
     }
     h += rozvNapajenZHtml(x);
     h += '<details class="rp-dalsi"' + (x.ib || x.pozn || x.vlozka ? ' open' : '') + '><summary>Další údaje</summary>' +
-      (p.kat === 'FU' ? pole('vlozka', 'Vložka (A, char.)', x.vlozka || '', { nepov: true, ph: '40 gG' }) : '') +
+      (p.kat === 'FU' ? pole('vlozka', 'Vložka (A, char.)', x.vlozka || '', { nepov: true, ph: '40 gG' }) +
+        '<div class="rp-upoz rp-vlozka-upoz" id="rp-vlozka-upoz"' + (rozvVlozkaUpoz(x) ? '' : ' hidden') + '>⚠ ' + esc(rozvVlozkaUpoz(x)) + '</div>' : '') +
       pole('ib', 'Provozní proud Ib (A)', x.ib, { nepov: true, dec: true, ph: 'pro výpočet oteplení' }) +
       pole('pozn', 'Poznámka', x.pozn, { nepov: true }) + '</details>';
     h += rozvOvlVyvodHtml(x) + rozvOvlPanelHtml(x) + rozvPrislPanelHtml(x);
@@ -34896,7 +34909,11 @@ function rozvVlastnostZmena(el) {
     if (s0) s0.textContent = 'podle typu (' + rzsKratce(rzsPredikce(z.x)) + ')';
   }
   if (k === 'sbernice' && !v) delete z.x.sbernice;
-  if (k === 'vlozka') { if (v.trim()) z.x.vlozka = v.trim(); else delete z.x.vlozka; }   // pojistková vložka (2026-11-05)
+  if (k === 'vlozka') {   // pojistková vložka (2026-11-05); upozornění se mění při psaní
+    if (v.trim()) z.x.vlozka = v.trim(); else delete z.x.vlozka;
+    var vu = document.getElementById('rp-vlozka-upoz'), vt = rozvVlozkaUpoz(z.x);
+    if (vu) { vu.hidden = !vt; vu.textContent = vt ? '⚠ ' + vt : ''; }
+  }
   if (k === 'prurezSv') { z.x.p.prurez = v.trim(); delete z.x.prurezSv; }
   if (k === 'pocet') {   // svorkovnice: počet svorek → šířka (přes rozvZmena, mění se rozvržení)
     delete z.x.pocet; var n = Math.max(1, Math.round(+String(v).replace(',', '.')) || 0);
@@ -35164,6 +35181,27 @@ function rozvNapSvg(rz) {
     if (!deti[r]) { deti[r] = []; rodice.push(r); }
     deti[r].push(u);
   });
+  // mezery nad řadami a okraje rámu (pruhy se přidělují postupně, ať se čáry nepřekrývají)
+  var hornaRady = {}, ramL = Infinity, ramP = -Infinity, pruhy = {}, kraje = { L: 0, P: 0 };
+  por.forEach(function (u) { var g = G[u]; if (!g) return; hornaRady[g.r] = Math.min(hornaRady[g.r] == null ? Infinity : hornaRady[g.r], g.y); ramL = Math.min(ramL, g.x); ramP = Math.max(ramP, g.x + g.w); });
+  if (rz.skrin && !pscJe(rz)) { ramL = Math.min(ramL, RZG.okraj); ramP = Math.max(ramP, RZG.okraj + (+rz.skrin.modulu || 0) * RZG.M); }
+  // kolik vodorovných pruhů bude v mezeře nad kterou řadou — podle toho rozestup
+  var pocty = {};
+  rodice.forEach(function (r) {
+    var rid = r === '@koren' ? koren : r, P = G[rid]; if (!P || (r === '@koren' && __rzNap.skrytHlavni)) return;
+    var cr = null, ci = -9;
+    deti[r].forEach(function (u) {
+      var g = G[u]; if (g.r === cr && g.i === ci + 1) { ci = g.i; return; }
+      cr = g.r; ci = g.i; pocty[P.r] = (pocty[P.r] || 0) + 1; if (g.r !== P.r) pocty[g.r] = (pocty[g.r] || 0) + 1;
+    });
+  });
+  var pruh = function (r) {
+    var k = pruhy[r] = (pruhy[r] || 0) + 1, prvni = hornaRady[r] - 4.4, n = pocty[r] || 1;
+    var mez = r > 0 && hornaRady[r - 1] != null ? hornaRady[r - 1] + RZG.H + 6 : 1;
+    var krok = n > 1 ? Math.max(0.5, Math.min(1.4, (prvni - mez) / (n - 1))) : 1.4;
+    return prvni - (k - 1) * krok;
+  };
+  var okraj = function (vpravo) { var k = vpravo ? ++kraje.P : ++kraje.L; return vpravo ? ramP + 2.5 + (k - 1) * 1.2 : Math.max(0.8, ramL - 2.5 - (k - 1) * 1.2); };
   var bi = 0;
   rodice.forEach(function (r) {
     var hlavni = r === '@koren', rid = hlavni ? koren : r, P = G[rid]; if (!P) return;
@@ -35176,14 +35214,25 @@ function rozvNapSvg(rz) {
       if (cur && cur.r === g.r && cur.posl.i === g.i - 1) { cur.u.push(u); cur.posl = g; }
       else { cur = { r: g.r, u: [u], prvni: g, posl: g }; sk.push(cur); }
     });
-    var px = P.x + P.w / 2, py = P.y + H(P);
+    // Pravoúhle (2026-11-06): z horní hrany nadřazeného svisle do mezery nad
+    // jeho řadou, vodorovně k dětem, dolů na sběrnici nad nimi. Do jiné řady
+    // po okraji rámu skříně — nikdy šikmo přes přístroje. Čáry ve stejné
+    // mezeře se rozestoupí (pruhy po 1,4 mm).
+    var px = P.x + P.w / 2, py = P.y;
     h += '<g data-nap-rodic="' + esc(rid) + '">';
     sk.forEach(function (q) {
       var a = q.prvni, b = q.posl, yb = a.y - 2.6, xa = a.x + a.w / 2, xb = b.x + b.w / 2;
-      var cx = px <= xa ? xa : px >= xb ? xb : (xa + xb) / 2;   // k bližšímu konci sběrnice (kratší čára přes přístroje)
-      var cesta = 'M' + Z(px) + ' ' + Z(py) + ' C' + Z(px) + ' ' + Z(py + 14) + ' ' + Z(cx) + ' ' + Z(yb - 14) + ' ' + Z(cx) + ' ' + Z(yb);
+      var cx = px <= xa ? xa : px >= xb ? xb : (xa + xb) / 2;
+      var body = [[px, py], [px, pruh(P.r)]];
+      if (q.r === P.r) body.push([cx, body[1][1]]);
+      else {
+        var vpravo = (px + cx) / 2 > (ramL + ramP) / 2, xe = okraj(vpravo), yc = pruh(q.r);
+        body.push([xe, body[1][1]], [xe, yc], [cx, yc]);
+      }
+      body.push([cx, yb]);
+      var cesta = body.map(function (t, i) { return (i ? 'L' : 'M') + Z(t[0]) + ' ' + Z(t[1]); }).join(' ');
       h += '<path d="' + cesta + '" fill="none" stroke="' + barva + '" stroke-width="' + sw + '" stroke-opacity=".85"' + (hlavni ? ' stroke-dasharray="1.6 1.2"' : '') +
-        ' pointer-events="visibleStroke" data-nap-deti="' + esc(q.u.join(',')) + '"/>';
+        ' stroke-linejoin="round" pointer-events="visibleStroke" data-nap-deti="' + esc(q.u.join(',')) + '"/>';
       if (q.u.length > 1) h += '<line x1="' + Z(xa) + '" y1="' + Z(yb) + '" x2="' + Z(xb) + '" y2="' + Z(yb) + '" stroke="' + barva + '" stroke-width="' + sw + '" data-nap-deti="' + esc(q.u.join(',')) + '" pointer-events="visibleStroke"/>';
       q.u.forEach(function (u) {
         var g = G[u], xx = g.x + g.w / 2;
@@ -36446,7 +36495,7 @@ DOK_TYPY.rozv.pdf = function (d) {
     var typ = esc(rozvNazev(p)) + (dalsi ? '<br><small>' + esc(dalsi) + '</small>' : '');
     if (!p.overeno) neover = true;
     return '<tr><td class="c">' + esc(rozvJeSvorkovnice(p) ? rozvSvorkyRozsah(x) : x.ozn) + '</td><td>' + esc(x.vyvod) + '</td><td>' + typ + (p.overeno ? '' : ' *') + '</td>' +
-      '<td class="c">' + rozvPdfCislo(p.In, 'A') + '</td><td class="c">' + esc(p.char) + '</td><td class="c">' + esc(p.poly ? (/N/.test(p.poly) ? p.poly : p.poly + 'P') : '') + '</td>' +
+      '<td class="c">' + (rozvVlozkaText(x) ? esc(rozvVlozkaText(x)) : rozvPdfCislo(p.In, 'A')) + '</td><td class="c">' + esc(p.char) + '</td><td class="c">' + esc(p.poly ? (/N/.test(p.poly) ? p.poly : p.poly + 'P') : '') + '</td>' +
       '<td class="c">' + (p.idn !== '' && p.idn != null ? rozvPdfCislo(p.idn, 'mA') + (p.rcdTyp ? ' ' + esc(p.rcdTyp) : '') : '') + '</td>' +
       '<td class="c">' + esc(x.faze) + '</td><td>' + esc([x.kabel, x.prurez].filter(Boolean).join(' ')) + '</td>' +
       (psc ? '<td class="c">' + esc(mista[x.uid] || '') + '</td><td class="c">' + esc(p.sirkaMm ? rozvCisloText(p.sirkaMm) + ' × ' + rozvCisloText(p.vyskaMm || '?') : (p.sirka !== '' ? rozvSirkaText(p.sirka) : '')) + '</td>' : '') + '</tr>';
@@ -37279,7 +37328,7 @@ function rozvPopiskyRady(d) {
       var p = x.p || {}, w = +p.sirka || 1, m = rozvMez(x);
       if (m) { b.push({ w: m * M, prazdne: true, mezera: true }); obs += m; }   // mezera mezi přístroji = prázdné políčko její šířky
       obs += w;
-      b.push(p.kat === 'REZ' ? { w: w * M, prazdne: true } : { w: w * M, ozn: x.ozn || '', vyvod: x.vyvod || '', hod: rozvPopiskaHodnota(p) });
+      b.push(p.kat === 'REZ' ? { w: w * M, prazdne: true } : { w: w * M, ozn: x.ozn || '', vyvod: x.vyvod || '', hod: rozvVlozkaText(x) || rozvPopiskaHodnota(p) });
     });
     var volno = Math.round((mod - obs) * 100) / 100;
     for (var k = 0; volno > 0.001; k++) { var c = Math.min(1, volno); b.push({ w: c * M, prazdne: true, volno: true }); volno = Math.round((volno - c) * 100) / 100; }

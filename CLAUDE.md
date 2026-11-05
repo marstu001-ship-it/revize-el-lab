@@ -2892,8 +2892,12 @@ chránič.
   řádek **„→ napájí: -SPD1, -FA25…FA44"** (`rozvOznRada`). Totéž ve výběru víc.
   Změna jde přes `rozvZmena` (ZPĚT, Ctrl+Z) — `rozvNapajeniNastavit`.
 - **Režim 🔗 Napájení** (tlačítko v liště čelního pohledu, `__rz.napRezim`, jen
-  v paměti): šipky `rozvNapSvg` od spodní hrany nadřazeného k horní hraně dětí,
-  sousední děti v řadě jednou šipkou se sběrnicí, každý nadřazený vlastní barva,
+  v paměti): šipky `rozvNapSvg` **pravoúhle** (oprava po v1.58 — šikmé čáry
+  vedly přes přístroje): z horní hrany nadřazeného svisle do mezery nad jeho
+  řadou, vodorovně k dětem, dolů na sběrnici nad nimi; do jiné řady svisle po
+  levém / pravém okraji rámu skříně (podle toho, kde je blíž). Čáry v téže
+  mezeře se rozestoupí (`pruh`, rozestup podle počtu čar v mezeře, nejvýš
+  1,4 mm), čáry po okraji po 1,2 mm. Sousední děti v řadě jednou šipkou se sběrnicí, každý nadřazený vlastní barva,
   napájení z hlavního vypínače tence šedě a výchozí skryté. **Tažení myší**
   A → B (čára, nepřípustný cíl červeně), **klik a klik** (`rozvNapKlik`: napájející,
   pak přidat / ubrat napájené; Esc / klik do prázdna konec), **rámeček +
@@ -2910,7 +2914,12 @@ chránič.
   (`model.pod`, `vPod`); hlubší úroveň **zploštěle** s poznámkou „z -FAx · název"
   (`model.zplost`). Přívodní svorky (`x.privodni`) na přívodu před hlavním
   vypínačem (`rozvSvorkyRozsah`: „-X1…X3"). Pojistka: volitelné **`x.vlozka`**
-  („40 gG", „Vložka (A, char.)" v Dalších údajích) → „vložka 40 gG" ve schématu.
+  („40 gG", „Vložka (A, char.)" v Dalších údajích) → „vložka 40 gG" ve schématu,
+  **„40 A gG" v čelním pohledu, v seznamu přístrojů (sloupec In) a na popiscích**
+  (`rozvVlozkaText`); bez vložky In jako dřív. Vložka větší než In odpojovače →
+  upozornění v panelu „Vložka 40 A je větší než jmenovitý proud odpojovače
+  32 A." (`rozvVlozkaUpoz`). Kontroly In podřazeného (i max. předjištění SPD)
+  berou u pojistky vložku (`rozvInEff`). Data se nemění.
 
 **Svorková lišta, přípojnice, obecné položky (commit 2):**
 - Řada jako **svorková lišta** (`rady[i].svorky = true`, zaškrtávátka „Svorkové

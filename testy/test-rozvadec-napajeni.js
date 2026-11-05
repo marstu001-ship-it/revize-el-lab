@@ -201,6 +201,37 @@ async function stranka(ctx, url, err) {
   await p.evaluate(() => { const b = Array.from(document.querySelectorAll('.kt-menu button, .kt-menu [role="menuitem"]')).filter(x => /Odpojit/.test(x.textContent))[0]; if (b) b.click(); }); await w(150);
   check('pravý klik na šipce: Odpojit / Vrátit na automatiku; Odpojit → z hlavního vypínače', menu.some(t => /Odpojit — napájet z hlavního vypínače/.test(t)) && menu.some(t => /Vrátit na automatiku/.test(t)) &&
     await p.evaluate(() => __T.naj('-FA16').nadr === '' && __T.naj('-FA15').nadr === __T.naj('-FA24').uid), menu.join(' | '));
+  // geometrie šipek (2026-11-06): pravoúhle, mezerou nad řadou / po okraji rámu, nikdy přes přístroj
+  const geo = await p.evaluate(() => {
+    rozvNapajeniNastavit([__T.naj('-FA1').uid], __T.naj('-FA24').uid);   // dítě v jiné řadě než nadřazený
+    __rzNap.skrytHlavni = false; rozvSvgPrekreslit();
+    const rects = rozvGeom().map(g => ({ uid: g.uid, x: g.x, y: g.y, w: g.w, h: g.h || RZG.H }));
+    const segs = [];
+    document.querySelectorAll('#rz-pohled .rz-nap-vrstva path[data-nap-deti], #rz-pohled .rz-nap-vrstva line[data-nap-deti]').forEach(el => {
+      const rod = el.closest('[data-nap-rodic]').getAttribute('data-nap-rodic');
+      let pts = el.tagName === 'line' ? [[+el.getAttribute('x1'), +el.getAttribute('y1')], [+el.getAttribute('x2'), +el.getAttribute('y2')]]
+        : (el.getAttribute('d').match(/-?[\d.]+\s+-?[\d.]+/g) || []).map(s => s.trim().split(/\s+/).map(Number));
+      for (let i = 1; i < pts.length; i++) segs.push({ a: pts[i - 1], b: pts[i], rod, line: el.tagName === 'line' });
+    });
+    let sikme = 0, okraj = 0; const pres = [], prekryv = [];
+    segs.forEach(s => {
+      const [a, b] = [s.a, s.b];
+      if (Math.abs(a[0] - b[0]) > 0.01 && Math.abs(a[1] - b[1]) > 0.01) sikme++;
+      const x1 = Math.min(a[0], b[0]), x2 = Math.max(a[0], b[0]), y1 = Math.min(a[1], b[1]), y2 = Math.max(a[1], b[1]), e = 0.05;
+      if (Math.abs(a[0] - b[0]) < 0.01 && y2 - y1 > 40) okraj++;   // svislá čára přes řadu = po okraji rámu
+      rects.forEach(r => { if (x2 > r.x + e && x1 < r.x + r.w - e && y2 > r.y + e && y1 < r.y + r.h - e) pres.push(rozvNajit(r.uid).x.ozn); });
+    });
+    // vodorovné úseky různých nadřazených ve stejné výšce se nepřekrývají
+    const vod = segs.filter(s => !s.line && Math.abs(s.a[1] - s.b[1]) < 0.01 && Math.abs(s.a[0] - s.b[0]) > 0.01);
+    vod.forEach((s, i) => vod.slice(i + 1).forEach(t => {
+      if (s.rod !== t.rod && Math.abs(s.a[1] - t.a[1]) < 0.01 && Math.min(Math.max(s.a[0], s.b[0]), Math.max(t.a[0], t.b[0])) - Math.max(Math.min(s.a[0], s.b[0]), Math.min(t.a[0], t.b[0])) > 0.05) prekryv.push(s.a[1]);
+    }));
+    const r = { segs: segs.length, sikme, okraj, pres: Array.from(new Set(pres)).join(','), prekryv: prekryv.length };
+    zpetPosledni(); __rzNap.skrytHlavni = true; rozvSvgPrekreslit();
+    return r;
+  });
+  check('šipky Napájení pravoúhle: žádný šikmý úsek, žádný úsek přes obdélník přístroje (RS2 i s napájením z hlavního vypínače)', geo.segs > 20 && geo.sikme === 0 && geo.pres === '', JSON.stringify(geo));
+  check('šipky Napájení: do jiné řady po okraji rámu, čáry ve stejné mezeře se nepřekrývají', geo.okraj >= 1 && geo.prekryv === 0, JSON.stringify(geo));
   if (SNIMKY) { await p.evaluate(() => { document.querySelectorAll('.toast').forEach(t => t.remove()); __rz.vyber = null; __rz.vic = null; rozvPohledVykreslit(); }); await (await p.$('#rz-pohled')).screenshot({ path: path.join(SNIMKY, 'rs2-napajeni.png') }); }
   await p.evaluate(() => { TD_AKCE.tdRNapRezim(); });
   check('mimo režim Napájení šipky nejsou', await p.evaluate(() => !document.querySelector('#rz-pohled .rz-nap-vrstva')));
@@ -395,6 +426,30 @@ async function stranka(ctx, url, err) {
   check('jiný výrobce: PDF bez jména a razítka z profilu, schéma bez „Vypracoval" z profilu', !np.pdfJmeno && !np.pdfRazitko && !np.schema, [np.pdfJmeno, np.pdfRazitko, np.schema, np.kde].join(' '));
   check('jiný výrobce: ručně vyplněné hodnoty platí (funkce, jméno v prohlášení)', np.funkce === 'jednatel' && np.rucne === 'Eva Výrobcová', np.funkce + ' ' + np.rucne);
   check('jiný výrobce: odškrtnutí vrátí profil, klíč bezProfilu se neukládá', np.zpet === 'false|Petr Vymyšlený', np.zpet);
+
+  // ── 9. pojistkový odpojovač: vložka vs. držák (2026-11-06) ──────────────
+  const vl = await p.evaluate(async () => {
+    rozvZalozkaNastavit('navrh'); await __T.w(100);
+    const fu = __T.naj('-FU1'), spd = __T.naj('SPD1'), r = {};
+    const celo = () => (document.querySelector('#rz-pohled [data-puid="' + fu.uid + '"]') || {}).textContent || '';
+    const sezn = () => DOK_TYPY.rozv.pdf(Object.assign({}, __T.cist(), { dokVyber: { schema: false, tech: false, prohl: false, ko: false } })).map(q => q.html || '').join('');
+    delete fu.vlozka; spd.p.pozn = 'max. předjištění 32 A'; rozvPohledVykreslit();
+    rozvVybrat(fu.uid, false); await __T.w(30);
+    r.bez = { celo: celo(), upoz: document.getElementById('rp-vlozka-upoz').hidden, spd: rozvNapajeniUpoz(spd).join('|'), sezn: /<td class="c">32 A<\/td>/.test(sezn()) };
+    fu.vlozka = '40 gG'; rozvPohledVykreslit(); rozvVybrat(fu.uid, false); await __T.w(30);
+    const u = document.getElementById('rp-vlozka-upoz');
+    r.s = { celo: celo(), upoz: !u.hidden && u.textContent, spd: rozvNapajeniUpoz(spd).join('|'), sezn: /<td class="c">40 A gG<\/td>/.test(sezn()),
+      pop: rozvPopiskyRady ? JSON.stringify(rozvPopiskyRady(__T.cist())).indexOf('40 A gG') !== -1 : true };
+    // psaní do pole vložky přepočítá upozornění hned
+    const pole = document.querySelector('#rz-vlastnosti [data-rp2="vlozka"]'); pole.value = '25 gG'; pole.dispatchEvent(new Event('input', { bubbles: true }));
+    r.psani = document.getElementById('rp-vlozka-upoz').hidden;
+    delete fu.vlozka; spd.p.pozn = ''; __rz.vyber = null; rozvPohledVykreslit(); rozvVlastnostiVykreslit(); dokZmena();
+    return r;
+  });
+  check('pojistka bez vložky: v čelním pohledu 32 A, v seznamu 32 A, bez upozornění', /32 A/.test(vl.bez.celo) && !/gG/.test(vl.bez.celo) && vl.bez.upoz === true && vl.bez.sezn && vl.bez.spd === '', JSON.stringify(vl.bez));
+  check('pojistka 10×38 (In 32) s vložkou 40 gG: čelní pohled a seznam „40 A gG", popisky taky', /40 A gG/.test(vl.s.celo) && !/32 A/.test(vl.s.celo) && vl.s.sezn && vl.s.pop, JSON.stringify(vl.s));
+  check('upozornění „Vložka 40 A je větší než jmenovitý proud odpojovače 32 A." (při psaní 25 gG zmizí)', vl.s.upoz === '⚠ Vložka 40 A je větší než jmenovitý proud odpojovače 32 A.' && vl.psani === true, vl.s.upoz);
+  check('kontrola předjištění SPD bere vložku (40 A > max. 32 A)', /předjištění 40 A je vyšší než max\. předjištění svodiče 32 A/.test(vl.s.spd), vl.s.spd);
 
   // ── starý rozvaděč z předchozí verze: data, schéma, PDF beze změny ─────
   {
