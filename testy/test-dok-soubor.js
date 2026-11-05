@@ -72,7 +72,7 @@ async function pretahnout(p, cesta) {
   let [dl] = await Promise.all([A.waitForEvent('download'), A.click('[data-action="tdSouborKolegovi"]')]);
   const cestaP = await dl.path();
   const soubP = JSON.parse(fs.readFileSync(cestaP, 'utf8'));
-  check('název souboru podle čísla dokumentu', /^POUVV-0001_\d{4}-\d{2}-\d{2}\.json$/.test(dl.suggestedFilename()), dl.suggestedFilename());
+  check('název souboru podle čísla dokumentu', /^(LAB_)?POUVV-0001_\d{4}-\d{2}-\d{2}\.json$/.test(dl.suggestedFilename()), dl.suggestedFilename());
   check('soubor má formát revize-el-dokumenty a jeden dokument', soubP._format === 'revize-el-dokumenty' && soubP.dokumenty.length === 1 && soubP.odesilatel === 'Jan Vymyšlený');
   check('soubor nese i neuloženou poslední změnu (uloží se před exportem)', soubP.dokumenty[0].data.stavba === 'Vymyšlená kotelna Polní 1');
 
