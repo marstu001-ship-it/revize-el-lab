@@ -4,7 +4,10 @@
 //     bajtově stejný — nic se nepřeznačí, nezapíše se typ obvodu, skupina ani β,
 //   * revizní zpráva (getData i archiv po uložení) bajtově stejná, zmrazený čas,
 //   * záloha ze staré verze se obnoví beze ztráty, nová ve výchozím stavu bez fotek předloh,
-//   * import knihovny CSV se 43, 50 i 51 sloupci.
+//   * import knihovny CSV se 43, 50 i 51 sloupci,
+//   * (v9.140, opravy norem) rozvaděč se soudobostí „stupen: 'B'" a oteplením „okoli55: true"
+//     a zpráva LPS s vadami se staršími citacemi — po otevření a uložení bajtově jako ve staré verzi;
+//     výkonový rozvaděč PSC (hala) uložený starou verzí — nové řádky tab. D.1 se prázdné neuloží.
 // Vše vymyšlené (byt 3+1, „Výrobce A / B").
 const T = __dirname + '/';
 const PORT = process.env.PORT || 8901, STARA = process.env.STARA_PORT || 8902;
@@ -57,10 +60,13 @@ const otevritUlozit = async (p, uid) => p.evaluate(async (uid) => {
 }, uid);
 
 const zpravaOtevritUlozit = async (p) => p.evaluate(async () => {
-  otevritZpravu(0); await new Promise(r => setTimeout(r, 600));
-  const D = JSON.stringify(getData());
-  saveToArchiv(); await new Promise(r => setTimeout(r, 300));
-  return { D, archiv: JSON.stringify(STORE.archiv) };
+  const D = [];
+  for (let i = archiv.length - 1; i >= 0; i--) {
+    otevritZpravu(i); await new Promise(r => setTimeout(r, 600));
+    D.push(JSON.stringify(getData()));
+    saveToArchiv(); await new Promise(r => setTimeout(r, 300));
+  }
+  return { D: D.join('\n'), archiv: JSON.stringify(STORE.archiv) };
 });
 
 (async () => {
@@ -68,6 +74,9 @@ const zpravaOtevritUlozit = async (p) => p.evaluate(async () => {
   const S = await stranka(b, STARA), N = await stranka(b, PORT);
 
   // ── stará verze: zpráva + rozvaděč + záloha ───────────────────────────────
+  await S.p.evaluate(require(T + 'rozvadec-psc-hala.js')); await S.p.evaluate(async () => { dokZmena(); await dokUlozitOtevreny(); });
+  const uidPsc = await S.p.evaluate(() => window.__dokOtevreny.uid);
+  const staryPsc = await otevritUlozit(S.p, uidPsc);
   const st = await S.p.evaluate(async () => {
     archiv.length = 0; STORE.archiv = archiv;
     aktTyp = 'elektro'; aktPodtyp = 'dum'; novaZprava('elektro'); await new Promise(r => setTimeout(r, 300));
@@ -84,15 +93,41 @@ const zpravaOtevritUlozit = async (p) => p.evaluate(async () => {
     __T.naj('-FA2').pi = '1,5'; __T.naj('-FA3').p.pv = '2';
     dokZmena(); await dokUlozitOtevreny();
     const uid = window.__dokOtevreny.uid;
-    const zaloha = await buildZalohaBlob().text();
-    return { uid, zaloha, csv: ROZV_CSV.map(c => c[0]) };
+
+    // starší rozvaděč: soudobost se stupněm elektrizace B a oteplení s „okoli55: true"
+    await dokNovy('rozv');
+    __T.dk('[data-dk="oznaceni"]', 'RD-STARY'); __T.dk('[data-dk="soustava"]', '3NPE ~400/230 V TN-S');
+    rozvSkrinNastavit(rozvKnihPolozka('v-sk-3x12-n')); window.__rozvByt();
+    __T.naj('-FA2').pi = '2';
+    __rz.soud = { byty: { zap: true, n: '10', stupen: 'B' } };
+    rozvZmena('t', () => {}); await dokUlozitOtevreny();
+    const uid2 = window.__dokOtevreny.uid;
+    const d2 = DOK_TYPY.rozv.cist(dokForm()); d2.otepleni = { okoli55: true, penc: '40' };
+    window.__dokOtevreny.data = d2; await dokUlozitOtevreny();
+
+    // starší zpráva LPS s vadami se staršími citacemi
+    novaZprava('lps'); await new Promise(r => setTimeout(r, 300));
+    const L = getData();
+    L.ev_cislo = 'RE-25-0042'; L.misto = 'Testovací hromosvod'; L.zahajeni = '2025-05-01'; L.ukonceni = '2025-05-01'; L.vypracovani = '2025-05-02';
+    L.zavady = [
+      { kod: 'C1', popis: 'Naměřený zemní odpor zemniče přesahuje povolenou hodnotu (>10 Ω)', dalsi: 'svod 3', norma: 'ČSN EN 62305-3 ed.2, čl. 5.4.1', fotky: [] },
+      { kod: 'C2', popis: 'Uvolněné nebo poškozené měřicí (zkušební) svorky na svodech', dalsi: '', norma: 'ČSN EN 62305-3 ed.2, čl. 5.3.5', fotky: [] }
+    ];
+    nacistData(L); await new Promise(r => setTimeout(r, 300));
+    saveToArchiv(); await new Promise(r => setTimeout(r, 300));
+    return { uid, uid2, csv: ROZV_CSV.map(c => c[0]) };
   });
   // označení vypínače, jak ho dala stará verze (do v9.134 -QM1, od v9.135 -QH1)
   const oznQ = j => (j.match(/"ozn": ?"-Q[MH]?\d*"/g) || []).map(x => x.replace(/\s/g, '')).join(',');
-  const oznStare = oznQ(st.zaloha);
-  check('stará verze: rozvaděč má vypínač (' + oznStare + ')', !!oznStare);
+  // rozvaděč 1 a zprávy se ve staré verzi otevřou a uloží (s návštěvou Dokumentů) PŘED zálohou,
+  // rozvaděč 2 se do zálohy dostane neotevřený a otevře se ve staré verzi až po ní
   const staryRozv = await otevritUlozit(S.p, st.uid);
   const staraZprava = await zpravaOtevritUlozit(S.p);
+  st.zaloha = await S.p.evaluate(async () => await buildZalohaBlob().text());
+  const oznStare = oznQ(staryRozv.ulozeno);
+  check('stará verze: rozvaděč má vypínač (' + oznStare + ')', !!oznStare);
+  const staryRozv2 = await otevritUlozit(S.p, st.uid2);
+  check('stará verze: rozvaděč má stupen „B" a okoli55', /"stupen":"B"/.test(staryRozv2.ulozeno) && /"okoli55":true/.test(staryRozv2.ulozeno), staryRozv2.ulozeno.length);
 
   // ── nová verze: obnova zálohy ze staré verze ───────────────────────────────────
   const ob = await N.p.evaluate(async (z) => {
@@ -107,20 +142,46 @@ const zpravaOtevritUlozit = async (p) => p.evaluate(async () => {
   check('záloha ze staré verze: knihovna a objekty', ob.knih === JSON.stringify(zal.dokumentace.rozvKnihovna || []) && ob.obj === JSON.stringify(zal.dokumentace.rozvObjekty || []));
 
   const novyRozv = await otevritUlozit(N.p, st.uid);
-  check('starý rozvaděč: načtená data stejná jako ve staré verzi', novyRozv.nacteno === staryRozv.nacteno);
-  check('starý rozvaděč: cist() po otevření bajtově jako ve staré verzi', novyRozv.cist === staryRozv.cist,
+  check('starý rozvaděč (uložený starou verzí po návštěvě Dokumentů): načtená data = uložená starou verzí', novyRozv.nacteno === staryRozv.ulozeno);
+  check('starý rozvaděč: cist() po otevření bajtově jako uložená data', novyRozv.cist === novyRozv.nacteno,
     novyRozv.cist.length + ' × ' + staryRozv.cist.length);
-  check('starý rozvaděč: uložená data po otevření a uložení bajtově jako ve staré verzi', novyRozv.ulozeno === staryRozv.ulozeno);
+  check('starý rozvaděč: po otevření, projití záložek a uložení bajtově beze změny (i stitek.tridaII: false, bez ko.ui / ko.pe)', novyRozv.ulozeno === novyRozv.nacteno && novyRozv.ulozeno === staryRozv.ulozeno && (staryRozv.ulozeno.match(/"tridaII":[^,}]*/) || [''])[0] === (novyRozv.ulozeno.match(/"tridaII":[^,}]*/) || ['-'])[0]);
   check('starý rozvaděč: označení vypínače se nepřeznačilo (' + oznStare + ')', oznQ(novyRozv.ulozeno) === oznStare, oznQ(novyRozv.ulozeno));
   check('starý rozvaděč: nezapsal se typ obvodu, skupina ani β soudobosti',
     !/"typObv|"soud|"beta"|"obvTyp/.test(novyRozv.ulozeno), (novyRozv.ulozeno.match(/"(typObv|soud\w*|beta|obvTyp)"/g) || []).join(','));
   check('starý rozvaděč: Pi se nedopočítalo (jen ručně zadané 1,5)', (novyRozv.ulozeno.match(/"pi":/g) || []).length === (staryRozv.ulozeno.match(/"pi":/g) || []).length);
   if (novyRozv.ulozeno !== staryRozv.ulozeno) {
     const a = staryRozv.ulozeno, c = novyRozv.ulozeno; let i = 0; while (a[i] === c[i]) i++;
+    const A = JSON.parse(a), C = JSON.parse(c), cesty = [];
+    const pr = (x, y, k) => { if (JSON.stringify(x) === JSON.stringify(y)) return; if (x && y && typeof x === 'object' && typeof y === 'object') { new Set(Object.keys(x).concat(Object.keys(y))).forEach(q => pr(x[q], y[q], k + '.' + q)); } else cesty.push(k + ': ' + JSON.stringify(x) + ' → ' + JSON.stringify(y)); };
+    pr(A, C, 'data'); console.log('ROZDÍLY: ' + cesty.join(' ; '));
     console.log('ROZDÍL @' + i + '\n stará: ' + a.slice(i - 80, i + 120) + '\n nová:  ' + c.slice(i - 80, i + 120));
   }
 
+  const novyRozv2 = await otevritUlozit(N.p, st.uid2);
+  // jediný povolený rozdíl: klíč stitek.tridaII, který obě verze zapisují poprvé při návštěvě Dokumentů —
+  // stará výchozí false, nová odvozenou hodnotu '' (třída ochrany není II → značka se netiskne, význam stejný)
+  const bezTr = x => x.replace(/"tridaII":(false|"")/, '"tridaII":#');
+  check('rozvaděč se „stupen: B" a „okoli55: true" (Dokumenty poprvé): načtený beze změny, po uložení jako ve staré verzi kromě nově zapsaného tridaII',
+    novyRozv2.nacteno === staryRozv2.nacteno && bezTr(novyRozv2.ulozeno) === bezTr(staryRozv2.ulozeno),
+    novyRozv2.ulozeno.length + ' × ' + staryRozv2.ulozeno.length);
+  // (se STARA = v9.139 a starší stará verze zapíše false; se STARA = HEAD už '')
+  check('rozvaděč (Dokumenty poprvé): stará verze zapsala tridaII: false nebo "", nová odvozené ""',
+    /"tridaII":(false|"")/.test(staryRozv2.ulozeno) && /"tridaII":""/.test(novyRozv2.ulozeno) && !/"tridaII"/.test(novyRozv2.nacteno));
+  check('rozvaděč se „stupen: B": stupen ani okoli55 se nepřepsaly, tmax/okoli/vodice125 nepřibyly',
+    /"stupen":"B"/.test(novyRozv2.ulozeno) && /"okoli55":true/.test(novyRozv2.ulozeno) && !/"tmax"|"okoli":|"vodice125"/.test(novyRozv2.ulozeno));
+  if (bezTr(novyRozv2.ulozeno) !== bezTr(staryRozv2.ulozeno)) {
+    const a = staryRozv2.ulozeno, c = novyRozv2.ulozeno; let i = 0; while (a[i] === c[i]) i++;
+    console.log('ROZDÍL2 @' + i + '\n stará: ' + a.slice(i - 80, i + 120) + '\n nová:  ' + c.slice(i - 80, i + 120));
+  }
+
+  const novyPsc = await otevritUlozit(N.p, uidPsc);
+  check('PSC uložený starou verzí: po otevření, záložkách a uložení bajtově beze změny (žádné prázdné řádky tab. D.1)',
+    novyPsc.nacteno === staryPsc.ulozeno && novyPsc.ulozeno === novyPsc.nacteno, novyPsc.ulozeno.length + ' × ' + novyPsc.nacteno.length);
+
   const novaZpr = await zpravaOtevritUlozit(N.p);
+  check('zprávy v archivu: elektro i LPS', (staraZprava.D.match(/\n/g) || []).length === 1 && /RE-25-0042/.test(staraZprava.D));
+  check('zpráva LPS: vady se staršími citacemi beze změny', /ČSN EN 62305-3 ed\.2, čl\. 5\.3\.5/.test(novaZpr.archiv) && /povolenou hodnotu \(>10 Ω\)/.test(novaZpr.archiv));
   check('zpráva: getData() bajtově jako ve staré verzi', novaZpr.D === staraZprava.D);
   check('zpráva: archiv po uložení bajtově jako ve staré verzi', novaZpr.archiv === staraZprava.archiv);
 

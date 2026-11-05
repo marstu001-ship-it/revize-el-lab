@@ -33,7 +33,7 @@
 <script>
 (function() {
   'use strict';
-  var LAB_VERZE = 'v1.54 · 2026-11-04';   // bumpni spolu s CACHE_NAME v sw.js
+  var LAB_VERZE = 'v1.55 · 2026-11-05';   // bumpni spolu s CACHE_NAME v sw.js
 
   // ── klíče localStorage / sessionStorage ────────────────────────────────
   function klic(k) {
@@ -2624,7 +2624,7 @@ html.dark .rz-imp-chyby{background:#3a1f1c;border-color:#6b2c25}
 <body>
 
 <div class="topbar">
-  <div class="brand" data-action="home" style="cursor:pointer" title="Hlavní stránka">⚡ Revize <em>EL</em> <span class="ver">v9.139<span class="ver-date"> · 2026-11-03</span></span></div>
+  <div class="brand" data-action="home" style="cursor:pointer" title="Hlavní stránka">⚡ Revize <em>EL</em> <span class="ver">v9.140<span class="ver-date"> · 2026-11-04</span></span></div>
   <div class="topbar-right">
     <button class="btn btn-ghost" id="theme-toggle" data-action="toggleTheme" title="Přepnout světlý / tmavý režim">🌙</button>
     <button class="btn btn-ghost" id="view-toggle" data-action="toggleView" title="Přepnout zobrazení PC / Mobil">💻 PC</button>
@@ -32122,6 +32122,20 @@ DOK_TYPY.rozv.cist = function (koren) {
   // „výpočet soudobého příkonu" do PDF: chybí = zapnuto (rozvVyber) — ukládá se jen vypnuté,
   // jinak by starý rozvaděč s Pi dostal pouhým otevřením Dokumentů nový klíč
   if (d.dokVyber && d.dokVyber.soudobost === true) delete d.dokVyber.soudobost;
+  // opravy norem 61439 (v9.140): uložený rozvaděč se otevřením Dokumentů nemění —
+  // nové klíče kusového ověření (Ui, spojitost PE) jen vyplněné, starší „tridaII: true/false"
+  // zůstane, dokud technik zaškrtnutí nezmění (jinak by ho pravidlo data-odv přepsalo na '')
+  var puv = (window.__dokOtevreny || {}).data || {}, pko = puv.ko || {};
+  if (d.ko) {
+    if (d.ko.pe && !String(d.ko.pe.i || '').trim() && !String(d.ko.pe.r || '').trim() && !('pe' in pko)) delete d.ko.pe;
+    if (String(d.ko.ui == null ? '' : d.ko.ui).trim() === '' && !('ui' in pko)) delete d.ko.ui;
+  }
+  if (d.ov) ['z', 'p'].forEach(function (k) {   // PSC tab. D.1: prázdné nové řádky se neukládají
+    var o = d.ov[k], po = (puv.ov || {})[k] || {};
+    if (o && typeof o === 'object') Object.keys(o).forEach(function (q) { if (String(o[q] == null ? '' : o[q]).trim() === '' && !(q in po)) delete o[q]; });
+  });
+  var tII = koren.querySelector('[data-dk="stitek.tridaII"]');
+  if (tII && d.stitek && d.stitek.tridaII === '' && puv.stitek && typeof puv.stitek.tridaII === 'boolean' && puv.stitek.tridaII === tII.checked) d.stitek.tridaII = puv.stitek.tridaII;
   if (__rz) { if (__rz.vnejsi && __rz.vnejsi.length) d.vnejsi = dokKopie(__rz.vnejsi); else delete d.vnejsi; }   // prvky mimo rozvaděč (ovládání)
   return d;
 };

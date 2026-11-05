@@ -200,7 +200,7 @@ Revize EL je single-page PWA (HTML + JS + service worker). Obsah se cachuje
 v prohlížeči přes `sw.js`, takže uživatel nevidí změny, dokud se neinvalidně
 cache.
 
-**Aktuální verze: v9.139 · 2026-11-03**
+**Aktuální verze: v9.140 · 2026-11-04**
 
 ## Povinné při každé změně kódu před commitem
 
@@ -570,6 +570,35 @@ nedělala (pokyn uživatele).
 i otevřené z archivu a znovu uložené; zmrazený čas a náhoda) je ve verzi
 před funkcí a po ní **bajtově shodný** (archiv i `getData()`, sha256).
 
+## Normy – stav ověření citací (kontrola 2026-11-04, v9.140)
+
+Citace a hodnoty se kontrolovaly proti plnému znění norem, které má uživatel.
+Podrobnosti po dávkách jsou v oddílech níž. **Do repozitáře jdou jen čísla
+článků, hodnoty a citace — nikdy opsaný text norem.**
+
+- **Ověřeno:** ČSN 33 2000-6 ed.2 (+Z1, Z2), 4-41 ed.3, 5-51 ed.3+Z1+Z2
+  (+ TNI 33 2000-5-51), 5-52 ed.2, 5-54 ed.3, 4-443 ed.3, ČSN 33 1500
+  (tab. 1 a 1a), 7-701 ed.2, ČSN EN 61140 ed.3; ČSN 34 1390; ČSN 33 2130 ed.4
+  (přílohy A, B, čl. 8.1.3, 8.7.3); ČSN EN 60204-1 ed.3; ČSN EN IEC 62305-3
+  ed.3, -2 ed.3, ČSN EN 62305-1 ed.2, -4 ed.2; ČSN EN IEC 61439-1 ed.3
+  a 61439-2 ed.3; ČSN EN 50110-1 ed.4.
+- **Dál čeká na ověření** (štítek „čeká na ověření v ČSN" / `overit` zůstává):
+  - **ČSN EN IEC 61439-3 ed.2 (díl 3, DBO)** — RDF DBO, meze 250 A / 125 A,
+    umístění, znečištění, rozměry DBO; u PSC vnější provedení, F / D / W, EMC,
+    znečištění, kategorie přepětí,
+  - **ČSN 33 2000-7-701 ed.3** — koupelnové vady se citují bez vydání,
+    kontrola proběhla proti ed.2,
+  - **ČSN 33 1600 ed.2 Z1 / Z2** — lhůty spotřebičů (tab. 1),
+  - **dvě citace přílohy E ČSN EN 62305-3 ed.2** (čl. E.5.6.2.2 a E.7 —
+    ed.2 uživatel nemá, ověřeno jen přes obsah ed.3) a číslo kap. 8 v ed.2.
+- **Zásada: uložené zprávy a rozvaděče se nepřepisují.** Opravy mění katalog,
+  popisky, výchozí hodnoty pro NOVÉ zprávy a texty skládané za běhu. Vady
+  zapsané ve zprávě, starší klíče (`stupen: 'A'|'B'|'C'`, `okoli55: true`,
+  starší volby LPS) se otevřou a uloží bajtově stejně; jinak se jen
+  zobrazí v nové podobě. Citace skládané za běhu (tabulka zkoušek a–i,
+  patičky měření) se v PDF starých zpráv změní — to je záměr a `porovnani2.js`
+  je vypíše (`OPRAVY_TEXTU`).
+
 ## Normy – opravy citací, dávka 1: revize (2026-11-04)
 
 Uživatel nechal citace zkontrolovat proti plnému znění ČSN 33 2000-6 ed.2
@@ -704,6 +733,17 @@ příklad normy v editoru „ČSN EN 50549-1" (vydání 2 v ČR není).
 Test: `testy/test-normy-61439.js` (19 kontrol). **Upraveno:**
 `test-rozvadec-dokumenty.js` (11.5, odvozené zkušební napětí, štítky jen
 u dílu 3), `test-rozvadec-faze-otepleni.js` (podmínky s citací, pole teploty).
+
+**Při přenosu do ostrého programu (v9.140) opraveno:** návštěva záložky
+Dokumenty a uložení zapisovaly uloženému rozvaděči prázdné nové klíče
+`ko.ui`, `ko.pe` a u PSC prázdné řádky tab. D.1 (`ov.z.*`, `ov.p.*`)
+a starší `stitek.tridaII: false` přepisovaly pravidlem `data-odv` na `''`.
+`DOK_TYPY.rozv.cist` je teď ukládá jen vyplněné a uloženou hodnotu
+`tridaII` nechá, dokud technik zaškrtnutí nezmění. Jediný rozdíl proti
+v9.139 zůstává u rozvaděče, jehož Dokumenty nikdo neotevřel: klíč `tridaII`
+zapsaný poprvé je `''` (odvozená hodnota) místo dřívějšího `false` — význam
+stejný. Hlídá `test-rozvadec-stara-data.js` (rozvaděč uložený v9.139 se
+`stupen: 'B'`, `okoli55: true`, PSC hala, zpráva LPS se staršími citacemi).
 
 ## Tvorba dokumentace — Protokol o určení vnějších vlivů (blok `TVORBA DOKUMENTACE`)
 
