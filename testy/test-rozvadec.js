@@ -2398,6 +2398,59 @@ function pomocnik() {
     await w(200); await p.screenshot({ path: path.join(BEH, 'cad-novinky.png') });
   }
 
+  // ── dávka 4 norem: DBO podle ČSN EN IEC 61439-3 ed. 2 ─────────────────
+  {
+    const r = await p.evaluate(() => {
+  const kn = id => rozvVestavene().concat(pscVestavene()).find(x => x.id === id);
+  const prv = (id, o) => Object.assign({ uid: 'u' + Math.random().toString(36).slice(2), knih: id, p: dokKopie(kn(id)), ozn: '', vyvod: '', faze: 'L1' }, o || {});
+  const base = (extra) => Object.assign({ rezim: 'DBO', soustava: '3NPE ~50Hz 400/230V TN-S', skrin: { rady: 2, modulu: 12 }, rady: [{ prvky: [
+    prv('v-qm-3-40', { ozn: '-QH1' }),
+    prv('v-fa-1-B16', { vyvod: 'Zásuvky 1' }), prv('v-fa-1-B16', { vyvod: 'Zásuvky 2' }), prv('v-fa-1-B16', { vyvod: 'Zásuvky 3' }),
+    prv('v-fa-1-B10', { vyvod: 'Osvětlení' }), prv('v-fa-1-B16', { vyvod: 'Pračka' }), prv('v-fa-3-B25', { vyvod: 'Nabíjení EV wallbox', faze: '3f' })
+  ] }, { prvky: [] }], otepleni: { rdfRezim: 'tabulka' } }, extra || {});
+  const r = {};
+  const d1 = base(); const r1 = rotRdf(d1); r.rdf1 = { n: r1.n, k: r1.k, evfv: r1.evfv, text: r1.text };
+  const d2 = base({ otepleni: { rdfRezim: 'tabulka', evRizeni: true } }); const r2 = rotRdf(d2); r.rdf2 = { n: r2.n, k: r2.k, text: r2.text };
+  const v1 = rozvOteplVypocet(d1); const ev = v1.radky.find(q => q.x.vyvod === 'Nabíjení EV wallbox'), zs = v1.radky.find(q => q.x.vyvod === 'Zásuvky 1');
+  r.inc = { ev: ev && ev.eff, zas: zs && zs.eff };
+  const up = (extra) => { const d = base(extra); return rozvDboUpoz(d, rozvDokEff(d)); };
+  r.znec1 = up({ tech: { znec: '1' } }); r.znec2 = up({ tech: { znec: '2' } });
+  r.ip20 = up({ krytiZavreno: 'IP40', krytiOtevreno: 'IP20' }); r.ip2xc = up({ krytiZavreno: 'IP40', krytiOtevreno: 'IP2XC' }); r.ip30 = up({ krytiZavreno: 'IP30' });
+  r.ikVen = up({ tech: { umisteni: 'venkovní', ik: 'IK05' } }); r.ikVnitr = up({ tech: { umisteni: 'vnitřní', ik: 'IK05' } });
+  const dq = base(); dq.rady[0].prvky[0] = prv('v-qf-3-250', { ozn: '-QF1', privod: true }); r.qf = rozvDboUpoz(dq, rozvDokEff(dq));
+  const dfv = base({ privodIn: '40' }); dfv.rady[1].prvky.push(prv('v-fa-3-B25', { vyvod: 'FVE střídač', faze: '3f' })); r.fv = rozvDboUpoz(dfv, rozvDokEff(dfv));
+  const st = (extra) => rozvStitekTabulkaHtml(base(extra), ROZV_STITKY['90x45']);
+  r.st54 = /Krytí IP<\/span><span class="rz-sc-v">IP54/.test(st({ krytiZavreno: 'IP54', stitek: { rozsirena: false } }));
+  r.st2xc = /Krytí IP/.test(st({ krytiZavreno: 'IP2XC', stitek: { rozsirena: false } }));
+  // metoda 11.9 C → věta v PDF protokolu; formulář: volba C, zaškrtávátko EV/FV, nápovědy 11.7 / 11.10
+  const dc = base({ ko: { metoda: 'C' } }); r.pdfC = rozvPdfProtokol(dc, rozvDokEff(dc)).map(x => x.html || '').join('');
+  const hc = document.createElement('div'); hc.innerHTML = rozvDokHtml(dc);
+  r.optC = !!hc.querySelector('select[data-dk="ko.metoda"] option[value="C"]');
+  r.evZatrh = !!hc.querySelector('input[data-dk="otepleni.evRizeni"]');
+  r.nap = Array.from(hc.querySelectorAll('.rz-ko-nap')).map(x => x.textContent).join(' | ');
+  r.umistCeka = /Umístění<span class="rz-ceka"/.test(hc.innerHTML) || !!hc.querySelector('[data-dk="tech.znec"]').closest('.f').querySelector('.rz-ceka');
+  r.znecPh = hc.querySelector('[data-dk="tech.znec"]').placeholder; r.ikPh = hc.querySelector('[data-dk="tech.ik"]').placeholder;
+  r.rdfCeka = !!hc.querySelector('[data-dk="otepleni.rdfRezim"]').closest('.f').querySelector('.rz-ceka');
+  // evRizeni se do dat zapíše jen zaškrtnuté
+  const f0 = document.createElement('div'); f0.innerHTML = '<input class="rot-inc">'; const dd = { otepleni: { evRizeni: false, rdfRezim: 'bez' } };
+  rozvOteplCistNavic(f0, dd); r.evData = JSON.stringify(dd.otepleni || {});
+  return r;
+    });
+    check('61439-3 tab. 101: 6 vývodů, 1 EV → n = 5, k = 0,7, EV × 1', r.rdf1.n === 5 && r.rdf1.k === 0.7 && r.rdf1.evfv === 1 && r.inc.ev === 25 && Math.abs(r.inc.zas - 11.2) < 1e-9, JSON.stringify([r.rdf1, r.inc]));
+    check('61439-3 tab. 101: text RDF uvádí činitel 1 u EV/FV a citaci', r.rdf1.text === 'RDF 0,7 podle počtu vývodů (5); vývody nabíjení EV / FV (1) činitel 1 — ČSN EN IEC 61439-3 ed. 2, tab. 101', r.rdf1.text);
+    check('61439-3 tab. 101: zaškrtnuté řízení zátěže → n = 6, k = 0,6', r.rdf2.n === 6 && r.rdf2.k === 0.6, JSON.stringify(r.rdf2));
+    check('61439-3: evRizeni se do dat zapíše jen zaškrtnuté', !/evRizeni/.test(r.evData) && r.evZatrh, r.evData);
+    check('61439-3 7.1.2: znečištění 1 → upozornění, 2 → nic', /nejméně 2 \(čl\. 7\.1\.2/.test(r.znec1) && r.znec2 === '');
+    check('61439-3 8.2.2: IP20 při otevřených dveřích → upozornění, IP2XC / IP30 nic', /alespoň IP2XC \(čl\. 8\.2\.2 ČSN EN IEC 61439-3 ed\. 2\) — teď IP20\./.test(r.ip20) && r.ip2xc === '' && r.ip30 === '', r.ip20);
+    check('61439-3 8.2.1: venkovní IK05 → upozornění, vnitřní IK05 nic', /nejméně IK07/.test(r.ikVen) && r.ikVnitr === '');
+    check('61439-3 8.5.3: přívod QF → upozornění, hlavní vypínač ne', /není určen k obsluze laikem/.test(r.qf) && !/obsluze laikem/.test(r.znec2 + r.ip30));
+    check('61439-3 příl. CC: FV vývod → InA 40 A, hlavní přístroj 40 A + FV 25 A', /teď InA 40 A, hlavní přístroj 40 A \+ FV 25 A\./.test(r.fv), r.fv);
+    check('61439-3 6.1 h: štítek bez rozšířené části — IP54 ano, IP2XC ne', r.st54 && !r.st2xc);
+    check('61439-3 11.9: metoda C ve formuláři a věta v PDF protokolu', r.optC && /Zkouška se nevyžaduje: DBO jen s přípojnicemi nebo hotovými rozvody hlavního obvodu, ověřeno prohlídkou vodičů a uložení \(ČSN EN IEC 61439-3 ed\. 2, čl\. 11\.9\)\./.test(r.pdfC));
+    check('61439-3: nápovědy 11.7 (čl. 8.8) a 11.10 (čl. 6.3) ve formuláři', /čl\. 8\.8/.test(r.nap) && /čl\. 6\.3/.test(r.nap), r.nap);
+    check('61439-3: umístění, znečištění a RDF bez štítku „čeká na ověření", placeholdery', !r.umistCeka && !r.rdfCeka && r.znecPh === 'nejméně 2 (ČSN EN IEC 61439-3, čl. 7.1.2)' && r.ikPh === 'IK05', r.znecPh + ' ' + r.ikPh);
+  }
+
   // ── oddělení od revizí ────────────────────────────────────────────────
   const odd = await p.evaluate(async () => {
     showScreen('home'); renderArchiv();

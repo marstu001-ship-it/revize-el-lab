@@ -217,7 +217,7 @@ async function priprava(p) {
   check('Icc prázdné = políčko Icc chybí a InA se roztáhne přes celý řádek', !st4.bunky.some(b => /Icc/.test(b.l)) && ina4.vRadku === 1 && ina4.w > 80, JSON.stringify(ina4));
   await stitekS({ icc: '10', 'stitek.rozsirena': false });
   const st5 = await stitekInfo();
-  check('bez rozšířené části jen povinné údaje (InA zůstane; Icc, IP, soustava ne)', bunka(st5, 'Jmenovitý proud InA').v === '40 A' && !/Icc|IP40|TN-S/.test(st5.text), st5.text);
+  check('bez rozšířené části jen povinné údaje (InA zůstane; Icc, soustava ne; krytí IP40 nad IP2XC ano — čl. 6.1 h 61439-3 ed. 2)', bunka(st5, 'Jmenovitý proud InA').v === '40 A' && !/Icc|TN-S/.test(st5.text) && bunka(st5, 'Krytí IP').v === 'IP40', st5.text);
   await stitekS({ 'stitek.rozsirena': true, 'stitek.styl': 'jednoduche' });
   const st6 = await stitekInfo();
   check('rozvržení „jednoduché": staré řádky textu (Rozvaděč nn typ, Výr. č., Rok/měs., norma, síť, InA), žádná políčka', !st6.tab && !st6.bunky.length &&
@@ -394,7 +394,7 @@ async function priprava(p) {
     ko.nazvy === 'Stupeň krytí krytu|Vzdušné vzdálenosti a povrchové cesty|Ochrana před úrazem el. proudem a celistvost ochranných obvodů|Vestavění vestavných součástí|Vnitřní elektrické obvody a spoje|Svorky pro vnější vodiče|Mechanická funkce|Dielektrické vlastnosti|Zapojení, provozní vlastnosti a funkce', ko.radky);
   check('výsledky prázdné, Ui 400 V → zkušební napětí 1 890 V podle tab. 8 (odvozené), doba 1 s, izolační odpory prázdné', ko.vysl === ',,,,,,,,' && ko.ui === '400' && ko.au === '1890' && /Tab\. 8/.test(ko.tab8) &&
     ko.at === '1' && ko.iso === '', JSON.stringify({ vysl: ko.vysl, ui: ko.ui, au: ko.au, at: ko.at, iso: ko.iso, t8: ko.tab8.slice(0, 40) }));
-  check('metoda B (izolační odpor) nabídnuta — hlavní vypínač 40 A, Un 400 V', ko.metody === ',A,B', ko.metody);
+  check('metoda B (izolační odpor) nabídnuta — hlavní vypínač 40 A, Un 400 V', ko.metody === ',A,B,C', ko.metody);
   await p.click('[data-action="tdRKoS"]'); await w(150);
   const koS = await p.evaluate(() => Array.from(document.querySelectorAll('.rz-ko-tab tr[data-cl]')).map(r => r.querySelector('select').value || '-').join(','));
   check('„Všechny prohlídky (S) vyhovují" vyplní jen 11.2, 11.5 a 11.7 (zkoušky P ani S/P ne)', koS === 'vyhovuje,-,-,vyhovuje,-,vyhovuje,-,-,-', koS);
@@ -417,7 +417,7 @@ async function priprava(p) {
   check('přívodní přístroj nad 630 A: metodu B program sám nenabídne (už zvolená zůstane s varováním)', /do 630 A a Un do 500 V/.test(b630.pozn) && /800 A/.test(b630.pozn) && b630.upoz, JSON.stringify(b630));
   const b630b = await p.evaluate(async () => { const u = await dokNovy('rozv'); rozvSkrinNastavit(rozvKnihPolozka('v-sk-1x12-n')); rozvVlozit('v-qm-3-100', 0, 0); __rz.rady[0].prvky[0].p.In = 800;
     rozvZalozkaNastavit('dok'); const r = Array.from(document.querySelector('.rz-ko-metoda').options).map(o => o.value).join(','); return r; });
-  check('… a u nového rozvaděče s přívodním přístrojem 800 A je v nabídce jen metoda A', b630b === ',A', b630b);
+  check('… a u nového rozvaděče s přívodním přístrojem 800 A je v nabídce jen metoda A (a C – nevyžaduje se, 61439-3 ed. 2)', b630b === ',A,C', b630b);
   await p.evaluate(async uid => { window.__dokOtevreny = null; await dokOtevrit(uid); rozvZalozkaNastavit('dok'); }, prvniUid); await w(150);
   const kp = await pdfJen(['ko']);
   check('protokol v PDF: na výšku, hlavička (výrobce, zákazník, typ, výr. č., normy, Un, fn, InA, Icc, IP, druh sítě)', !kp.nasirku[0] &&
@@ -427,8 +427,8 @@ async function priprava(p) {
     /11\.2\s+Stupeň krytí krytu\s+S\s+vyhovuje/.test(kp.text) && /11\.8\s+Mechanická funkce\s+P\s*\n/.test(kp.text) &&
     /L1–PE 0,5 MΩ, L2–PE >200 MΩ, L3–PE 1 MΩ, N–PE …… \(kritérium ≥ 1 MΩ\)/.test(kp.text) && /Vymyšlený tester VT-1, výr\. č\. VV-123/.test(kp.text) &&
     /Zapojení provedl/.test(kp.text) && /Zkoušku provedl \(zkušební technik\)\s+Petr Vymyšlený/.test(kp.text) && /S = prohlídka, P = zkouška/.test(kp.text), '');
-  check('štítky „čeká na ověření v ČSN" jen u údajů dílu 3 (umístění, znečištění, rozměry, RDF DBO); RoHS, třída II, IP, IK, 11.4, tab. 8 a kvalifikace ověřené; v PDF ne',
-    ['Umístění', 'Stupeň znečištění', 'Rozměry v × š × h (mm)', 'Součinitel soudobosti RDF'].every(t => ko.ceka.indexOf(t) !== -1) &&
+  check('štítky „čeká na ověření v ČSN" jen u rozměrů DBO (umístění, znečištění, RDF ověřené v 61439-3 ed. 2); RoHS, třída II, IP, IK, 11.4, tab. 8 a kvalifikace ověřené; v PDF ne',
+    ko.ceka.indexOf('Rozměry v × š × h (mm)') !== -1 && !['Umístění', 'Stupeň znečištění', 'Součinitel soudobosti RDF'].some(t => ko.ceka.indexOf(t) !== -1) &&
     !ko.ceka.some(t => /RoHS|třídy II|Krytí|Odolnost IK|Ochrana před úrazem|Zkušební napětí|Kvalifikace/.test(t)) && !/čeká na ověření/.test(kp.text), ko.ceka.join(' | '));
   await p.screenshot({ path: BEH + '/rz-dok-protokol.png' });
 

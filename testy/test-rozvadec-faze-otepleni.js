@@ -164,8 +164,8 @@ const w = ms => new Promise(r => setTimeout(r, ms));
   });
   check('oddíl „Oteplení" mezi Technickými údaji a Prohlášením', o0.ods.indexOf('otepleni') === o0.ods.indexOf('tech') + 1 && o0.ods.indexOf('prohl') === o0.ods.indexOf('otepleni') + 1, o0.ods.join(','));
   check('bez Pv: 3 oranžové řádky „doplňte Pv", výsledek neúplné', o0.radky === 3 && o0.chybi === 3 && /Neúplné – chybí: Pv u 3 přístrojů,/.test(o0.vys), o0.vys);
-  check('podmínky a 0,8 In citují čl. 10.10.4.1 (ověřeno, bez štítku); štítek má jen RDF DBO a výchozí 55 °C („ověřte u výrobce")',
-    o0.ceka === 2 && /čl\. 10\.10\.4\.1/.test(o0.podm) && /35 °C \(čl\. 7\.1\.1\)/.test(o0.podm) && /125 %/.test(o0.podm) && o0.th === 'čl. 10.10.4.1 e)', o0.ceka + ' ' + o0.podm.slice(0, 80));
+  check('podmínky a 0,8 In citují čl. 10.10.4.1 (ověřeno, bez štítku); štítek má jen výchozí 55 °C („ověřte u výrobce"; RDF DBO ověřené v 61439-3 ed. 2)',
+    o0.ceka === 1 && /čl\. 10\.10\.4\.1/.test(o0.podm) && /35 °C \(čl\. 7\.1\.1\)/.test(o0.podm) && /125 %/.test(o0.podm) && o0.th === 'čl. 10.10.4.1 e)', o0.ceka + ' ' + o0.podm.slice(0, 80));
   const pvVyp = async (sel, v) => { await p.fill(sel, v); await w(80); };
   const uids = await p.evaluate(() => ['-QH1', '-FA1', '-FA2'].map(o => __T.naj(o).uid));
   await pvVyp('.rot-pv[data-uid="' + uids[0] + '"]', '1,5');

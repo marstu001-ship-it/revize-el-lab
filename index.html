@@ -35924,11 +35924,14 @@ var ROZV_KO_POLOZKY = [
   { cl: '11.4', nazev: 'Ochrana před úrazem el. proudem a celistvost ochranných obvodů', zp: 'S/P' },
   { cl: '11.5', nazev: 'Vestavění vestavných součástí', zp: 'S' },
   { cl: '11.6', nazev: 'Vnitřní elektrické obvody a spoje', zp: 'S/P' },
-  { cl: '11.7', nazev: 'Svorky pro vnější vodiče', zp: 'S' },
+  { cl: '11.7', nazev: 'Svorky pro vnější vodiče', zp: 'S', napDbo: 'DBO: nejméně 2 svorky pro vodiče ochranného pospojování; N svorek nejméně tolik, kolik vývodů potřebuje N, ve stejném pořadí (ČSN EN IEC 61439-3, čl. 8.8).' },
   { cl: '11.8', nazev: 'Mechanická funkce', zp: 'P' },
   { cl: '11.9', nazev: 'Dielektrické vlastnosti', zp: 'P' },
-  { cl: '11.10', nazev: 'Zapojení, provozní vlastnosti a funkce', zp: 'P' }
+  { cl: '11.10', nazev: 'Zapojení, provozní vlastnosti a funkce', zp: 'P', napDbo: 'U RCD pro více obvodů musí laik poznat, které obvody chrání – bez přístupu k živým částem (čl. 6.3).' }
 ];
+// 11.9 metoda C — jen DBO (ČSN EN IEC 61439-3 ed. 2, čl. 11.9); věta jde do PDF protokolu.
+var ROZV_KO_METODA_C = 'C – nevyžaduje se: DBO jen s přípojnicemi nebo hotovými rozvody hlavního obvodu, ověřeno prohlídkou vodičů a uložení (ČSN EN IEC 61439-3 ed. 2, čl. 11.9)';
+
 function rozvKoKlic(cl) { return 'k' + cl.replace('.', '_'); }
 // Zkušební napětí podle tab. 8 ČSN EN IEC 61439-1 ed. 3 (hlavní obvody) z Ui.
 // [Ui do (V), AC efektivní (V), DC (V)]
@@ -36098,9 +36101,49 @@ function rozvIp2xc(ip) {
   var m = /IP\s*([0-6X])\s*([0-9X])\s*([A-D])?/i.exec(String(ip || '')); if (!m || m[1].toUpperCase() === 'X') return null;
   var c = +m[1]; return c >= 3 || (c === 2 && /[CD]/i.test(m[3] || ''));
 }
+// Krytí vyšší než IP2XC? (štítek DBO bez rozšířené části, čl. 6.1 h ČSN EN IEC 61439-3 ed. 2)
+function rozvIpNad2xc(ip) {
+  var m = /IP\s*([0-6X])\s*([0-9X])\s*([A-D])?/i.exec(String(ip || '')); if (!m || m[1].toUpperCase() === 'X') return false;
+  var c = +m[1], w = m[2].toUpperCase() === 'X' ? 0 : +m[2], p = (m[3] || '').toUpperCase();
+  if (c >= 3) return true;
+  return c === 2 && (p === 'C' || p === 'D') && (w >= 1 || p === 'D');
+}
 function rozvTridaIIUpoz(e) {
   return e.trida === 'II' && e.ipz && rozvIp2xc(e.ipz) === false
     ? '<div class="rp-upoz rz-tr2-ip">⚠ Rozvaděč třídy II musí mít krytí alespoň IP2XC (čl. 8.4.4 c ČSN EN IEC 61439-1 ed. 3) — teď ' + esc(e.ipz) + '.</div>' : '';
+}
+// ČSN EN IEC 61439-3 ed. 2 (DBO, ověřeno v plném znění, dávka 4 norem). Jen
+// upozornění na obrazovce — do PDF nejde nic jako požadavek normy, nic se nedoplní.
+function rozvDboIk(ik) { var m = /IK\s*0*(\d+)/i.exec(String(ik || '')); return m ? +m[1] : null; }
+function rozvDboVstup(d) {   // vstupní (přívodní) přístroj DBO
+  var v = rfVse(d.rady || []);
+  return v.filter(function (x) { return x.privod === true; })[0] || v.filter(function (x) { return x.p.kat === 'QM'; })[0] ||
+    v.filter(function (x) { return x.p.kat === 'QF' || (x.p.kat === 'FU' && rsNh(x.p)); })[0] || null;
+}
+function rozvDboUpoz(d, e) {
+  if (pscJe(d)) return '';
+  var h = [], u = function (t) { h.push('<div class="rp-upoz rz-dbo-upoz">' + t + '</div>'); };
+  var zn = /(\d+)/.exec(String(e.znec || ''));
+  if (zn && +zn[1] < 2)
+    u('⚠ Stupeň znečištění u DBO je nejméně 2 (čl. 7.1.2 ČSN EN IEC 61439-3 ed. 2) — teď ' + esc(e.znec) + '.');
+  var ip = e.ipo || e.ipz;
+  if (ip && rozvIp2xc(ip) === false)
+    u('⚠ DBO musí mít po instalaci a při obsluze krytí alespoň IP2XC (čl. 8.2.2 ČSN EN IEC 61439-3 ed. 2) — teď ' + esc(ip) + '.');
+  var ik = rozvDboIk(e.ik), ikMin = e.umisteni === 'venkovní' ? 7 : 5;
+  if (ik != null && ik < ikMin)
+    u('⚠ ' + (ikMin === 7 ? 'Venkovní' : 'Vnitřní') + ' DBO musí mít odolnost nejméně IK0' + ikMin + ' (čl. 8.2.1 ČSN EN IEC 61439-3 ed. 2) — teď ' + esc(e.ik) + '.');
+  var vs = rozvDboVstup(d);
+  if (vs && (vs.p.kat === 'QF' || (vs.p.kat === 'FU' && rsNh(vs.p))))
+    u('⚠ Vstupní přístroj není určen k obsluze laikem — musí mít klíč nebo nástroj k opětovnému zapnutí a výměně vložky, nebo štítek, že to smí jen osoba poučená nebo znalá (čl. 8.5.3).');
+  var fv = rfVse(d.rady || []).filter(function (x) { return rfVyvod(x) && rotFv(x); });
+  if (fv.length) {
+    var ina = rfNum(e.ina) !== '' ? rfNum(e.ina) : rfNum(d.privodIn), hl = vs ? rfNum(vs.p.In) : '';
+    var zdroj = fv.reduce(function (a, x) { var v = rfNum(x.p.In); return a + (v === '' ? 0 : v); }, 0);
+    var c = function (v) { return v === '' ? '?' : rozvCisloText(v); };
+    h.push('<div class="dk-pozn rz-dbo-cc">ℹ S výrobnou zapojenou paralelně by mělo být InA ≥ In hlavního jistícího přístroje + proud zdroje (příloha CC ČSN EN IEC 61439-3 ed. 2), teď InA ' +
+      c(ina) + ' A, hlavní přístroj ' + c(hl) + ' A + FV ' + c(zdroj) + ' A.</div>');
+  }
+  return h.join('');
 }
 var ROZV_STITEK_NEPOV = 'na štítku nepovinné (ČSN EN IEC 61439-1 ed. 3, čl. 6.1), uveďte v technických údajích';
 function rozvDokHtml(d) {
@@ -36170,14 +36213,14 @@ function rozvDokHtml(d) {
       rzZrcadlo('icc', 'Zkratová odolnost Icc (kA)', d.icc, { ph: '6' }) +
       rzZrcadlo('krytiZavreno', 'Krytí – dveře zavřené', d.krytiZavreno, Object.assign({ ph: 'IP40' }, nep('Krytí – dveře zavřené'))) +
       rzZrcadlo('krytiOtevreno', 'Krytí – dveře otevřené', d.krytiOtevreno, { ph: 'IP20' }) +
-      rzPole(d, odv, 'tech.ik', 'Odolnost IK', Object.assign({ ph: 'IK07' }, nep('Odolnost IK'))) +
+      rzPole(d, odv, 'tech.ik', 'Odolnost IK', Object.assign({ ph: e.umisteni === 'venkovní' ? 'IK07' : 'IK05' }, nep('Odolnost IK'))) +
       rzVolba(d, odv, 'tech.trida', 'Třída ochrany', [['', '—'], ['I', 'I'], ['II', 'II']]) +
-      rzVolba(d, odv, 'tech.umisteni', 'Umístění', [['', '— vyberte —'], ['vnitřní', 'vnitřní'], ['venkovní', 'venkovní']], ced('Umístění')) +
-      rzPole(d, odv, 'tech.znec', 'Stupeň znečištění', Object.assign({ ph: 'stupeň 1–4 podle prostředí — doplňte' }, ced('Stupeň znečištění'))) +
+      rzVolba(d, odv, 'tech.umisteni', 'Umístění', [['', '— vyberte —'], ['vnitřní', 'vnitřní'], ['venkovní', 'venkovní']]) +
+      rzPole(d, odv, 'tech.znec', 'Stupeň znečištění', { ph: 'nejméně 2 (ČSN EN IEC 61439-3, čl. 7.1.2)' }) +
       rzPole(d, odv, 'tech.rdf', 'Součinitel soudobosti RDF', { ph: 'z oddílu Oteplení, nebo zadejte', nepov: true }) +
       rzPole(d, odv, 'tech.rozmery', 'Rozměry v × š × h (mm)', Object.assign({ ph: '550 × 310 × 100' }, ced('Rozměry v × š × h (mm)'))) +
       rzPole(d, odv, 'tech.hmotnost', 'Hmotnost (kg)', { nepov: true, attr: ' inputmode="decimal"' }) +
-    '</div>');
+    '</div>' + '<div id="rz-dbo-upoz">' + rozvDboUpoz(d, e) + '</div>');
   // Oteplení (etapa 4)
   h += rzOddil('otepleni', '🌡 Oteplení — ověření výpočtem (čl. 10.10.4.2)', rozvOteplHtml(d));
   if (psc) h += rzOddil('overeni', '🧪 Ověření návrhu (systém výrobce)', pscOvereniHtml(d, odv));
@@ -36198,7 +36241,7 @@ function rozvDokHtml(d) {
   var radky = ROZV_KO_POLOZKY.map(function (p) {
     var k = rozvKoKlic(p.cl);
     var vys = String(((ko.v || {})[k]) || ''), pz = (ko.p || {})[k], pozn = (pz != null && String(pz) !== '') ? pz : (odv['ko.p.' + k] || '');
-    return '<tr data-cl="' + p.cl + '" data-zp="' + p.zp + '"><td class="c">' + p.cl + '</td><td>' + esc(p.nazev) + (p.ceka ? rozvCeka(p.ceka) : '') + '</td>' +
+    return '<tr data-cl="' + p.cl + '" data-zp="' + p.zp + '"><td class="c">' + p.cl + '</td><td>' + esc(p.nazev) + (p.ceka ? rozvCeka(p.ceka) : '') + (p.napDbo && !psc ? '<div class="dk-nepov rz-ko-nap">' + esc(p.napDbo) + '</div>' : '') + '</td>' +
       '<td class="c">' + p.zp + '</td><td><select data-dk="ko.v.' + k + '" class="rz-ko-v">' + ROZV_KO_VYSL.map(function (x) {
         return '<option value="' + esc(x[0]) + '"' + (x[0] === vys ? ' selected' : '') + '>' + esc(x[1]) + '</option>'; }).join('') + '</select></td>' +
       '<td><input type="text" data-dk="ko.p.' + k + '" value="' + esc(pozn) + '"' + (odv['ko.p.' + k] ? ' data-odv="' + esc(odv['ko.p.' + k]) + '"' : '') + ' autocomplete="off"></td></tr>';
@@ -36221,7 +36264,8 @@ function rozvDokHtml(d) {
     '<div class="g3">' +
       '<div class="f"><label>Způsob ověření</label><select data-dk="ko.metoda" class="rz-ko-metoda">' +
         '<option value="">— vyberte —</option><option value="A"' + (met === 'A' ? ' selected' : '') + '>A – zkouška přiloženým napětím</option>' +
-        (mb.ok || met === 'B' ? '<option value="B"' + (met === 'B' ? ' selected' : '') + '>B – měření izolačního odporu</option>' : '') + '</select></div>' +
+        (mb.ok || met === 'B' ? '<option value="B"' + (met === 'B' ? ' selected' : '') + '>B – měření izolačního odporu</option>' : '') +
+        (!psc || met === 'C' ? '<option value="C"' + (met === 'C' ? ' selected' : '') + '>' + esc(ROZV_KO_METODA_C) + '</option>' : '') + '</select></div>' +
       rzVolba(d, {}, 'ko.pomocne', 'Pomocné obvody', ROZV_KO_POMOCNE, { span: 'span2' }) +
     '</div>' +
     '<div class="dk-pozn rz-ko-bpozn">' + (mb.ok ? 'Měření izolačního odporu (B, čl. 11.9: přívod do 630 A, Un do 500 V, měřicí napětí nejméně 500 V DC, ≥ 1 MΩ) jde použít — přívodní přístroj ' + esc(mb.zdroj) + ' ' + rozvCisloText(mb.In) + ' A, Un ' + mb.U + ' V.'
@@ -36337,6 +36381,7 @@ function rozvDokChybiVykreslit() {
   box.innerHTML = ch.length ? 'Chybí: ' + ch.map(function (c) {
     return '<button type="button" class="rz-odkaz" data-action="tdRDokNaPole" data-cil="' + esc(c[1]) + '">' + esc(c[0]) + '</button>'; }).join(', ')
     : '✓ Pro štítek a prohlášení je vyplněno vše potřebné.';
+  var du = document.getElementById('rz-dbo-upoz'); if (du) du.innerHTML = rozvDboUpoz(d, rozvDokEff(d));
   var dup = document.getElementById('rz-vc-dup'), o = window.__dokOtevreny || {};
   var x = rozvVyrDuplicita((d.vyroba || {}).cislo, o.uid);
   if (dup) dup.textContent = x ? '⚠ toto výrobní číslo už má ' + (x.cislo || 'jiný rozvaděč') + ((x.data || {}).oznaceni ? ' (' + x.data.oznaceni + ')' : '') : '';
@@ -36529,6 +36574,7 @@ function rozvPdfProtokol(d, e) {
   else if (ko.metoda === 'B') diel = 'Měření izolačního odporu: měřicí napětí ' + (b.u ? b.u + ' V DC' : '…… V DC') + '; ' +
     [['l1', 'L1'], ['l2', 'L2'], ['l3', 'L3'], ['n', 'N']].map(function (x) { return x[1] + '–PE ' + (b[x[0]] ? b[x[0]] + ' MΩ' : '……'); }).join(', ') +
     ' (kritérium ≥ 1 MΩ).';
+  else if (ko.metoda === 'C') diel = 'Zkouška se nevyžaduje: DBO jen s přípojnicemi nebo hotovými rozvody hlavního obvodu, ověřeno prohlídkou vodičů a uložení (ČSN EN IEC 61439-3 ed. 2, čl. 11.9).';
   if (rfNum(pe.i) !== '' || rfNum(pe.r) !== '') B.push({ html: '<div class="dok-pdf-h2">11.4 Spojitost ochranného obvodu</div><p class="dok-pdf-p">' +
     esc('Zkouška podle čl. 10.5.2: měřicí proud ' + (pe.i ? pe.i + ' A' : '……') + ', největší naměřený odpor ' + (pe.r ? pe.r + ' Ω' : '……') + ' (kritérium ≥ 10 A, ≤ 0,1 Ω).') + '</p>', drz: false });
   B.push({ html: '<div class="dok-pdf-h2">11.9 Dielektrické vlastnosti</div><p class="dok-pdf-p">' + esc(diel || 'Způsob ověření nevyplněn.') +
@@ -36789,6 +36835,7 @@ function rozvStitekTabulkaHtml(d, rz, o) {
     h += radek([b('Jmenovitý proud InA', esc(rozvJednotka(e.ina, 'A') || n)), roz ? b('Zkratová odolnost Icc', esc(rozvJednotka(e.icc, 'kA'))) : null]);
     if (roz) h += radek([b('Krytí IP (zavřeno / otevřeno)', esc(rozvIpText(e))), b('Třída ochrany', e.trida ? esc(e.trida) + tr2 : '')]);
   }
+  if (!roz && rozvIpNad2xc(e.ipz)) h += radek([b('Krytí IP', esc(e.ipz))]);   // čl. 6.1 h ČSN EN IEC 61439-3 ed. 2
   h += radek([{ l: '', v: 'ČSN EN IEC 61439-3 (IEC 61439-3)', cls: 'rz-sc-norma' }]);
   return '<div class="rz-stitek rz-st-tab" style="width:' + rz.w + 'mm;height:' + rz.h + 'mm"><div class="rz-st-obsah rz-st-mriz">' + h + '</div></div>';
 }
@@ -36807,7 +36854,7 @@ function rozvStitekVejde(s) {
 function rozvStitekJednoducheHtml(d, rz) {
   var e = rozvDokEff(d), st = d.stitek || {}, roz = st.rozsirena !== false, n = '……';
   var sit = roz ? rozvSitText(e) : '', radek2 = roz ? [e.icc ? 'Icc ' + rozvJednotka(e.icc, 'kA') : '', rozvIpText(e),
-    e.trida ? 'třída ' + e.trida : ''].filter(Boolean) : [];
+    e.trida ? 'třída ' + e.trida : ''].filter(Boolean) : (!pscJe(d) && rozvIpNad2xc(e.ipz) ? [e.ipz] : []);   // čl. 6.1 h
   return '<div class="rz-stitek" style="width:' + rz.w + 'mm;height:' + rz.h + 'mm"><div class="rz-st-obsah" style="padding-bottom:' + (rz.ce + 0.8) + 'mm">' +
     '<div class="rz-st-vyr"><b>' + esc(e.vyr.nazev || n) + '</b>' + (e.vyr.adresa ? ', ' + esc(e.vyr.adresa) : '') + '</div>' +
     '<div class="rz-st-r">Rozvaděč nn typ: <b>' + esc(e.typ || n) + '</b></div>' +
@@ -37123,7 +37170,13 @@ document.addEventListener('input', function (e) {
 // (p.pv = W/pól při In, skříň penc), nebo co technik zadá.
 var ROT_KAT = ['QM', 'FA', 'FI', 'FIFA', 'AFDD', 'FU', 'KM', 'XS', 'QF', 'QS'];   // QF, QS jen u PSC   // přístroje se ztrátami úměrnými proudu
 var ROT_KONST = ['TR', 'ZD', 'JINE'];   // Pv celkem za přístroj (údaj výrobce), nepřepočítává se proudem
-var ROT_RDF = [[2, 3, 0.8], [4, 5, 0.7], [6, 9, 0.6], [10, Infinity, 0.5]];   // [ověřit] IET (vydání 2012), ČSN EN 61439-3
+var ROT_RDF = [[2, 3, 0.8], [4, 5, 0.7], [6, 9, 0.6], [10, Infinity, 0.5]];   // ČSN EN IEC 61439-3 ed.2, čl. 5.4, tab. 101
+// DBO, tab. 101 (poslední řádek): vývody nabíjení EV a FV mají činitel 1, není-li
+// řízení zátěže v připojeném zařízení ani v DBO (otepleni.evRizeni) — do počtu n
+// vývodů se pak nepočítají.
+var ROT_FV_RE = /\bfv\b|fve|fotovolt|\bpv\b|střídač|stridac|měnič|menic/i;
+function rotFv(x) { return ROT_FV_RE.test(String(x.vyvod || '')); }
+function rotEvFv(x) { return rzsSk(x) === 'ev' || rotFv(x); }
 var ROT_PRIRAZKY = [['50', '50 % (odhad BEAMA)'], ['30', '30 % (Schneider – jen spoje)'], ['@', 'vlastní']];
 var ROT_OVERENO = [['', '— vyberte —'], ['zkouska', 'zkouškou'], ['odvozeni', 'odvozením od ověřeného referenčního návrhu výrobce systému']];   // PSC nad 630 A / víc polí
 var ROT_ZDROJ_PRIRAZKY = { '50': 'odhad BEAMA', '30': 'Schneider – jen spoje', '@': 'zadal technik' };
@@ -37146,13 +37199,15 @@ function rotMotor(x) { return (x.spotr || '') === 'motor' || x.p.kat === 'MS'; }
 function rotMotorK(x) { var pi = rfNum(x.pi); return pi !== '' && pi > 100 ? 1 : 0.8; }
 function rotRdf(d) {
   var o = d.otepleni || {}, psc = pscJe(d), vv = rfVse(d.rady).filter(rfVyvod);
-  var mot = psc ? vv.filter(rotMotor) : [], n = vv.length - mot.length;
+  var mot = psc ? vv.filter(rotMotor) : [], evfv = (!psc && o.evRizeni !== true) ? vv.filter(rotEvFv) : [];
+  var n = vv.length - mot.length - evfv.length;
   if (o.rdfRezim === 'tabulka') {
     var r = (psc ? ROT_RDF_PSC : ROT_RDF).filter(function (x) { return n >= x[0] && n <= x[1]; })[0];
     var t = psc ? (r ? 'činitel předpokládaného zatížení ' + rozvCisloText(r[2]) + ' podle počtu hlavních obvodů (' + n + ')' : 'činitel předpokládaného zatížení 1 (méně než 2 hlavní obvody)') +
         (mot.length ? '; motorové vývody 0,8 (≤ 100 kW) / 1,0 (> 100 kW)' : '') + ' — ČSN EN IEC 61439-2 ed. 3, tab. 101'
-      : (r ? 'RDF ' + rozvCisloText(r[2]) + ' podle počtu vývodů (' + n + ')' : 'RDF 1 (méně než 2 vývody)');
-    return { k: r ? r[2] : 1, text: t, rezim: 'tabulka', n: n, motory: mot.length };
+      : (r ? 'RDF ' + rozvCisloText(r[2]) + ' podle počtu vývodů (' + n + ')' : 'RDF 1 (méně než 2 vývody)') +
+        (evfv.length ? '; vývody nabíjení EV / FV (' + evfv.length + ') činitel 1' : '') + ' — ČSN EN IEC 61439-3 ed. 2, tab. 101';
+    return { k: r ? r[2] : 1, text: t, rezim: 'tabulka', n: n, motory: mot.length, evfv: evfv.length };
   }
   if (o.rdfRezim === 'vyrobce') {
     var k = rfNum(o.rdfVyrobce);
@@ -37180,6 +37235,7 @@ function rozvOteplVypocet(d) {
     var In = rfNum(x.p.In), ru = rfNum(incRucne[x.uid]), ib = rfNum(x.ib);
     var inc = ru !== '' ? ru : ib !== '' ? ib : In;
     var kx = (r.psc && rdf.rezim === 'tabulka' && rotMotor(x)) ? rotMotorK(x) : k;   // PSC: motory podle tab. 101
+    if (!r.psc && rdf.rezim === 'tabulka' && rdf.evfv && rotEvFv(x)) kx = 1;   // DBO: EV / FV bez řízení zátěže × 1
     vyp[x.uid] = { inc: inc, odv: ib !== '' ? ib : In, eff: inc === '' ? '' : (rfVyvod(x) ? inc * kx : inc) };
   });
   // proud jistící skupiny po fázích (chránič: jeho vývody; hlavní vypínač: všechny vývody)
@@ -37303,7 +37359,7 @@ function rozvOteplHtml(d) {
       (psc ? rzVolba(d, odv, 'otepleni.rdfRezim', 'Činitel předpokládaného zatížení (RDF)', [['bez', 'bez RDF — vývody plným Inc (konzervativní)'], ['tabulka', 'podle tab. 101 ČSN EN IEC 61439-2 ed. 3 (není-li dohoda o skutečném zatížení)'], ['vyrobce', 'RDF zadané výrobcem systému']],
         { labelHtml: 'Činitel předpokládaného zatížení (RDF) <span class="dk-nepov">ČSN EN IEC 61439-2 ed. 3, čl. 5.4, tab. 101</span>' })
       : rzVolba(d, odv, 'otepleni.rdfRezim', 'Součinitel soudobosti RDF', [['bez', 'bez RDF — vývody plným Inc (konzervativní)'], ['tabulka', 'podle RDF z tabulky pro ČSN EN 61439-3'], ['vyrobce', 'RDF zadané výrobcem systému']],
-        { labelHtml: 'Součinitel soudobosti RDF' + rozvCeka('Tabulka RDF (2–3 vývody 0,8 · 4–5 0,7 · 6–9 0,6 · 10 a více 0,5) je z rešerše (IET, vydání 2012).') })) +
+        { labelHtml: 'Součinitel soudobosti RDF <span class="dk-nepov">ČSN EN IEC 61439-3 ed. 2, čl. 5.4, tab. 101</span>' })) +
       '<div class="f rot-rdf-vl"' + (o.rdfRezim === 'vyrobce' ? '' : ' hidden') + '><label>RDF výrobce systému</label><input type="text" data-dk="otepleni.rdfVyrobce" value="' + esc(o.rdfVyrobce || '') + '" inputmode="decimal" placeholder="např. 0,7" autocomplete="off"></div>' +
       rzPole(d, odv, 'otepleni.penc', 'Vyzářitelný ztrátový výkon skříně Penc (W)', { ph: 'katalog výrobce skříně', attr: ' inputmode="decimal"' }) +
       rzPole(d, odv, 'otepleni.dt', 'ΔT, pro které Penc platí (K)', { ph: 'z katalogu', attr: ' inputmode="decimal"', nepov: true }) +
@@ -37312,6 +37368,7 @@ function rozvOteplHtml(d) {
         ' placeholder="55" inputmode="decimal" autocomplete="off"><span class="dk-nepov">podle katalogu výrobce, u modulových přístrojů obvykle 55 °C (čl. 10.10.4.2.1)</span></div>' +
       rzPole(d, odv, 'otepleni.okoli', 'Denní průměrná teplota okolí (°C)', { attr: ' inputmode="decimal"', za: '<span class="dk-nepov">referenční 35 °C (čl. 7.1.1)</span>' }) +
     '</div>' +
+    (psc ? '' : rzZatrh('otepleni.evRizeni', 'Řízení zátěže EV/FV je v zařízení nebo v DBO', o.evRizeni === true)) +
     '<div class="dk-pozn" id="rot-rdf-info">' + esc(v.rdf.text) + '</div>' +
     '<div class="dk-pozn" id="rot-dovolene">' + rotDovoleneText(v) + '</div>' +
     rzZatrh('otepleni.vodice125', 'Vodiče přímo připojené k přístrojům mají průřez nejméně pro 125 % skupinového jmenovitého proudu obvodu (čl. 10.10.4.1 f)', o.vodice125 === true) +
@@ -37362,6 +37419,7 @@ function rozvOteplCistNavic(koren, d) {
     if (d.otepleni.tmax === '') delete d.otepleni.tmax;
     if (d.otepleni.okoli === '') delete d.otepleni.okoli;
     if (d.otepleni.vodice125 === false) delete d.otepleni.vodice125;
+    if (d.otepleni.evRizeni === false) delete d.otepleni.evRizeni;   // dávka 4: jen zaškrtnuté
   }
   if (d.otepleni && !Object.keys(d.otepleni).some(function (k) { var v = d.otepleni[k]; return v !== '' && v !== false && v != null; })) delete d.otepleni;
 }
@@ -41100,8 +41158,8 @@ TD_AKCE.tdRPolSmazat = async function (el) {
 //     desky). Díky tomu funguje všechna logika DBO (výběr, schránka,
 //     označení, fáze, seznam přístrojů) beze změny.
 //   hlavička navíc: forma, icw, icwT, ipk, provedeni.
-// Hranice DBO / PSC (250 A přívod, 125 A vývod, obsluha laiky) je z rešerše
-// ČSN EN IEC 61439-3:2024 — viz CLAUDE.md. Nic dalšího normového se nepočítá.
+// Hranice DBO / PSC (InA do 250 A, vývody do 125 A, napětí proti zemi do 300 V AC,
+// obsluha laiky) — ČSN EN IEC 61439-3 ed. 2, kap. 1. Nic dalšího normového se nepočítá.
 // ═══════════════════════════════════════════════════════════════════════
 DOK_TYPY.psc = Object.create(DOK_TYPY.rozv);
 Object.assign(DOK_TYPY.psc, {
@@ -41833,7 +41891,7 @@ function pscHlavickaHtml(d, sel) {
     '</div><div class="rz-psc-prevod">Rozvaděč je veden jako PSC (číslo ' + esc(d.cislo || 'PSC-…') + '). ' +
     '<button type="button" class="dok-mini" data-action="tdPscNaDbo" title="Převést zpět na rozvodnici DBO — jen když návrh nemá nic, co DBO neumí">Převést na DBO…</button></div>';
 }
-// Proč by DBO měl být PSC: přívod / InA nad 250 A, vývod nad 125 A.
+// Proč by DBO měl být PSC: přívod / InA nad 250 A, vývod nad 125 A (ČSN EN IEC 61439-3 ed. 2, kap. 1).
 function rozvPscDuvody(d) {
   var v = [], ina = rotInA(d, { ina: (d.tech || {}).ina }).In;
   if (ina !== '' && ina > 250) v.push('přívod ' + rozvCisloText(ina) + ' A');

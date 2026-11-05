@@ -612,6 +612,13 @@ const presahy = (p, svg) => p.evaluate(svg => {
     const rozdil = (a, c) => { let i = 0; while (i < a.length && a[i] === c[i]) i++; return i + ': …' + a.slice(Math.max(0, i - 60), i + 80) + ' ⟷ …' + c.slice(Math.max(0, i - 60), i + 80); };
     check('DBO: editor (hlavička, pohled, vlastnosti) stejný jako ve předchozí verzi', A.htmlBez === B.htmlBez, A.htmlBez === B.htmlBez ? '' : rozdil(A.htmlBez, B.htmlBez));
     check('DBO: PDF návrhu stejné jako ve předchozí verzi', A.pdf === B.pdf, A.pdf === B.pdf ? '' : rozdil(A.pdf, B.pdf));
+    // dávka 4 norem (ČSN EN IEC 61439-3 ed. 2): záměrné doplňky Dokumentů DBO se z porovnání vyjmou (hlídá je test-rozvadec.js)
+    const bezD4 = t => t.replace(/<div id="rz-dbo-upoz">(?:<div class="[^"]*">[^<]*<\/div>)*<\/div>/g, '')
+      .replace(/<div class="dk-nepov rz-ko-nap">[^<]*<\/div>/g, '').replace(/<option value="C"[^>]*>[^<]*<\/option>/g, '')
+      .replace(/<label class="teren-radek rz-zatrh"><input type="checkbox" data-dk="otepleni\.evRizeni"[^>]*> [^<]*<\/label>/g, '')
+      .replace(/ <span class="rz-ceka"[^>]*>[^<]*<\/span>/g, '').replace(/ <span class="dk-nepov">ČSN EN IEC 61439-3 ed\. 2, čl\. 5\.4, tab\. 101<\/span>/g, '')
+      .replace(/(data-dk="tech\.(?:ik|znec)") placeholder="[^"]*"/g, '$1');
+    A.dbo5b.dok = bezD4(A.dbo5b.dok); B.dbo5b.dok = bezD4(B.dbo5b.dok);
     for (const [k, n] of [['dok', 'záložka Dokumenty'], ['stitek', 'štítek'], ['schema', 'schéma zapojení (všechny listy)'], ['otepl', 'výpočet oteplení'], ['faze', 'součty fází'], ['pdfVse', 'celé PDF dokumentace']])
       check('DBO (etapa 5b): ' + n + ' znak po znaku stejné jako ve předchozí verzi', A.dbo5b[k] === B.dbo5b[k], A.dbo5b[k] === B.dbo5b[k] ? A.dbo5b[k].length + ' znaků' : rozdil(A.dbo5b[k], B.dbo5b[k]));
     await s.evaluate(() => TD_AKCE.tdPdfZpet && TD_AKCE.tdPdfZpet());

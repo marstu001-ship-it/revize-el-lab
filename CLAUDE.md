@@ -582,13 +582,15 @@ Podrobnosti po dávkách jsou v oddílech níž. **Do repozitáře jdou jen čí
   **ČSN 33 1600 ed.2 + Z1 + Z2 (+ Z2/Opr. 2)** (dávka 4); ČSN 34 1390; ČSN 33 2130 ed.4
   (přílohy A, B, čl. 8.1.3, 8.7.3); ČSN EN 60204-1 ed.3; ČSN EN IEC 62305-3
   ed.3, -2 ed.3, ČSN EN 62305-1 ed.2, -4 ed.2; ČSN EN IEC 61439-1 ed.3
-  a 61439-2 ed.3; ČSN EN 50110-1 ed.4.
+  a 61439-2 ed.3; **ČSN EN IEC 61439-3 ed.2** (08/2025, EN IEC 61439-3:2024;
+  ed.1 z 10/2012 platí souběžně do 30. 11. 2027 — kap. 1, 5.4 + tab. 101, 6.1 h,
+  6.3, 7.1.2, 8.2.1, 8.2.2, 8.5.3, 8.8, 11.9, příl. CC; dávka 4); ČSN EN 50110-1 ed.4.
 - **Dál čeká na ověření** (štítek „čeká na ověření v ČSN" / `overit` zůstává):
-  - **ČSN EN IEC 61439-3 ed.2 (díl 3, DBO)** — RDF DBO, meze 250 A / 125 A,
-    umístění, znečištění, rozměry DBO; u PSC vnější provedení, F / D / W, EMC,
-    znečištění, kategorie přepětí,
   - **dvě citace přílohy E ČSN EN 62305-3 ed.2** (čl. E.5.6.2.2 a E.7 —
     ed.2 uživatel nemá, ověřeno jen přes obsah ed.3) a číslo kap. 8 v ed.2.
+  - Štítek `rozvCeka` v programu zůstává jen u údajů, které rešerše uváděla
+    z paměti a které dávky nepotvrdily: rozměry DBO, u PSC umístění, vnější
+    provedení, F / D / W, EMC, znečištění a kategorie přepětí.
 - **Zásada: uložené zprávy a rozvaděče se nepřepisují.** Opravy mění katalog,
   popisky, výchozí hodnoty pro NOVÉ zprávy a texty skládané za běhu. Vady
   zapsané ve zprávě, starší klíče (`stupen: 'A'|'B'|'C'`, `okoli55: true`,
@@ -718,11 +720,10 @@ Test: `testy/test-normy-lps.js` (32 kontrol).
 ## Normy – konfigurátor rozvaděčů podle ČSN EN IEC 61439-1/-2 ed. 3, dávka 3 (2026-11-04)
 
 Údaje se štítkem „čeká na ověření v ČSN", které jsou teď ověřené v plném znění
-61439-1 ed. 3 a 61439-2 ed. 3, štítek ztratily a mají citaci. **Ponechaly ho
-údaje dílu 3 (DBO)** — ČSN EN IEC 61439-3 ed. 2 uživatel nemá: RDF pro DBO
-(0,8 / 0,7 / 0,6 / 0,5), meze DBO 250 A / 125 A, umístění, stupeň znečištění
-a rozměry v technických údajích DBO; u PSC vnější provedení, připojení F / D / W,
-EMC, znečištění a kategorie přepětí (`pscTechHtml`).
+61439-1 ed. 3 a 61439-2 ed. 3, štítek ztratily a mají citaci. Ponechaly ho
+údaje dílu 3 (DBO) — ty ověřila až dávka 4 (oddíl níž): RDF DBO, meze, umístění
+a znečištění štítek ztratily, rozměry DBO ho mají dál; u PSC vnější provedení,
+připojení F / D / W, EMC, znečištění a kategorie přepětí (`pscTechHtml`).
 
 - **Kusové ověření:** 11.4 bez štítku, nepovinná pole `ko.pe.i` (A) a `ko.pe.r`
   (Ω) — zkouška podle 10.5.2, jen porovnání ≥ 10 A, ≤ 0,1 Ω (`rozvPeStav`);
@@ -769,6 +770,42 @@ v9.139 zůstává u rozvaděče, jehož Dokumenty nikdo neotevřel: klíč `trid
 zapsaný poprvé je `''` (odvozená hodnota) místo dřívějšího `false` — význam
 stejný. Hlídá `test-rozvadec-stara-data.js` (rozvaděč uložený v9.139 se
 `stupen: 'B'`, `okoli55: true`, PSC hala, zpráva LPS se staršími citacemi).
+
+## Normy – rozvaděč DBO podle ČSN EN IEC 61439-3 ed. 2, dávka 4 (2026-11-05)
+
+Ověřeno v plném znění ČSN EN IEC 61439-3 ed. 2 (08/2025; ed. 1 platí souběžně
+do 30. 11. 2027). **Jen upozornění na obrazovce** (`rozvDboUpoz`, box
+`#rz-dbo-upoz` v Technických údajích, překresluje se s řádkem „Chybí"), do PDF
+nic jako požadavek normy — kromě štítku a metody 11.9 C. Data se nemění, nové
+klíče (`otepleni.evRizeni`, `ko.metoda: 'C'`) jen když je technik nastaví.
+
+- **Bez štítku „čeká na ověření":** RDF DBO 0,8 / 0,7 / 0,6 / 0,5 (čl. 5.4, tab. 101
+  — `ROT_RDF`, popisek a text v `rotRdf` s citací), hranice DBO (kap. 1),
+  umístění vnitřní / venkovní (kap. 1, 8.2.1; u PSC štítek zůstává).
+- **RDF a EV / FV** (tab. 101, poslední řádek): v režimu `tabulka` u DBO se vývody
+  nabíjení EV (`rzsSk(x) === 'ev'`) a FV (`ROT_FV_RE` v názvu vývodu) nepočítají do n
+  a násobí se 1; zaškrtávátko „Řízení zátěže EV/FV je v zařízení nebo v DBO"
+  (`otepleni.evRizeni`, ukládá se jen zaškrtnuté) je počítá jako ostatní.
+  Text RDF: „RDF 0,7 podle počtu vývodů (5); vývody nabíjení EV / FV (1) činitel 1
+  — ČSN EN IEC 61439-3 ed. 2, tab. 101". **Mění se tím text RDF v oddílu
+  a na stránce oteplení v PDF** u rozvaděčů s RDF podle tabulky.
+- **Upozornění:** znečištění < 2 (čl. 7.1.2, placeholder „nejméně 2 …"), krytí
+  pod IP2XC — kontroluje se `krytiOtevreno`, jinak zavřené (čl. 8.2.2, každý DBO;
+  kontrola třídy II 61439-1 8.4.4 c zůstává), IK pod IK05 vnitřní / IK07
+  venkovní (8.2.1, placeholder podle umístění), vstupní přístroj QF nebo NH
+  (`rozvDboVstup`, 8.5.3), FV vývod → informace přílohy CC (InA ≥ In hlavního
+  přístroje + In jističů FV).
+- **Štítek (čl. 6.1 h):** krytí vyšší než IP2XC (`rozvIpNad2xc`) je i na základním
+  štítku bez rozšířené části (tabulka i jednoduché rozvržení) — **mění PDF štítku**
+  takových rozvaděčů.
+- **Kusové ověření:** nápovědy 11.7 (čl. 8.8) a 11.10 (čl. 6.3) jen ve formuláři
+  (`napDbo`); 11.9 třetí volba **C – nevyžaduje se** (`ROZV_KO_METODA_C`, jen DBO),
+  v PDF věta „Zkouška se nevyžaduje: …".
+
+Test: `test-rozvadec.js` (+13). **Upraveno:** `test-rozvadec-dokumenty.js`
+(IP40 na základním štítku, metody A/B/C, štítky jen u rozměrů),
+`test-rozvadec-faze-otepleni.js` (štítek jen u 55 °C), `test-rozvadec-psc.js`
+(porovnání Dokumentů DBO bez doplňků dávky 4).
 
 ## Tvorba dokumentace — Protokol o určení vnějších vlivů (blok `TVORBA DOKUMENTACE`)
 
@@ -1849,7 +1886,7 @@ Technickými údaji a Prohlášením):
   knihovny.**
 - Pevné ztráty (W), přirážka **50 % (odhad BEAMA) / 30 % (Schneider – jen
   spoje) / vlastní**, RDF **bez** (výchozí) / tabulka 2–3 0,8 · 4–5 0,7 ·
-  6–9 0,6 · 10+ 0,5 [ověřit IET] / výrobce — RDF jde jako odvozená hodnota
+  6–9 0,6 · 10+ 0,5 (ČSN EN IEC 61439-3 ed.2, tab. 101; EV / FV × 1, dávka 4) / výrobce — RDF jde jako odvozená hodnota
   do `tech.rdf`. Penc ze skříně (přepsatelné), ΔT z poznámky skříně
   („ΔT = 30 K") nebo ručně. **Bez zaškrtnutí „Přístroje jsou určeny pro
   teplotu okolí 55 °C" je výsledek neúplný.**
@@ -1902,9 +1939,8 @@ projít i touhle kontrolou.
   (byty, domy, kanceláře) – do 250 A, vývody do 125 A. ČSN EN IEC 61439-3",
   PSC „Výkonové rozvaděče – nad 250 A nebo s obsluhou jen poučenou osobou.
   ČSN EN IEC 61439-2".
-- **Meze 250 A / 125 A** jsou z **rešerše k ČSN EN IEC 61439-3:2024, kterou
-  dodal uživatel (dva nezávislé zdroje)** — normu samotnou nikdo nečetl.
-  Ve formuláři se ukazují bez štítku „čeká na ověření" (rozhodnutí uživatele).
+- **Meze 250 A / 125 A** (InA do 250 A, vývody do 125 A, napětí proti zemi do
+  300 V AC) — ověřeno v ČSN EN IEC 61439-3 ed. 2, kap. 1 (dávka 4 norem).
 - **Výstraha u DBO** (`rozvPscDuvody`: InA / přívod přes `rotInA` > 250 A nebo
   vývod `rfVyvod` s In > 125 A): jeden oranžový řádek nad hlavičkou
   `.rz-psc-upoz` „⚠ Nad 250 A / 125 A jde o PSC – převést na PSC?
