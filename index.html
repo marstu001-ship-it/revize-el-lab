@@ -2242,6 +2242,13 @@ body.rz-tahne,body.rz-tahne *{cursor:grabbing!important;user-select:none!importa
 body.rz-oznacuje,body.rz-oznacuje *{cursor:crosshair!important;user-select:none!important}
 .rz-banner-vyber{background:#e8f1fb;border-color:#2B579A;color:#1f3d63}
 html.dark .rz-banner-vyber{background:#1d2a3a;color:#c9dcf3}
+/* „nechat prázdné" u odvozených hodnot (2026-11-05) */
+.rz-odv-f{position:relative}
+.rz-odv-f > input{padding-right:2rem}
+.rz-odv-btn{position:absolute;right:.25rem;bottom:.3rem;border:none;background:transparent;color:#888;cursor:pointer;font-size:.85rem;padding:.15rem .35rem;border-radius:3px}
+.rz-odv-btn:hover{background:#eee;color:#333}
+html.dark .rz-odv-btn:hover{background:#333;color:#eee}
+.rz-bez-profilu{margin:.3rem 0}
 /* režim 🔗 Napájení (2026-11-05) */
 .rz-nap-btn.akt{background:#fff3c4;border-color:#e0a800;font-weight:700}
 html.dark .rz-nap-btn.akt{background:#3d3410}
@@ -2653,6 +2660,10 @@ html.dark .rz-imp-chyby{background:#3a1f1c;border-color:#6b2c25}
   /* rozvaděč — předloha z fotky: posuvníky průhlednosti a narovnání na prst */
   .rzp-op,#rzp-uhel{min-height:44px}
 }
+@media (max-width:600px), (pointer:coarse) and (max-height:500px){
+  .rz-odv-btn{min-width:44px;min-height:44px;bottom:0;right:0}
+  .rz-odv-f > input{padding-right:3rem}
+}
 /* ═══ /MOBIL ═══ */
 </style>
 </head>
@@ -2822,6 +2833,19 @@ html.dark .rz-imp-chyby{background:#3a1f1c;border-color:#6b2c25}
     <button type="button" class="nov-lupa-x" data-action="novinkyHledatZrusit" title="Zrušit hledání (Esc)">✕</button>
   </div>
   <div id="nov-hledat-info" class="nov-lupa-info"></div>
+
+  <div class="scard" data-nov-datum="2026-11-05">
+    <div class="scard-title">🔗 Rozvaděč – kdo koho napájí <span class="nov-datum">5. 11. 2026</span></div>
+    <div style="font-size:.85rem;line-height:1.7">
+      <ul style="margin:.3rem 0 0 1.4rem;padding:0">
+        <li>Ve vlastnostech přístroje je volba <strong>Napájen z</strong> — vyberete, ze kterého jističe, chrániče, pojistky nebo vypínače přístroj vede. U napájejícího přístroje je vidět <strong>→ napájí: …</strong>.</li>
+        <li>Tlačítko <strong>🔗 Napájení</strong> nad čelním pohledem ukáže šipky, kdo koho napájí. <strong>Táhněte myší</strong> od přístroje, který napájí, k napájenému — nebo <strong>klepněte</strong> na napájející a pak na napájené. Víc přístrojů naráz: vyberte je rámečkem a dejte <strong>Napájet z…</strong>. Ctrl+Z vrací.</li>
+        <li><strong>Schéma zapojení</strong> to nakreslí: pojistky před svodičem přepětí v jednom sloupci, skupinu jističů za jističem nebo chráničem a přívodní svorky před hlavním vypínačem.</li>
+        <li>Řadu jde označit jako <strong>svorkovou lištu</strong> (ve vlastnostech rozvaděče) — nepočítá se do volného místa, oteplení ani soudobosti. V knihovně jsou <strong>svorkovnice</strong> a <strong>přípojnice N a PE</strong> s počtem svorek.</li>
+        <li>V Dokumentech jde u předvyplněných polí klepnout na <strong>✕ nechat prázdné</strong> (↺ vrátí) a zaškrtnout <strong>Dokumentace pro jiného výrobce</strong> — pak se z vašeho profilu nepřevezme jméno, místo, razítko ani podpis.</li>
+      </ul>
+    </div>
+  </div>
 
   <div class="scard" data-nov-datum="2026-11-05">
     <div class="scard-title">🔌 Spotřebiče – lhůty podle ČSN 33 1600 Z2 <span class="nov-datum">5. 11. 2026</span></div>
@@ -32346,9 +32370,18 @@ DOK_TYPY.rozv.cist = function (koren) {
   var tII = koren.querySelector('[data-dk="stitek.tridaII"]');
   if (tII && d.stitek && d.stitek.tridaII === '' && puv.stitek && typeof puv.stitek.tridaII === 'boolean' && puv.stitek.tridaII === tII.checked) d.stitek.tridaII = puv.stitek.tridaII;
   if (__rz) { if (__rz.vnejsi && __rz.vnejsi.length) d.vnejsi = dokKopie(__rz.vnejsi); else delete d.vnejsi; }   // prvky mimo rozvaděč (ovládání)
+  if (d.bezProfilu !== true) delete d.bezProfilu;   // dokumentace pro jiného výrobce — ukládá se jen zaškrtnutá
+  if (d.bezOdv) {   // „nechat prázdné" platí, dokud do pole technik nic nenapíše
+    Object.keys(d.bezOdv).forEach(function (k) { var v = dkCesta(d, k); if (!d.bezOdv[k] || (v != null && String(v).trim() !== '')) delete d.bezOdv[k]; });
+    if (!Object.keys(d.bezOdv).length) delete d.bezOdv;
+  }
   return d;
 };
 
+document.addEventListener('change', function (e) {
+  var t = e.target; if (!t || t.getAttribute('data-dk') !== 'bezProfilu' || !__rz) return;
+  setTimeout(function () { rozvZalozkaNastavit('dok'); }, 0);   // odvozené hodnoty z profilu se přepočítají
+});
 // Souhrn v záhlaví sbalené hlavičky se přepisuje při psaní.
 document.addEventListener('input', function (e) {
   var t = e.target;
@@ -33646,7 +33679,7 @@ TD_AKCE.tdRSoudNastVychozi = function () {
 // ── List „Výpočet soudobého příkonu" (vektorově, rám a razítko jako schéma) ──
 function rozvSoudSoubor(d) { return ((d.cislo || 'ROZ') + '_soudobost_' + (d.oznaceni || '')).replace(/[\\\/:*?"<>|\s]+/g, '_').replace(/_+$/, '') + '.pdf'; }
 function rozvSoudListSvg(d) {
-  var r = rozvSoudVypocet(d), t = (typeof STORE !== 'undefined' && STORE.technik) || {}, kw = rzsKw;
+  var r = rozvSoudVypocet(d), t = rozvProfil(d), kw = rzsKw;
   var g = rsGeom('A4', false, false), h = rsRam(g);
   var c = { vypracoval: t.jmeno || '', datum: dokDatumCz(d.datum) || '', akce: d.stavba || '', investor: (d.investor || {}).nazev || '',
             nazev: 'Výpočet soudobého příkonu', projekt: d.stavba || '', zakazka: d.cislo || '', soubor: rozvSoudSoubor(d), listu: 1 };
@@ -36549,8 +36582,15 @@ function rozvDokOdvozene(d) {
   var t8 = rozvTab8(rozvDokHodnota(d, odv, 'ko.ui'));   // 11.9 metoda A: tab. 8 z Ui
   odv['ko.a.u'] = t8 ? String(t8.ac) : '';
   if (pscJe(d)) pscDokOdvozene(d, odv);   // výkonový rozvaděč (etapa 5b)
+  // „Nechat prázdné" a dokumentace pro jiného výrobce (2026-11-05): odvozená hodnota se nepoužije
+  if (d.bezProfilu === true) ROZV_Z_PROFILU.forEach(function (k) { odv[k] = ''; });
+  if (d.bezOdv) Object.keys(d.bezOdv).forEach(function (k) { if (d.bezOdv[k]) odv[k] = ''; });
   return odv;
 }
+// Odvozené hodnoty, které se berou z profilu technika (bezProfilu je nepoužije).
+var ROZV_Z_PROFILU = ['prohl.misto', 'prohl.jmeno', 'ko.zkousel.jmeno'];
+// Profil technika pro dokumenty rozvaděče — prázdný u dokumentace pro jiného výrobce.
+function rozvProfil(d) { return (d && d.bezProfilu === true) || typeof STORE === 'undefined' ? {} : (STORE.technik || {}); }
 function rozvDokHodnota(d, odv, cesta) {
   var v = dkCesta(d, cesta);
   return (v != null && String(v).trim() !== '') ? String(v).trim() : (odv[cesta] || '');
@@ -36569,7 +36609,7 @@ function rozvDokEff(d) {
     pMisto: g('prohl.misto'), pDatum: g('prohl.datum'), pJmeno: g('prohl.jmeno'), pFunkce: g('prohl.funkce'),
     overeni: g('prohl.overeni'), otepleni: g('prohl.otepleni'),
     zkJmeno: g('ko.zkousel.jmeno'), zkDatum: g('ko.zkousel.datum'),
-    razitko: ((d.prohl || {}).razitko !== false) && !!(t.razitko || t.podpis),
+    razitko: ((d.prohl || {}).razitko !== false) && d.bezProfilu !== true && !!(t.razitko || t.podpis),
     psc: pscJe(d), icw: String(d.icw || '').trim(), icwT: String(d.icwT || '').trim(), ipk: String(d.ipk || '').trim(), forma: String(d.forma || '').trim(),
     montaz: String(d.provedeni || '').trim(), vnejsi: g('tech.vnejsi'), pripojeni: g('tech.pripojeni'), emc: g('tech.emc'), kp: g('tech.kp'),
     iccTyp: g('tech.iccTyp'), iccIn: g('tech.iccIn'), system: g('ov.system')
@@ -36611,8 +36651,23 @@ function rzPole(d, odv, cesta, label, o) {
   o = o || {};
   var ul = dkCesta(d, cesta), v = (ul != null && String(ul) !== '') ? ul : (odv[cesta] || '');
   var attr = (o.attr || '') + (odv[cesta] ? ' data-odv="' + esc(odv[cesta]) + '"' : '');
-  return dkPole(cesta, label, v, Object.assign({}, o, { attr: attr }));
+  // „nechat prázdné" (2026-11-05): u pole s odvozenou hodnotou ✕, u vyprázdněného ↺
+  var bez = !!(d.bezOdv && d.bezOdv[cesta]), prof = d.bezProfilu === true && ROZV_Z_PROFILU.indexOf(cesta) !== -1;
+  var za = (o.za || '') + (bez ? '<button type="button" class="rz-odv-btn" data-action="tdRBezOdv" data-cesta="' + esc(cesta) + '" data-zpet="1" title="doplnit automaticky">↺</button>'
+    : odv[cesta] ? '<button type="button" class="rz-odv-btn" data-action="tdRBezOdv" data-cesta="' + esc(cesta) + '" title="nechat prázdné">✕</button>' : '');
+  if (bez || prof) attr += ' placeholder="(prázdné – vyplní se ručně)"';
+  return dkPole(cesta, label, v, Object.assign({}, o, { attr: attr, za: za, span: ((o.span || '') + (za ? ' rz-odv-f' : '')).trim() }));
 }
+TD_AKCE.tdRBezOdv = function (el) {
+  var o = window.__dokOtevreny; if (!o || !o.data) return;
+  var c = el.getAttribute('data-cesta'), zpet = el.hasAttribute('data-zpet'), inp = dokForm().querySelector('[data-dk="' + c + '"]');
+  o.data.bezOdv = o.data.bezOdv || {};
+  if (zpet) { delete o.data.bezOdv[c]; if (!Object.keys(o.data.bezOdv).length) delete o.data.bezOdv; }
+  else o.data.bezOdv[c] = true;
+  if (inp) inp.value = '';
+  rozvZalozkaNastavit('dok'); dokZmena();
+  var n = dokForm().querySelector('[data-dk="' + c + '"]'); if (n) n.focus();
+};
 function rzVolba(d, odv, cesta, label, volby, o) {
   o = o || {};
   var ul = dkCesta(d, cesta), v = (ul != null && String(ul) !== '') ? String(ul) : (odv[cesta] || '');
@@ -36707,6 +36762,8 @@ function rozvDokHtml(d) {
       (psc ? '<span class="dk-nepov">štítek se tiskne zvlášť, ve skutečné velikosti</span></div>'
       : '<button class="rz-dok-tisk2 rz-dok-popisky-btn" data-action="tdRPopisky" title="Pásky s popisky okruhů, které se nalepí pod přístroje — ve skutečné velikosti">🏷 Tisk popisků přístrojů</button>' +
       '<span class="dk-nepov">štítek a popisky se tisknou zvlášť, ve skutečné velikosti</span></div>') +
+    '<label class="teren-radek rz-zatrh rz-bez-profilu"><input type="checkbox" data-dk="bezProfilu"' + (d.bezProfilu === true ? ' checked' : '') +
+      '> Dokumentace pro jiného výrobce – nepřebírat údaje z mého profilu</label>' +
     '<div class="rz-dok-chybi" id="rz-dok-chybi"></div>' +
     '<div class="dk-pozn">Naměřené hodnoty a výsledky zkoušek vyplňujete vy — program je nikdy nedoplní. Štítek „' + ROZV_DOK_CEKA +
       '" = údaj z rešerše norem, ne z jejich textu.</div></div>';
@@ -36777,8 +36834,9 @@ function rozvDokHtml(d) {
     '</div>' +
     rzPole(d, odv, 'prohl.overeni', 'Ověření návrhu (bod 7)', { radky: 2, ph: 'dokumentace ověření návrhu výrobce skříňového systému (výrobce, číslo dokumentu)' }) +
     rzPole(d, odv, 'prohl.otepleni', 'Oteplení (bod 7)', { radky: 2, ph: 'jak bylo oteplení ověřeno — výpočet přijde v etapě 4' }) +
-    ((t.razitko || t.podpis) ? rzZatrh('prohl.razitko', 'vložit razítko a podpis z profilu', (d.prohl || {}).razitko !== false)
-      : '<div class="dk-pozn">Razítko a podpis se vloží, až je nahrajete v Nastavení (profil technika).</div>'));
+    ((t.razitko || t.podpis) && d.bezProfilu !== true ? rzZatrh('prohl.razitko', 'vložit razítko a podpis z profilu', (d.prohl || {}).razitko !== false)
+      : '<div class="dk-pozn">Razítko a podpis se vloží, až je nahrajete v Nastavení (profil technika).</div>') +
+    (d.bezProfilu === true ? '<div class="dk-pozn">Dokumentace pro jiného výrobce — razítko, podpis ani údaje z vašeho profilu se nevloží.</div>' : ''));
   // Kusové ověření
   var radky = ROZV_KO_POLOZKY.map(function (p) {
     var k = rozvKoKlic(p.cl);
@@ -37057,7 +37115,7 @@ function rozvPdfTech(d, e) {
     { html: '<table class="dok-pdf-tab rz-pdf-tech">' + radky + '</table>' }];
 }
 function rozvPdfProhlaseni(d, e) {
-  var t = (typeof STORE !== 'undefined' && STORE.technik) || {};
+  var t = rozvProfil(d);
   var bod = function (n, nadpis, obsah) {
     return '<div class="rz-ps-bod"><div class="rz-ps-n">' + n + '. ' + esc(nadpis) + '</div>' + (obsah ? '<div class="rz-ps-o">' + obsah + '</div>' : '') + '</div>';
   };
@@ -37352,7 +37410,7 @@ function rozvStitekTabulkaHtml(d, rz, o) {
   o = o || {};
   if (pscJe(d)) return pscStitekTabulkaHtml(d, rz, o);
   var e = rozvDokEff(d), st = d.stitek || {}, roz = st.rozsirena !== false, n = '……', T = rz.tab;
-  var t = (typeof STORE !== 'undefined' && STORE.technik) || {}, logo = st.logo !== false && t.logo ? t.logo : '';
+  var t = (typeof STORE !== 'undefined' && STORE.technik) || {}, logo = st.logo !== false && t.logo && d.bezProfilu !== true ? t.logo : '';
   var b = function (l, v, cls) { return v ? { l: l, v: v, cls: cls || '' } : null; };   // prázdné nepovinné políčko se nekreslí
   var radek = function (bunky) {
     bunky = bunky.filter(Boolean); if (!bunky.length) return '';
@@ -38011,7 +38069,7 @@ function rozvPdfOtepleni(d, e) {
   if (v.nad08 && v.nad08.length) pred.push('Zatížení nad 0,8 × In: ' + v.nad08.map(function (q) { return q.x.ozn || q.x.p.kat; }).join(', ') + '.');
   B.push({ html: '<div class="dok-pdf-h2">Předpoklady výpočtu</div><ul class="rz-ps-ul">' + pred.map(function (x) { return '<li>– ' + esc(x) + '</li>'; }).join('') + '</ul>' });
   B.push({ html: '<table class="rz-ps-podpis-tab"><tr><td><small>Datum</small><br>' + esc(dokDatumCz(e.pDatum) || dokDatumCz(d.datum) || '……………') + '</td>' +
-    '<td><small>Vypracoval</small><br>' + esc(e.pJmeno || t.jmeno || '……………') + '</td><td class="rz-ps-p"><small>Podpis</small></td></tr></table>' });
+    '<td><small>Vypracoval</small><br>' + esc(e.pJmeno || (d.bezProfilu === true ? '' : t.jmeno) || '……………') + '</td><td class="rz-ps-p"><small>Podpis</small></td></tr></table>' });
   return B;
 }
 
@@ -39859,7 +39917,7 @@ function rozvSchSoubor(d) { return ((d.cislo || 'ROZ') + '_schema_' + (d.oznacen
 // Všechny listy výkresu: [{ g, svg }]. Jedna funkce pro náhled i PDF.
 function rozvSchemaListy(d, o) {
   d = d || {}; o = o || {};
-  var s = d.schema || {}, odv = rozvSchOdvozene(d), t = (typeof STORE !== 'undefined' && STORE.technik) || {};
+  var s = d.schema || {}, odv = rozvSchOdvozene(d), t = rozvProfil(d);
   var hod = function (cesta) { return rozvDokHodnota(d, odv, cesta); };
   var fmt = o.format || (RS_FORMATY[s.format] ? s.format : 'A4');
   var met = s.metKreslit === true;
@@ -42857,13 +42915,13 @@ function pscPdfOvereni(d, e) {
     '</table>', delit: true });
   B.push({ html: '<div class="rz-pdf-pozn">' + PSC_OV_ZDROJ + ' — Z = zkouška, S = srovnání s referenčním návrhem, H = hodnocení.</div>' });
   B.push({ html: '<table class="rz-ps-podpis-tab"><tr><td><small>Datum</small><br>' + esc(dokDatumCz(e.pDatum) || dokDatumCz(d.datum) || '……………') + '</td>' +
-    '<td><small>Vypracoval</small><br>' + esc(e.pJmeno || t.jmeno || '……………') + '</td><td class="rz-ps-p"><small>Podpis</small></td></tr></table>' });
+    '<td><small>Vypracoval</small><br>' + esc(e.pJmeno || (d.bezProfilu === true ? '' : t.jmeno) || '……………') + '</td><td class="rz-ps-p"><small>Podpis</small></td></tr></table>' });
   return B;
 }
 // Štítek PSC — tatáž tabulka s popsanými políčky jako u DBO (v1.22).
 function pscStitekTabulkaHtml(d, rz, o) {
   var e = rozvDokEff(d), st = d.stitek || {}, roz = st.rozsirena !== false, n = '……', T = rz.tab;
-  var t = (typeof STORE !== 'undefined' && STORE.technik) || {}, logo = st.logo !== false && t.logo ? t.logo : '';
+  var t = (typeof STORE !== 'undefined' && STORE.technik) || {}, logo = st.logo !== false && t.logo && d.bezProfilu !== true ? t.logo : '';
   var b = function (l, v, cls) { return v ? { l: l, v: v, cls: cls || '' } : null; };
   var radek = function (bunky) {
     bunky = bunky.filter(Boolean); if (!bunky.length) return '';

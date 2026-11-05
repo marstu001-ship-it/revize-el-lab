@@ -617,7 +617,9 @@ const presahy = (p, svg) => p.evaluate(svg => {
       .replace(/<div class="dk-nepov rz-ko-nap(?: rz-ko-pe)?">[^<]*<\/div>/g, '').replace(/<option value="C"[^>]*>[^<]*<\/option>/g, '')
       .replace(/<label class="teren-radek rz-zatrh"><input type="checkbox" data-dk="otepleni\.evRizeni"[^>]*> [^<]*<\/label>/g, '')
       .replace(/ <span class="rz-ceka"[^>]*>[^<]*<\/span>/g, '').replace(/ <span class="dk-nepov">ČSN EN IEC 61439-3 ed\. 2, čl\. 5\.4, tab\. 101<\/span>/g, '')
-      .replace(/(data-dk="tech\.(?:ik|znec)") placeholder="[^"]*"/g, '$1');
+      .replace(/(data-dk="tech\.(?:ik|znec)") placeholder="[^"]*"/g, '$1')
+      // „nechat prázdné" a dokumentace pro jiného výrobce (2026-11-05)
+      .replace(/<label class="teren-radek rz-zatrh rz-bez-profilu">.*?<\/label>/g, '').replace(/<button type="button" class="rz-odv-btn"[^>]*>[^<]*<\/button>/g, '').replace(/ rz-odv-f"/g, '"');
     A.dbo5b.dok = bezD4(A.dbo5b.dok); B.dbo5b.dok = bezD4(B.dbo5b.dok);
     for (const [k, n] of [['dok', 'záložka Dokumenty'], ['stitek', 'štítek'], ['schema', 'schéma zapojení (všechny listy)'], ['otepl', 'výpočet oteplení'], ['faze', 'součty fází'], ['pdfVse', 'celé PDF dokumentace']])
       check('DBO (etapa 5b): ' + n + ' znak po znaku stejné jako ve předchozí verzi', A.dbo5b[k] === B.dbo5b[k], A.dbo5b[k] === B.dbo5b[k] ? A.dbo5b[k].length + ' znaků' : rozdil(A.dbo5b[k], B.dbo5b[k]));

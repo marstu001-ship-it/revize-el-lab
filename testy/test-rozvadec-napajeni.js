@@ -340,6 +340,62 @@ async function stranka(ctx, url, err) {
   });
   check('import CSV: 5 řádků bez chyb, i SPD s prázdnými póly', csv.pol === 5 && csv.chyby === 0, JSON.stringify(csv));
 
+  // ── 8. „nechat prázdné" a dokumentace pro jiného výrobce (commit 3) ────
+  const np = await p.evaluate(async () => {
+    const r = {}, f = () => dokForm();
+    STORE.technik.razitko = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNkYAAAAAYAAjCB0C8AAAAASUVORK5CYII=';
+    rozvZalozkaNastavit('dok'); await __T.w(200);
+    f().querySelectorAll('details.rz-dok-oddil').forEach(x => x.open = true);
+    const pole = () => f().querySelector('[data-dk="ko.zkousel.jmeno"]');
+    r.pred = pole().value;
+    const btn = pole().closest('.f').querySelector('[data-action="tdRBezOdv"]');
+    r.btn = btn ? btn.textContent + '|' + btn.title : '';
+    btn.click(); await __T.w(150);
+    f().querySelectorAll('details.rz-dok-oddil').forEach(x => x.open = true);
+    r.po = pole().value; r.ph = pole().placeholder;
+    let d = __T.cist(); r.bezOdv = JSON.stringify(d.bezOdv || {}); r.eff = rozvDokEff(d).zkJmeno;
+    r.zpetBtn = (pole().closest('.f').querySelector('[data-action="tdRBezOdv"]') || {}).textContent;
+    r.pdfKo = DOK_TYPY.rozv.pdf(Object.assign({}, d, { dokVyber: { cp: false, schema: false, tech: false, prohl: false, ko: true, soudobost: false } })).map(q => q.html || '').join('');
+    r.pdfKoJmeno = /Petr Vymyšlený/.test(r.pdfKo);
+    window.__snimekDok = true;
+    // ↺ vrátí jméno z profilu
+    pole().closest('.f').querySelector('[data-action="tdRBezOdv"]').click(); await __T.w(150);
+    d = __T.cist(); r.vraceno = pole().value + '|' + JSON.stringify(d.bezOdv || null);
+    // napsat vlastní text po ✕ → bezOdv pro pole zmizí
+    pole().closest('.f').querySelector('[data-action="tdRBezOdv"]').click(); await __T.w(150);
+    pole().value = 'Karel Jiný'; pole().dispatchEvent(new Event('input', { bubbles: true }));
+    d = __T.cist(); r.napsano = d.ko.zkousel.jmeno + '|' + JSON.stringify(d.bezOdv || null);
+    pole().value = ''; pole().dispatchEvent(new Event('input', { bubbles: true }));
+    // dokumentace pro jiného výrobce
+    const pf = f().querySelector('[data-dk="prohl.funkce"]'); if (pf) { pf.value = 'jednatel'; pf.dispatchEvent(new Event('input', { bubbles: true })); }
+    const z = f().querySelector('[data-dk="bezProfilu"]'); r.zatrh = !!z;
+    z.checked = true; z.dispatchEvent(new Event('change', { bubbles: true })); await __T.w(150);
+    d = __T.cist(); const e = rozvDokEff(d);
+    r.bez = [e.pJmeno, e.pMisto, e.zkJmeno, String(e.razitko)].join('|'); r.funkce = e.pFunkce; r.data = d.bezProfilu;
+    const pdf = DOK_TYPY.rozv.pdf(Object.assign({}, d, { dokVyber: {} })).map(q => q.html || q.cela || '').join('');
+    r.pdfJmeno = /Petr Vymyšlený/.test(pdf); r.pdfRazitko = /rz-ps-razitko/.test(pdf);
+    r.schema = /Petr Vymyšlený/.test(rozvSchemaListy(d).map(l => l.svg).join('')); r.kde = (pdf.match(/.{80}Petr Vymyšlený.{40}/) || [''])[0];
+    r.zatrhDom = f().querySelector('[data-dk="bezProfilu"]').checked;
+    // ručně vyplněné zůstává
+    const pj = f().querySelector('[data-dk="prohl.jmeno"]'); pj.value = 'Eva Výrobcová'; pj.dispatchEvent(new Event('input', { bubbles: true }));
+    d = __T.cist(); r.rucne = rozvDokEff(d).pJmeno;
+    // odškrtnout: zpět profil, klíč se neuloží
+    pj.value = ''; pj.dispatchEvent(new Event('input', { bubbles: true }));
+    const z2 = f().querySelector('[data-dk="bezProfilu"]'); z2.checked = false; z2.dispatchEvent(new Event('change', { bubbles: true })); await __T.w(150);
+    d = __T.cist(); r.zpet = ('bezProfilu' in d) + '|' + rozvDokEff(d).pJmeno;
+    delete STORE.technik.razitko;
+    return r;
+  });
+  check('nechat prázdné: u „Zkoušku provedl" (jméno z profilu) tlačítko ✕ „nechat prázdné"', np.pred === 'Petr Vymyšlený' && np.btn === '✕|nechat prázdné', np.pred + ' ' + np.btn);
+  check('nechat prázdné: ✕ → pole prázdné s „(prázdné – vyplní se ručně)", bezOdv v datech, v PDF protokolu bez jména', np.po === '' && np.ph === '(prázdné – vyplní se ručně)' &&
+    np.bezOdv === '{"ko.zkousel.jmeno":true}' && np.eff === '' && !np.pdfKoJmeno && np.zpetBtn === '↺', np.bezOdv);
+  check('nechat prázdné: ↺ vrátí jméno z profilu a klíč zmizí', np.vraceno === 'Petr Vymyšlený|null', np.vraceno);
+  check('nechat prázdné: napsaný text platí a „nechat prázdné" pro pole zmizí', np.napsano === 'Karel Jiný|null', np.napsano);
+  check('jiný výrobce: zaškrtávátko v Dokumentech; jméno, místo, zkoušející a razítko z profilu se nepoužijí', np.zatrh && np.zatrhDom && np.bez === '|||false' && np.data === true, np.bez);
+  check('jiný výrobce: PDF bez jména a razítka z profilu, schéma bez „Vypracoval" z profilu', !np.pdfJmeno && !np.pdfRazitko && !np.schema, [np.pdfJmeno, np.pdfRazitko, np.schema, np.kde].join(' '));
+  check('jiný výrobce: ručně vyplněné hodnoty platí (funkce, jméno v prohlášení)', np.funkce === 'jednatel' && np.rucne === 'Eva Výrobcová', np.funkce + ' ' + np.rucne);
+  check('jiný výrobce: odškrtnutí vrátí profil, klíč bezProfilu se neukládá', np.zpet === 'false|Petr Vymyšlený', np.zpet);
+
   // ── starý rozvaděč z předchozí verze: data, schéma, PDF beze změny ─────
   {
     const ctxS = await kontext(b), errS = [];

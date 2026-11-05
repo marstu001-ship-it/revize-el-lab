@@ -155,7 +155,9 @@ const res = []; const check = (n, ok, d) => res.push((ok ? '✅' : '❌') + ' ' 
   const nov = await p.evaluate(() => {
     const k2 = [...document.querySelectorAll('#screen-novinky .scard')].find(c => /Spotřebiče – lhůty podle ČSN 33 1600 Z2/.test(c.textContent));
     const maxD = [...document.querySelectorAll('#screen-novinky [data-nov-datum]')].map(c => c.getAttribute('data-nov-datum')).sort().pop();
-    return { je: !!k2, d: k2 && k2.getAttribute('data-nov-datum'), t: k2 ? k2.textContent : '', prvni: k2 && k2 === document.querySelector('#screen-novinky .scard[data-nov-datum]'), maxD };
+    return { je: !!k2, d: k2 && k2.getAttribute('data-nov-datum'), t: k2 ? k2.textContent : '', prvni: k2 && (() => {   // nad kartou nic staršího (pozice se nepinuje — přibývají další karty)
+      const vse = [...document.querySelectorAll('#screen-novinky .scard[data-nov-datum]')], i = vse.indexOf(k2);
+      return vse.slice(0, i).every(c => c.getAttribute('data-nov-datum') >= k2.getAttribute('data-nov-datum')); })(), maxD };
   });
   check('Novinky: karta „🔌 Spotřebiče – lhůty podle ČSN 33 1600 Z2" nahoře s datem 2026-11-05', nov.je && nov.d === '2026-11-05' && nov.prvni && nov.maxD === '2026-11-05' &&
     /3/.test(nov.t) && /96 měsíců/.test(nov.t) && /Kdy jaká lhůta/.test(nov.t) && /Použít návrh/.test(nov.t), nov.d);

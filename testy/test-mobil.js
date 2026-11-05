@@ -580,6 +580,13 @@ function vsechnyStavy(zalozky) {
     __rz.vyber = x.uid; rozvPohledVykreslit(); rozvVlastnostiVykreslit();
     document.querySelector('#rz-vlastnosti .rp-svorkovnice').scrollIntoView({ block: 'start' }); await __M.w(100);
   }));
+  add('rozvaděč – Dokumenty: nechat prázdné a jiný výrobce', 'Tvorba dokumentace', E(async () => {
+    await __M.rozv(); window.__dokOtevreny.data.bezOdv = { 'ko.zkousel.jmeno': true }; window.__dokOtevreny.data.bezProfilu = true;
+    rozvZalozkaNastavit('dok'); await __M.w(150);
+    dokForm().querySelectorAll('details.rz-dok-oddil').forEach(x => x.open = true);
+    document.querySelector('.rz-bez-profilu').scrollIntoView({ block: 'start' }); await __M.w(100);
+    setTimeout(() => { if (window.__dokOtevreny) { delete window.__dokOtevreny.data.bezOdv; delete window.__dokOtevreny.data.bezProfilu; } }, 3000);
+  }));
   // předloha z fotky: vymyšlená „fotka" řady nakreslená na plátno, jen v paměti
   const fotka = `(() => { const c = document.createElement('canvas'); c.width = 900; c.height = 600; const g = c.getContext('2d');
     g.fillStyle = '#777'; g.fillRect(0, 0, 900, 600); for (let m = 0; m < 12; m++) { g.fillStyle = '#fff'; g.fillRect(90 + m * 60 + 2, 220, 56, 180); }

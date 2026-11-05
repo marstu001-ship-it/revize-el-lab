@@ -2935,10 +2935,35 @@ chránič.
   se do repozitáře **nedává** — test importuje syntetické CSV se stejnými
   sloupci (i SPD s prázdnými póly).
 
+**„Nechat prázdné" a dokumentace pro jiného výrobce (commit 3):**
+- Odvozená hodnota (`data-odv`) šla dřív jen přepsat, ne smazat (prázdné =
+  „použij odvozenou"). U pole s odvozenou hodnotou je teď **✕ „nechat
+  prázdné"** → `d.bezOdv[cesta] = true`, pole prázdné s náznakem „(prázdné –
+  vyplní se ručně)", v PDF prázdná kolonka; **↺ „doplnit automaticky"** klíč
+  smaže (`TD_AKCE.tdRBezOdv`). Napsaný text platí a `bezOdv` pro pole zmizí
+  (`cist`).
+- **„Dokumentace pro jiného výrobce – nepřebírat údaje z mého profilu"**
+  (zaškrtávátko v hlavičce Dokumentů, `d.bezProfilu = true`, ukládá se jen
+  zaškrtnuté): z profilu se nebere jméno a místo v prohlášení, jméno
+  zkoušejícího (`ROZV_Z_PROFILU`), razítko, podpis, logo ani „Vypracoval"
+  ve výkresech (`rozvProfil(d)`). Ručně vyplněné platí dál.
+- Obojí na jednom místě: `rozvDokOdvozene` (odvozená hodnota → '') a
+  `rozvDokEff`, takže obrazovka i PDF ukazují totéž. Údaje výrobce
+  předvyplněné při založení jsou uložená data — nemění se.
+
+Karta v Novinkách **„🔗 Rozvaděč – kdo koho napájí"** (5. 11. 2026) — o ni si
+řeklo zadání.
+
 Test: `testy/test-rozvadec-napajeni.js` (vzorek RS2 `testy/rozvadec-rs2.js`;
 model, panel, režim Napájení skutečnou myší, klik a klik, rámeček, Ctrl+Z,
-kontextové menu, telefon 360 px, schéma, fáze, starý rozvaděč proti
-`STARA_PORT`). **Upraveno:** `test-rozvadec.js` (volba „Napájen z").
+kontextové menu, telefon 360 px, schéma, fáze, svorková lišta, import CSV,
+nechat prázdné, jiný výrobce, starý rozvaděč proti `STARA_PORT` — při přenosu
+pustit se `STARA=<předchozí vydání>`). **Upraveno:** `test-rozvadec.js`
+(volba „Napájen z", hledání bez výsledku jiným slovem — „svodič" teď najde
+svodič 3+1), `test-rozvadec-psc.js` (porovnání DBO bez 🔗 Napájení,
+svorkových lišt, poznámky 11.7 a „nechat prázdné"), `test-spotrebice-lhuty.js`
+(karta Novinek se nepinuje na první místo), `test-mobil.js` (stavy režimu
+Napájení, svorkovnice, Dokumenty s ✕).
 
 ### Výměna výkresů s CAD — export a import DXF (2026-11-02, bloky „ROZVADĚČ — VÝMĚNA S CAD")
 
