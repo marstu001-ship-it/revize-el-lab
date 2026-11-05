@@ -11,7 +11,7 @@ const res = []; const check = (n, ok, d) => res.push((ok?'✅':'❌')+' '+n+(d?'
 
   const r = await p.evaluate(() => {
     const karty = [...document.querySelectorAll('#screen-novinky .scard')];
-    const spotr = karty.find(k => /spotřebič/i.test(k.querySelector('.scard-title').textContent));
+    const spotr = karty.find(k => /Revize elektrických spotřebičů/.test(k.querySelector('.scard-title').textContent));
     const arch = karty.find(k => /Postranní archiv/i.test(k.querySelector('.scard-title').textContent));
     const cis = karty.find(k => /Vlastní číslování zpráv/i.test(k.querySelector('.scard-title').textContent));
     const hrom = karty.find(k => /Hromadné operace v archivu/i.test(k.querySelector('.scard-title').textContent));

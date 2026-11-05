@@ -3759,7 +3759,9 @@ Test: `testy/test-spotrebice-lhuty.js` (31 kontrol — návrh pro všechny
 kombinace ze zadání, upozornění, Použít návrh, PDF bez karty, překryv i na
 360 px, starý protokol bajtově proti předchozí verzi, Novinky). V `test-mobil.js`
 stav „dialog modal-sp-lhuty". **Upraveno:** `test-rozvadec.js` (karta CAD
-v Novinkách už není nahoře — kontroluje se, že nad ní není nic staršího).
+v Novinkách už není nahoře — kontroluje se, že nad ní není nic staršího),
+`test-spotrebice.js` (nabídka 3–96 měsíců), `test-novinky.js` (karta
+„Revize elektrických spotřebičů" se hledá celým názvem).
 
 ## Protokol jen pro JEDEN spotřebič (v9.78)
 

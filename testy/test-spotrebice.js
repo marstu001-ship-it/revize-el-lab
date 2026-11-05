@@ -98,7 +98,7 @@ const res = []; const check = (n, ok, d) => res.push((ok ? '✅' : '❌') + ' ' 
     out.rucni = pri.value;
     return out;
   });
-  check('nabízí se 6 / 12 / 24 měsíců', lhuta.volby.join(',') === '6,12,24', lhuta.volby.join(','));
+  check('nabízí se 3 / 6 / 12 / 24 / 48 / 96 měsíců (ČSN 33 1600 Z2, tab. 1)', lhuta.volby.join(',') === '3,6,12,24,48,96', lhuta.volby.join(','));
   check('výchozí lhůta je 24 měsíců', lhuta.vychozi === '24', lhuta.vychozi);
   check('termín příští revize se dopočítá z lhůty',
     lhuta['6'] === '2026-05-13' && lhuta['12'] === '2026-11-13' && lhuta['24'] === '2027-11-13',
