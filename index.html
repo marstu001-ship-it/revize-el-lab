@@ -33098,9 +33098,9 @@ function rozvPiNastaveniHtml(panel) {
   };
   var vs = rozvNastVstup();
   return '<details class="rp-dalsi rz-pi-nastaveni" data-dk-mimo><summary>⚙ Nastavení konfigurátoru' + (panel ? ' – odhad Pi' : '') + '</summary>' +
-    '<label class="rz-pi-nr">Přístroje napájím <select class="rz-vstup-nast"><option value="nahore"' + (vs === 'nahore' ? ' selected' : '') + '>shora</option>' +
+    '<div class="rz-vstup-nast-box"><label class="rz-pi-nr">Přístroje napájím <select class="rz-vstup-nast"><option value="nahore"' + (vs === 'nahore' ? ' selected' : '') + '>shora</option>' +
       '<option value="dole"' + (vs === 'dole' ? ' selected' : '') + '>zespodu</option></select></label>' +
-    '<div class="dk-pozn">Výchozí strana vstupu pro přístroje, které jste ještě nezapojili ručně (režim 🔌 Zapojení). Platí jen v tomto prohlížeči.</div>' +
+    '<div class="dk-pozn">Výchozí strana vstupu pro přístroje, které jste ještě nezapojili ručně (režim 🔌 Zapojení). Platí jen v tomto prohlížeči.</div></div>' +
     '<div class="dk-pozn">Výchozí příkony pro „🧮 Odhadnout…" u Pi. Platí jen v tomto prohlížeči, do rozvaděče se neukládají.</div>' +
     r('zasuvka', 'Zásuvka', 'kW/ks') + r('svetlo', 'Svítidlo (LED)', 'kW/ks') +
     ROZV_PI_SPOTR.filter(function (q) { return q[2] != null; }).map(function (q) { return r(q[0], q[1], 'kW'); }).join('') +
