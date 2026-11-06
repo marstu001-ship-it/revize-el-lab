@@ -564,16 +564,19 @@ function vsechnyStavy(zalozky) {
   add('rozvaděč – čelní pohled', 'Tvorba dokumentace', E(async () => {
     await __M.rozv(); document.getElementById('rz-pohled').scrollIntoView({ block: 'start' }); await __M.w(100);
   }));
-  // kdo koho napájí (2026-11-05, v1.61 vodiče ze svorky na svorku): režim 🔌 Zapojení s vybraným napájejícím a volba „Napájen z"
-  add('rozvaděč – režim Zapojení, vodiče a výběr napájejícího', 'Tvorba dokumentace', E(async () => {
+  // kdo koho napájí (v1.63 zapojení podle vzoru): režim 🔌 Zapojení s panelem „Kdo koho napájí" a vybraný vodič
+  add('rozvaděč – režim Zapojení, panel Kdo koho napájí', 'Tvorba dokumentace', E(async () => {
     await __M.rozv(); document.getElementById('toast-wrap').innerHTML = '';
-    TD_AKCE.tdRNapRezim(); __rz.napZdroj = __rz.rady[1].prvky[0].uid; rozvPohledVykreslit();
+    TD_AKCE.tdRNapRezim();
     document.querySelector('.rz-banner-nap').scrollIntoView({ block: 'start' }); await __M.w(100);
-    setTimeout(() => { if (__rz) { __rz.napRezim = false; __rz.napZdroj = null; } }, 3000);
+    setTimeout(() => { if (__rz) { __rz.napRezim = false; } }, 3000);
   }));
   add('rozvaděč – režim Zapojení, vybraný vodič v panelu', 'Tvorba dokumentace', E(async () => {
     await __M.rozv(); document.getElementById('toast-wrap').innerHTML = '';
-    TD_AKCE.tdRNapRezim(); const u = document.querySelector('#rz-pohled .rz-uch-g [data-uchyt="dst"]'); if (u) rozvVodicVybrat(u);
+    TD_AKCE.tdRNapRezim();
+    const a = __rz.rady[0].prvky[0], c = __rz.rady[1].prvky[0], pr = rzpPredpoved({ uid: a.uid, strana: 'b', pol: 0 }, { uid: c.uid, strana: 't', pol: 0 });
+    if (pr.nw) { pr.nw.uid = 'wm1'; rozvZmena('t', () => { __rz.vodice = (__rz.vodice || []).concat([pr.nw]); }); __rz.napVodic = 'wm1'; rozvSvgPrekreslit(); rozvVlastnostiVykreslit(); }
+    document.getElementById('toast-wrap').innerHTML = '';
     document.getElementById('rz-vlastnosti').scrollIntoView({ block: 'start' }); await __M.w(100);
     setTimeout(() => { if (__rz) { __rz.napRezim = false; __rz.napVodic = null; } }, 3000);
   }));
