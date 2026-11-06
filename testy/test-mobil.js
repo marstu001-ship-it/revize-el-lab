@@ -564,12 +564,18 @@ function vsechnyStavy(zalozky) {
   add('rozvaděč – čelní pohled', 'Tvorba dokumentace', E(async () => {
     await __M.rozv(); document.getElementById('rz-pohled').scrollIntoView({ block: 'start' }); await __M.w(100);
   }));
-  // kdo koho napájí (2026-11-05): režim 🔗 Napájení s vybraným napájejícím a volba „Napájen z"
-  add('rozvaděč – režim Napájení, šipky a výběr napájejícího', 'Tvorba dokumentace', E(async () => {
+  // kdo koho napájí (2026-11-05, v1.61 vodiče ze svorky na svorku): režim 🔌 Zapojení s vybraným napájejícím a volba „Napájen z"
+  add('rozvaděč – režim Zapojení, vodiče a výběr napájejícího', 'Tvorba dokumentace', E(async () => {
     await __M.rozv(); document.getElementById('toast-wrap').innerHTML = '';
     TD_AKCE.tdRNapRezim(); __rz.napZdroj = __rz.rady[1].prvky[0].uid; rozvPohledVykreslit();
     document.querySelector('.rz-banner-nap').scrollIntoView({ block: 'start' }); await __M.w(100);
     setTimeout(() => { if (__rz) { __rz.napRezim = false; __rz.napZdroj = null; } }, 3000);
+  }));
+  add('rozvaděč – režim Zapojení, vybraný vodič v panelu', 'Tvorba dokumentace', E(async () => {
+    await __M.rozv(); document.getElementById('toast-wrap').innerHTML = '';
+    TD_AKCE.tdRNapRezim(); const u = document.querySelector('#rz-pohled .rz-uch-g [data-uchyt="dst"]'); if (u) rozvVodicVybrat(u);
+    document.getElementById('rz-vlastnosti').scrollIntoView({ block: 'start' }); await __M.w(100);
+    setTimeout(() => { if (__rz) { __rz.napRezim = false; __rz.napVodic = null; } }, 3000);
   }));
   add('rozvaděč – vlastnosti: Napájen z a → napájí', 'Tvorba dokumentace', E(async () => {
     await __M.rozv(); const x = __rz.rady[1].prvky[0]; __rz.vyber = x.uid; rozvPohledVykreslit(); rozvVlastnostiVykreslit();
