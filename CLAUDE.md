@@ -2225,6 +2225,16 @@ záložky a zaškrtávátka), `test-rozvadec-dokumenty.js` a
   nejvýš `max(380px, 100vh − 150px)` vysoký a posouvá se **v obou směrech**
   (vodorovný posuvník byl u vysoké skříně až pod koncem stránky);
   na telefonu `max-height:none` (blok MOBIL), posouvá se stránka.
+- **Měřítko „Na šířku okna" se při výběru přístroje NEMĚNÍ** (oprava 2026-11-06,
+  „skákající zoom"): dřív se počítalo z vnitřní šířky rámečku, která závisí na
+  jeho svislém posuvníku — a ten na měřítku, takže při výšce okna na hraně každé
+  klepnutí (překreslení) přepnulo posuvník i měřítko tam a zpět. Teď
+  `rozvMeritkoNaSirku` bere šířku plochy `#rz-pohled` (−16 px), posuvník rámečku
+  odečte jen když ho obsah při tom měřítku potřebuje (`rozvSirkaPosuvniku`,
+  `rozvSvgVyska`) a výsledek drží v `__rz.__kSir` s klíčem okno × režim × skříň
+  (přepočet jen při změně okna, režimu Napájení / PSC nebo skříně, „⇔ Na šířku
+  okna" ho vynutí). Test: `test-rozvadec-napajeni.js` se skutečnými posuvníky
+  (`ignoreDefaultArgs: ['--hide-scrollbars']`), 1920 × 910 / 905, 1366, 360 px.
 - **Poloha posuvníku se překreslením NIKDY nemění** (chyba „klik vedle
   přístroje odroluje rámeček"): `rozvPohledVykreslit()` staví rámeček znovu
   přes `innerHTML`, takže si **před přepsáním zapamatuje `scrollLeft/Top`

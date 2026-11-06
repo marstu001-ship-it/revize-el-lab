@@ -34193,12 +34193,37 @@ function rozvDotyk() {
 // Po − / ＋ platí ruční měřítko (`__rz.kRucni`, px/mm) a drží se i při změně
 // okna, dokud technik znovu nestiskne „Na šířku okna" (2026-10-27).
 var RZ_K_MIN = 2.3, RZ_K_MAX = 4;   // DBO: pod 2,3 px/mm není čitelný pruh výrobce ani In
-function rozvMeritkoNaSirku() {
-  var ram = document.getElementById('rz-svg-ram') || document.getElementById('rz-pohled');
-  var sirka = ram ? ram.clientWidth - 14 : 700;   // padding rámečku 2 × 6 px + rezerva
-  return __rz.rezim === 'PSC' ? Math.max(0.9, Math.min(3, sirka / rozvSvgRozmery(__rz).Wsvg))   // PSC: skutečné rozměry v mm
-    : Math.max(RZ_K_MIN, Math.min(RZ_K_MAX, sirka / rozvSvgRozmery(__rz).Wsvg));
+// Skákající zoom (oprava 2026-11-06): měřítko se dřív počítalo z vnitřní šířky
+// rámečku, která závisí na tom, jestli má rámeček svislý posuvník — a ten
+// závisí na měřítku. U výšky okna na hraně se tak každým klepnutím (překreslením)
+// přepínal posuvník i měřítko tam a zpět. Teď: šířka plochy čelního pohledu
+// (nezávisí na posuvníku rámečku), posuvník se odečte jen tehdy, když ho obsah
+// při tom měřítku opravdu potřebuje, a výsledek se drží, dokud se nezmění okno,
+// režim (Napájení, PSC) nebo skříň. Výběr přístroje ani panel ho nemění.
+var __rzSbw = null;
+function rozvSirkaPosuvniku() {
+  if (__rzSbw != null) return __rzSbw;
+  var d = document.createElement('div'); d.style.cssText = 'position:absolute;top:-999px;width:100px;height:100px;overflow:scroll';
+  document.body.appendChild(d); __rzSbw = Math.max(0, d.offsetWidth - d.clientWidth); document.body.removeChild(d);
+  return __rzSbw;
 }
+function rozvMeritkoNaSirku() {
+  var pohled = document.getElementById('rz-pohled'), rr = rozvSvgRozmery(__rz), psc = __rz.rezim === 'PSC';
+  var klic = [window.innerWidth, window.innerHeight, __rz.rezim || '', rr.Wsvg, rr.Hsvg, __rz.napRezim ? 1 : 0].join('|');
+  if (__rz.__kSir && __rz.__kSir.klic === klic) return __rz.__kSir.k;
+  var min = psc ? 0.9 : RZ_K_MIN, max = psc ? 3 : RZ_K_MAX;   // PSC: skutečné rozměry v mm
+  var plocha = pohled ? pohled.clientWidth : 0, sirka = plocha ? plocha - 16 : 700;   // rámeček: okraj 2 × 1 px, padding 2 × 6 px + rezerva
+  var k = Math.max(min, Math.min(max, sirka / rr.Wsvg));
+  var ram = document.getElementById('rz-svg-ram'), sbw = rozvSirkaPosuvniku();
+  if (sbw && plocha) {   // posuvník rámečku jen, když ho obsah při tomto měřítku potřebuje
+    var mh = ram ? parseFloat(getComputedStyle(ram).maxHeight) : Math.max(380, window.innerHeight - 150);
+    var vys = rozvSvgVyska(__rz) * k + 12 + (rr.Wsvg * k > sirka + 2 ? sbw : 0);
+    if (isFinite(mh) && vys > mh) k = Math.max(min, Math.min(max, (sirka - sbw) / rr.Wsvg));
+  }
+  if (plocha > 50) __rz.__kSir = { klic: klic, k: k };   // skrytá plocha (nulová šířka) se nepamatuje
+  return k;
+}
+function rozvSvgVyska(rz) { return rozvSvgRozmery(rz).Hsvg + rozvNapPas(rz); }
 function rozvMeritko() {
   if (__rz.kRucni) return __rz.kRucni;
   return rozvMeritkoNaSirku() * (__rz.zoom || 1);
@@ -34218,7 +34243,7 @@ TD_AKCE.tdRZoom = function (el) {
   __rz.zoom = 1;
   rozvPohledVykreslit();
 };
-TD_AKCE.tdRNaSirku = function () { if (!__rz) return; __rz.kRucni = null; __rz.zoom = 1; rozvPohledVykreslit(); };
+TD_AKCE.tdRNaSirku = function () { if (!__rz) return; __rz.kRucni = null; __rz.zoom = 1; __rz.__kSir = null; rozvPohledVykreslit(); };
 TD_AKCE.tdRZrusitVyber = function () { if (!__rz) return; __rz.knihVyber = null; __rz.presun = null; rozvPohledVykreslit(); rozvKnihovnaVykreslit(); };
 
 // ── Úpravy (všechny přes rozvZmena → ZPĚT, uložení) ─────────────────────
@@ -35167,6 +35192,8 @@ function rozvNapBannerHtml() {
     (zdroj || __rz.napCeka ? '<button class="dok-mini" data-action="tdRNapHotovo">✓ Hotovo</button>' : '') +
     '<button class="dok-mini" data-action="tdRNapRezim">Ukončit režim</button></span></div>';
 }
+// Pás nad skříní v režimu Napájení (mm) — zatím žádný.
+function rozvNapPas(rz) { return 0; }
 // Šipky napájení nad čelním pohledem (mm, stejné souřadnice jako přístroje).
 function rozvNapSvg(rz) {
   var G = {}, por = [], vse = {};

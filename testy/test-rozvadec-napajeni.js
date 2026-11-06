@@ -451,6 +451,34 @@ async function stranka(ctx, url, err) {
   check('upozornění „Vložka 40 A je větší než jmenovitý proud odpojovače 32 A." (při psaní 25 gG zmizí)', vl.s.upoz === '⚠ Vložka 40 A je větší než jmenovitý proud odpojovače 32 A.' && vl.psani === true, vl.s.upoz);
   check('kontrola předjištění SPD bere vložku (40 A > max. 32 A)', /předjištění 40 A je vyšší než max\. předjištění svodiče 32 A/.test(vl.s.spd), vl.s.spd);
 
+  // ── skákající zoom (oprava 2026-11-06) ──────────────────────────────────
+  // Skutečné posuvníky (headless je jinak schovává) a výška okna na hraně, kdy
+  // dřív každé klepnutí přepnulo svislý posuvník rámečku a s ním měřítko.
+  {
+    const bz = await chromium.launch({ executablePath: CHROME, ignoreDefaultArgs: ['--hide-scrollbars'] });
+    for (const vp of [{ width: 1920, height: 910 }, { width: 1920, height: 905 }, { width: 1366, height: 768 }, { width: 360, height: 740, mobil: true }]) {
+      const cz = await kontext(bz, vp.mobil ? { viewport: { width: 360, height: 740 }, isMobile: true, hasTouch: true } : { viewport: { width: vp.width, height: vp.height } });
+      const ez = [], pz = await stranka(cz, URL, ez);
+      await pz.evaluate(async () => { await __T.rs2(); __rz.vyber = null; rozvPohledVykreslit(); rozvVlastnostiVykreslit(); });
+      await w(200);
+      for (const nap of [false, true]) {
+        if (nap) { await pz.evaluate(() => TD_AKCE.tdRNapRezim()); await w(150); }
+        const ks = [];
+        for (const o of ['-QH1', '-FA3', '-FA20', '-FI1', '-FA30', '-FA5', 'SPD1', '-FA40', '-FA24', '-FA10']) {
+          const q = await pz.evaluate(o => __T.bod(o, 'nahore'), o);
+          if (vp.mobil) await pz.touchscreen.tap(q.x, q.y); else await pz.mouse.click(q.x, q.y);
+          await w(160);
+          ks.push(await pz.evaluate(() => { const r = document.getElementById('rz-svg-ram'), s = r.querySelector('.rz-svg'); return (r.__k || 0).toFixed(4) + '/' + s.getAttribute('width'); }));
+        }
+        const ruzne = Array.from(new Set(ks));
+        check('zoom: 10× klepnutí na přístroje ' + (nap ? 'v režimu Napájení' : 'v normálním režimu') + ' (' + vp.width + '×' + vp.height + ') — měřítko i šířka SVG beze změny', ruzne.length === 1, ruzne.join(' | '));
+      }
+      check('zoom (' + vp.width + '): bez chyb na stránce', ez.length === 0, ez.join(' | '));
+      await cz.close();
+    }
+    await bz.close();
+  }
+
   // ── starý rozvaděč z předchozí verze: data, schéma, PDF beze změny ─────
   {
     const ctxS = await kontext(b), errS = [];
