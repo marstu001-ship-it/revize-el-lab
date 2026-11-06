@@ -2970,6 +2970,52 @@ chránič.
   `rozvDokEff`, takže obrazovka i PDF ukazují totéž. Údaje výrobce
   předvyplněné při založení jsou uložená data — nemění se.
 
+**Napájení z přívodu, přes svorky a před hlavním vypínačem (2026-11-06,
+v1.60):** zásada uživatele „bez takových možností, jaké jsou v reálu, to
+nejsem schopný udělat" — napájení jde zadat u každého prvku včetně hlavního
+vypínače, svorek a SPD (kromě REZ, PRISL, VNEJSI).
+- **Data (jen co uživatel nastaví):** `x.nadr = '@privod'` = přímo z přívodu
+  před hlavním vypínačem (přívodní svorky, SPD T1, elektroměr, jistič
+  ovládání); starší `predHlavnim: true` a `privodni: true` (blok svorkovnice)
+  se čtou stejně (`rozvZPrivodu`, `rozvPredHlavnim`) a nepřepisují se.
+  Hlavní vypínač (kořen) bez `nadr` = z přívodu jako dřív; nově `nadr` = uid
+  svorky, nebo **sada svorek `nadrSvorky = [uid…]`** (`nadr` = první,
+  `rozvNadrSeznam`, `rozvKorenSvorky` — svorky bez vlastního napájení se při
+  tom připojí k přívodu). Hlavní vypínač smí být napájen jen ze svorky nebo
+  z přístroje před ním (`rozvPredKorenem`); kruh hlídá `rozvLzeNapajet`,
+  neplatné napájení kořene vrátí `rozvKorenNadrPlatne` na „z přívodu".
+- **Svorky (kategorie X) jsou průchozí prvek** — `ROZV_NAPAJECI` obsahuje X,
+  napájet i být napájeny smí řadová svorka, svorkovnice i přípojnice N
+  (`rozvSvorkaNap`; ne PE ani ovládací svorky). Zaškrtávátko „Přívodní svorky
+  (před hlavním vypínačem)" je u každé svorky (i `x-rad`) a zapisuje
+  `nadr: '@privod'` (přes `rozvZmena`, ZPĚT).
+- **Kořen stromu je přívod:** `rozvDeti('@privod')` = prvky před hlavním
+  vypínačem (+ hlavní vypínač, když není ze svorek).
+- **Panel:** „Napájen z" i u hlavního vypínače (z přívodu / svorka / přístroj
+  před ním; sada svorek jako jedna volba), u ostatních navíc „z přívodu (před
+  hlavním vypínačem)"; „→ napájí: -QH1 (L1)" u svorky s fází.
+- **Režim Napájení:** nad skříní pás s **„⚡ Přívod"** (`rozvNapPas`,
+  `rozvPrivodGeom`, popis z hlavičky — kabel, průřez, soustava; viewBox
+  začíná nad skříní, jen obrazovka, jen DBO). Táhne a klepe se jako přístroj
+  (`data-nap-privod`), šipky z přívodu mají vlastní barvu (`RZ_NAP_PRIVOD`)
+  a nikdy se neskrývají. Tažení ze svorky, která je ve výběru svorek, nastaví
+  hlavnímu vypínači celou sadu (`rozvNapajeniZVice`); „Napájí…" (`tdRNapNa`)
+  totéž klepnutím. Klik a klik: svorka → hlavní vypínač přidá svorku do sady
+  (znovu = ubere).
+- **Schéma (`rsPrivod`):** přívod → přívodní svorky (z `'@privod'`,
+  `nadrSvorky`, `privodni`) s označením „-X1…X3" a fázemi → hlavní vypínač;
+  prvky z přívodu, které nejsou svorky, odbočí před hlavním vypínačem stejně
+  jako jistič ovládání (`rsPredHl`, i řetěz FU → SPD přes `rsHlavaHtml`).
+  Rozvaděč jen se starým blokem `privodni` a `predHlavnim` beze změny.
+- **Kontroly (upozornění):** hlavní vypínač 3P z méně než tří fázových svorek,
+  svorka z přívodu, která nic nenapájí; **informace** u SPD před hlavním
+  vypínačem (`rozvNapajeniInfo`).
+
+Test: `test-rozvadec-napajeni.js` oddíl 10 (RS2 s `x-rad` -X1…X3, tažení
+z Přívodu, rámeček X1…X3 → QH1, klik a klik, „Napájí…", Ctrl+Z, kruh, SPD
+z přívodu ve schématu, kontroly) a starý rozvaděč s blokem `privodni`
+a `predHlavnim` proti v1.59.
+
 Karta v Novinkách **„🔗 Rozvaděč – kdo koho napájí"** (5. 11. 2026) — o ni si
 řeklo zadání.
 

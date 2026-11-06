@@ -668,7 +668,7 @@ function pomocnik() {
   check('klepnutí na přístroj ho vybere, vlastnosti se zapíšou a hned ukážou v pohledu', sel.vybrany && /^Zásuvky – obývací pokoj, TV\|L2\|CYKY-O\|true\|true$/.test(sel.data) &&
     /Zásuvky – obý/.test(sel.svg), sel.data);
   // „Napájen z" (2026-11-05, dřív „Nadřazený chránič"): automaticky, přímo z hlavního vypínače, napájecí přístroje v pořadí pohledu (bez sebe a hlavního vypínače)
-  check('napájení jde změnit ručně (nabídka: automaticky, přímo z hlavního vypínače, napájecí přístroje)', /^automaticky — -FI1 \| přímo z hlavního vypínače \| /.test(sel.volby) &&
+  check('napájení jde změnit ručně (nabídka: automaticky, z přívodu, přímo z hlavního vypínače, napájecí přístroje)', /^automaticky — -FI1 \| z přívodu \(před hlavním vypínačem\) \| přímo z hlavního vypínače \| /.test(sel.volby) &&
     /-FI1 Chránič 40 A\/30 mA 4P/.test(sel.volby) && /-FI2 Chránič/.test(sel.volby) && !/-QH1/.test(sel.volby) && !/-FA4 /.test(sel.volby), sel.volby);
   check('smazaný ručně zvolený chránič → zpátky automaticky', sel.poSmazani === 'false|true', sel.poSmazani);
   // klávesy: Delete, Ctrl+Z, šipky, Ctrl+D, přečíslovat

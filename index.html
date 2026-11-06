@@ -2841,6 +2841,7 @@ html.dark .rz-imp-chyby{background:#3a1f1c;border-color:#6b2c25}
         <li>Ve vlastnostech přístroje je volba <strong>Napájen z</strong> — vyberete, ze kterého jističe, chrániče, pojistky nebo vypínače přístroj vede. U napájejícího přístroje je vidět <strong>→ napájí: …</strong>.</li>
         <li>Tlačítko <strong>🔗 Napájení</strong> nad čelním pohledem ukáže šipky, kdo koho napájí. <strong>Táhněte myší</strong> od přístroje, který napájí, k napájenému — nebo <strong>klepněte</strong> na napájející a pak na napájené. Víc přístrojů naráz: vyberte je rámečkem a dejte <strong>Napájet z…</strong>. Ctrl+Z vrací.</li>
         <li><strong>Schéma zapojení</strong> to nakreslí: pojistky před svodičem přepětí v jednom sloupci, skupinu jističů za jističem nebo chráničem a přívodní svorky před hlavním vypínačem.</li>
+        <li>Napájení z přívodu: přívod → svorky → hlavní vypínač, odbočky před hlavním vypínačem (např. SPD T1).</li>
         <li>Řadu jde označit jako <strong>svorkovou lištu</strong> (ve vlastnostech rozvaděče) — nepočítá se do volného místa, oteplení ani soudobosti. V knihovně jsou <strong>svorkovnice</strong> a <strong>přípojnice N a PE</strong> s počtem svorek.</li>
         <li>V Dokumentech jde u předvyplněných polí klepnout na <strong>✕ nechat prázdné</strong> (↺ vrátí) a zaškrtnout <strong>Dokumentace pro jiného výrobce</strong> — pak se z vašeho profilu nepřevezme jméno, místo, razítko ani podpis.</li>
       </ul>
@@ -32669,7 +32670,7 @@ function rozvPresunBlok(uidy, r, idx, poz, pos) {
 }
 
 function rozvKopiePrvku(x) {
-  var y = dokKopie(x); y.uid = rozvUid(); y.ozn = ''; y.nadrRucne = false; delete y.napaji; delete y.pos; delete y.hlavni;   // kopie nenapájí cizí rozvaděč a není hlavní vypínač
+  var y = dokKopie(x); y.uid = rozvUid(); y.ozn = ''; y.nadrRucne = false; delete y.napaji; delete y.pos; delete y.hlavni; delete y.nadrSvorky;   // kopie nenapájí cizí rozvaděč a není hlavní vypínač
   delete y.ovl; delete y.spina; delete y.predHlavnim;   // ovládání a spínání se nekopíruje (zapojí se znovu)
   return y;
 }
@@ -32973,9 +32974,10 @@ function rozvSvg(rz, o) {
   }
   var k = o.k || 1, jedn = o.tisk ? 'mm' : '', vicSet = {};
   if (!o.tisk && rz.vic && rz.vic.length > 1 && rz.vic.indexOf(rz.vyber) !== -1) rz.vic.forEach(function (u) { vicSet[u] = 1; });
+  var pas = o.tisk ? 0 : rozvNapPas(rz);   // režim Napájení: pás s přívodem nad skříní
   var rozmer = o.tisk ? ' width="' + rozvZaokr(Wsvg * k) + 'mm" height="' + rozvZaokr(Hsvg * k) + 'mm"'
-                      : ' width="' + Math.round(Wsvg * k) + '" height="' + Math.round(Hsvg * k) + '"';
-  var h = '<svg xmlns="http://www.w3.org/2000/svg" class="rz-svg" viewBox="0 0 ' + rozvZaokr(Wsvg) + ' ' + rozvZaokr(Hsvg) + '"' + rozmer +
+                      : ' width="' + Math.round(Wsvg * k) + '" height="' + Math.round((Hsvg + pas) * k) + '"';
+  var h = '<svg xmlns="http://www.w3.org/2000/svg" class="rz-svg" viewBox="0 ' + (pas ? -pas : 0) + ' ' + rozvZaokr(Wsvg) + ' ' + rozvZaokr(Hsvg + pas) + '"' + rozmer +
     ' font-family="DM Sans, Arial, Helvetica, sans-serif" role="img" aria-label="Čelní pohled rozvaděče">' +
     '<defs><pattern id="rz-srafa' + (o.tisk ? 't' : '') + '" width="3" height="3" patternUnits="userSpaceOnUse" patternTransform="rotate(45)">' +
       '<line x1="0" y1="0" x2="0" y2="3" stroke="#c0392b" stroke-width="1" stroke-opacity=".45"/></pattern></defs>';
@@ -34518,31 +34520,65 @@ function rozvPrecislovat() {
 // beze změny (nadr ∈ chránič ∪ '').
 var ROZV_NADR_AUTO = ['FA', 'AFDD', 'TR', 'ZD', 'XS', 'JINE'];
 var ROZV_NADR_BEZ = ['QM', 'SPD', 'FI', 'FIFA', 'REZ', 'X', 'PRISL', 'VNEJSI'];   // bez automatiky
-var ROZV_NAPAJECI = ['QM', 'QS', 'QF', 'FA', 'FU', 'FI', 'FIFA', 'RCBO', 'AFDD', 'MS'];   // smí napájet jiné přístroje
-var ROZV_NAPAJEN_NE = ['REZ', 'PRISL', 'VNEJSI', 'X'];   // volbu „Napájen z" nemají (kromě přípojnice N)
+var ROZV_NAPAJECI = ['QM', 'QS', 'QF', 'FA', 'FU', 'FI', 'FIFA', 'RCBO', 'AFDD', 'MS', 'X'];   // smí napájet jiné přístroje (X = svorky, průchozí prvek)
+var ROZV_NAPAJEN_NE = ['REZ', 'PRISL', 'VNEJSI'];   // volbu „Napájen z" nemají
 function rozvPrvkyVse(rady) { var a = []; (rady || []).forEach(function (r) { (r.prvky || []).forEach(function (x) { if (x && x.p) a.push(x); }); }); return a; }
+// Napájení z přívodu, přes svorky a před hlavním vypínačem (2026-11-06).
+// `x.nadr = '@privod'` = přímo z přívodu, před hlavním vypínačem (přívodní
+// svorky, SPD T1, elektroměr, jistič ovládání). Starší `predHlavnim: true`
+// (jistič ovládání) a `privodni: true` (blok svorkovnice) se čtou stejně a
+// nepřepisují se. Hlavní vypínač (kořen) smí být napájen ze svorky (`nadr`)
+// nebo ze sady svorek (`nadrSvorky = [uid…]`, `nadr` = první z nich);
+// bez toho je napájen z přívodu jako dřív. Kořenem stromu je přívod.
+var ROZV_PRIVOD = { uid: '@privod', ozn: 'Přívod', p: { kat: '@PRIVOD' } };
+function rozvSvorkaNap(x) { return !!(x && x.p && x.p.kat === 'X' && x.p.prip !== 'PE' && !x.svorkaOvl); }   // svorka, přípojnice N (ne PE, ne ovládací svorky)
+function rozvJeNapajeci(x) { return !!(x && x.p && ROZV_NAPAJECI.indexOf(x.p.kat) !== -1 && (x.p.kat !== 'X' || rozvSvorkaNap(x))); }
+function rozvNadrSeznam(x) { if (!x) return []; if (x.nadrSvorky && x.nadrSvorky.length) return x.nadrSvorky; return x.nadr && x.nadr !== '@privod' ? [x.nadr] : []; }
+function rozvZPrivodu(x) { return !!(x && (x.nadr === '@privod' || (x.p && x.p.kat === 'X' && x.privodni === true))); }
+// Leží přístroj před hlavním vypínačem? (z přívodu, přes přívodní svorku, jistič ovládání na přívodu)
+function rozvPredHlavnim(x, rady) {
+  var vse = {}, kor = rozvKoren(rady || (__rz && __rz.rady)), u = x, krok = 0;
+  rozvPrvkyVse(rady || (__rz && __rz.rady)).forEach(function (q) { vse[q.uid] = q; });
+  while (u && krok++ < 500) {
+    if (u.uid === kor) return false;
+    if (rozvZPrivodu(u) || (u.predHlavnim === true && (!u.nadr || u === x))) return true;
+    u = u.nadr ? vse[u.nadr] : null;
+  }
+  return false;
+}
+// Smí přístroj napájet hlavní vypínač? Jen svorka, nebo přístroj před hlavním vypínačem.
+function rozvPredKorenem(y, rady) { return !!y && (rozvSvorkaNap(y) || rozvPredHlavnim(y, rady)); }
 // Hlavní vypínač = kořen stromu (první QM, nebo výslovně hlavní) — nadr nemá.
 function rozvKoren(rady) {
   var u = rozvHlavniVypinace(rady || []);
   return u.length ? u[0] : '';
 }
-function rozvMaNapajeni(x, rady) {   // smí mít volbu „Napájen z"?
+function rozvMaNapajeni(x, rady) {   // smí mít volbu „Napájen z"? (i hlavní vypínač, svorky a SPD)
   if (!x || !x.p) return false;
-  if (x.p.kat === 'X') return x.p.prip === 'N';   // přípojnice N za chráničem
+  if (x.p.kat === 'X') return rozvSvorkaNap(x);
   if (ROZV_NAPAJEN_NE.indexOf(x.p.kat) !== -1) return false;
-  if (x.p.kat === 'QM' && x.uid === rozvKoren(rady || (__rz && __rz.rady))) return false;
   return true;
 }
 function rozvDeti(uid, rady) {
   if (!uid) return [];
-  return rozvPrvkyVse(rady || (__rz && __rz.rady)).filter(function (y) { return y.nadr === uid && y.uid !== uid; });
+  rady = rady || (__rz && __rz.rady);
+  var vse = rozvPrvkyVse(rady);
+  if (uid === '@privod') {   // před hlavním vypínačem (+ hlavní vypínač, když není napájen ze svorek)
+    var kor = rozvKoren(rady);
+    return vse.filter(function (y) {
+      if (y.uid === kor) return !rozvNadrSeznam(y).length;
+      return rozvZPrivodu(y) || (y.predHlavnim === true && !y.nadr);
+    });
+  }
+  return vse.filter(function (y) { return y.uid !== uid && rozvNadrSeznam(y).indexOf(uid) !== -1; });
 }
 function rozvPotomci(uid, rady) {
-  var vse = rozvPrvkyVse(rady || (__rz && __rz.rady)), out = [], videno = {}; videno[uid] = 1;
+  rady = rady || (__rz && __rz.rady);
+  var out = [], videno = {}; videno[uid] = 1;
   var fronta = [uid];
   while (fronta.length) {
     var u = fronta.shift();
-    vse.forEach(function (y) { if (y.nadr === u && !videno[y.uid]) { videno[y.uid] = 1; out.push(y); fronta.push(y.uid); } });
+    rozvDeti(u, rady).forEach(function (y) { if (!videno[y.uid]) { videno[y.uid] = 1; out.push(y); fronta.push(y.uid); } });
   }
   return out;
 }
@@ -34554,8 +34590,11 @@ function rozvNadrazeny(x, rady) {
 }
 function rozvLzeNapajet(rodic, dite, rady) {
   if (!rodic || !dite || !rodic.p || !dite.p || rodic.uid === dite.uid) return false;
-  if (ROZV_NAPAJECI.indexOf(rodic.p.kat) === -1) return false;
   if (!rozvMaNapajeni(dite, rady)) return false;
+  if (rodic.uid === '@privod') return true;   // z přívodu smí cokoli, co napájení má
+  if (!rozvJeNapajeci(rodic)) return false;
+  rady = rady || (__rz && __rz.rady);
+  if (dite.uid === rozvKoren(rady) && !rozvPredKorenem(rodic, rady)) return false;   // hlavní vypínač jen ze svorek / z přístroje před ním
   return !rozvPotomci(dite.uid, rady).some(function (y) { return y.uid === rodic.uid; });   // kruh
 }
 // Přístroje, které napájejí jiné (bez svorek / přípojnic) — u fází, oteplení
@@ -34579,7 +34618,17 @@ function rozvVlozkaUpoz(x) {
 }
 // Upozornění k napájení (jen panel, nic neblokuje).
 function rozvNapajeniUpoz(x, rady) {
-  var r = rozvNadrazeny(x, rady), a = []; if (!r) return a;
+  rady = rady || (__rz && __rz.rady);
+  var a = [], kor = rozvKoren(rady);
+  if (x.uid === kor && rsTrif(x.p)) {   // hlavní vypínač 3P ze svorek: aspoň tři fáze
+    var sv = rozvNadrSeznam(x).map(function (u) { return rozvPrvkyVse(rady).filter(function (q) { return q.uid === u; })[0]; }).filter(rozvSvorkaNap);
+    if (sv.length) {
+      var fz = []; sv.forEach(function (q) { if (/^L[123]$/.test(q.faze || '') && fz.indexOf(q.faze) === -1) fz.push(q.faze); }); fz.sort();
+      if (fz.length < 3) a.push((x.ozn || 'Hlavní vypínač') + ' ' + rozvPolyText(x.p) + ' je napájen jen ze svorek ' + (fz.length ? fz.join(', ') : 'bez zadané fáze') + '.');
+    }
+  }
+  if (rozvSvorkaNap(x) && rozvZPrivodu(x) && !rozvDeti(x.uid, rady).length) a.push((x.ozn || 'Svorka') + ' je připojena k přívodu, ale nic nenapájí.');
+  var r = rozvNadrazeny(x, rady); if (!r) return a;
   var In = rozvInEff(x), Ir = rozvInEff(r);
   if (x.p.kat !== 'SPD' && In !== '' && Ir !== '' && In > Ir) a.push('jmenovitý proud ' + rozvCisloText(In) + ' A je větší než u nadřazeného ' + (r.ozn || '') + ' (' + rozvCisloText(Ir) + ' A)');
   if (rsTrif(x.p) && /^(1|1\+N|2)$/.test(String(r.p.poly || ''))) a.push('třífázový přístroj pod jednofázovým ' + (r.ozn || ''));
@@ -34589,6 +34638,11 @@ function rozvNapajeniUpoz(x, rady) {
     if (mx !== '' && Ir !== '' && Ir > mx) a.push('předjištění ' + rozvCisloText(Ir) + ' A je vyšší než max. předjištění svodiče ' + rozvCisloText(mx) + ' A');
   }
   return a;
+}
+function rozvPolyText(p) { return p && p.poly ? (/N/.test(p.poly) ? p.poly : p.poly + 'P') : ''; }
+// Jen informace (nic nehlídá): SPD před hlavním vypínačem.
+function rozvNapajeniInfo(x, rady) {
+  return x && x.p && x.p.kat === 'SPD' && rozvPredHlavnim(x, rady) ? ['SPD před hlavním vypínačem – ověřte předjištění podle výrobce (max. předjištění)'] : [];
 }
 // „-FA25…FA44" — souvislé řady označení zkrátit.
 function rozvOznRada(xs) {
@@ -34612,19 +34666,48 @@ function rozvNadrazeneAuto(rady) {
     r.prvky.forEach(function (x) {
       if (x.p.kat === 'FI') fi = x.uid;
       if (x.nadrRucne) {
-        var cil = x.nadr === '' ? null : vse[x.nadr];
-        var ok = x.nadr === '' || (cil && cil.uid !== x.uid && ROZV_NAPAJECI.indexOf(cil.p.kat) !== -1 && rozvMaNapajeni(x, rady));
-        if (ok && cil) {   // kruh? (nadřazený je mezi potomky)
-          var u = cil, krok = 0;
-          while (u && u.nadr && krok++ < 500) { if (u.nadr === x.uid) { ok = false; break; } u = vse[u.nadr]; }
+        if (x.uid === koren) { if (rozvKorenNadrPlatne(x, vse, rady)) return; }
+        else if (x.nadr === '@privod') { if (rozvMaNapajeni(x, rady)) return; }
+        else {
+          var cil = x.nadr === '' ? null : vse[x.nadr];
+          var ok = x.nadr === '' || (cil && cil.uid !== x.uid && rozvJeNapajeci(cil) && rozvMaNapajeni(x, rady));
+          if (ok && cil) {   // kruh? (nadřazený je mezi potomky)
+            var u = cil, krok = 0;
+            while (u && u.nadr && krok++ < 500) { if (u.nadr === x.uid) { ok = false; break; } u = vse[u.nadr]; }
+          }
+          if (ok) return;
         }
-        if (ok) return;
       }
       x.nadrRucne = false;
       x.nadr = ROZV_NADR_AUTO.indexOf(x.p.kat) !== -1 ? fi : '';
+      if (x.nadrSvorky) delete x.nadrSvorky;
     });
   });
-  if (koren && vse[koren] && vse[koren].nadrRucne) { vse[koren].nadrRucne = false; vse[koren].nadr = ''; }   // hlavní vypínač nadr nemá
+}
+// Hlavní vypínač napájený ze svorky / sady svorek: platí, dokud svorky existují,
+// leží před ním a nevznikl by kruh (hlavní vypínač jinak nadr nemá — z přívodu).
+function rozvKorenNadrPlatne(x, vse, rady) {
+  var s = rozvNadrSeznam(x); if (!s.length) return false;
+  var ok = s.filter(function (u) {
+    var y = vse[u]; if (!y || u === x.uid || !rozvPredKorenem(y, rady)) return false;
+    var q = y, krok = 0; while (q && q.nadr && krok++ < 500) { if (q.nadr === x.uid) return false; q = vse[q.nadr]; }
+    return true;
+  });
+  if (ok.length === s.length) return true;
+  delete x.nadrSvorky;
+  if (!ok.length) return false;
+  x.nadr = ok[0]; if (ok.length > 1) x.nadrSvorky = ok;
+  return true;
+}
+// Nastaví hlavnímu vypínači svorky, ze kterých je napájen ([] = z přívodu).
+// Svorky bez ručního napájení se zároveň připojí k přívodu.
+function rozvKorenSvorky(x, s) {
+  var por = rozvPrvkyVse(__rz.rady).map(function (y) { return y.uid; });
+  s = s.filter(function (u, i) { return por.indexOf(u) !== -1 && s.indexOf(u) === i; }).sort(function (a, b) { return por.indexOf(a) - por.indexOf(b); });
+  delete x.nadrSvorky;
+  if (!s.length) { x.nadr = ''; x.nadrRucne = false; return; }
+  x.nadr = s[0]; x.nadrRucne = true; if (s.length > 1) x.nadrSvorky = s;
+  s.forEach(function (u) { var q = rozvNajit(u); if (q && rozvSvorkaNap(q.x) && !rozvZPrivodu(q.x) && !(q.x.nadrRucne && q.x.nadr)) { q.x.nadr = '@privod'; q.x.nadrRucne = true; } });
 }
 
 // ── Vlastnosti vybraného přístroje / rozvaděče ──────────────────────────
@@ -34684,7 +34767,7 @@ function rozvVlastnostiVykreslit() {
   if (p.kat === 'PRISL') h += rozvPrislPanelHtml(x) + rozvOvlPanelHtml(x);
   else if (x.svorkaOvl) h += rozvSvorkaPanelHtml(x);
   else if (rozvJeSvorkovnice(p)) h += pole('ozn', 'Označení (první svorka)', x.ozn, { ph: '-X1' }) + pole('vyvod', 'Popis', x.vyvod, { nepov: true, ph: p.prip ? 'za chráničem -FI1' : 'vývodové svorky' }) +
-    rozvSvorkovnicePanelHtml(x) + (p.prip === 'N' ? rozvNapajenZHtml(x) : '');
+    rozvSvorkovnicePanelHtml(x) + rozvNapajenZHtml(x);
   else if (p.kat !== 'REZ') {
     h += pole('ozn', 'Označení', x.ozn, { ph: rozvPredponaPrvku(x) ? rozvPredponaPrvku(x) + '1' : '' }) +
       (p.kat === 'QM' ? '<label class="teren-radek rp-hlavni"><input type="checkbox" class="rp-pole" data-rp2="hlavni"' + (rozvJeHlavni(x) ? ' checked' : '') +
@@ -34709,6 +34792,7 @@ function rozvVlastnostiVykreslit() {
           '<button class="dok-mini" data-action="tdRPiOdhad" title="Spočítat Pi z počtu zásuvek, svítidel nebo z příkonu spotřebiče">🧮 Odhadnout…</button></div></div>' +
         rozvSoudVyvodHtml(x);
     }
+    if (p.kat === 'X' && !p.prip) h += rozvPrivodniHtml(x);   // řadová svorka (2026-11-06)
     h += rozvNapajenZHtml(x);
     h += '<details class="rp-dalsi"' + (x.ib || x.pozn || x.vlozka ? ' open' : '') + '><summary>Další údaje</summary>' +
       (p.kat === 'FU' ? pole('vlozka', 'Vložka (A, char.)', x.vlozka || '', { nepov: true, ph: '40 gG' }) +
@@ -34758,7 +34842,7 @@ TD_AKCE.tdRMixVyber = function (el) {
 function rozvNapajeciVolby() {
   if (!__rz) return [];
   var koren = rozvKoren(__rz.rady), a = [];
-  __rz.rady.forEach(function (r) { r.prvky.forEach(function (y) { if (ROZV_NAPAJECI.indexOf(y.p.kat) !== -1 && y.uid !== koren) a.push(y); }); });
+  __rz.rady.forEach(function (r) { r.prvky.forEach(function (y) { if (rozvJeNapajeci(y) && y.uid !== koren) a.push(y); }); });
   return a;
 }
 function rozvNapajeciPopis(y) {
@@ -34767,47 +34851,92 @@ function rozvNapajeciPopis(y) {
     : p.kat === 'FA' || p.kat === 'AFDD' || p.kat === 'FIFA' ? (p.char || '') + In : In ? In + ' A' : '';
   var pol = p.poly ? (/N/.test(p.poly) ? p.poly : p.poly + 'P') : '';
   var druh = { QM: 'Vypínač', QS: 'Odpínač', QF: 'Výkonový jistič', FA: 'Jistič', FU: 'Pojistkový odpojovač', FI: 'Chránič', FIFA: 'RCBO', AFDD: 'AFDD', MS: 'Motorový spouštěč' }[p.kat] || k.nazev || p.kat;
+  if (p.kat === 'X') return [rozvSvorkyRozsah(y) || '?', p.prip ? 'Přípojnice ' + p.prip : p.svorky ? 'Svorkovnice' : 'Svorka', /^L[123]$/.test(y.faze || '') ? y.faze : '', rozvZPrivodu(y) ? '(z přívodu)' : ''].filter(Boolean).join(' ');
   return [y.ozn || '?', druh, hod, pol].filter(Boolean).join(' ');
 }
-function rozvNapajenZHtml(x) {
-  if (!rozvMaNapajeni(x)) {
-    var deti0 = rozvDeti(x.uid);
-    return deti0.length ? '<div class="rp-napaji rp-napaji-deti">→ napájí: ' + esc(rozvOznRada(deti0)) + '</div>' : '';
-  }
-  var auto = ROZV_NADR_AUTO.indexOf(x.p.kat) !== -1, nad = rozvNadrazeny(x);
-  var zakaz = {}; zakaz[x.uid] = 1; rozvPotomci(x.uid).forEach(function (y) { zakaz[y.uid] = 1; });
-  var volby = rozvNapajeciVolby().filter(function (y) { return !zakaz[y.uid]; });
-  var autoText = 'automaticky — ' + (x.nadr && !x.nadrRucne && nad ? (nad.ozn || 'chránič') : 'chránič vlevo v řadě není');
-  var deti = rozvDeti(x.uid), upoz = rozvNapajeniUpoz(x);
-  return '<div class="f rp-napajen"><label title="Ze kterého přístroje vede napájení (kreslí se do schématu). Totéž jde nastavit myší v režimu 🔗 Napájení.">Napájen z</label>' +
-    '<select class="rp-pole" data-rp2="nadr">' +
-    (auto ? '<option value="@auto"' + (!x.nadrRucne ? ' selected' : '') + '>' + esc(autoText) + '</option>' : '') +
-    '<option value=""' + ((x.nadrRucne || !auto) && !x.nadr ? ' selected' : '') + '>přímo z hlavního vypínače</option>' +
-    volby.map(function (y) { return '<option value="' + esc(y.uid) + '"' + ((x.nadrRucne || !auto) && x.nadr === y.uid ? ' selected' : '') + '>' + esc(rozvNapajeciPopis(y)) + '</option>'; }).join('') +
-    '</select></div>' +
-    (upoz.length ? '<div class="rp-upoz rp-napajeni-upoz">⚠ ' + upoz.map(esc).join(' · ') + '</div>' : '') +
-    (deti.length ? '<div class="rp-napaji rp-napaji-deti">→ napájí: ' + esc(rozvOznRada(deti)) + '</div>' : '');
+function rozvNapajiText(x, deti) {   // „→ napájí: -QH1 (L1)" — u svorky i její fáze
+  return '→ napájí: ' + rozvOznRada(deti) + (x.p && x.p.kat === 'X' && /^L[123]$/.test(x.faze || '') ? ' (' + x.faze + ')' : '');
 }
-// Zapíše napájení přístrojům (bez rozvZmena). v = '@auto' | '' | uid. Vrací počet změněných.
-function rozvNapajeniZapsat(uidy, v) {
-  var n = 0, rodic = v && v !== '@auto' ? rozvNajit(v) : null;
+function rozvNapajenZHtml(x) {
+  var deti = rozvDeti(x.uid), napaji = deti.length ? '<div class="rp-napaji rp-napaji-deti">' + esc(rozvNapajiText(x, deti)) + '</div>' : '';
+  if (!rozvMaNapajeni(x)) return napaji;
+  var kor = x.uid === rozvKoren(__rz.rady), upoz = rozvNapajeniUpoz(x), info = rozvNapajeniInfo(x);
+  var zakaz = {}; zakaz[x.uid] = 1; rozvPotomci(x.uid).forEach(function (y) { zakaz[y.uid] = 1; });
+  var volby = rozvNapajeciVolby().filter(function (y) { return !zakaz[y.uid] && (!kor || rozvPredKorenem(y)); });
+  var sel = '';
+  if (kor) {   // hlavní vypínač: z přívodu (výchozí), ze svorky, ze sady svorek
+    var sv = rozvNadrSeznam(x), sada = sv.length > 1 ? sv.map(rozvNajit).filter(Boolean).map(function (q) { return q.x; }) : null;
+    sel = '<option value=""' + (!sv.length ? ' selected' : '') + '>z přívodu</option>' +
+      (sada ? '<option value="@sada" selected>svorky ' + esc(rozvOznRada(sada)) + '</option>' : '') +
+      volby.map(function (y) { return '<option value="' + esc(y.uid) + '"' + (sv.length === 1 && sv[0] === y.uid ? ' selected' : '') + '>' + esc(rozvNapajeciPopis(y)) + '</option>'; }).join('');
+  } else {
+    var auto = ROZV_NADR_AUTO.indexOf(x.p.kat) !== -1, nad = rozvNadrazeny(x), zp = rozvZPrivodu(x);
+    var autoText = 'automaticky — ' + (x.nadr && !x.nadrRucne && nad ? (nad.ozn || 'chránič') : 'chránič vlevo v řadě není');
+    sel = (auto ? '<option value="@auto"' + (!x.nadrRucne && !zp ? ' selected' : '') + '>' + esc(autoText) + '</option>' : '') +
+      '<option value="@privod"' + (zp ? ' selected' : '') + '>z přívodu (před hlavním vypínačem)</option>' +
+      '<option value=""' + ((x.nadrRucne || !auto) && !x.nadr && !zp ? ' selected' : '') + '>přímo z hlavního vypínače</option>' +
+      volby.map(function (y) { return '<option value="' + esc(y.uid) + '"' + ((x.nadrRucne || !auto) && x.nadr === y.uid && !zp ? ' selected' : '') + '>' + esc(rozvNapajeciPopis(y)) + '</option>'; }).join('');
+  }
+  return '<div class="f rp-napajen"><label title="Ze kterého přístroje vede napájení (kreslí se do schématu). Totéž jde nastavit myší v režimu 🔗 Napájení.">Napájen z</label>' +
+    '<select class="rp-pole" data-rp2="nadr">' + sel + '</select></div>' +
+    (kor && rozvNadrSeznam(x).length > 1 ? '<div class="dk-pozn">Sadu svorek nastavíte v režimu 🔗 Napájení: vyberte svorky rámečkem a táhněte je na hlavní vypínač.</div>' : '') +
+    (upoz.length ? '<div class="rp-upoz rp-napajeni-upoz">⚠ ' + upoz.map(esc).join(' · ') + '</div>' : '') +
+    (info.length ? '<div class="dk-pozn rp-napajeni-info">ℹ ' + info.map(esc).join(' · ') + '</div>' : '') + napaji;
+}
+// Zapíše napájení přístrojům (bez rozvZmena). v = '@auto' | '' | '@privod' | uid.
+// Hlavní vypínač: '' / '@privod' = z přívodu, uid svorky = ze svorky; o.pridat
+// přidá svorku do sady (o.prepnout ji z ní ubere, když už v ní je). Vrací počet změněných.
+function rozvNapajeniNajit(v) { return v === '@privod' ? { x: ROZV_PRIVOD } : rozvNajit(v); }
+function rozvNapajeniZapsat(uidy, v, o) {
+  o = o || {};
+  var n = 0, rodic = v && v !== '@auto' ? rozvNapajeniNajit(v) : null, kor = rozvKoren(__rz.rady);
+  if (v && v !== '@auto' && !rodic) return 0;
   uidy.forEach(function (u) {
     var q = rozvNajit(u); if (!q || !rozvMaNapajeni(q.x)) return;
-    if (v === '@auto') { if (q.x.nadrRucne) { q.x.nadrRucne = false; n++; } return; }
-    if (rodic && !rozvLzeNapajet(rodic.x, q.x)) return;
-    q.x.nadrRucne = true; q.x.nadr = v; n++;
+    var x = q.x;
+    if (x.uid === kor) {
+      var s = rozvNadrSeznam(x).slice();
+      if (v === '@auto' || v === '' || v === '@privod') s = [];
+      else {
+        if (!rozvLzeNapajet(rodic.x, x)) return;
+        var i = s.indexOf(v), sady = rozvSvorkaNap(rodic.x) && s.every(function (w) { var z = rozvNajit(w); return z && rozvSvorkaNap(z.x); });
+        if (o.pridat && sady) { if (i === -1) s.push(v); else if (o.prepnout) s.splice(i, 1); }
+        else s = [v];
+      }
+      rozvKorenSvorky(x, s); n++; return;
+    }
+    if (v === '@auto') { if (x.nadrRucne || x.nadr === '@privod') { x.nadrRucne = false; if (x.nadr === '@privod') x.nadr = ''; n++; } return; }
+    if (rodic && !rozvLzeNapajet(rodic.x, x)) return;
+    if (x.p.kat === 'X') delete x.privodni;   // starší „přívodní svorky" → teď napájení z přívodu (nadr)
+    x.nadrRucne = true; x.nadr = v; n++;
   });
   return n;
 }
 function rozvNapajeniNastavit(uidy, v, o) {
   o = o || {};
-  var rodic = v && v !== '@auto' ? rozvNajit(v) : null, pocet = 0;
+  var rodic = v && v !== '@auto' ? rozvNapajeniNajit(v) : null, pocet = 0;
   if (rodic) {
     var spatne = uidy.map(rozvNajit).filter(function (q) { return q && !rozvLzeNapajet(rodic.x, q.x); });
-    if (spatne.length === uidy.length) { showToast('⚠ ' + (rodic.x.ozn || 'Přístroj') + ' nemůže napájet ' + spatne.map(function (q) { return q.x.ozn || rozvNazev(q.x.p); }).join(', ') + ' (vznikl by kruh, nebo to není napájecí přístroj).', { timeout: 5000 }); return 0; }
+    if (spatne.length === uidy.length) { showToast('⚠ ' + (rodic.x.ozn || 'Přístroj') + ' nemůže napájet ' + spatne.map(function (q) { return q.x.ozn || rozvNazev(q.x.p); }).join(', ') +
+      (rodic.x.uid !== '@privod' && spatne.some(function (q) { return q.x.uid === rozvKoren(__rz.rady); }) ? ' (hlavní vypínač jde napájet jen z přívodu, ze svorek nebo z přístroje před ním).' : ' (vznikl by kruh, nebo to není napájecí přístroj).'), { timeout: 5000 }); return 0; }
   }
-  rozvZmena('Napájení', function () { pocet = rozvNapajeniZapsat(uidy, v); }, o.toast ? { toast: o.toast } : undefined);
+  rozvZmena('Napájení', function () { pocet = rozvNapajeniZapsat(uidy, v, o); }, o.toast ? { toast: o.toast } : undefined);
   return pocet;
+}
+// Víc zdrojů → jeden cíl: hlavní vypínač ze sady svorek; jinak jen jeden zdroj.
+function rozvNapajeniZVice(zdroje, cil) {
+  var B = rozvNajit(cil); if (!B) return;
+  var zz = zdroje.filter(function (u) { return u !== cil; }).map(rozvNajit).filter(Boolean).map(function (q) { return q.x; });
+  if (!zz.length) return;
+  if (zz.length === 1) { rozvNapajeniNastavit([cil], zz[0].uid); return; }
+  if (B.x.uid === rozvKoren(__rz.rady) && zz.every(rozvSvorkaNap)) {
+    var spatne = zz.filter(function (y) { return !rozvLzeNapajet(y, B.x); });
+    if (spatne.length) { showToast('⚠ ' + rozvOznRada(spatne) + ' nemůže napájet ' + (B.x.ozn || 'hlavní vypínač') + ' (vznikl by kruh).', { timeout: 5000 }); return; }
+    rozvZmena('Napájení', function () { rozvKorenSvorky(B.x, zz.map(function (y) { return y.uid; })); },
+      { toast: (B.x.ozn || 'Hlavní vypínač') + ' napájen ze svorek ' + rozvOznRada(zz) });
+    return;
+  }
+  showToast('⚠ Z víc přístrojů naráz může být napájen jen hlavní vypínač (ze sady přívodních svorek). ' + (B.x.ozn || rozvNazev(B.x.p)) + ' má jen jeden napájející přístroj.', { timeout: 5500 });
 }
 
 // ── Svorková lišta (2026-11-05) ─────────────────────────────────────────
@@ -34832,7 +34961,10 @@ function rozvSvorkovnicePanelHtml(x) {
   return '<div class="g2 rp-svorkovnice"><div class="f"><label>Počet svorek</label><input type="text" class="rp-pole" data-rp2="pocet" value="' + esc(p.pocet || '') + '" inputmode="numeric" autocomplete="off"></div>' +
     '<div class="f"><label>Průřez</label><input type="text" class="rp-pole" data-rp2="prurezSv" value="' + esc(p.prurez || '') + '" placeholder="2,5–4 mm²" autocomplete="off"></div></div>' +
     '<div class="dk-pozn">' + esc(rozvSvorkyRozsah(x)) + ' · šířka ' + esc(rozvSirkaText(p.sirka)) + '</div>' +
-    (p.prip ? '' : '<label class="teren-radek rp-privodni"><input type="checkbox" class="rp-pole" data-rp2="privodni"' + (x.privodni ? ' checked' : '') + '> Přívodní svorky (před hlavním vypínačem)</label>');
+    (p.prip ? '' : rozvPrivodniHtml(x));
+}
+function rozvPrivodniHtml(x) {
+  return '<label class="teren-radek rp-privodni"><input type="checkbox" class="rp-pole" data-rp2="privodni"' + (rozvZPrivodu(x) ? ' checked' : '') + '> Přívodní svorky (před hlavním vypínačem)</label>';
 }
 
 // Vlastnosti při výběru víc přístrojů: společné akce pro celý výběr.
@@ -34887,7 +35019,7 @@ function rozvVlastnostZmena(el) {
   var z = __rz && __rz.vyber ? rozvNajit(__rz.vyber) : null; if (!z) return;
   var k = el.getAttribute('data-rp2'), v = el.value;
   if (k === 'nadr') {   // „Napájen z" — přes rozvZmena (ZPĚT, Ctrl+Z, překreslení)
-    rozvNapajeniNastavit([z.x.uid], v);
+    if (v !== '@sada') rozvNapajeniNastavit([z.x.uid], v);
     return;
   } else if (k === 'fazeZamek') { if (el.checked) z.x.fazeZamek = true; else delete z.x.fazeZamek; }
   else if (k === 'predHlavnim') { if (el.checked) z.x.predHlavnim = true; else delete z.x.predHlavnim; }
@@ -34945,7 +35077,14 @@ function rozvVlastnostZmena(el) {
     if (String(v).trim() && n) rozvZmena('Počet svorek', function () { z.x.p.pocet = n; z.x.p.sirka = rozvSvorkySirka(n); }, { bezVlastnosti: true });
     return;
   }
-  if (k === 'privodni') { delete z.x.privodni; if (el.checked) z.x.privodni = true; }
+  if (k === 'privodni') {   // přívodní svorka = napájení z přívodu (staré privodni: true se čte stejně)
+    var zap = el.checked;
+    rozvZmena(zap ? 'Přívodní svorka' : 'Svorka není přívodní', function () {
+      delete z.x.privodni;
+      if (zap) { z.x.nadr = '@privod'; z.x.nadrRucne = true; } else if (z.x.nadr === '@privod') { z.x.nadr = ''; z.x.nadrRucne = false; }
+    });
+    return;
+  }
   if (k === 'vyvod') {   // „podle názvu (…)" se mění s názvem
     var o0 = document.querySelector('#rz-vlastnosti [data-rp2="spotr"] option[value=""]');
     if (o0) o0.textContent = 'podle názvu (' + rsSpotrNazev(rsSpotrPredikce(v) || 'jine') + ')';
@@ -35008,6 +35147,10 @@ document.addEventListener('pointerdown', function (e) {
     return;
   }
   var mod = e.ctrlKey || e.metaKey || e.shiftKey;
+  if (__rz.napRezim && t.closest('#rz-pohled [data-nap-privod]')) {   // ⚡ Přívod: tažení k napájeným
+    if (!mod) __rzTah = { druh: 'nap', puid: '@privod', x0: e.clientX, y0: e.clientY, akt: false };
+    return;
+  }
   var pr = t.closest('#rz-pohled [data-puid]');
   if (pr) {
     if (!mod) __rzTah = { druh: __rz.napRezim ? 'nap' : 'prvek', puid: pr.getAttribute('data-puid'), x0: e.clientX, y0: e.clientY, akt: false };   // v režimu Napájení se nepřesouvá
@@ -35167,7 +35310,7 @@ var __rzNap = { skrytHlavni: true };
 var RZ_NAP_BARVY = ['#c0392b', '#2B579A', '#0f7b5f', '#a85400', '#6a3d9a', '#1f8a9e', '#8a6d00', '#b0306a'];
 TD_AKCE.tdRNapRezim = function () {
   if (!__rz) return;
-  __rz.napRezim = !__rz.napRezim; __rz.napZdroj = null; __rz.napCeka = null;
+  __rz.napRezim = !__rz.napRezim; __rz.napZdroj = null; __rz.napCeka = null; __rz.napNa = null;
   __rz.presun = null; __rz.knihVyber = null;
   rozvPohledVykreslit();
 };
@@ -35176,37 +35319,58 @@ TD_AKCE.tdRNapZ = function () {
   if (!s.length) { showToast('Vyberte nejdřív přístroje, které se mají napájet (rámeček nebo Ctrl+klik).', { timeout: 4000 }); return; }
   __rz.napCeka = s; __rz.napZdroj = null; rozvPohledVykreslit();
 };
-TD_AKCE.tdRNapHotovo = function () { __rz.napZdroj = null; __rz.napCeka = null; rozvPohledVykreslit(); };
+TD_AKCE.tdRNapHotovo = function () { __rz.napZdroj = null; __rz.napCeka = null; __rz.napNa = null; rozvPohledVykreslit(); };
+TD_AKCE.tdRNapNa = function () {
+  var s = rozvVybrane(); if (s.length < 1) return;
+  __rz.napNa = s; __rz.napCeka = null; __rz.napZdroj = null; rozvPohledVykreslit();
+};
 document.addEventListener('change', function (e) {
   var t = e.target; if (!t || !t.classList || !t.classList.contains('rz-nap-skryt')) return;
   __rzNap.skrytHlavni = t.checked; rozvSvgPrekreslit();
 });
 function rozvNapBannerHtml() {
-  var zdroj = __rz.napZdroj ? rozvNajit(__rz.napZdroj) : null, nSel = rozvVybrane().length;
-  var co = __rz.napCeka ? 'Klepněte na přístroj, který napájí vybrané (' + rozvKusy(__rz.napCeka.length) + ').'
+  var zdroj = __rz.napZdroj ? rozvNapajeniNajit(__rz.napZdroj) : null, nSel = rozvVybrane().length;
+  var co = __rz.napNa ? 'Klepněte na přístroj, který vybrané (' + rozvKusy(__rz.napNa.length) + ') napájejí — hlavní vypínač i ze sady svorek.'
+    : __rz.napCeka ? 'Klepněte na přístroj (nebo ⚡ Přívod), který napájí vybrané (' + rozvKusy(__rz.napCeka.length) + ').'
     : zdroj ? 'Napájí <b>' + esc(zdroj.x.ozn || rozvNazev(zdroj.x.p)) + '</b> — klepnutím na přístroje je přidáte nebo uberete. Esc nebo klik do prázdna ukončí.'
     : 'Táhněte od přístroje, který napájí, k přístroji, který je napájen. Nebo klepněte na napájející a pak na napájené.';
   return '<div class="rz-banner rz-banner-nap">🔗 <span class="rz-nap-text">' + co + '</span><span class="rz-banner-akce">' +
-    (nSel > 1 && !__rz.napCeka ? '<button class="dok-mini" data-action="tdRNapZ" title="Vybraným přístrojům nastavit, ze kterého přístroje jsou napájené">Napájet z…</button>' : '') +
+    (nSel > 1 && !__rz.napCeka && !__rz.napNa ? '<button class="dok-mini" data-action="tdRNapZ" title="Vybraným přístrojům nastavit, ze kterého přístroje jsou napájené">Napájet z…</button>' +
+      '<button class="dok-mini" data-action="tdRNapNa" title="Vybrané přístroje (např. přívodní svorky) napájejí přístroj, na který pak klepnete">Napájí…</button>' : '') +
     '<label class="teren-radek rz-nap-skryt-l"><input type="checkbox" class="rz-nap-skryt"' + (__rzNap.skrytHlavni ? ' checked' : '') + '> skrýt napájení z hlavního vypínače</label>' +
-    (zdroj || __rz.napCeka ? '<button class="dok-mini" data-action="tdRNapHotovo">✓ Hotovo</button>' : '') +
+    (zdroj || __rz.napCeka || __rz.napNa ? '<button class="dok-mini" data-action="tdRNapHotovo">✓ Hotovo</button>' : '') +
     '<button class="dok-mini" data-action="tdRNapRezim">Ukončit režim</button></span></div>';
 }
-// Pás nad skříní v režimu Napájení (mm) — zatím žádný.
-function rozvNapPas(rz) { return 0; }
+// Pás nad skříní v režimu Napájení (mm) — „⚡ Přívod" v levém horním rohu (jen DBO, jen obrazovka).
+var RZ_NAP_PAS = 12, RZ_NAP_PRIVOD = '#c45100';
+function rozvNapPas(rz) { return rz && rz === __rz && rz.napRezim && !pscJe(rz) ? RZ_NAP_PAS : 0; }
+function rozvPrivodPopis() {
+  var f = typeof dokForm === 'function' ? dokForm() : null, g = function (k) { var e = f && f.querySelector('[data-dk="' + k + '"]'); return e ? String(e.value || '').trim() : ''; };
+  var kab = [g('privodKabel'), g('privodPrurez')].filter(Boolean).join(' ');
+  return [kab, g('soustava')].filter(Boolean).join(' · ');
+}
+function rozvPrivodGeom(rz) {
+  var W = rozvSvgRozmery(rz).W, pop = rozvPrivodPopis(), w = Math.min(W - 1.2, Math.max(22, 15 + pop.length * 1.22));
+  return { x: 0.6, y: -RZ_NAP_PAS + 0.8, w: w, h: RZ_NAP_PAS - 2.6, pop: pop };
+}
 // Šipky napájení nad čelním pohledem (mm, stejné souřadnice jako přístroje).
 function rozvNapSvg(rz) {
   var G = {}, por = [], vse = {};
   rozvGeom().forEach(function (g) { G[g.uid] = g; por.push(g.uid); });
   rozvPrvkyVse(rz.rady).forEach(function (x) { vse[x.uid] = x; });
-  var Z = rozvZaokr, H = function (g) { return g.h || RZG.H; }, koren = rozvKoren(rz.rady);
+  var Z = rozvZaokr, H = function (g) { return g.h || RZG.H; }, koren = rozvKoren(rz.rady), pas = rozvNapPas(rz);
   var h = '<g class="rz-nap-vrstva">', rodice = [], deti = {};
   por.forEach(function (u) {
     var x = vse[u]; if (!x || !G[u]) return;
-    var r = x.nadr && vse[x.nadr] && x.nadr !== u ? x.nadr : (rozvMaNapajeni(x, rz.rady) && koren && koren !== u ? '@koren' : null);
-    if (!r) return;
-    if (!deti[r]) { deti[r] = []; rodice.push(r); }
-    deti[r].push(u);
+    var rr;
+    if (u === koren) { rr = rozvNadrSeznam(x).filter(function (q) { return vse[q] && q !== u; }); if (!rr.length) rr = pas ? ['@privod'] : []; }
+    else if (pas && (rozvZPrivodu(x) || (x.predHlavnim === true && !x.nadr))) rr = ['@privod'];
+    else if (x.nadr && vse[x.nadr] && x.nadr !== u) rr = [x.nadr];
+    else rr = rozvMaNapajeni(x, rz.rady) && koren && x.p.kat !== 'X' && !rozvZPrivodu(x) ? ['@koren'] : [];
+    rr.forEach(function (r) {
+      if (!deti[r]) { deti[r] = []; rodice.push(r); }
+      deti[r].push(u);
+    });
   });
   // mezery nad řadami a okraje rámu (pruhy se přidělují postupně, ať se čáry nepřekrývají)
   var hornaRady = {}, ramL = Infinity, ramP = -Infinity, pruhy = {}, kraje = { L: 0, P: 0 };
@@ -35215,7 +35379,7 @@ function rozvNapSvg(rz) {
   // kolik vodorovných pruhů bude v mezeře nad kterou řadou — podle toho rozestup
   var pocty = {};
   rodice.forEach(function (r) {
-    var rid = r === '@koren' ? koren : r, P = G[rid]; if (!P || (r === '@koren' && __rzNap.skrytHlavni)) return;
+    var rid = r === '@koren' ? koren : r, P = r === '@privod' ? { r: -1 } : G[rid]; if (!P || (r === '@koren' && __rzNap.skrytHlavni)) return;
     var cr = null, ci = -9;
     deti[r].forEach(function (u) {
       var g = G[u]; if (g.r === cr && g.i === ci + 1) { ci = g.i; return; }
@@ -35229,8 +35393,33 @@ function rozvNapSvg(rz) {
     return prvni - (k - 1) * krok;
   };
   var okraj = function (vpravo) { var k = vpravo ? ++kraje.P : ++kraje.L; return vpravo ? ramP + 2.5 + (k - 1) * 1.2 : Math.max(0.8, ramL - 2.5 - (k - 1) * 1.2); };
-  var bi = 0;
+  var bi = 0, pv = pas ? rozvPrivodGeom(rz) : null;
+  if (pv) {   // ⚡ Přívod: zdroj šipek (táhne se a klepe jako přístroj)
+    h += '<g class="rz-nap-privod" data-nap-privod="1" style="cursor:pointer"><title>' + esc('Přívod' + (pv.pop ? ': ' + pv.pop : '') + ' — táhněte nebo klepněte na přívodní svorky, hlavní vypínač nebo přístroj před ním') + '</title>' +
+      '<rect x="' + Z(pv.x) + '" y="' + Z(pv.y) + '" width="' + Z(pv.w) + '" height="' + Z(pv.h) + '" rx="1.2" fill="#fff3e6" stroke="' + RZ_NAP_PRIVOD + '" stroke-width="0.6"/>' +
+      '<text x="' + Z(pv.x + 1.6) + '" y="' + Z(pv.y + 4.4) + '" font-size="3.4" font-weight="700" fill="' + RZ_NAP_PRIVOD + '">⚡ Přívod</text>' +
+      (pv.pop ? '<text x="' + Z(pv.x + 18) + '" y="' + Z(pv.y + 4.2) + '" font-size="2.5" fill="#5a4a3a">' + esc(pv.pop.length * 1.22 > pv.w - 19 ? pv.pop.slice(0, Math.max(4, Math.floor((pv.w - 21) / 1.22))) + '…' : pv.pop) + '</text>' : '') + '</g>';
+  }
   rodice.forEach(function (r) {
+    if (r === '@privod') {   // z přívodu: svisle podél levého okraje rámu do mezery nad řadou dětí, vodorovně k nim
+      if (!pv) return;
+      var sx = pv.x + 2.6, sy = pv.y + pv.h, skp = [], cp = null;
+      deti[r].forEach(function (u) { var g = G[u]; if (cp && cp.r === g.r && cp.posl.i === g.i - 1) { cp.u.push(u); cp.posl = g; } else { cp = { r: g.r, u: [u], prvni: g, posl: g }; skp.push(cp); } });
+      h += '<g data-nap-rodic="@privod">';
+      skp.forEach(function (q) {
+        var a = q.prvni, b = q.posl, yb = a.y - 2.6, xa = a.x + a.w / 2, xb = b.x + b.w / 2, yc = pruh(q.r);
+        var cesta = 'M' + Z(sx) + ' ' + Z(sy) + ' L' + Z(sx) + ' ' + Z(yc) + ' L' + Z(xa) + ' ' + Z(yc) + ' L' + Z(xa) + ' ' + Z(yb);
+        h += '<path d="' + cesta + '" fill="none" stroke="' + RZ_NAP_PRIVOD + '" stroke-width="0.9" stroke-opacity=".9" stroke-linejoin="round" pointer-events="visibleStroke" data-nap-deti="' + esc(q.u.join(',')) + '"/>';
+        if (q.u.length > 1) h += '<line x1="' + Z(xa) + '" y1="' + Z(yb) + '" x2="' + Z(xb) + '" y2="' + Z(yb) + '" stroke="' + RZ_NAP_PRIVOD + '" stroke-width="0.9" data-nap-deti="' + esc(q.u.join(',')) + '" pointer-events="visibleStroke"/>';
+        q.u.forEach(function (u) {
+          var g = G[u], xx = g.x + g.w / 2;
+          h += '<path d="M' + Z(xx) + ' ' + Z(yb) + ' L' + Z(xx) + ' ' + Z(g.y - 0.9) + '" stroke="' + RZ_NAP_PRIVOD + '" stroke-width="0.9" fill="none" data-nap-deti="' + esc(u) + '" pointer-events="visibleStroke"/>' +
+            '<path d="M' + Z(xx - 1.2) + ' ' + Z(g.y - 2) + ' L' + Z(xx + 1.2) + ' ' + Z(g.y - 2) + ' L' + Z(xx) + ' ' + Z(g.y - 0.2) + ' Z" fill="' + RZ_NAP_PRIVOD + '" pointer-events="none"/>';
+        });
+      });
+      h += '</g>';
+      return;
+    }
     var hlavni = r === '@koren', rid = hlavni ? koren : r, P = G[rid]; if (!P) return;
     if (hlavni && __rzNap.skrytHlavni) return;
     var barva = hlavni ? '#9a9a9a' : RZ_NAP_BARVY[bi++ % RZ_NAP_BARVY.length], sw = hlavni ? 0.45 : 0.9;
@@ -35270,6 +35459,7 @@ function rozvNapSvg(rz) {
     h += '<circle cx="' + Z(px) + '" cy="' + Z(py) + '" r="1.1" fill="' + barva + '" pointer-events="none"/></g>';
   });
   var zd = __rz.napZdroj && G[__rz.napZdroj];
+  if (__rz.napZdroj === '@privod' && pv) h += '<rect class="rz-nap-zdroj" x="' + Z(pv.x - 0.5) + '" y="' + Z(pv.y - 0.5) + '" width="' + Z(pv.w + 1) + '" height="' + Z(pv.h + 1) + '" rx="1.5" fill="none" stroke="#e0a800" stroke-width="1.2" stroke-dasharray="2 1" pointer-events="none"/>';
   if (zd) h += '<rect class="rz-nap-zdroj" x="' + Z(zd.x - 1) + '" y="' + Z(zd.y - 1) + '" width="' + Z(zd.w + 2) + '" height="' + Z(H(zd) + 2) + '" rx="1.5" fill="none" stroke="#e0a800" stroke-width="1.2" stroke-dasharray="2 1" pointer-events="none"/>';
   (__rz.napCeka || []).forEach(function (u) { var g = G[u]; if (g) h += '<rect x="' + Z(g.x - 0.6) + '" y="' + Z(g.y - 0.6) + '" width="' + Z(g.w + 1.2) + '" height="' + Z(H(g) + 1.2) + '" fill="none" stroke="#2B579A" stroke-width="0.8" stroke-dasharray="1.5 1" pointer-events="none"/>'; });
   h += '<line id="rz-nap-tah" x1="0" y1="0" x2="0" y2="0" stroke="#2B579A" stroke-width="1" stroke-dasharray="2 1" visibility="hidden" pointer-events="none"/>';
@@ -35279,31 +35469,51 @@ function rozvNapPodBodem(cx, cy) {
   var el = document.elementFromPoint(cx, cy), pr = el && el.closest && el.closest('#rz-pohled [data-puid]');
   return pr ? pr.getAttribute('data-puid') : null;
 }
+function rozvNapTahZdroje(d) {   // tažení ze svorky, která je ve výběru svorek → celá sada
+  var s = rozvVybrane();
+  if (d.puid === '@privod' || s.length < 2 || s.indexOf(d.puid) === -1) return [d.puid];
+  return s.every(function (u) { var q = rozvNajit(u); return q && rozvSvorkaNap(q.x); }) ? s : [d.puid];
+}
 function rozvNapTahPohyb(d) {
-  var l = document.getElementById('rz-nap-tah'), a = rozvGeom().filter(function (g) { return g.uid === d.puid; })[0], b = rozvBodMm(d.x, d.y);
+  var pv = d.puid === '@privod' ? rozvPrivodGeom(__rz) : null;
+  var l = document.getElementById('rz-nap-tah'), a = pv ? { x: pv.x, y: pv.y, w: 5.2, h: pv.h } : rozvGeom().filter(function (g) { return g.uid === d.puid; })[0], b = rozvBodMm(d.x, d.y);
   if (!l || !a || !b) return;
-  var cil = rozvNapPodBodem(d.x, d.y), A = rozvNajit(d.puid), B = cil && cil !== d.puid ? rozvNajit(cil) : null;
-  d.cilNap = B && A && rozvLzeNapajet(A.x, B.x) ? cil : null;
+  var cil = rozvNapPodBodem(d.x, d.y), A = rozvNapajeniNajit(d.puid), B = cil && cil !== d.puid ? rozvNajit(cil) : null, zdr = rozvNapTahZdroje(d);
+  d.cilNap = B && A && zdr.indexOf(cil) === -1 && zdr.every(function (u) { var q = rozvNapajeniNajit(u); return q && rozvLzeNapajet(q.x, B.x); }) &&
+    (zdr.length === 1 || B.x.uid === rozvKoren(__rz.rady)) ? cil : null;
   l.setAttribute('x1', rozvZaokr(a.x + a.w / 2)); l.setAttribute('y1', rozvZaokr(a.y + (a.h || RZG.H)));
   l.setAttribute('x2', rozvZaokr(b.x)); l.setAttribute('y2', rozvZaokr(b.y));
   l.setAttribute('stroke', B && !d.cilNap ? '#c0392b' : '#2B579A');
   l.setAttribute('visibility', 'visible');
 }
 function rozvNapTahKonec(d) {
-  var cil = rozvNapPodBodem(d.x, d.y), A = rozvNajit(d.puid), B = cil && cil !== d.puid ? rozvNajit(cil) : null;
+  var cil = rozvNapPodBodem(d.x, d.y), A = rozvNapajeniNajit(d.puid), B = cil && cil !== d.puid ? rozvNajit(cil) : null;
   if (!A || !B) return;
-  if (!rozvLzeNapajet(A.x, B.x)) { showToast('⚠ ' + (A.x.ozn || 'Přístroj') + ' nemůže napájet ' + (B.x.ozn || rozvNazev(B.x.p)) + ' (vznikl by kruh, nebo to není napájecí přístroj).', { timeout: 4500 }); return; }
-  rozvNapajeniNastavit([B.x.uid], A.x.uid);
+  var zdr = rozvNapTahZdroje(d);
+  if (zdr.length > 1) { if (zdr.indexOf(cil) === -1) rozvNapajeniZVice(zdr, cil); return; }
+  if (!rozvLzeNapajet(A.x, B.x)) { showToast('⚠ ' + (A.x.ozn || 'Přístroj') + ' nemůže napájet ' + (B.x.ozn || rozvNazev(B.x.p)) +
+    (B.x.uid === rozvKoren(__rz.rady) && A.x.uid !== '@privod' ? ' (hlavní vypínač jde napájet jen z přívodu, ze svorek nebo z přístroje před ním).' : ' (vznikl by kruh, nebo to není napájecí přístroj).'), { timeout: 4500 }); return; }
+  rozvNapajeniNastavit([B.x.uid], A.x.uid, { pridat: true });
 }
 // Klepnutí v režimu Napájení. Vrací true, když ho zpracoval.
 function rozvNapKlik(e, t) {
   var pr = t.closest('[data-puid]'), mod = e.ctrlKey || e.metaKey || e.shiftKey;
   if (mod) return false;   // Ctrl / Shift = obyčejný výběr (pro „Napájet z…")
+  if (t.closest('[data-nap-privod]')) {   // ⚡ Přívod
+    if (__rz.napCeka) { var cek = __rz.napCeka; __rz.napCeka = null; rozvNapajeniNastavit(cek, '@privod', { toast: 'Napájení z přívodu: ' + rozvKusy(cek.length) }); return true; }
+    __rz.napNa = null;
+    __rz.napZdroj = __rz.napZdroj === '@privod' ? null : '@privod'; rozvVyberNastavit([]); rozvPohledVykreslit(); rozvVlastnostiVykreslit(); return true;
+  }
   if (!pr) {
     if (t.closest('[data-nap-deti]')) return true;
-    __rz.napZdroj = null; __rz.napCeka = null; rozvVyberNastavit([]); rozvPohledVykreslit(); rozvVlastnostiVykreslit(); return true;
+    __rz.napZdroj = null; __rz.napCeka = null; __rz.napNa = null; rozvVyberNastavit([]); rozvPohledVykreslit(); rozvVlastnostiVykreslit(); return true;
   }
   var uid = pr.getAttribute('data-puid'), q = rozvNajit(uid); if (!q) return true;
+  if (__rz.napNa) {   // „Napájí…": vybrané přístroje (svorky) napájejí ten, na který se klepne
+    var zdr = __rz.napNa; __rz.napNa = null;
+    if (zdr.indexOf(uid) === -1) rozvNapajeniZVice(zdr, uid); else rozvPohledVykreslit();
+    return true;
+  }
   if (__rz.napCeka) {
     var uidy = __rz.napCeka.filter(function (u) { return u !== uid; }); __rz.napCeka = null;
     if (uidy.length) rozvNapajeniNastavit(uidy, uid, { toast: 'Napájení z ' + (q.x.ozn || rozvNazev(q.x.p)) + ': ' + rozvKusy(uidy.length) });
@@ -35311,15 +35521,23 @@ function rozvNapKlik(e, t) {
     return true;
   }
   if (!__rz.napZdroj) {
-    if (ROZV_NAPAJECI.indexOf(q.x.p.kat) === -1) {
-      showToast((q.x.ozn || rozvNazev(q.x.p)) + ' nenapájí jiné přístroje — začněte klepnutím na napájející přístroj (jistič, chránič, pojistku, vypínač).', { timeout: 4500 });
+    if (!rozvJeNapajeci(q.x)) {
+      showToast((q.x.ozn || rozvNazev(q.x.p)) + ' nenapájí jiné přístroje — začněte klepnutím na napájející přístroj (jistič, chránič, pojistku, vypínač, svorku) nebo na ⚡ Přívod.', { timeout: 4500 });
       return true;
     }
     __rz.napZdroj = uid; rozvVyberNastavit([uid]); rozvPohledVykreslit(); rozvVlastnostiVykreslit(); return true;
   }
   if (uid === __rz.napZdroj) { __rz.napZdroj = null; rozvPohledVykreslit(); return true; }
-  var Z = rozvNajit(__rz.napZdroj); if (!Z) { __rz.napZdroj = null; return true; }
-  if (q.x.nadr === Z.x.uid) rozvNapajeniNastavit([uid], '');   // byl jeho — ubrat (napájení z hlavního vypínače)
+  var Z = rozvNapajeniNajit(__rz.napZdroj); if (!Z) { __rz.napZdroj = null; return true; }
+  var kor = rozvKoren(__rz.rady);
+  if (Z.x.uid === '@privod') {   // z přívodu: přidat, nebo (byl z přívodu) ubrat
+    if (uid === kor) { if (rozvNadrSeznam(q.x).length) rozvNapajeniNastavit([uid], ''); else rozvPohledVykreslit(); }
+    else if (rozvZPrivodu(q.x)) rozvNapajeniNastavit([uid], '');
+    else rozvNapajeniNastavit([uid], '@privod');
+    return true;
+  }
+  if (uid === kor && rozvLzeNapajet(Z.x, q.x)) rozvNapajeniNastavit([uid], Z.x.uid, { pridat: true, prepnout: true });   // svorky do sady (znovu = ubrat)
+  else if (q.x.nadr === Z.x.uid) rozvNapajeniNastavit([uid], '');   // byl jeho — ubrat (napájení z hlavního vypínače)
   else if (!rozvLzeNapajet(Z.x, q.x)) showToast('⚠ ' + (Z.x.ozn || 'Přístroj') + ' nemůže napájet ' + (q.x.ozn || rozvNazev(q.x.p)) + ' (vznikl by kruh, nebo to není napájecí přístroj).', { timeout: 4500 });
   else rozvNapajeniNastavit([uid], Z.x.uid);
   return true;
@@ -35585,7 +35803,7 @@ document.addEventListener('keydown', function (e) {
   if (document.querySelector('.modal-overlay.open')) return;
   var k = e.key;
   if (k === 'Escape') {
-    if (__rz.napRezim && (__rz.napZdroj || __rz.napCeka)) { __rz.napZdroj = null; __rz.napCeka = null; rozvPohledVykreslit(); return; }
+    if (__rz.napRezim && (__rz.napZdroj || __rz.napCeka || __rz.napNa)) { __rz.napZdroj = null; __rz.napCeka = null; __rz.napNa = null; rozvPohledVykreslit(); return; }
     if (__rz.knihVyber || __rz.presun) TD_AKCE.tdRZrusitVyber();
     else if (__rz.rezimVyberu || __rz.vyber) TD_AKCE.tdRVyberZrusit();
     return;
@@ -37942,7 +38160,7 @@ function rozvOteplVypocet(d) {
     }
     if (vyp[x.uid]) { radek.odv = vyp[x.uid].odv; radek.inc = vyp[x.uid].inc; radek.eff = vyp[x.uid].eff; }
     else {
-      var cl = p.kat === 'FI' || (rod[x.uid] && !(p.kat === 'QM' && !x.nadr)) ? (function () {
+      var cl = p.kat === 'FI' || (rod[x.uid] && !(p.kat === 'QM' && (!x.nadr || x.uid === rozvKoren(d.rady)))) ? (function () {
         var m = {}; rozvPotomci(x.uid, d.rady).forEach(function (y) { m[y.uid] = 1; });
         return vyvody.filter(function (y) { return m[y.uid]; });
       })() : vyvody;
@@ -39517,8 +39735,9 @@ function rsModel(d, o) {
     });
     jedn.push({ fi: x, sloupce: cols });
   });
-  if (jedn.some(function (u) { return u.sloupce.length === 1 && u.sloupce[0].predHlavnim; }))   // jistič ovládacích obvodů na přívodu — první sloupec
-    jedn = jedn.filter(function (u) { return u.sloupce.length === 1 && u.sloupce[0].predHlavnim; }).concat(jedn.filter(function (u) { return !(u.sloupce.length === 1 && u.sloupce[0].predHlavnim); }));
+  // před hlavním vypínačem (jistič ovládacích obvodů, SPD T1, odbočka z přívodu / přívodní svorky) — první sloupce
+  var predHl = function (u) { var x = u.sloupce[0]; return u.sloupce.length === 1 ? rsPredHl(x, d) : u.fi === x && rsPredHlNovy(x, d); };
+  if (jedn.some(predHl)) jedn = jedn.filter(predHl).concat(jedn.filter(function (u) { return !predHl(u); }));
   return { qm: qm, jedn: jedn, ridici: ridici, retez: retez, hlavy: hlavy, pod: pod, vPod: vPod, zplost: zplost };
 }
 // Rozsah označení svorkovnice „-X4…X46" (počet svorek p.pocet), jinak samo označení.
@@ -39531,6 +39750,9 @@ function rozvSvorkyRozsah(x) {
 function rozvSvorkySirka(n) { n = Math.max(1, Math.round(+n || 1)); return Math.max(0.5, Math.ceil(n * 6 / ROZV_MODUL_MM * 2) / 2); }
 function rozvJeSvorkovnice(p) { return !!(p && p.kat === 'X' && p.svorky); }
 function rsRcd(x) { return !!(x && x.p && (x.p.kat === 'FI' || x.p.kat === 'FIFA')); }
+// Sloupec odbočený z přívodu před hlavním vypínačem (starší predHlavnim, nebo napájení z přívodu / přívodní svorky).
+function rsPredHl(x, d) { return !!x && (x.predHlavnim === true || rsPredHlNovy(x, d)); }
+function rsPredHlNovy(x, d) { return !!x && !!d && !!x.nadr && rozvPredHlavnim(x, d.rady); }   // jen napájení z přívodu (ne starší predHlavnim)
 
 // Geometrie listu jednopólového schématu (mm). Horní část je na A4 i A3
 // stejná, na A3 je víc sloupců a delší místo na popis vývodu.
@@ -39706,13 +39928,32 @@ function rsPrivod(d, g, model, c) {
       rsKruh(xTA, yP + 9.4, 1.8) + rsText(xTA, yP + 10, 'A', { fs: 1.8, zar: 'middle' }) + rsText(xTA, yP + 13.5, model.pm.ozn || '-PM', { fs: 1.8, zar: 'middle', tucne: true }) + '</g>';
   }
   if (kab) h += rsText(xS + 1.5, yP - 1.2, rsVejit(kab, (xTA ? xTA - 3 : xQ - 8) - xS, 2.1), { fs: 2.1 });
-  var svP = rozvVsePrvky(d).filter(function (y) { return y.p && y.p.kat === 'X' && y.privodni === true; });   // přívodní svorky (2026-11-05)
-  svP.forEach(function (sv, i) {
+  // Přívodní svorky: přívod → svorky → hlavní vypínač (2026-11-06: i řadové svorky
+  // z přívodu a svorky, ze kterých je napájen hlavní vypínač). Rozvaděč jen se
+  // starším blokem `privodni: true` se kreslí přesně jako dřív.
+  var svKor = model.qm ? rozvNadrSeznam(model.qm) : [], svNove = rozvVsePrvky(d).filter(function (y) { return y.p && y.p.kat === 'X' && (y.nadr === '@privod' || svKor.indexOf(y.uid) !== -1); });
+  var svP = rozvVsePrvky(d).filter(function (y) { return y.p && y.p.kat === 'X' && (y.privodni === true || (svNove.length && svNove.indexOf(y) !== -1)); });
+  var svDy = svP.length ? 6.2 : 3.4;
+  if (!svNove.length) svP.forEach(function (sv, i) {
     var xs0 = Math.min(xQ - 12, xS + 9) + i * 4.5;
     h += '<g data-puid="' + esc(sv.uid) + '">' + rsKruh(xs0, yP, 0.75) + rsCara(xs0 - 0.9, yP + 0.9, xs0 + 0.9, yP - 0.9, { w: RS_TENKA }) +
       rsText(xs0, yP + 3.1, rozvSvorkyRozsah(sv) || sv.ozn || '-X', { fs: 1.8, zar: 'middle', tucne: true }) + '</g>';
   });
-  if (d.napajenZ) h += rsText(14, yP + (jis ? 12 : svP.length ? 6.2 : 3.4), rsVejit('z ' + [d.napajenZ.ozn, d.napajenZ.nazev ? '(' + d.napajenZ.nazev + ')' : ''].filter(Boolean).join(' '), 38, 1.9), { fs: 1.9 });
+  else {
+    var x0s = Math.min(xQ - 12, xS + 9), krokS = svP.length > 1 ? Math.min(3.4, (xQ - 21 - x0s) / (svP.length - 1)) : 0;
+    var jednotl = svP.every(function (sv) { return !(+((sv.p || {}).pocet) > 1); });
+    var fz = svP.map(function (sv) { return /^L[123]$/.test(sv.faze || '') ? sv.faze : ''; });
+    svP.forEach(function (sv, i) {
+      var xs0 = x0s + i * krokS;
+      h += '<g data-puid="' + esc(sv.uid) + '" data-privodni="1">' + rsKruh(xs0, yP, 0.75) + rsCara(xs0 - 0.9, yP + 0.9, xs0 + 0.9, yP - 0.9, { w: RS_TENKA }) +
+        (jednotl ? '' : rsText(xs0, yP + 3.1, rozvSvorkyRozsah(sv) || sv.ozn || '-X', { fs: 1.8, zar: 'middle', tucne: true })) + '</g>';
+    });
+    var stred = x0s + (svP.length - 1) * krokS / 2;
+    if (jednotl) h += rsText(stred, yP + 3.1, rozvOznRada(svP), { fs: 1.8, zar: 'middle', tucne: true });
+    if (fz.some(Boolean)) h += rsText(stred, yP + 5.5, fz.map(function (f) { return f || '?'; }).join(', '), { fs: 1.6, zar: 'middle' });
+    svDy = fz.some(Boolean) ? 8.4 : 6.2;
+  }
+  if (d.napajenZ) h += rsText(14, yP + (jis ? 12 : svDy), rsVejit('z ' + [d.napajenZ.ozn, d.napajenZ.nazev ? '(' + d.napajenZ.nazev + ')' : ''].filter(Boolean).join(' '), 38, 1.9), { fs: 1.9 });
   h += rsLomitkaVodorovne(g.x0 - 7.5, yP, tri ? 5 : 3);
   // N a PE přicházejí s přívodem
   h += rsBod(xQ - 5, yP) + rsBod(xQ - 8, yP) + rsCara(xQ - 5, yP, xQ - 5, g.yN, { carky: true }) + rsCara(xQ - 8, yP, xQ - 8, g.yPE, { carky: true });
@@ -39748,6 +39989,10 @@ function rsPrivod(d, g, model, c) {
 // na úrovni chrániče a dál dolů ke sběrnici skupiny (yG), u řetězu až k dítěti (yD).
 function rsHlavaHtml(x, g, xx, c, doY, rcd) {
   var p = x.p || {}, nz = c.psc ? pscSchZnacka(p) : RS_ZNACKA_KAT[p.kat] || 'jistic', z = RS_ZNACKY[nz] || RS_ZNACKY.jistic, h = '';
+  if (g.prvni && !rsRcd(x) && rsPredHlNovy(x, c.d)) {   // odbočka z přívodu před hlavním vypínačem (např. pojistka → SPD T1)
+    var yT0 = g.yP - 4;
+    h += rsBod(g.xQ, g.yP) + rsCara(g.xQ, g.yP, g.xQ, yT0) + rsCara(g.xQ, yT0, xx, yT0) + rsCara(xx, yT0, xx, g.yFI) + rsZnacka(nz, xx, g.yFI) + rsCara(xx, g.yFI + z.h, xx, doY);
+  } else
   h += rsCara(xx, g.yL, xx, g.yFI) + rsBod(xx, g.yL) + rsZnacka(nz, xx, g.yFI) + rsCara(xx, g.yFI + z.h, xx, doY);
   h += rsText(xx + 0.9, g.yFI - 0.9, x.ozn || '', { fs: 2.2, tucne: true });
   var dx = nz === 'rcbo' || nz === 'chranic' ? 0.7 : 0;
@@ -39781,7 +40026,7 @@ function rsSloupecHtml(x, g, sl, kus, c) {
     return '<g data-puid="' + esc(x.uid) + '">' + h + '</g>';
   }
   var nz = c.psc ? pscSchZnacka(p) : RS_ZNACKA_KAT[kat] || 'jistic', z = RS_ZNACKY[nz] || RS_ZNACKY.jistic;
-  if (x.predHlavnim && g.prvni && !ve) {   // jistič ovládacích obvodů zapojený před hlavním vypínačem (na přívodu)
+  if (rsPredHl(x, c.d) && g.prvni && !ve && !kus.retez) {   // před hlavním vypínačem: odbočka z přívodu (jistič ovládání, SPD T1…)
     var yT = g.yP - 4;
     h += rsBod(g.xQ, g.yP) + rsCara(g.xQ, g.yP, g.xQ, yT) + rsCara(g.xQ, yT, xx, yT) + rsCara(xx, yT, xx, g.yD) + rsZnacka(nz, xx, g.yD);
   } else
@@ -39868,7 +40113,7 @@ function rsListSchema(d, list, idx, listy, c, model) {
       // nad sběrnicí (jistič ovládání před hlavním vypínačem), a smí přesáhnout
       // konec sběrnice.
       var sx = xA + (g.prvni ? 13 : 11.5) + (tri ? 3.3 : 1.1) + 2;
-      list.sloupce.forEach(function (x, i) { if (x.predHlavnim && g.prvni && !x.nadr) sx = Math.max(sx, xs[i] + 2.5); });
+      list.sloupce.forEach(function (x, i) { if (g.prvni && (x.predHlavnim && !x.nadr || x.nadr && rsPredHl(x, d))) sx = Math.max(sx, xs[i] + 2.5); });
       h += rsText(sx, g.yL - 1.4, rsVejit(sit, g.x1 - 3 - sx, 2.1), { fs: 2.1 });
     }
   }
