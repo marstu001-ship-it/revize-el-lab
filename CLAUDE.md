@@ -112,6 +112,15 @@ Pravidla, aby oddělení drželo:
   `test-mobil.js`, `test-zs-mez.js`, `test-lab-oddeleni.js`,
   `test-typy-krizem.js`, `porovnani2.js`) jen **u větších funkcí** a **vždy
   před přenosem do revize-el**.
+- **Opakování regrese po opravě (pokyn uživatele 2026-11-06):** když
+  regrese něco najde a opravuje se **jen testovací soubor** (`testy/…`)
+  a `index.html` ani jiný soubor aplikace (`sw.js`, `manifest.json`,
+  `vektor/`…) se od posledního zeleného běhu nezměnil, stačí znovu pustit
+  **jen ten jeden test**. Když se změnil `index.html` nebo jiný soubor
+  aplikace, pustí se **celá regrese znovu**.
+- **Celá regrese běží na pozadí** (`testy/regrese.sh > log &`, počkat na
+  řádek `CELKEM ŠPATNĚ`) a čte se z ní **jen souhrn** — řádky s ❌,
+  `SELHALO` a `CELKEM ŠPATNĚ`, ne celý výpis.
 
 ## 🧭 Přívětivost obrazovek — platí pro KAŽDOU novou obrazovku (pokyn uživatele 2026-10-16)
 
