@@ -488,6 +488,13 @@ async function stranka(ctx, url, err) {
     const doc = new DOMParser().parseFromString(sv, 'image/svg+xml');
     r.schPoradi = U.map(u => +doc.querySelector('[data-puid="' + u + '"] circle').getAttribute('cx')).every(cx => cx < 65 - 8);
     window.__schSvg = sv;
+    // přívodní svorky leží uvnitř čárkovaného rámu rozvaděče (oprava v1.61)
+    const ram = Array.from(doc.querySelectorAll('rect[stroke-dasharray="3 1.6"]')).sort((a, b2) => +b2.getAttribute('width') - +a.getAttribute('width'))[0];
+    const rx = +ram.getAttribute('x'), ry = +ram.getAttribute('y'), rw = +ram.getAttribute('width'), rh = +ram.getAttribute('height');
+    r.svUvnitr = Array.from(doc.querySelectorAll('[data-privodni] circle')).map(c => { const cx = +c.getAttribute('cx'), cy = +c.getAttribute('cy'), rr = +c.getAttribute('r');
+      return cx - rr > rx && cx + rr < rx + rw && cy - rr > ry && cy + rr < ry + rh; });
+    const kab = Array.from(doc.querySelectorAll('text')).filter(t => /CYKY 5×10/.test(t.textContent))[0];
+    r.kabVne = !!kab && +kab.getAttribute('x') < rx;
     // uložit a znovu otevřít — sada zůstane
     await dokUlozitOtevreny(); const uid = __dokOtevreny.uid; await dokOtevrit(uid); await __T.w(300);
     r.poOtevreni = JSON.stringify(__T.naj('-QH1').nadrSvorky) === JSON.stringify(U) && ['-X1', '-X2', '-X3'].every(o => __T.naj(o).nadr === '@privod');
@@ -525,6 +532,7 @@ async function stranka(ctx, url, err) {
   check('panel svorky: „→ napájí: -QH1 (L1)", zaškrtnuté „Přívodní svorky"', /→ napájí: -QH1 \(L1\)/.test(pv.panelX1) && pv.zatrhX1, (pv.panelX1.match(/→ napájí[^\n]*/) || [''])[0]);
   check('panel hlavního vypínače: „Napájen z" = svorky -X1…X3, nabídka z přívodu a svorek (bez jističů)', /^svorky -X1…X3 \| z přívodu \/ svorky -X1…X3 \/ -X1 Svorka L1/.test(pv.qhVolba) && !/-FA/.test(pv.qhVolba) && pv.qhUpoz0 === '', pv.qhVolba);
   check('schéma: přívod → přívodní svorky -X1…X3 (L1, L2, L3) vlevo od -QH1; data mají sadu svorek', pv.schSvorky === 3 && pv.schText && pv.schPoradi && pv.dataSada, pv.schSvorky + ' ' + pv.schText + ' ' + pv.schPoradi);
+  check('schéma: obdélník každé přívodní svorky leží uvnitř čárkovaného rámu rozvaděče, popis kabelu vně rámu', pv.svUvnitr.length === 3 && pv.svUvnitr.every(Boolean) && pv.kabVne, JSON.stringify(pv.svUvnitr) + ' ' + pv.kabVne);
   check('uložení a znovu otevření: sada svorek i napájení z přívodu zůstanou', pv.poOtevreni);
   check('kontrola: „-QH1 3P je napájen jen ze svorek L1, L2."', pv.upozQh === '-QH1 3P je napájen jen ze svorek L1, L2.', pv.upozQh);
   check('kontrola: „-X3 je připojena k přívodu, ale nic nenapájí." (ZPĚT sadu vrátí)', pv.upozX3 === '-X3 je připojena k přívodu, ale nic nenapájí.' && pv.zpetSada, pv.upozX3);

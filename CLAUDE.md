@@ -3007,6 +3007,12 @@ vypínače, svorek a SPD (kromě REZ, PRISL, VNEJSI).
   prvky z přívodu, které nejsou svorky, odbočí před hlavním vypínačem stejně
   jako jistič ovládání (`rsPredHl`, i řetěz FU → SPD přes `rsHlavaHtml`).
   Rozvaděč jen se starým blokem `privodni` a `predHlavnim` beze změny.
+  **Přívodní svorky leží UVNITŘ čárkovaného rámu** (oprava v1.61,
+  `rsSvorkyNove`, `rsRamLevy`): s nimi rám na prvním listu začíná na x 36
+  (s předřazeným jističem 41), svorky od rámu + 3,5 mm, lomítka a popis kabelu
+  vně rámu (kabel do rozvaděče vstupuje zvenku). Bez nových přívodních svorek
+  (i se samotným starším blokem `privodni`) je rám přesně jako dřív — test
+  kontroluje geometricky, že obdélník každé svorky leží v rámu.
 - **Kontroly (upozornění):** hlavní vypínač 3P z méně než tří fázových svorek,
   svorka z přívodu, která nic nenapájí; **informace** u SPD před hlavním
   vypínačem (`rozvNapajeniInfo`).

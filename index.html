@@ -39750,6 +39750,17 @@ function rozvSvorkyRozsah(x) {
 function rozvSvorkySirka(n) { n = Math.max(1, Math.round(+n || 1)); return Math.max(0.5, Math.ceil(n * 6 / ROZV_MODUL_MM * 2) / 2); }
 function rozvJeSvorkovnice(p) { return !!(p && p.kat === 'X' && p.svorky); }
 function rsRcd(x) { return !!(x && x.p && (x.p.kat === 'FI' || x.p.kat === 'FIFA')); }
+// Přívodní svorky zapojené z přívodu / do hlavního vypínače (v1.60+). Leží v rozvaděči, takže
+// čárkovaný rám na prvním listu sahá až před ně (kabel vstupuje do rámu zvenku). Rozvaděč
+// jen se starším blokem `privodni` (nebo bez svorek) má rám jako dřív.
+function rsSvorkyNove(d, model) {
+  var svKor = model && model.qm ? rozvNadrSeznam(model.qm) : [];
+  return rozvVsePrvky(d).filter(function (y) { return y.p && y.p.kat === 'X' && (y.nadr === '@privod' || svKor.indexOf(y.uid) !== -1); });
+}
+function rsRamLevy(d, g, model) {
+  if (!g.prvni || (model && model.psc) || !rsSvorkyNove(d, model).length) return g.x0;
+  return String(d.privodJistic || '').trim() ? 41 : 36;
+}
 // Sloupec odbočený z přívodu před hlavním vypínačem (starší predHlavnim, nebo napájení z přívodu / přívodní svorky).
 function rsPredHl(x, d) { return !!x && (x.predHlavnim === true || rsPredHlNovy(x, d)); }
 function rsPredHlNovy(x, d) { return !!x && !!d && !!x.nadr && rozvPredHlavnim(x, d.rady); }   // jen napájení z přívodu (ne starší predHlavnim)
@@ -39927,11 +39938,12 @@ function rsPrivod(d, g, model, c) {
     if (model.pm) h += '<g data-puid="' + esc(model.pm.uid) + '">' + rsCara(xTA, yP + 5.4, xTA, yP + 7.6, { carky: '0.8 0.5', w: RS_TENKA }) +
       rsKruh(xTA, yP + 9.4, 1.8) + rsText(xTA, yP + 10, 'A', { fs: 1.8, zar: 'middle' }) + rsText(xTA, yP + 13.5, model.pm.ozn || '-PM', { fs: 1.8, zar: 'middle', tucne: true }) + '</g>';
   }
-  if (kab) h += rsText(xS + 1.5, yP - 1.2, rsVejit(kab, (xTA ? xTA - 3 : xQ - 8) - xS, 2.1), { fs: 2.1 });
+  var xRam = rsRamLevy(d, g, model), ramNovy = xRam !== g.x0;
+  if (kab) h += rsText(xS + 1.5, yP - 1.2, rsVejit(kab, (ramNovy ? xRam - 7 : xTA ? xTA - 3 : xQ - 8) - xS, 2.1), { fs: 2.1 });   // popis kabelu vně rámu
   // Přívodní svorky: přívod → svorky → hlavní vypínač (2026-11-06: i řadové svorky
   // z přívodu a svorky, ze kterých je napájen hlavní vypínač). Rozvaděč jen se
   // starším blokem `privodni: true` se kreslí přesně jako dřív.
-  var svKor = model.qm ? rozvNadrSeznam(model.qm) : [], svNove = rozvVsePrvky(d).filter(function (y) { return y.p && y.p.kat === 'X' && (y.nadr === '@privod' || svKor.indexOf(y.uid) !== -1); });
+  var svNove = rsSvorkyNove(d, model);
   var svP = rozvVsePrvky(d).filter(function (y) { return y.p && y.p.kat === 'X' && (y.privodni === true || (svNove.length && svNove.indexOf(y) !== -1)); });
   var svDy = svP.length ? 6.2 : 3.4;
   if (!svNove.length) svP.forEach(function (sv, i) {
@@ -39940,7 +39952,7 @@ function rsPrivod(d, g, model, c) {
       rsText(xs0, yP + 3.1, rozvSvorkyRozsah(sv) || sv.ozn || '-X', { fs: 1.8, zar: 'middle', tucne: true }) + '</g>';
   });
   else {
-    var x0s = Math.min(xQ - 12, xS + 9), krokS = svP.length > 1 ? Math.min(3.4, (xQ - 21 - x0s) / (svP.length - 1)) : 0;
+    var x0s = ramNovy ? xRam + 3.5 : Math.min(xQ - 12, xS + 9), krokS = svP.length > 1 ? Math.min(3.4, ((ramNovy ? xQ - 10 : xQ - 21) - x0s) / (svP.length - 1)) : 0;
     var jednotl = svP.every(function (sv) { return !(+((sv.p || {}).pocet) > 1); });
     var fz = svP.map(function (sv) { return /^L[123]$/.test(sv.faze || '') ? sv.faze : ''; });
     svP.forEach(function (sv, i) {
@@ -39954,7 +39966,7 @@ function rsPrivod(d, g, model, c) {
     svDy = fz.some(Boolean) ? 8.4 : 6.2;
   }
   if (d.napajenZ) h += rsText(14, yP + (jis ? 12 : svDy), rsVejit('z ' + [d.napajenZ.ozn, d.napajenZ.nazev ? '(' + d.napajenZ.nazev + ')' : ''].filter(Boolean).join(' '), 38, 1.9), { fs: 1.9 });
-  h += rsLomitkaVodorovne(g.x0 - 7.5, yP, tri ? 5 : 3);
+  h += rsLomitkaVodorovne(ramNovy ? xRam - 6 : g.x0 - 7.5, yP, tri ? 5 : 3);
   // N a PE přicházejí s přívodem
   h += rsBod(xQ - 5, yP) + rsBod(xQ - 8, yP) + rsCara(xQ - 5, yP, xQ - 5, g.yN, { carky: true }) + rsCara(xQ - 8, yP, xQ - 8, g.yPE, { carky: true });
   // hlavní vypínač na přívodu
@@ -40095,7 +40107,8 @@ function rsListSchema(d, list, idx, listy, c, model) {
   var xs = list.sloupce.map(function (x, i) { return rsSloupecX(g, i); });
   var posl = xs.length ? xs[xs.length - 1] : g.xQ + 6;
   // čárkovaný obrys rozvaděče, označení nahoře uprostřed
-  h += rsObd(g.x0, g.y0, g.x1 - g.x0, g.yB - g.y0, { carky: '3 1.6', w: RS_TENKA });
+  var xRam = rsRamLevy(d, g, model);   // s přívodními svorkami (v1.61) rám sahá až za ně — svorky jsou v rozvaděči
+  h += rsObd(xRam, g.y0, g.x1 - xRam, g.yB - g.y0, { carky: '3 1.6', w: RS_TENKA });
   h += rsText((g.x0 + g.x1) / 2, g.y0 + 4.6, 'Rozvaděč ' + (d.oznaceni || '') + (predL ? ' — pokračování' : ''), { fs: 3.4, tucne: true, zar: 'middle' });
   // sběrnice
   var xA = g.prvni ? g.xQ : g.x0 + 3, xE = dalsiL ? g.c1 + 4 : posl + 4.5;
