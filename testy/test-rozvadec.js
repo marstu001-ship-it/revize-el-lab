@@ -669,7 +669,8 @@ function pomocnik() {
     /Zásuvky – obý/.test(sel.svg), sel.data);
   // „Napájen z" (2026-11-05, dřív „Nadřazený chránič"): automaticky, přímo z hlavního vypínače, napájecí přístroje v pořadí pohledu (bez sebe a hlavního vypínače)
   check('napájení jde změnit ručně (nabídka: automaticky, z přívodu, přímo z hlavního vypínače, napájecí přístroje)', /^automaticky — -FI1 \| z přívodu \(před hlavním vypínačem\) \| přímo z hlavního vypínače \| /.test(sel.volby) &&
-    /-FI1 Chránič 40 A\/30 mA 4P/.test(sel.volby) && /-FI2 Chránič/.test(sel.volby) && !/-QH1/.test(sel.volby) && !/-FA4 /.test(sel.volby), sel.volby);
+    /-FI1 Chránič 40 A\/30 mA 4P/.test(sel.volby) && /-FI2 Chránič/.test(sel.volby) && !/-QH1/.test(sel.volby.split(' | paralelně')[0]) && !/-FA4\b/.test(sel.volby) &&
+    /\| paralelně na vstup -QH1 \(před vypínačem\) \| paralelně na vstup -FA1 /.test(sel.volby), sel.volby);   // v1.62: skupina „paralelně na vstupních svorkách"
   check('smazaný ručně zvolený chránič → zpátky automaticky', sel.poSmazani === 'false|true', sel.poSmazani);
   // klávesy: Delete, Ctrl+Z, šipky, Ctrl+D, přečíslovat
   await p.evaluate(() => { document.activeElement && document.activeElement.blur(); __rz.vyber = __rz.rady[1].prvky[2].uid; rozvPohledVykreslit(); rozvVlastnostiVykreslit(); });
