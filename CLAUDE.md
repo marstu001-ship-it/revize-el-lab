@@ -3064,7 +3064,67 @@ zůstávají `nadr` / `nadrSvorky`; vodiče se jen kreslí (`rozvVodice`,
   `preventDefault` (SVG `touch-action` prohlížeč nerespektuje), větší svorky
   a úchyty. Ctrl+Z všude.
 
-Test: `test-rozvadec-napajeni.js` (121 kontrol — RS2: vývodka → L1 L2 L3 do
+**Zapojení přes uzly — každá svorka je uzel (2026-11-06, v1.62).** Připomínka
+uživatele: SPD nešel připojit paralelně na svorky hlavního vypínače, nový jistič
+šel táhnout jen zespodu, vodiče obkružovaly řady čárkovanými „obdélníky".
+Elektrikář neuvažuje „výstup zdroje → vstup cíle", ale **vodič spojuje dvě
+svorky, každá patří k uzlu (stejný potenciál) a proud teče od strany, která už
+je pod napětím**. Pravidla (`rozvRole`, `rozvAkce` — jedno místo pro tah, klik
+a klik i štítek):
+
+- Přístroj má **vstupní uzel** (svorky na straně vstupu = potenciál jeho zdroje)
+  a **výstupní uzel** (napájí jeho děti). **Napájený** = má zdroj, i automatický
+  (`rozvZdrojEff`; hlavní vypínač a vývodka vždy). Nezapojený (bez zdroje) nemá
+  vstup ani výstup — obě strany volné, jeho svorky jsou šedé.
+- `rozvRole(uid, strana)`: `'out'` = výstupní svorka napájeného napájecího
+  přístroje (a vývodka), `'in'` = vstupní svorka napájeného (u nenapájecích, např.
+  SPD, obě strany), `null` = nezapojený.
+- Vodič smí začít i skončit na **libovolné** svorce. Tah ze svorky S přístroje A
+  na svorku / tělo T přístroje B (`rozvAkce(a, sa, b, sb)`):
+  | role | výsledek |
+  |---|---|
+  | S `out`, T ne-`out` | B napájen z A (`B.nadr`), vstup B = strana T |
+  | T `out`, S ne-`out` | A napájen z B, vstup A = strana S (nový jistič z horní svorky na výstup QH1) |
+  | oba `out` | zdrojem je ten, kdo napájí víc přístrojů (`rozvPotomci`), při shodě A |
+  | S `in` | **B paralelně na vstup A**: `B.nadr` = zdroj A (`rozvParHodnota`), `B.pres = { uid: A, strana: 'vstup' }` |
+  | T `in` (S nezapojený) | A paralelně na vstup B |
+  | oba nezapojené | odkud se táhne, to je zdroj: svorka S = výstup A, T = vstup B |
+  | vývodka | vždy pod napětím — cokoli k ní = z přívodu (`'@privod'`) |
+  Nejde-li první výklad (kruh, hlavní vypínač z jističe…), zkusí se opačný;
+  jinak červeně a štítek „✕ …". Strana vstupu se **nikdy nezadává dotazem**.
+- **`x.pres`** (nový nepovinný klíč, jen po zásahu uživatele) slouží **jen ke
+  kreslení**: vodič vede ze vstupních svorek vzoru. Logika (schéma, fáze,
+  soudobost) jede dál podle `nadr`. Hlavní vypínač ze svorek z přívodu →
+  paralelní přístroj dostane `'@privod'` (svorky jsou průchozí) → ve schématu
+  odbočka před hlavním vypínačem. `rozvPresSrovnat` (v `rozvNadrazeneAuto`) drží
+  `nadr` paralelního přístroje se zdrojem vzoru, zmizelý vzor `pres` smaže.
+  Každý jiný zápis napájení, odpojení i automatika `pres` smaže; kopie přístroje
+  ho nepřebírá. Paralelně **na výstup** (SPD za vypínačem) = obyčejné `B.nadr = A`.
+- **Štítek u kurzoru** během tahu (`#rz-nap-stitek`, `rozvAkceText`): „napájet
+  z -QH1", „SPD1 paralelně na vstup -QH1 (před vypínačem)", „přepojit -FA5 na
+  -FU1", „napojit -X5 na -X4"; cíl zelený / červený obrys (`#rz-nap-cil`).
+- Konec vodiče: u napájeného → nový cíl dostane totéž (u paralelního vodiče
+  paralelně); u zdroje → puštění na výstupní svorku = napájení z ní, na vstupní =
+  paralelně na vstup, na tělo = výstup.
+- Panel: „Napájen: paralelně na vstupních svorkách -QH1 (před vypínačem)",
+  ve „Napájen z" skupina **paralelně na vstupních svorkách** (`'@par:<uid>'`).
+- **Kreslení:** v režimu Zapojení žádné čárkované obdélníky (zvýraznění zdroje
+  a výběru plnou čarou). Automatická spojení tenká čárkovaná. Svazek
+  vícepólový → vícepólový = jedna čára tmavě šedě (`RZ_SVAZEK_BARVA`) s popisem
+  „3f+N", barvy fází jen u jednotlivých vodičů. Trasa: stejná strana téže řady
+  = mezerou u řady, 3 úseky; jinak nejbližší mezerou a **okraj zvolený jednou pro
+  celou skupinu** (sběrnici) — dřív se skupina rozdělila na obě strany a
+  obkroužila řadu; nejvýš 5 úseků, nikdy přes řady.
+
+Test: `test-rozvadec-napajeni.js` oddíl 11 (SPD paralelně na horních svorkách
+QH1 se štítkem, vodič 3 úseky mezerou nad řadou, svazek, schéma, panel a volba,
+Ctrl+Z; SPD za vypínačem; nový jistič z horní svorky na výstup QH1 a z dolní na
+výstup FI1, do prázdna nic; dva nezapojené podle směru tahu, šedé svorky;
+geometricky: bez čárkovaných obdélníků, ≤ 5 úseků, nic přes cizí řady ani
+svorkovou lištu). **Upraveno:** tah z horní (vstupní) svorky -FA24 je teď
+paralelní připojení (dřív otočil -FA24), nápověda režimu.
+
+Test: `test-rozvadec-napajeni.js` (137 kontrol — RS2: vývodka → L1 L2 L3 do
 horních svorek -X1…X3, X → QH1 póly 1/3/5 v barvách, řetěz 2 vodiče na fázi,
 QH1 výstup dole, FI1 → FA25…44 sběrnicí, geometrie; tažení na spodní / horní
 svorku, z horní svorky zdroje, kruh; přepojení konce na -FU1, do prázdna,

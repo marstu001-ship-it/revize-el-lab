@@ -195,8 +195,8 @@ async function stranka(ctx, url, err) {
     r.geo = { vodicu: vod.length, sikme, pres: pres.slice(0, 5).join(', ') };
     return r;
   });
-  check('režim Zapojení: tlačítko „🔌 Zapojení" zapnuté, nápověda „Táhněte z výstupní svorky na vstupní svorku…"', /^true\|🔌 Zapojení/.test(rez.btn) &&
-    rez.napoveda.indexOf('Táhněte z výstupní svorky na vstupní svorku. Vodič přepojíte tažením jeho konce, odpojíte puštěním do prázdna.') !== -1 && /skrýt automatická spojení/.test(rez.banner) && !/Napájí…/.test(rez.banner), rez.btn);
+  check('režim Zapojení: tlačítko „🔌 Zapojení" zapnuté, nápověda „Táhněte ze svorky na svorku (horní i dolní)…"', /^true\|🔌 Zapojení/.test(rez.btn) &&
+    rez.napoveda.indexOf('Táhněte ze svorky na svorku (horní i dolní)') !== -1 && /na vstupní svorky se připojuje paralelně/.test(rez.napoveda) && /skrýt automatická spojení/.test(rez.banner) && !/Napájí…/.test(rez.banner), rez.btn);
   check('vývodka přívodu; z přívodu do -QH1 tři vodiče L1 hnědá, L2 černá, L3 šedá na póly 1, 3, 5 (vstupní svorky nahoře)', rez.vyvodka &&
     rez.privQh === 'L1:0:#8B4513,L2:1:#1c1c1c,L3:2:#8c8c8c' && rez.privQhB, rez.privQh);
   check('svorky po pólech: -QH1 3P 3 + 3, -FA25 1P 1 + 1', rez.svorek === '6|2', rez.svorek);
@@ -232,11 +232,11 @@ async function stranka(ctx, url, err) {
   check('tažení na horní svorku → zase shora (klíč vstup se smaže, je výchozí)', await p.evaluate(() => !('vstup' in __T.naj('-FA19')) && __T.naj('-FA19').nadr === __T.naj('-FA23').uid));
   await p.keyboard.press('Control+z'); await w(120); await p.keyboard.press('Control+z'); await w(150);
   check('Ctrl+Z ×2 vrátí obojí', await p.evaluate(() => __T.naj('-FA19').nadr === '' && !('vstup' in __T.naj('-FA19'))));
-  // tažení z HORNÍ svorky zdroje bez ručního napájení → jeho výstup nahoře, vstup dole
+  // v1.62: tažení z HORNÍ (vstupní) svorky napájeného -FA24 → -FA18 paralelně na vstup -FA24 (stejný zdroj), vodič z horní svorky -FA24
   a = await p.evaluate(() => __T.sv('-FA24', 'nahore', 0)); c = await p.evaluate(() => __T.sv('-FA18', 'nahore', 0));
   await p.mouse.move(a.x, a.y); await p.mouse.down(); await p.mouse.move(a.x + 10, a.y - 12, { steps: 4 }); await p.mouse.move(c.x, c.y, { steps: 12 }); await p.mouse.up(); await w(150);
-  const prev = await p.evaluate(() => { const d = __T.draty('-FA24', '-FA18')[0] || {}; return { ok: __T.naj('-FA18').nadr === __T.naj('-FA24').uid && __T.naj('-FA24').vstup === 'dole', a: d.a, sv: __T.svBod('-FA24', 'nahore', +d.sp || 0) }; });
-  check('tažení z horní svorky -FA24 (bez ručního napájení): -FA24 napájen zespodu, výstup nahoře, vodič začíná na horní svorce', prev.ok && prev.a === prev.sv, JSON.stringify(prev));
+  const prev = await p.evaluate(() => { const d = __T.draty('-FA24', '-FA18')[0] || {}, x = __T.naj('-FA18'); return { ok: x.nadr === '' && x.nadrRucne === true && x.pres && x.pres.uid === __T.naj('-FA24').uid && !('vstup' in __T.naj('-FA24')), a: d.a, sv: __T.svBod('-FA24', 'nahore', +d.sp || 0) }; });
+  check('tažení z horní (vstupní) svorky -FA24: -FA18 paralelně na vstup -FA24 (stejný zdroj — hlavní vypínač), vodič začíná na horní svorce -FA24', prev.ok && prev.a === prev.sv, JSON.stringify(prev));
   await p.keyboard.press('Control+z'); await w(150);
   check('Ctrl+Z vrátí i stranu zdroje', await p.evaluate(() => __T.naj('-FA18').nadr === '' && !('vstup' in __T.naj('-FA24'))));
   // nepřípustný cíl (kruh): -FA25 → -FI1
@@ -710,6 +710,106 @@ async function stranka(ctx, url, err) {
     await ps.screenshot({ path: SNIMKY + '/rs2-schema-privod.png', fullPage: true }); await ps.close();
   }
   await p.evaluate(() => { if (__rz.napRezim) TD_AKCE.tdRNapRezim(); });
+
+  // ── 11. zapojení přes uzly (v1.62): libovolná svorka, paralelní připojení na vstup ──
+  {
+    const c11 = await kontext(b, { viewport: { width: 1920, height: 1500 } }), e11 = [];
+    const q = await stranka(c11, URL, e11);
+    await q.evaluate(async () => {
+      await __T.rs2(); const n = __T.naj;
+      ['L1', 'L2', 'L3'].forEach((f, i) => { const x = rozvVlozit('v-x-rad', 2, i); x.ozn = '-X' + (i + 1); x.faze = f; });
+      const U = ['-X1', '-X2', '-X3'].map(o => n(o).uid);
+      rozvNapajeniNastavit(U, '@privod'); rozvNapajeniZVice(U, n('-QH1').uid);
+      __rz.vyber = null; TD_AKCE.tdRNapRezim(); document.querySelectorAll('.toast').forEach(t => t.remove());
+    });
+    await w(200);
+    const stitek = () => q.evaluate(() => { const e = document.getElementById('rz-nap-stitek'); return e && e.style.display !== 'none' ? e.textContent : ''; });
+    let st = '';
+    const tah = async (fa, fc, uloz) => {
+      await q.evaluate(fc); const A = await q.evaluate(fa), C = await q.evaluate(fc);
+      await q.mouse.move(A.x, A.y); await q.mouse.down(); await q.mouse.move(A.x + 10, A.y + 10, { steps: 4 }); await q.mouse.move(C.x, C.y, { steps: 14 });
+      st = await stitek(); if (uloz && SNIMKY) await q.screenshot({ path: path.join(SNIMKY, uloz), clip: { x: Math.max(0, C.x - 520), y: Math.max(0, C.y - 170), width: 820, height: 300 } });
+      await q.mouse.up(); await w(200); await q.evaluate(() => document.querySelectorAll('.toast').forEach(t => t.remove()));
+    };
+    // a) SPD paralelně na horních (vstupních) svorkách QH1 → před vypínačem
+    await tah(() => __T.sv('-QH1', 'nahore', 0), () => __T.sv('SPD1', 'nahore', 0), 'spd-paralelne-qh1.png');
+    const par = await q.evaluate(() => {
+      const n = __T.naj, s = n('SPD1'), qh = n('-QH1'), r = {};
+      r.data = s.nadr === '@privod' && s.nadrRucne === true && JSON.stringify(s.pres) === JSON.stringify({ uid: qh.uid, strana: 'vstup' });
+      const d = __T.draty('-QH1', 'SPD1'); r.dr = d.length === 1 && d[0].a === __T.svBod('-QH1', 'nahore', 0) && d[0].b === __T.svBod('SPD1', 'nahore', 0);
+      const g = document.querySelector('#rz-pohled .rz-wire[data-wire-dst="' + s.uid + '"]'), body = g.getAttribute('data-body');
+      const ys = g.querySelector('.rz-w').getAttribute('d').match(/-?[\d.]+ -?[\d.]+/g).map(t => +t.split(' ')[1]);
+      r.useky = +body - 1; r.mezera = ys.every(y => y <= rozvRadaY(0) + 0.01 && y >= 0);
+      r.svazek = d[0] && d[0].barva === '#3d3d3d' && d[0].faze === '3f+N';
+      const m = rsModel(__T.cist()); r.sch = m.jedn[0].sloupce[0].uid === s.uid && rozvPredHlavnim(s);
+      rozvVybrat(s.uid, false); r.panel = document.getElementById('rz-vlastnosti').innerText;
+      const sel = document.querySelector('#rz-vlastnosti [data-rp2="nadr"]'); r.volba = sel.options[sel.selectedIndex].textContent;
+      __rz.vyber = null; rozvVlastnostiVykreslit();
+      return r;
+    });
+    check('v1.62: tah z horní svorky -QH1 na SPD1 → štítek „SPD1 paralelně na vstup -QH1 (před vypínačem)"', /paralelně na vstup -QH1 \(před vypínačem\)/.test(st), st);
+    check('SPD paralelně před vypínačem: SPD1.nadr = zdroj QH1 (přívod přes X1…X3 → „@privod"), pres = {QH1, vstup}', par.data);
+    check('SPD paralelně: vodič z horní svorky -QH1 na horní svorku SPD1, nejvýš 3 úseky, jen mezerou nad řadou s QH1', par.dr && par.useky <= 3 && par.mezera, par.useky + ' ' + par.mezera);
+    check('SPD paralelně: 3P → 3+N jedna čára (svazek „3f+N") tmavě šedě', par.svazek);
+    check('SPD paralelně: ve schématu odbočka před -QH1 (první sloupec, před hlavním vypínačem)', par.sch);
+    check('panel: „Napájen: paralelně na vstupních svorkách -QH1 (před vypínačem)" a volba „paralelně na vstup -QH1 (před vypínačem)"',
+      /Napájen: paralelně na vstupních svorkách -QH1 \(před vypínačem\)/.test(par.panel) && par.volba === 'paralelně na vstup -QH1 (před vypínačem)', par.volba);
+    await q.keyboard.press('Control+z'); await w(150);
+    check('Ctrl+Z vrátí paralelní připojení', await q.evaluate(() => __T.naj('SPD1').nadr === __T.naj('-FU1').uid && !__T.naj('SPD1').pres));
+    // b) SPD za vypínačem: dolní svorka QH1
+    await tah(() => __T.sv('-QH1', 'dole', 0), () => __T.sv('SPD1', 'nahore', 0));
+    check('SPD za vypínačem: tah z dolní svorky -QH1 → SPD1 napájen z -QH1 (bez pres), ve schématu za vypínačem', await q.evaluate(() => {
+      const s = __T.naj('SPD1'); return rozvZdrojEff(s) === __T.naj('-QH1').uid && s.nadrRucne === true && !s.pres && !rozvPredHlavnim(s); }), st);
+    // c) nový jistič: z horní svorky na výstup QH1, z dolní na výstup FI1, do prázdna nic
+    await q.evaluate(() => { const x = rozvVlozit('v-fa-1-B16', 1, __rz.rady[1].prvky.length); x.ozn = '-FA99'; dokZmena(); rozvPohledVykreslit(); });
+    await w(150);
+    await tah(() => __T.sv('-FA99', 'nahore', 0), () => __T.sv('-QH1', 'dole', 2), 'novy-jistic-z-horni.png');
+    const nj1 = await q.evaluate(() => { const x = __T.naj('-FA99'); return x.nadr === '' && x.nadrRucne === true && !('vstup' in x) && __T.draty('-QH1', '-FA99')[0].b === __T.svBod('-FA99', 'nahore', 0); });
+    check('nový jistič: tah z jeho HORNÍ svorky na dolní svorku -QH1 → napájen z -QH1, vstup nahoře (štítek „napájet z -QH1")', nj1 && st === 'napájet z -QH1', st);
+    if (SNIMKY) await (await q.$('#rz-pohled')).screenshot({ path: path.join(SNIMKY, 'novy-jistic-zapojeny.png') });
+    await tah(() => __T.sv('-FA99', 'dole', 0), () => __T.sv('-FI1', 'dole', 0));
+    check('nový jistič: tah z jeho DOLNÍ svorky na výstup -FI1 → napájen z -FI1, vstup dole', await q.evaluate(() => { const x = __T.naj('-FA99'); return x.nadr === __T.naj('-FI1').uid && x.vstup === 'dole' && __T.naj('-FI1').nadr === ''; }), st);
+    const d0 = await q.evaluate(() => JSON.stringify(__T.cist()));
+    await tah(() => __T.sv('-FA99', 'nahore', 0), () => { const g = rozvGeom().filter(z => z.r === 3), L = g[g.length - 1]; return __T.mmBod(L.x + L.w + 25, L.y + RZG.H / 2); });
+    check('nový jistič: tah z horní svorky do prázdna → nic se nezmění', await q.evaluate(d0 => JSON.stringify(__T.cist()) === d0, d0) && st === '');
+    // d) dva nezapojené přístroje (svorky bez napájení): směr podle tahu
+    await q.evaluate(() => { ['-X4', '-X5', '-X6', '-X7'].forEach((o, i) => { const x = rozvVlozit('v-x-rad', 2, 3 + i); x.ozn = o; x.faze = 'L1'; }); dokZmena(); rozvPohledVykreslit(); });
+    await w(150);
+    const sede = await q.evaluate(() => document.querySelector('#rz-pohled .rz-svorky[data-sv-uid="' + __T.naj('-X4').uid + '"] .rz-sv').getAttribute('stroke'));
+    await tah(() => __T.sv('-X4', 'dole', 0), () => __T.sv('-X5', 'nahore', 0));
+    const d1 = await q.evaluate(() => ({ x5: __T.naj('-X5').nadr === __T.naj('-X4').uid && !('vstup' in __T.naj('-X5')), x4: !('vstup' in __T.naj('-X4')) }));
+    await tah(() => __T.sv('-X7', 'nahore', 0), () => __T.sv('-X6', 'dole', 0));
+    const d2 = await q.evaluate(() => ({ x6: __T.naj('-X6').nadr === __T.naj('-X7').uid && __T.naj('-X6').vstup === 'dole', x7: __T.naj('-X7').vstup === 'dole' }));
+    check('dva nezapojené: svorky volných přístrojů šedé; X4 dole → X5 nahoře = X5 z X4; X7 nahoře → X6 dole = X6 z X7 (výstup X7 nahoře, vstup X6 dole)',
+      sede === '#b0b0b0' && d1.x5 && d1.x4 && d2.x6 && d2.x7, sede + ' ' + JSON.stringify(d1) + JSON.stringify(d2));
+    // e) kreslení: bez čárkovaných obdélníků, krátké trasy, nic přes svorkovou lištu ani cizí řady
+    const kr = await q.evaluate(() => {
+      const r = { rect: document.querySelectorAll('#rz-pohled .rz-nap-vrstva rect[stroke-dasharray]').length, dlouhe: [], radou: [], stejna: [] };
+      const mod = +__rz.skrin.modulu, x0 = RZG.okraj, x1 = RZG.okraj + mod * RZG.M;
+      const radky = __rz.rady.map((rr, i) => ({ i: i, y0: rozvRadaY(i), y1: rozvRadaY(i) + RZG.H }));
+      const rada = u => { const g = rozvGeom().filter(z => z.uid === u)[0]; return g ? g.r : -1; };
+      document.querySelectorAll('#rz-pohled .rz-wire').forEach(g => {
+        const pts = g.querySelector('.rz-w').getAttribute('d').match(/-?[\d.]+ -?[\d.]+/g).map(t => t.split(' ').map(Number));
+        const src = g.getAttribute('data-wire-src'), dst = g.getAttribute('data-wire-dst'), ra = rada(src), rb = rada(dst), jm = (rozvNajit(dst) || { x: {} }).x.ozn;
+        if (pts.length - 1 > 5) r.dlouhe.push(jm);
+        const a = g.getAttribute('data-a').split(' ').map(Number), b2 = g.getAttribute('data-b').split(' ').map(Number);
+        if (ra === rb && ra >= 0 && Math.abs(a[1] - b2[1]) < 0.01 && pts.length - 1 > 3) r.stejna.push(jm);
+        for (let k = 0; k + 1 < pts.length; k++) {
+          const [px, py] = pts[k], [qx, qy] = pts[k + 1];
+          radky.forEach(R => { if (R.i === ra || R.i === rb) return;
+            const sx0 = Math.min(px, qx), sx1 = Math.max(px, qx), sy0 = Math.min(py, qy), sy1 = Math.max(py, qy);
+            if (sx1 > x0 + 0.5 && sx0 < x1 - 0.5 && sy1 > R.y0 + 0.5 && sy0 < R.y1 - 0.5) r.radou.push(jm + '×řada' + (R.i + 1)); });
+        }
+      });
+      return r;
+    });
+    check('kreslení: v režimu Zapojení žádné čárkované obdélníky (rect se stroke-dasharray)', kr.rect === 0, kr.rect);
+    check('kreslení: žádný vodič nemá víc než 5 úseků; mezi svorkami na stejné straně téže řady nejvýš 3', !kr.dlouhe.length && !kr.stejna.length, kr.dlouhe.concat(kr.stejna).join());
+    check('kreslení: žádný vodič nevede přes svorkovou lištu ani přes řadu, se kterou nesouvisí', !kr.radou.length, kr.radou.slice(0, 6).join());
+    if (SNIMKY) await (await q.$('#rz-pohled')).screenshot({ path: path.join(SNIMKY, 'rs2-v162.png') });
+    check('v1.62: bez chyb na stránce', e11.length === 0, e11.join(' | '));
+    await c11.close();
+  }
 
   // ── skákající zoom (oprava 2026-11-06) ──────────────────────────────────
   // Skutečné posuvníky (headless je jinak schovává) a výška okna na hraně, kdy
