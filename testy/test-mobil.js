@@ -593,6 +593,15 @@ function vsechnyStavy(zalozky) {
     await __M.rozv(); document.getElementById('toast-wrap').innerHTML = '';
     rzhNavrhyOtevrit(); await __M.w(100);
   }), '#modal-rz-hrebeny');
+  add('rozvaděč – režim Zapojení, vodič s průřezem a barvou', 'Tvorba dokumentace', E(async () => {
+    await __M.rozv(); document.getElementById('toast-wrap').innerHTML = '';
+    TD_AKCE.tdRNapRezim();
+    const a = __rz.rady[0].prvky[0], c = __rz.rady[1].prvky[0], pr = rzpPredpoved({ uid: a.uid, strana: 'b', pol: 0 }, { uid: c.uid, strana: 't', pol: 0 });
+    if (pr.nw) { pr.nw.uid = 'wm2'; pr.nw.prurez = '10'; __rz.vodice = (__rz.vodice || []).concat([pr.nw]); __rz.napVodic = 'wm2'; rozvSvgPrekreslit(); rozvVlastnostiVykreslit(); }
+    document.getElementById('toast-wrap').innerHTML = '';
+    (document.querySelector('#rz-vlastnosti .rz-vodic-pole') || document.getElementById('rz-vlastnosti')).scrollIntoView({ block: 'start' }); await __M.w(100);
+    setTimeout(() => { if (__rz) { __rz.napRezim = false; __rz.napVodic = null; __rz.vodice = (__rz.vodice || []).filter(q => q.uid !== 'wm2'); } }, 3000);
+  }));
   add('rozvaděč – vlastnosti: Napájen z a → napájí', 'Tvorba dokumentace', E(async () => {
     await __M.rozv(); const x = __rz.rady[1].prvky[0]; __rz.vyber = x.uid; rozvPohledVykreslit(); rozvVlastnostiVykreslit();
     document.querySelector('#rz-vlastnosti .rp-napaji-deti').scrollIntoView({ block: 'start' }); await __M.w(100);

@@ -3220,6 +3220,24 @@ stavy „rozvaděč – nástroj Hřeben a vybraný hřeben v panelu" a „…na
 (okno)". **Upraveno:** `test-rozvadec.js` (kontextová nabídka má „🪮 Navrhnout
 hřebeny…" a „🪮 Propojit hřebenem").
 
+#### Fáze 1c — průřez a barva vodičů, vývodka (lab v1.64)
+
+- U vybraného vodiče (režim 🔌 Zapojení) **Průřez** a **Barva** (`vodice[i].prurez`,
+  `vodice[i].barva`, jen po zadání; přepojení je drží). Výchozí průřez je jen návrh
+  podle In zdroje (`rzvNavrhPrurez`: do 25 A 2,5 mm², 32 A 4, 40 A 6, 63 A 10, 80 A 16),
+  barva podle fáze (hnědá, černá, šedá; zadaná barva platí pro celý svazek i v kresbě).
+- Vodiče se zadaným průřezem jdou do **„Propojovací materiál"** (`rzvMaterial`: „Vodič
+  H07V-K 10 mm² hnědý – propojky 3 ks", po pólech a barvách).
+- **Kabelová vývodka** se kreslí na okraji skříně (`rozvVyvodkaSvg`, obrazovka i PDF,
+  mimo režim Zapojení — ten má vlastní vývodku v pásu) podle pole hlavičky **„Přívod
+  do skříně"** (`privodSmer`, dřív popisek „Přívod"), výchozí shora.
+- Karta v Novinkách **„🛠 Čelní pohled jako v dílně"** (8. 11. 2026) se třemi obrázky
+  postupu (vložit přístroje, protáhnout hřeben, propojka z hlavního vypínače) — o ni
+  si řeklo zadání.
+
+Test: `testy/test-rozvadec-dilna.js` (oddíly 1 vývodka a 7). V `test-mobil.js` stav
+„rozvaděč – režim Zapojení, vodič s průřezem a barvou".
+
 ### Výměna výkresů s CAD — export a import DXF (2026-11-02, bloky „ROZVADĚČ — VÝMĚNA S CAD")
 
 Zadání uživatele: technici kreslí ve Schématech CAD (Elmer), který ukládá

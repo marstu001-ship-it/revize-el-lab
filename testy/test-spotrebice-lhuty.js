@@ -159,7 +159,8 @@ const res = []; const check = (n, ok, d) => res.push((ok ? '✅' : '❌') + ' ' 
       const vse = [...document.querySelectorAll('#screen-novinky .scard[data-nov-datum]')], i = vse.indexOf(k2);
       return vse.slice(0, i).every(c => c.getAttribute('data-nov-datum') >= k2.getAttribute('data-nov-datum')); })(), maxD };
   });
-  check('Novinky: karta „🔌 Spotřebiče – lhůty podle ČSN 33 1600 Z2" nahoře s datem 2026-11-05', nov.je && nov.d === '2026-11-05' && nov.prvni && nov.maxD === '2026-11-05' &&
+  check('Novinky: karta „🔌 Spotřebiče – lhůty podle ČSN 33 1600 Z2" nahoře s datem 2026-11-05', nov.je && nov.d === '2026-11-05' && nov.prvni && nov.maxD >= '2026-11-05' &&   // nejnovější datum se nepinuje (přibývají další karty)
+   
     /3/.test(nov.t) && /96 měsíců/.test(nov.t) && /Kdy jaká lhůta/.test(nov.t) && /Použít návrh/.test(nov.t), nov.d);
 
   check('bez chyb stránky', !N.err.length && !T.err.length, N.err.concat(T.err).join(' | '));
