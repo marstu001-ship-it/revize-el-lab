@@ -3112,6 +3112,60 @@ svorkových lišt, poznámky 11.7 a „nechat prázdné"), `test-spotrebice-lhut
 (karta Novinek se nepinuje na první místo), `test-mobil.js` (stavy režimu
 Napájení, svorkovnice, Dokumenty s ✕).
 
+### Čelní pohled „jako v dílně" — ZÁSADY přestavby (pokyn uživatele 2026-11-08, platí i pro další fáze)
+
+Uživatel je revizní technik a výrobce rozvaděčů: „Chci přemýšlet tak, jak se
+rozvaděč vyzbrojuje v praxi. „Pěkné kolo, na kole jezdit umím – ale jak se jezdí
+na tomhle?" – takhle to být nesmí." Každá další fáze čelního pohledu se řídí:
+
+1. **Vypadá to jako skutečnost.** Každý druh prvku má vlastní kresbu ve stylu
+   čistého technického výkresu (ne fotky). Elektrikář pozná přístroj na první pohled.
+2. **Ovládá se to, jak se rozvaděč skutečně vyzbrojuje:** DIN lišta → přístroje →
+   hřebeny → propojky a vodiče → svorky. Napájení („kdo koho napájí") **vzniká samo**
+   z hřebenů a propojek. Šipky a volba „Napájen z" zůstávají jako kontrolní pohled
+   a ruční oprava.
+3. **Žádné pojmy programu tam, kde stačí pojem z dílny.** Popisky, tlačítka
+   a nápovědy: hřeben, propojka, svorka, přípojnice, krytka, vývodka.
+4. **Data se nesmí změnit.** Starý rozvaděč se otevře a uloží bajtově beze změny,
+   jeho PDF, schéma i DXF se nemění, dokud uživatel nepřidá hřeben nebo propojku.
+   Nová kresba přístrojů smí změnit **jen vzhled čelního pohledu** (obrazovka i PDF).
+   Testy, které porovnávají rozvaděč se starou verzí znak po znaku, porovnávají čelní
+   pohled přes `testy/bez-kresby.js` (skupina `<g class="rz-pr">` → značka s
+   `data-puid`, vývodka pryč); vše ostatní dál znak po znaku.
+
+#### Fáze 1a — věrné kresby prvků (lab v1.64, blok „ČELNÍ POHLED „JAKO V DÍLNĚ"")
+
+- **`rozvPrvekDinSvg(d, x, y, o)`** kreslí modulový přístroj na DIN liště (obrazovka,
+  PDF, duch při tažení, čela ve 3D); tělo podle druhu dělá **`cpKresba`** (vrací SVG
+  a rozvržení textů). Přístroj na montážní desce PSC (`o.h`) má dřívější kresbu.
+  Barvy `CP`: šedé tělo, světlé čelo, bílý štítek; barevné jen to, co je barevné ve
+  skutečnosti. Rozvržení `CP_R` (šrouby 7,3 / 45,6 mm, označení, štítek, páčka).
+- Druhy: jistič / QF páčka; **chránič a RCBO páčka + tlačítko T** (`.cp-tl-T`);
+  vypínač širší červená páčka (jako dřív); **SPD výměnné moduly se zeleným okénkem**
+  (`.cp-spd-okno`); **pojistkový odpojovač víčka s okénkem vložky** (`.cp-viko`,
+  `.cp-vlozka`); stykač / relé A1 / A2; hodiny, elektroměr (displej), kontrolka,
+  tlačítko, zásuvka, trafo / zdroj (štěrbiny); **rezerva = krytka s rýhou**.
+- **Řadová svorka** (`X` bez `svorky`): úzká, **barva podle funkce** — šedá fáze, **modrá
+  N, zelenožlutá PE** (`CP_SVORKA`). Volba ve vlastnostech **„Svorka je pro"**
+  (`x.funkce` = `'L' | 'N' | 'PE'`, ukládá se jen zadaná); bez ní `rozvSvorkaFunkce`
+  podle přípojnice, označení / názvu („PE", „N"). Šroub nahoře a dole, bílý štítek
+  s označením svisle, bez pruhu výrobce.
+- **Svorkovnice** (blok): řada úzkých svorek (`p.pocet`) se zarážkami a koncovou deskou,
+  rozsah `-X4…X46` nahoře, počet dole. Šířka bloku zůstává `pocet × 6 mm` (svorka +
+  podíl zarážek a desek) — staré rozvaděče se nemění. **Přípojnice N / PE**: mosazná
+  lišta se šrouby, izolátory na koncích, štítek N (modrý) / PE (zelenožlutý).
+- **Svorky ve skutečné šířce** (nové vestavěné položky): `v-x-rad-25` 2,5 mm² 5,2 mm,
+  `v-x-rad-4` 4 mm² 6,2 mm, `v-x-rad-10` 10 mm² 8,2 mm (`sirka` v modulech ≈ mm / 17,5,
+  `sirkaMm` pro popis). Starší `v-x-rad` (½ modulu) zůstává.
+- **Hustota detailu podle měřítka:** na obrazovce pod 1,8 px/mm (a ve 3D, `o.lod`)
+  se šrouby a drobnosti vynechají. Do PDF vždy plná kresba.
+- Pruh výrobce / ampéráže, označení, hodnota (`rozvCelo`), vývod, fáze, výběr, kolize
+  a upozornění zůstávají; texty se jen posunuly pod pruh a šrouby.
+
+Test: `testy/test-rozvadec-dilna.js` (oddíl 1). **Upraveno:** `test-rozvadec-psc.js`,
+`test-rozvadec-mezery.js`, `test-rozvadec-napajeni.js`, `test-rozvadec.js` (CAD) —
+porovnání se starou verzí přes `bez-kresby.js`.
+
 ### Výměna výkresů s CAD — export a import DXF (2026-11-02, bloky „ROZVADĚČ — VÝMĚNA S CAD")
 
 Zadání uživatele: technici kreslí ve Schématech CAD (Elmer), který ukládá

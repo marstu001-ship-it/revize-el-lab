@@ -24,6 +24,7 @@ const STARA = 'http://127.0.0.1:' + (process.env.PORT_STARA || 8902) + '/index.h
 const res = []; const check = (n, ok, d) => res.push((ok ? '✅' : '❌') + ' ' + n + (d ? ' — ' + d : ''));
 const w = ms => new Promise(r => setTimeout(r, ms));
 const path = require('path');
+const bezKresby = require('./bez-kresby');   // lab v1.64: kresba přístrojů v čelním pohledu se mění záměrně
 
 function pomocnik() {
   window.__T = {
@@ -609,6 +610,9 @@ const presahy = (p, svg) => p.evaluate(svg => {
       return { pred, po, svg, svgT, html, htmlBez, knih, pdf, dbo5b };
     }, data);
     const A = await zkus(s), B = await zkus(p);
+    // lab v1.64 (čelní pohled „jako v dílně"): kresby přístrojů, vývodka, tlačítko 🪮 Hřeben a popisek „Přívod do skříně" se mění záměrně
+    const bezCp = s0 => bezKresby(s0).replace(/<button class="dok-mini rz-hr-btn[^>]*>🪮 Hřeben<\/button>/g, '').replace(/Přívod do skříně/g, 'Přívod');
+    [A, B].forEach(X => { ['svg', 'svgT', 'htmlBez', 'pdf'].forEach(k => { X[k] = bezCp(X[k]); }); Object.keys(X.dbo5b).forEach(k => { X.dbo5b[k] = bezCp(X.dbo5b[k]); }); });
     check('starý DBO: otevření a uložení nezmění data (nová verze, bajtově)', B.pred === B.po, B.pred.length + ' / ' + B.po.length);
     check('DBO: uložená data po otevření a uložení stejná jako ve předchozí verzi', A.po === B.po, '');
     check('DBO: čelní pohled (obrazovka i tisk) znak po znaku stejný jako ve předchozí verzi', A.svg === B.svg && A.svgT === B.svgT, A.svg.length + ' / ' + B.svg.length);

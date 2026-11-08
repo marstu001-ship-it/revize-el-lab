@@ -772,7 +772,9 @@ async function stranka(ctx, url, err) {
     check('starý rozvaděč: otevření a uložení (bez Dokumentů) — data bajtově jako uložená', nov.jenOtevrit === JSON.stringify(JSON.parse(stary).data), rozdil(nov.jenOtevrit, JSON.stringify(JSON.parse(stary).data)));
     check('starý rozvaděč: schéma znak po znaku jako předchozí verze', nov.listy === puv.listy, rozdil(nov.listy, puv.listy));
     check('starý rozvaděč: oteplení, fáze a soudobost jako předchozí verze', nov.otepl === puv.otepl && nov.faze === puv.faze && nov.soud === puv.soud);
-    check('starý rozvaděč: PDF dokumentace (bloky) a DXF jako předchozí verze', nov.pdf === puv.pdf && nov.dxf === puv.dxf, rozdil(nov.pdf, puv.pdf) || rozdil(nov.dxf, puv.dxf));
+    // lab v1.64: čelní pohled má novou kresbu přístrojů a vývodku — porovnává se bez nich (require('./bez-kresby'))
+    const BK = require('./bez-kresby');
+    check('starý rozvaděč: PDF dokumentace (bloky, čelní pohled bez kresby přístrojů) a DXF jako předchozí verze', BK(nov.pdf) === BK(puv.pdf) && nov.dxf === puv.dxf, rozdil(BK(nov.pdf), BK(puv.pdf)) || rozdil(nov.dxf, puv.dxf));
     check('starý rozvaděč: ruční volba „Napájen z" se v režimu Zapojení kreslí jako automatické (čárkované) spojení ze správného zdroje, data bez vodičů', nov.autoRucni === true);
     check('předchozí verze i nová bez chyb', errS.length === 0 && errN.length === 0, errS.concat(errN).join(' | '));
     await ctxN.close();

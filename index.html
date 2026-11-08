@@ -31813,6 +31813,10 @@ function rozvVestavene() {
   P('zd-12-15', 'ZD', 'Napájecí zdroj 12 V DC 15 W', { uVstup: '230', uVystup: '12 DC', vykon: 15, sirka: 1 });
   P('xs-16', 'XS', 'Zásuvka na DIN lištu 16 A', { poly: '1+N', In: 16, sirka: 3 });
   P('x-rad', 'X', 'Svorka řadová (½ modulu)', { sirka: 0.5 });
+  // řadové svorky ve skutečné šířce (lab v1.64): 2,5 mm² 5,2 mm, 4 mm² 6,2 mm, 10 mm² 8,2 mm — šířka v modulech
+  P('x-rad-25', 'X', 'Svorka řadová 2,5 mm² (5,2 mm)', { prurez: '2,5 mm²', sirkaMm: 5.2, sirka: 0.3 });
+  P('x-rad-4', 'X', 'Svorka řadová 4 mm² (6,2 mm)', { prurez: '4 mm²', sirkaMm: 6.2, sirka: 0.35 });
+  P('x-rad-10', 'X', 'Svorka řadová 10 mm² (8,2 mm)', { prurez: '10 mm²', sirkaMm: 8.2, sirka: 0.47 });
   // svorková lišta, přípojnice, pojistkové odpojovače 14×51, svodič 3+1 (2026-11-05) — obecné, neověřené
   P('x-svork', 'X', 'Svorkovnice – řadové svorky (počet)', { svorky: true, pocet: 10, prurez: '2,5–4 mm²', sirka: rozvSvorkySirka(10) });
   P('x-prip-n', 'X', 'Přípojnice N (počet svorek)', { svorky: true, prip: 'N', pocet: 10, prurez: '6–16 mm²', sirka: rozvSvorkySirka(10) });
@@ -32906,6 +32910,261 @@ function rozvZnackaText(z, w, fs) {
   return rozvZkratit(z.kr || z.text, max);
 }
 
+// ═══ ČELNÍ POHLED „JAKO V DÍLNĚ" — věrné kresby prvků (lab v1.64, fáze 1) ═══
+// Každý druh prvku má vlastní kresbu ve stylu čistého technického výkresu
+// (cpKresba): šedé tělo, světlé čelo, bílý štítek, šrouby svorek nahoře a dole;
+// barevné je jen to, co je barevné i ve skutečnosti (páčka hlavního vypínače,
+// tlačítko T chrániče, okénko svodiče, modrá svorka N, zelenožlutá PE, mosazná
+// přípojnice). Kreslí se pro obrazovku i PDF stejně; data se nemění. Při malém
+// měřítku na obrazovce (`o.k` < 1,8 px/mm) se šrouby a drobnosti vynechají.
+// Přístroj na montážní desce PSC (`o.h`) má dál dřívější kresbu.
+var CP = { telo: '#e6e6e2', celo: '#f7f7f4', obrys: '#555', hrana: '#a4a4a0', sroub: '#d4d4d0', sroubO: '#6b6b6b', packa: '#3a3a3a',
+  cervena: '#b5291c', stitek: '#ffffff', T: '#e7c14a', okno: '#3fa34d', mosaz: '#c9a227', mosazO: '#86690f', izol: '#4a4a4a' };
+// Rozvržení modulového přístroje (mm od horní hrany, výška 50 mm).
+var CP_R = { sr1: 7.3, sr2: 45.6, ozn: 12.5, celo: 16.3, krok: 3.5, stitek: 9.3, vyvodH: 41.6, vyvodS: 42 };
+var CP_SVORKA = { L: { b: '#9c9c98', t: 'fáze (šedá)' }, N: { b: '#2f6fd0', t: 'N (modrá)' }, PE: { b: '#3c9a3c', pruh: '#f0d21b', t: 'PE (zelenožlutá)' } };
+function cpZ(n) { return rozvZaokr(n); }
+function cpRect(x, y, w, h, fill, o) {
+  o = o || {};
+  return '<rect' + (o.cls ? ' class="' + o.cls + '"' : '') + ' x="' + cpZ(x) + '" y="' + cpZ(y) + '" width="' + cpZ(Math.max(0, w)) + '" height="' + cpZ(Math.max(0, h)) + '"' +
+    (o.rx ? ' rx="' + o.rx + '"' : '') + ' fill="' + fill + '"' + (o.s ? ' stroke="' + o.s + '" stroke-width="' + (o.sw || 0.3) + '"' : '') + '/>';
+}
+// Šroub svorky: kroužek se zářezem.
+function cpSroub(cx, cy, r, cls) {
+  return '<g class="' + (cls || 'cp-sroub') + '"><circle cx="' + cpZ(cx) + '" cy="' + cpZ(cy) + '" r="' + cpZ(r) + '" fill="' + CP.sroub + '" stroke="' + CP.sroubO + '" stroke-width="0.25"/>' +
+    '<line x1="' + cpZ(cx - r * 0.62) + '" y1="' + cpZ(cy + r * 0.3) + '" x2="' + cpZ(cx + r * 0.62) + '" y2="' + cpZ(cy - r * 0.3) + '" stroke="' + CP.sroubO + '" stroke-width="0.28"/></g>';
+}
+function cpPoly(p) {
+  var s = String((p && p.poly) || '');
+  if (/^(3\+N|4)$/.test(s)) return 4;
+  if (s === '3') return 3;
+  if (s === '2' || s === '1+N') return 2;
+  return 1;
+}
+// Funkce řadové svorky: zadaná (`x.funkce`), přípojnice podle druhu, jinak podle označení / názvu.
+function rozvSvorkaFunkce(x) {
+  if (!x || !x.p) return 'L';
+  if (x.funkce === 'L' || x.funkce === 'N' || x.funkce === 'PE') return x.funkce;
+  if (x.p.prip === 'N' || x.p.prip === 'PE') return x.p.prip;
+  var t = String([x.vyvod, x.p.nazev].join(' '));
+  if (/\bPE\b|ochrann/i.test(t)) return 'PE';
+  if (/\bN\b|nulov|střední/i.test(t)) return 'N';
+  return 'L';
+}
+// Jedna úzká svorka (řadová svorka i svorka ve svorkovnici).
+function cpSvorka1(x, y, w, H, f, o) {
+  var c = CP_SVORKA[f] || CP_SVORKA.L, h = cpRect(x + 0.15, y + 2.2, w - 0.3, H - 4.4, c.b, { rx: 0.5, s: '#3d3d3d', sw: 0.22, cls: 'cp-svorka cp-svorka-' + f });
+  if (c.pruh) for (var i = 0; i < 6; i++) h += cpRect(x + 0.35, y + 6 + i * 6.6, w - 0.7, 2.2, c.pruh, { cls: 'cp-pe-pruh' });
+  if (!o.lod) {
+    var r = Math.min(1.1, w * 0.3);
+    h += cpSroub(x + w / 2, y + 5.2, r) + cpSroub(x + w / 2, y + H - 5.2, r);
+  }
+  return h;
+}
+// Tělo modulového přístroje (obrys, čelo, otvory svorek, šrouby po pólech).
+function cpTelo(x, y, w, H, n, o) {
+  var h = cpRect(x + 0.3, y, w - 0.6, H, CP.telo, { rx: 1.2, s: CP.obrys, sw: 0.35, cls: 'cp-telo' }) +
+    cpRect(x + 0.9, y + 9, w - 1.8, H - 18, CP.celo, { rx: 0.8, s: CP.hrana, sw: 0.25, cls: 'cp-celo' });
+  if (!o.lod) {
+    var pw = (w - 0.6) / n, r = Math.min(1.25, pw * 0.27);
+    for (var k = 0; k < n; k++) {
+      var cx = x + 0.3 + (k + 0.5) * pw;
+      h += cpSroub(cx, y + CP_R.sr1, r) + cpSroub(cx, y + CP_R.sr2, r);
+    }
+  }
+  return h;
+}
+function cpPacka(x, y, w, top, sir, barva) {
+  var lw = Math.min(sir, w * 0.36), cx = x + w / 2;
+  return cpRect(cx - lw / 2 - 0.5, y + top - 0.5, lw + 1, 9.5, '#cfcfcb', { rx: 0.9, cls: 'cp-packa-lozko' }) +
+    cpRect(cx - lw / 2, y + top, lw, 8.5, barva, { rx: 0.8, cls: 'cp-packa' }) +
+    '<line x1="' + cpZ(cx - lw / 2 + 0.6) + '" y1="' + cpZ(y + top + 2) + '" x2="' + cpZ(cx + lw / 2 - 0.6) + '" y2="' + cpZ(y + top + 2) + '" stroke="#fff" stroke-opacity=".35" stroke-width="0.4"/>';
+}
+// Kresba těla podle druhu prvku (bez textů — ty přidává rozvPrvekDinSvg).
+// Vrací { h, stitek: má se kreslit štítek, packaTop, bezZnacky, bezTextu }.
+function cpKresba(d, x, y, w, H, o) {
+  var p = d.p || {}, n = cpPoly(p), kat = p.kat, lod = !!o.lod, r = { h: '', stitek: false };
+  var radku = (rozvVlozkaText(d) ? 1 : rozvCelo(p).filter(Boolean).length) || 1;
+  var stDole = CP_R.celo + (radku - 1) * CP_R.krok + 1.5, pTop = stDole + 1.6;
+  var o2 = { lod: lod };
+  if (kat === 'REZ') {   // krytka (záslepka) s rýhou
+    r.h = cpRect(x + 0.4, y + 8.5, w - 0.8, H - 17, '#d9d9d5', { rx: 0.8, s: '#9a9a96', sw: 0.3, cls: 'cp-krytka' }) +
+      '<line x1="' + cpZ(x + 1.2) + '" y1="' + cpZ(y + H / 2) + '" x2="' + cpZ(x + w - 1.2) + '" y2="' + cpZ(y + H / 2) + '" stroke="#a9a9a5" stroke-width="0.5"/>';
+    r.bezZnacky = true; return r;
+  }
+  if (kat === 'X') {
+    r.bezZnacky = true;
+    if (rozvJeSvorkovnice(p) && p.prip) {   // přípojnice N / PE: mosazná lišta se šrouby, izolátory na koncích, štítek
+      var pf = p.prip === 'PE' ? 'PE' : 'N', ix = 3.2, by = y + H / 2 - 4, pocet = Math.max(1, Math.round(+p.pocet || 1));
+      r.h = cpRect(x + 0.4, y + 11, ix, H - 22, CP.izol, { rx: 0.6, cls: 'cp-izolator' }) + cpRect(x + w - 0.4 - ix, y + 11, ix, H - 22, CP.izol, { rx: 0.6, cls: 'cp-izolator' }) +
+        cpRect(x + 0.4 + ix - 0.6, by, w - 0.8 - 2 * ix + 1.2, 8, CP.mosaz, { rx: 0.6, s: CP.mosazO, sw: 0.3, cls: 'cp-pripojnice cp-pripojnice-' + pf });
+      if (!lod || pocet <= 24) {
+        var dx = (w - 2 * ix - 1.6) / pocet;
+        for (var i = 0; i < pocet; i++) {
+          var cx = x + ix + 0.8 + (i + 0.5) * dx;
+          r.h += '<g class="cp-sroub-p"><circle cx="' + cpZ(cx) + '" cy="' + cpZ(by + 4) + '" r="' + cpZ(Math.min(1.3, dx * 0.38)) + '" fill="#e6c96c" stroke="' + CP.mosazO + '" stroke-width="0.25"/>' +
+            (lod ? '' : '<line x1="' + cpZ(cx - 0.7) + '" y1="' + cpZ(by + 4.3) + '" x2="' + cpZ(cx + 0.7) + '" y2="' + cpZ(by + 3.7) + '" stroke="' + CP.mosazO + '" stroke-width="0.25"/>') + '</g>';
+        }
+      }
+      var sw = Math.min(14, w - 2 * ix - 2), sx = x + w / 2 - sw / 2;
+      r.h += cpRect(sx, y + 4.2, sw, 5, pf === 'N' ? CP_SVORKA.N.b : CP_SVORKA.PE.b, { rx: 0.6, cls: 'cp-stitek-' + pf });
+      if (pf === 'PE') r.h += cpRect(sx + sw * 0.25, y + 4.2, sw * 0.25, 5, CP_SVORKA.PE.pruh, {});
+      r.oznY = y + 7.9; r.oznBarva = pf === 'N' ? '#fff' : '#111'; r.celoY = y + H - 4.2;
+      return r;
+    }
+    if (rozvJeSvorkovnice(p)) {   // svorkovnice: řada úzkých svorek, koncová deska a zarážky na krajích
+      var pc = Math.max(1, Math.round(+p.pocet || 1)), zw = 1.8, f = rozvSvorkaFunkce(d), sw2 = (w - 2 * zw - 0.8) / pc;
+      r.h = cpRect(x + 0.2, y + 3, zw, H - 6, '#5a5a5a', { rx: 0.4, cls: 'cp-zarazka' }) + cpRect(x + w - 0.2 - zw, y + 3, zw, H - 6, '#5a5a5a', { rx: 0.4, cls: 'cp-zarazka' });
+      var lod2 = lod || sw2 * (o.k || 4) < 7;
+      for (var j = 0; j < pc; j++) r.h += cpSvorka1(x + zw + 0.2 + j * sw2, y + 3.2, sw2, H - 6.4, f, { lod: lod2 });
+      r.h += cpRect(x + w - zw - 0.75, y + 5.4, 0.55, H - 10.8, '#7a7a7a', { cls: 'cp-koncova' });   // koncová deska
+      r.oznY = y + 2.3; r.oznPozadi = true; r.celoY = y + H - 0.6; r.celoPozadi = true;
+      return r;
+    }
+    // jedna řadová svorka: barva podle funkce, šrouby, bílý štítek s označením (svisle)
+    r.h = cpSvorka1(x, y, w, H, rozvSvorkaFunkce(d), o2) + cpRect(x + 0.45, y + 17, w - 0.9, 16, '#fff', { s: '#9a9a9a', sw: 0.2, cls: 'cp-svorka-stitek' });
+    r.oznSvisle = true; r.bezTextu = true;
+    return r;
+  }
+  if (kat === 'SPD') {   // výměnné moduly s okénkem indikace
+    r.h = cpRect(x + 0.3, y, w - 0.6, H, CP.telo, { rx: 1.2, s: CP.obrys, sw: 0.35, cls: 'cp-telo' });
+    var mw = (w - 0.6) / n;
+    for (var k = 0; k < n; k++) {
+      var mx = x + 0.3 + k * mw;
+      r.h += cpRect(mx + 0.55, y + 8.6, mw - 1.1, H - 17.2, '#f2f2ee', { rx: 0.7, s: CP.hrana, sw: 0.25, cls: 'cp-spd-modul' }) +
+        cpRect(mx + mw / 2 - Math.min(2.2, mw * 0.28), y + pTop, Math.min(4.4, mw * 0.56), 3.2, CP.okno, { rx: 0.5, s: '#2a6e33', sw: 0.2, cls: 'cp-spd-okno' });
+      if (!lod) r.h += cpSroub(mx + mw / 2, y + CP_R.sr1 - 0.6, Math.min(1.2, mw * 0.25)) + cpSroub(mx + mw / 2, y + CP_R.sr2 + 0.6, Math.min(1.2, mw * 0.25));
+    }
+    r.stitek = true; return r;
+  }
+  if (kat === 'FU') {   // výklopná víčka s okénkem vložky, po pólech
+    r.h = cpRect(x + 0.3, y, w - 0.6, H, CP.telo, { rx: 1.2, s: CP.obrys, sw: 0.35, cls: 'cp-telo' });
+    var vw = (w - 0.6) / n;
+    for (var q = 0; q < n; q++) {
+      var vx = x + 0.3 + q * vw;
+      r.h += cpRect(vx + 0.6, y + pTop - 0.4, vw - 1.2, H - pTop - 7.2, '#d2d2ce', { rx: 1.4, s: '#666', sw: 0.3, cls: 'cp-viko' }) +
+        cpRect(vx + vw / 2 - Math.min(1.8, vw * 0.25), y + pTop + 2.2, Math.min(3.6, vw * 0.5), Math.max(4, H - pTop - 13), '#fbfbf7', { rx: 0.5, s: '#888', sw: 0.2, cls: 'cp-okenko' }) +
+        cpRect(vx + vw / 2 - Math.min(1.1, vw * 0.15), y + pTop + 3.4, Math.min(2.2, vw * 0.3), Math.max(1.6, H - pTop - 15.4), '#c58b4a', { rx: 0.4, cls: 'cp-vlozka' });
+      if (!lod) r.h += cpSroub(vx + vw / 2, y + CP_R.sr1 - 0.6, Math.min(1.2, vw * 0.25)) + cpSroub(vx + vw / 2, y + CP_R.sr2 + 0.6, Math.min(1.2, vw * 0.25));
+    }
+    r.stitek = true; return r;
+  }
+  r.h = cpTelo(x, y, w, H, n, o2); r.stitek = w >= 5;
+  var ct = x + w / 2;
+  switch (kat) {
+    case 'FA': case 'QF': r.h += cpPacka(x, y, w, pTop, 5, CP.packa); break;
+    case 'AFDD':
+      r.h += cpPacka(x, y, w, pTop, 5, CP.packa) + '<circle class="cp-led" cx="' + cpZ(ct) + '" cy="' + cpZ(y + pTop + 11.2) + '" r="0.9" fill="#d0d0cc" stroke="#777" stroke-width="0.2"/>';
+      break;
+    case 'FI': case 'FIFA':   // páčka + tlačítko T
+      r.h += cpPacka(x, y, w, pTop, kat === 'FI' ? 6 : 5, CP.packa);
+      var tw = Math.min(3.6, w * 0.34);
+      r.h += '<g class="cp-tl-T">' + cpRect(ct - tw / 2, y + pTop + 9.8, tw, tw, CP.T, { rx: 0.6, s: '#8a7020', sw: 0.25 }) +
+        '<text x="' + cpZ(ct) + '" y="' + cpZ(y + pTop + 9.8 + tw * 0.78) + '" font-size="' + cpZ(tw * 0.78) + '" font-weight="700" text-anchor="middle" fill="#3a2e00">T</text></g>';
+      break;
+    case 'QM': case 'QS':   // širší páčka, červená jako dřív
+      r.h += cpPacka(x, y, w, pTop, 9, CP.cervena); break;
+    case 'MS':   // otočný ovladač
+      r.h += '<circle class="cp-knoflik" cx="' + cpZ(ct) + '" cy="' + cpZ(y + pTop + 4.6) + '" r="' + cpZ(Math.min(4.2, w * 0.3)) + '" fill="#3a3a3a"/>' +
+        cpRect(ct - 0.5, y + pTop + 1.2, 1, 3.4, '#fff', {});
+      break;
+    case 'SF': case 'HL': {   // tlačítko / kontrolka
+      var cr = Math.min(3.6, w * 0.3);
+      r.h += '<circle class="' + (kat === 'HL' ? 'cp-kontrolka' : 'cp-tlacitko') + '" cx="' + cpZ(ct) + '" cy="' + cpZ(y + pTop + 4.2) + '" r="' + cpZ(cr) + '" fill="' + (kat === 'HL' ? '#e8b84a' : '#2e8b3e') + '" stroke="#444" stroke-width="0.3"/>';
+      break; }
+    case 'KM': case 'KA': case 'KT': {   // stykač / relé: svorky cívky A1, A2, okénko kontaktů
+      if (w >= 8) r.h += '<text class="cp-a1" x="' + cpZ(x + w - 1.3) + '" y="' + cpZ(y + 10.3) + '" font-size="1.8" text-anchor="end" fill="#555">A1</text>' +
+        '<text class="cp-a2" x="' + cpZ(x + w - 1.3) + '" y="' + cpZ(y + H - 8.4) + '" font-size="1.8" text-anchor="end" fill="#555">A2</text>';
+      if (kat === 'KT') r.h += '<circle class="cp-hodiny" cx="' + cpZ(ct) + '" cy="' + cpZ(y + pTop + 4.5) + '" r="' + cpZ(Math.min(4, w * 0.3)) + '" fill="#fff" stroke="#555" stroke-width="0.3"/>' +
+        '<path d="M' + cpZ(ct) + ' ' + cpZ(y + pTop + 2) + ' V' + cpZ(y + pTop + 4.5) + ' H' + cpZ(ct + 1.8) + '" fill="none" stroke="#333" stroke-width="0.35"/>';
+      else r.h += cpRect(ct - Math.min(3, w * 0.28), y + pTop + 1, Math.min(6, w * 0.56), 5, '#eaeae6', { rx: 0.5, s: '#777', sw: 0.25, cls: 'cp-kontakty' }) +
+        cpRect(ct - 0.9, y + pTop + 2.1, 1.8, 2.8, '#4a4a4a', { rx: 0.3 });
+      break; }
+    case 'PJ':   // elektroměr: displej
+      r.h += cpRect(x + 1.6, y + pTop, w - 3.2, 6, '#cfe0c8', { rx: 0.5, s: '#6f8a66', sw: 0.25, cls: 'cp-displej' }); break;
+    case 'XS':   // zásuvka
+      r.h += '<circle class="cp-zasuvka" cx="' + cpZ(ct) + '" cy="' + cpZ(y + pTop + 6) + '" r="' + cpZ(Math.min(6.5, w * 0.3)) + '" fill="#fff" stroke="#555" stroke-width="0.35"/>' +
+        '<circle cx="' + cpZ(ct - 2.2) + '" cy="' + cpZ(y + pTop + 6) + '" r="0.8" fill="#333"/><circle cx="' + cpZ(ct + 2.2) + '" cy="' + cpZ(y + pTop + 6) + '" r="0.8" fill="#333"/>';
+      break;
+    case 'TR': case 'ZD':   // větrací štěrbiny
+      for (var s = 0; s < 4; s++) r.h += '<line class="cp-sterbina" x1="' + cpZ(x + 2) + '" y1="' + cpZ(y + pTop + 1 + s * 2) + '" x2="' + cpZ(x + w - 2) + '" y2="' + cpZ(y + pTop + 1 + s * 2) + '" stroke="#9a9a96" stroke-width="0.45"/>';
+      break;
+    default: break;
+  }
+  return r;
+}
+// Modulový přístroj na DIN liště (obrazovka, PDF, duch při tažení, čela ve 3D).
+function rozvPrvekDinSvg(d, x, y, o) {
+  var g = RZG, M = g.M, p = d.p || {}, w = o.w || (+p.sirka || 1) * M, H = g.H, mimo = !!o.mimo, vyb = !!o.vyb;
+  var zna = rozvVyrZnacka(p);
+  var ampT = zna && rozvBarvyRezim() === 'proud' ? rozvAmpBarva(p) : null;
+  var tit = [d.ozn, rozvNazev(p), zna && zna.vyrobce ? (zna.vyrobce + ' ' + zna.rada).trim() : '', ampT && ampT.znamy ? 'barva ' + ampT.text + ' = ' + ampT.nazev : '', d.vyvod, d.faze,
+    p.kat === 'X' ? 'svorka ' + (CP_SVORKA[rozvSvorkaFunkce(d)] || {}).t : ''].filter(Boolean).join(' · ') + (d.upoz && d.upoz.length ? ' · ⚠ ' + d.upoz.join(', ') : '');
+  var lod = !!o.lod || (!o.tisk && !o.duch && o.k && o.k < 1.8);
+  var K = cpKresba(d, x, y, w, H, { lod: lod, k: o.k, zna: !!zna, tisk: o.tisk });
+  if (K.bezZnacky) zna = null;
+  var h = '<g class="rz-pr' + (o.tazeny ? ' rz-tazeny' : '') + '" data-kresba="' + esc(p.kat || '') + '"' + (o.duch ? '' : ' data-puid="' + esc(d.uid) + '"') + '><title>' + esc(tit) + '</title>' + K.h;
+  if (zna) {   // pruh se značkou a řadou výrobce, nebo (přepínač „Barvy: ampéráž") barva podle In
+    var zh = 4.4, zf = Math.min(2.7, w * 0.3), amp = rozvBarvyRezim() === 'proud' ? rozvAmpBarva(p) : null;
+    var zt = amp ? rozvZkratit(amp.text, Math.max(2, Math.floor((w - 1.4) / (zf * 0.55)))) : zna.text ? rozvZnackaText(zna, w, zf) : '';
+    h += '<rect class="rz-znacka-pruh' + (amp ? ' rz-amp-pruh' : '') + '" x="' + rozvZaokr(x + 0.7) + '" y="' + rozvZaokr(y + 0.45) + '" width="' + rozvZaokr(w - 1.4) + '" height="' + rozvZaokr(zh) +
+      '" rx="0.8" fill="' + (amp ? amp.barva : zna.barva) + '"' + (amp && amp.obrys ? ' stroke="#555" stroke-width="0.35"' : '') + (amp ? ' data-amp="' + esc(amp.nazev) + '"' : '') + '/>';
+    if (zt) h += '<text class="rz-znacka-text" x="' + rozvZaokr(x + w / 2) + '" y="' + rozvZaokr(y + 0.45 + zh / 2 + zf * 0.36) + '" font-size="' + rozvZaokr(zf) +
+      '" font-weight="700" text-anchor="middle" fill="' + (amp ? amp.textBarva : '#fff') + '">' + esc(zt) + '</text>';
+  }
+  if (mimo) h += '<rect x="' + rozvZaokr(x + 0.3) + '" y="' + y + '" width="' + rozvZaokr(w - 0.6) + '" height="' + H + '" fill="url(#rz-srafa' + (o.tisk ? 't' : '') + ')" stroke="#c0392b" stroke-width="0.9"/>';
+  var celo = rozvVlozkaText(d) ? [rozvVlozkaText(d)] : rozvCelo(p).filter(Boolean);
+  var oznT = rozvJeSvorkovnice(p) ? rozvSvorkyRozsah(d) : d.ozn;
+  if (K.oznSvisle) {   // řadová svorka: označení svisle na bílém štítku
+    if (oznT) { var sx = rozvZaokr(x + w / 2 + 0.8), sy = rozvZaokr(y + 32.4), sf = Math.min(2.4, w * 0.42);
+      h += '<text class="cp-svorka-ozn" x="' + sx + '" y="' + sy + '" font-size="' + rozvZaokr(sf) + '" font-weight="700" fill="#111" transform="rotate(-90 ' + sx + ' ' + sy + ')">' + esc(rozvZkratit(oznT, Math.floor(15 / (sf * 0.56)))) + '</text>'; }
+  } else if (K.oznY != null) {   // svorkovnice a přípojnice: označení nahoře, počet dole
+    var fo = Math.min(3, Math.max(2.2, w * 0.2)), tx = rozvZaokr(x + w / 2), oz = rozvZkratit(oznT, Math.max(2, Math.floor((w - 1) / (fo * 0.56))));
+    if (oz) {
+      if (K.oznPozadi) h += cpRect(x + w / 2 - oz.length * fo * 0.29 - 0.8, K.oznY - fo * 0.85, oz.length * fo * 0.58 + 1.6, fo * 1.15, '#fff', { rx: 0.5, s: '#bbb', sw: 0.2 });
+      h += '<text x="' + tx + '" y="' + rozvZaokr(K.oznY) + '" font-size="' + rozvZaokr(fo) + '" font-weight="700" text-anchor="middle" fill="' + (K.oznBarva || '#111') + '">' + esc(oz) + '</text>';
+    }
+    var celoX = rozvJeSvorkovnice(p) ? [celo[1] || celo[0]] : celo;   // svorkovnice / přípojnice: počet svorek
+    celoX.forEach(function (t, j) {
+      if (j || !t) return;
+      var ct = rozvZkratit(t, Math.max(2, Math.floor((w - 1) / (2.6 * 0.56))));
+      if (K.celoPozadi) h += cpRect(x + w / 2 - ct.length * 0.76 - 0.8, K.celoY - 2.3, ct.length * 1.52 + 1.6, 3, '#fff', { rx: 0.5, s: '#bbb', sw: 0.2 });
+      h += '<text x="' + tx + '" y="' + rozvZaokr(K.celoY) + '" font-size="2.6" text-anchor="middle" fill="#222">' + esc(ct) + '</text>';
+    });
+  } else {
+    // štítek s hodnotou, označení nad ním
+    var fs = w < 10 ? 2.4 : 3.4;
+    if (K.stitek && celo.length && w >= 5) h += cpRect(x + 1.2, y + CP_R.stitek + 3.6, w - 2.4, (celo.length - 1) * CP_R.krok + 4.6, CP.stitek, { rx: 0.5, s: '#b8b8b4', sw: 0.22, cls: 'cp-stitek' });
+    if (d.ozn) h += '<text x="' + rozvZaokr(x + w / 2) + '" y="' + rozvZaokr(y + CP_R.ozn) + '" font-size="' + rozvZaokr(fs) + '" font-weight="700" text-anchor="middle" fill="#111">' +
+      esc(rozvZkratit(oznT, Math.max(2, Math.floor(w / (fs * 0.56))))) + '</text>';
+    celo.forEach(function (t, j) {
+      var f2 = w < 10 ? 2.2 : (celo.length > 1 ? 3.0 : 3.5);
+      h += '<text x="' + rozvZaokr(x + w / 2) + '" y="' + rozvZaokr(y + CP_R.celo + 0.2 + j * CP_R.krok) + '" font-size="' + rozvZaokr(f2) + '" font-weight="' + (j === 0 ? 700 : 400) +
+        '" text-anchor="middle" fill="#222">' + esc(rozvZkratit(t, Math.max(2, Math.floor((w - 1.4) / (f2 * 0.56))))) + '</text>';
+    });
+  }
+  if (d.vyvod && w >= 8 && !K.bezTextu) {
+    if (w >= 2.5 * M) {
+      h += '<text x="' + rozvZaokr(x + w / 2) + '" y="' + (y + CP_R.vyvodH) + '" font-size="3.1" text-anchor="middle" fill="#1f497d">' +
+        esc(rozvZkratit(d.vyvod, Math.floor(w / 1.75))) + '</text>';
+    } else {
+      var cx = rozvZaokr(x + w / 2 + 1.1), cy = y + CP_R.vyvodS;
+      h += '<text x="' + cx + '" y="' + cy + '" font-size="3.1" fill="#1f497d" transform="rotate(-90 ' + cx + ' ' + cy + ')">' +
+        esc(rozvZkratit(d.vyvod, 11)) + '</text>';
+    }
+  }
+  if (d.faze && w >= 8 && p.kat !== 'X') h += '<text x="' + rozvZaokr(x + w - 1.4) + '" y="' + (y + 25.5) + '" font-size="2.4" text-anchor="end" fill="#7a4d00">' + esc(d.faze) + '</text>';
+  if (o.barvy && p.kat !== 'REZ') {   // spodní pruh v barvě fáze (L1 hnědá, L2 černá, L3 šedá; 3f všechny tři)
+    var fz = rfFaze(d), ff = fz === '3f' ? RF_FAZE : fz ? [fz] : [], sw = (w - 0.6) / Math.max(1, ff.length);
+    ff.forEach(function (k, i) { h += '<rect class="rz-faze-pruh" x="' + rozvZaokr(x + 0.3 + i * sw) + '" y="' + rozvZaokr(y + H - 2.2) + '" width="' + rozvZaokr(sw) + '" height="2.2" fill="' + RF_BARVY[k] + '"/>'; });
+  }
+  if (o.kolize) h += '<rect class="rz-kolize" x="' + rozvZaokr(x + 0.3) + '" y="' + y + '" width="' + rozvZaokr(w - 0.6) + '" height="' + H + '" fill="none" stroke="#c0392b" stroke-width="1.6"/>';
+  if (vyb) h += '<rect x="' + rozvZaokr(x - 0.4) + '" y="' + (y - 0.7) + '" width="' + rozvZaokr(w + 0.8) + '" height="' + (H + 1.4) + '" rx="1.6" fill="none" stroke="#2B579A" stroke-width="1.3"/>';
+  if (!o.tisk && d.upoz && d.upoz.length) h += '<circle class="rz-upoz" cx="' + rozvZaokr(x + w - 2.6) + '" cy="' + (y + 2.6) + '" r="2.2" fill="#e08a00"/>' +
+    '<text x="' + rozvZaokr(x + w - 2.6) + '" y="' + (y + 3.75) + '" font-size="3.2" font-weight="700" text-anchor="middle" fill="#fff">!</text>';
+  return h + '</g>';
+}
+
 // Jeden přístroj v čelním pohledu (i duch při tažení). x, y = levý horní roh v mm.
 function rozvPrvekSvg(d, x, y, o) {
   o = o || {};
@@ -32920,6 +33179,7 @@ function rozvPrvekSvg(d, x, y, o) {
     }
     return h + '</g>';
   }
+  if (!o.h) return rozvPrvekDinSvg(d, x, y, o);   // modulový přístroj: věrná kresba (lab v1.64)
   var sk = o.h ? Math.max(1, Math.min(2.4, Math.min(w, H) / 42)) : 1;   // velký přístroj na desce (PSC) — větší písmo
   var zna = rozvVyrZnacka(p), dz = zna ? 1 : 0;   // dz: posun textů pod pruh se značkou
   var ampT = zna && rozvBarvyRezim() === 'proud' ? rozvAmpBarva(p) : null;
@@ -33024,7 +33284,7 @@ function rozvSvg(rz, o) {
       x += rozvMez(d) * M;
       var w = rozvW(d) * M, mimo = (x - g.okraj) + w > mod * M + 0.01;
       h += rozvPrvekSvg(d, x, y, { tisk: o.tisk, mimo: mimo, vyb: !o.tisk && (rz.vyber === d.uid || !!vicSet[d.uid]), tazeny: !o.tisk && !!(rz.tazene && rz.tazene[d.uid]),
-                                   barvy: !o.tisk && __rzFazeBarvy });
+                                   barvy: !o.tisk && __rzFazeBarvy, k: k });
       x += w;
     });
     if (!o.tisk) h += rzpObrazekSvg(i, y, mod);   // předloha z fotky přes řadu (jen obrazovka)
@@ -35068,8 +35328,15 @@ function rozvSvorkovnicePanelHtml(x) {
     '<div class="dk-pozn">' + esc(rozvSvorkyRozsah(x)) + ' · šířka ' + esc(rozvSirkaText(p.sirka)) + '</div>' +
     (p.prip ? '' : rozvPrivodniHtml(x));
 }
+// Funkce řadové svorky (barva jako ve skutečnosti): fáze šedá, N modrá, PE zelenožlutá (lab v1.64).
+function rozvSvorkaFunkceHtml(x) {
+  var v = x.funkce === 'L' || x.funkce === 'N' || x.funkce === 'PE' ? x.funkce : '', odh = rozvSvorkaFunkce(Object.assign({}, x, { funkce: '' }));
+  var o = function (k, t) { return '<option value="' + k + '"' + (v === k ? ' selected' : '') + '>' + t + '</option>'; };
+  return '<div class="f rp-svorka-funkce"><label>Svorka je pro</label><select class="rp-pole" data-rp2="funkce">' +
+    o('', 'podle označení (' + (CP_SVORKA[odh] || CP_SVORKA.L).t + ')') + o('L', 'fázi – šedá') + o('N', 'N – modrá') + o('PE', 'PE – zelenožlutá') + '</select></div>';
+}
 function rozvPrivodniHtml(x) {
-  return '<label class="teren-radek rp-privodni"><input type="checkbox" class="rp-pole" data-rp2="privodni"' + (rozvZPrivodu(x) ? ' checked' : '') + '> Přívodní svorky (před hlavním vypínačem)</label>';
+  return (x.p && x.p.kat === 'X' && !x.p.prip ? rozvSvorkaFunkceHtml(x) : '') + '<label class="teren-radek rp-privodni"><input type="checkbox" class="rp-pole" data-rp2="privodni"' + (rozvZPrivodu(x) ? ' checked' : '') + '> Přívodní svorky (před hlavním vypínačem)</label>';
 }
 
 // Vlastnosti při výběru víc přístrojů: společné akce pro celý výběr.
@@ -35123,6 +35390,10 @@ document.addEventListener('change', function (e) {
 function rozvVlastnostZmena(el) {
   var z = __rz && __rz.vyber ? rozvNajit(__rz.vyber) : null; if (!z) return;
   var k = el.getAttribute('data-rp2'), v = el.value;
+  if (k === 'funkce') {   // funkce svorky: jen barva v čelním pohledu, neukládá se odhad
+    rozvZmena('Funkce svorky', function () { if (v === 'L' || v === 'N' || v === 'PE') z.x.funkce = v; else delete z.x.funkce; });
+    return;
+  }
   if (k === 'nadr') {   // „Napájen z" — přes rozvZmena (ZPĚT, Ctrl+Z, překreslení)
     if (v !== '@sada') rozvNapajeniNastavit([z.x.uid], v);
     return;
@@ -43955,7 +44226,7 @@ function r3Dvere(d) { return !(d.pohled3d && d.pohled3d.dvere === 'zavrene'); }
 
 // Čelo přístroje = táž kresba jako v čelním pohledu (rozvPrvekSvg), vložená do přední stěny.
 function r3Celo(x, w, h, off, o) {
-  var g = rozvPrvekSvg(x, 0, off, Object.assign({ tisk: true }, o || {}));
+  var g = rozvPrvekSvg(x, 0, off, Object.assign({ tisk: true, lod: true }, o || {}));   // 3D: bez šroubků (výkon)
   return { w: w, h: h, svg: g };
 }
 function r3Pristroj(x, X, Y, Z, w, h, hl, celo, kab) {

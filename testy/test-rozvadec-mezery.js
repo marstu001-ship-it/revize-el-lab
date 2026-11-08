@@ -83,12 +83,13 @@ async function stranka(b, port, init) {
   check('starý rozvaděč se načte bajtově beze změny', nove.nacteno === stary.data);
   check('… řady v editoru jsou stejné jako uložené a nemají klíč „mezera"', nove.rady === JSON.stringify(sd.rady) && nove.mezer === -1);
   check('… otevřený a uložený beze změny řad', nove.ulozeno === JSON.stringify(sd.rady));
-  check('… čelní pohled (SVG do PDF) znak po znaku stejný jako ve staré verzi', nove.out.svg === stary.out.svg);
+  const BK = require('./bez-kresby');   // lab v1.64: kresba přístrojů a vývodka se mění záměrně
+  check('… čelní pohled (SVG do PDF, bez kresby přístrojů) znak po znaku stejný jako ve staré verzi', BK(nove.out.svg) === BK(stary.out.svg));
   check('… schéma zapojení (všechny listy) stejné jako ve staré verzi', JSON.stringify(nove.out.schema) === JSON.stringify(stary.out.schema), nove.out.schema.length + ' listů');
   check('… popisky pod přístroje stejné jako ve staré verzi', nove.out.popisky === stary.out.popisky);
   // v9.131 přidala do souhrnu fází seznam vývodů bez In (trafa, zdroje) — u bytu je prázdný (stará verze ho mít může i nemusí)
   check('… součty fází a oteplení stejné jako ve staré verzi', nove.out.faze.replace(',"bezIn":[]', '') === stary.out.faze.replace(',"bezIn":[]', '') && nove.out.otepl === stary.out.otepl);
-  check('… PDF (titul, čelní pohled, seznam) stejné jako ve staré verzi', nove.out.seznam === stary.out.seznam);
+  check('… PDF (titul, čelní pohled bez kresby přístrojů, seznam) stejné jako ve staré verzi', BK(nove.out.seznam) === BK(stary.out.seznam));
   await S.ctx.close();
 
   const p = N.p;
