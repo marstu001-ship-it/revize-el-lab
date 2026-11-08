@@ -748,7 +748,7 @@ function pomocnik() {
   const m1 = await menu();
   const vyb1 = await p.evaluate(() => (rozvNajit(__rz.vyber) || { x: {} }).x.ozn);
   check('pravý klik na přístroj: menu programu se stejnými akcemi jako panel + schránka a rezerva, přístroj se vybere',
-    vyb1 === '-FA1' && m1 && m1.join('|') === 'Vlastnosti|Duplikovat|Kopírovat|(Vložit za něj)|Vložit rezervu vedle|Přesunout do řady 2|Přesunout do řady 3|🔢 Přečíslovat označení|Smazat', vyb1 + ' · ' + (m1 || []).join('|'));
+    vyb1 === '-FA1' && m1 && m1.join('|') === 'Vlastnosti|Duplikovat|Kopírovat|(Vložit za něj)|Vložit rezervu vedle|Přesunout do řady 2|Přesunout do řady 3|🔢 Přečíslovat označení|🪮 Navrhnout hřebeny…|Smazat', vyb1 + ' · ' + (m1 || []).join('|'));
   const kl = await p.evaluate(() => Array.from(document.querySelectorAll('.kt-menu .kt-kl')).map(x => x.textContent).join(','));
   check('menu ukazuje klávesy (Ctrl+D, Ctrl+C, Ctrl+V, Delete) a má vzhled menu tabulky měření', kl === 'Ctrl+D,Ctrl+C,Ctrl+V,Delete' &&
     await p.evaluate(() => document.querySelector('.kt-menu').className === 'kt-menu' && !!document.querySelector('.kt-menu .kt-pata')), kl);
@@ -1112,7 +1112,7 @@ function pomocnik() {
   await klik(0, 1.5); await klik(0, 2.5, 'Control');
   const q = await p.evaluate(() => __T.bod(0, 2.5)); await p.mouse.click(q.x, q.y, { button: 'right' }); await w(150);
   const mv = await p.evaluate(() => ({ m: Array.from(document.querySelectorAll('.kt-menu .kt-pol')).map(b => b.childNodes[0].textContent.trim()).join('|'), sel: __T.sel() }));
-  check('pravý klik nad výběrem: menu pro celý výběr (výběr zůstane)', mv.m === 'Duplikovat|Kopírovat|Vložit za ně|Přesunout do řady 1|Přesunout do řady 2|Přesunout do řady 3|Přesunout do řady 4|Přesunout do řady 5|Přesunout do řady 6|Smazat vybrané (2)' &&
+  check('pravý klik nad výběrem: menu pro celý výběr (výběr zůstane)', mv.m === 'Duplikovat|Kopírovat|Vložit za ně|Přesunout do řady 1|Přesunout do řady 2|Přesunout do řady 3|Přesunout do řady 4|Přesunout do řady 5|Přesunout do řady 6|🪮 Propojit hřebenem|Smazat vybrané (2)' &&
     mv.sel.split(',').length === 2, JSON.stringify(mv));
   await p.evaluate(() => { const b = Array.from(document.querySelectorAll('.kt-menu .kt-pol')).find(b => b.textContent.trim().startsWith('Přesunout do řady 5')); if (b) b.click(); }); await w(150);
   const m5 = await p.evaluate(() => __T.rada(4).split(',').slice(-2).join(','));
@@ -1190,7 +1190,7 @@ function pomocnik() {
     });
     check('telefon: první dlouhý stisk zapne výběr více přístrojů (pruh nahoře), přístroj je vybraný', dl.rezim.zap && !dl.rezim.menu &&
       /Výběr více přístrojů/.test(dl.rezim.banner) && /Vybráno: 1/.test(dl.rezim.banner), JSON.stringify(dl.rezim));
-    check('telefon: ve výběru dlouhý stisk prstem na přístroji otevře totéž menu (položky ≥ 40 px)', /^Vlastnosti\|Duplikovat\|Kopírovat\|Vložit za něj\|Vložit rezervu vedle\|Přesunout do řady 1\|🔢 Přečíslovat označení\|Smazat$/.test(dl.menu) &&
+    check('telefon: ve výběru dlouhý stisk prstem na přístroji otevře totéž menu (položky ≥ 40 px)', /^Vlastnosti\|Duplikovat\|Kopírovat\|Vložit za něj\|Vložit rezervu vedle\|Přesunout do řady 1\|🔢 Přečíslovat označení\|🪮 Navrhnout hřebeny…\|Smazat$/.test(dl.menu) &&
       dl.vyber === '-FI1' && dl.vyska >= 40, JSON.stringify(dl));
     // výběr více prstem: dlouhý stisk -FA1, klepnutí na -FA2, „✥ Přesunout jinam" v pruhu, klepnutí do řady 1
     await t.evaluate(async () => {

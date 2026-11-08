@@ -580,6 +580,19 @@ function vsechnyStavy(zalozky) {
     document.getElementById('rz-vlastnosti').scrollIntoView({ block: 'start' }); await __M.w(100);
     setTimeout(() => { if (__rz) { __rz.napRezim = false; __rz.napVodic = null; } }, 3000);
   }));
+  add('rozvaděč – nástroj Hřeben a vybraný hřeben v panelu', 'Tvorba dokumentace', E(async () => {
+    await __M.rozv(); document.getElementById('toast-wrap').innerHTML = '';
+    const r = __rz.rady[1], poz = rozvPozice(r);
+    if (r.prvky.length > 1) { const h = rzhNovy(1, poz[0], poz[r.prvky.length - 1] + rozvW(r.prvky[r.prvky.length - 1]), '1'); __rz.hrebeny = [h]; __rz.hrVyber = h.uid; }   // bez rozvZmena — stav se neukládá
+    __rz.hrNastroj = true; rozvPohledVykreslit(); rozvVlastnostiVykreslit();
+    document.getElementById('toast-wrap').innerHTML = '';
+    document.querySelector('.rz-banner-hr').scrollIntoView({ block: 'start' }); await __M.w(100);
+    setTimeout(() => { if (__rz) { __rz.hrNastroj = false; __rz.hrVyber = null; __rz.hrebeny = []; } }, 3000);
+  }));
+  add('rozvaděč – navrhnout hřebeny (okno)', 'Tvorba dokumentace', E(async () => {
+    await __M.rozv(); document.getElementById('toast-wrap').innerHTML = '';
+    rzhNavrhyOtevrit(); await __M.w(100);
+  }), '#modal-rz-hrebeny');
   add('rozvaděč – vlastnosti: Napájen z a → napájí', 'Tvorba dokumentace', E(async () => {
     await __M.rozv(); const x = __rz.rady[1].prvky[0]; __rz.vyber = x.uid; rozvPohledVykreslit(); rozvVlastnostiVykreslit();
     document.querySelector('#rz-vlastnosti .rp-napaji-deti').scrollIntoView({ block: 'start' }); await __M.w(100);

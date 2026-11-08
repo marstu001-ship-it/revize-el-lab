@@ -3166,6 +3166,60 @@ Test: `testy/test-rozvadec-dilna.js` (oddíl 1). **Upraveno:** `test-rozvadec-ps
 `test-rozvadec-mezery.js`, `test-rozvadec-napajeni.js`, `test-rozvadec.js` (CAD) —
 porovnání se starou verzí přes `bez-kresby.js`.
 
+#### Fáze 1b — propojovací hřebeny (lab v1.64, blok „ROZVADĚČ — PROPOJOVACÍ HŘEBENY")
+
+- **Data:** `d.hrebeny = [{ uid, rada, od, do, poly, strana, prurez, krytky, In? }]`
+  (`od`/`do` = pozice v řadě v modulech, `poly` `'1' | '3' | '1+N' | '3+N'`, `strana`
+  `'nahore' | 'dole'`, `krytky` = indexy zubů, `In` jen z položky knihovny výrobce).
+  Pole vznikne s prvním hřebenem (`cist`), v `rozvZmena` je ve snímku pro ZPĚT, úklid
+  `rzhUklid` (neexistující řada, konec za skříní). **Jen DBO** (`rzhVse` u PSC prázdné).
+- **Hřeben je součást zapojení po pólech** (model v1.63): sběrnice podle fází jako uzly
+  `<uid>:h:k`; každý zub (`rzhZuby`) spojí svorku přístroje na straně hřebenu (nahoře
+  `t`, dole `b`) se sběrnicí své fáze — 1P všechny L, **3P L1, L2, L3, L1…**, 1P+N / 3P+N
+  N zub se nezapojuje (`rzhHrany` → `rzpSpocti`). Krytka nebo volné místo = zub nic
+  nespojí. **Vodič na hřeben** má konec `{ uid: <hřeben>, strana: 'h', pol }`
+  (`rzpFazi`, `rzpBod`, trasovač). Hřeben **bez vodiče** se napájí automaticky ze
+  společného zdroje přístrojů pod ním (`rzhAuto`, čárkovaně). Přístroj na hřebenu
+  ztratí automatiku jako po vodiči (`rzpMset`), `rzpSync` mu zapíše `nadr` / `nadrRucne`
+  a **fázi 1P podle zubu** (zamčenou fázi `fazeZamek` ne). Zkrácený / smazaný hřeben →
+  odkryté přístroje zpátky na automatiku (`rzpReset`). Přes sběrnici hřebenu se
+  `rodic` vrací k přístroji, který hřeben napájí; panel „Kdo koho napájí" je pod ním.
+- **Ovládání:** tlačítko **🪮 Hřeben** v liště (nástroj: tah myší přes přístroje v řadě,
+  náhled během tahu; samé 1P → 1P, přes trojfázový přístroj → 3P). **Kraj hřebenu
+  = úchyt s kurzorem ↔** (`.rz-hr-kraj`, `ew-resize`), tažení roztáhne / zkrátí po
+  pólech, bublina „21 pólů · 40 A"; **tělo = posun** po ½ modulu; klepnutí vybere,
+  u vybraného **klepnutí na zub = krytka / zub**. Delete smaže, **S** přepne stranu,
+  pravý klik: Přepnout nahoru/dolů, 1P ↔ 3P, Průřez, Smazat. Dotyk: větší úchyty.
+  Výběr víc přístrojů → **„🪮 Propojit hřebenem"**. Položka knihovny „Propojovací
+  hřeben" (PRISL, `typ_prislusenstvi` **`hreben`**) dá hřeben přes vybrané přístroje,
+  jinak zapne nástroj; jako příslušenství přístroje se nenabízí.
+- **Strana:** nastavení **„Hřebeny osazuji: shora / zespodu"** v liště nástroje,
+  pamatuje si ho profil (`STORE.technik.rz_hreben_strana`, jde se zálohou); první hřeben
+  bez nastavení nabídne v hlášce druhou stranu. Hřeben zespodu se kreslí pod přístroji.
+- **Navrhnout hřebeny…** (lišta nástroje, pravý klik na řadu nebo přístroj) `rzhNavrhy`:
+  souvislé jističe (FA, FIFA, AFDD) se stejným `rozvZdrojEff` v řadě, aspoň dva → hřeben
+  (3P, když je zdroj trojfázový) **s napájecím vodičem** z výstupní svorky zdroje. Okno
+  `#modal-rz-hrebeny`, nic se nedělá bez potvrzení, jedno ZPĚT. RS2: 3 hřebeny
+  (FA1…14 a FA15…24 z -QH1, FA25…44 z -FI1 — chránič sám na hřebenu není, vodič vede
+  z jeho výstupu).
+- **Zátěž a průřez** (`rzhZatez`): In napájejícího přístroje, nebo menší proud větve ze
+  soudobosti (Pi × β vývodů pod hřebenem, cos φ z výpočtu soudobosti). Řada **10 mm²
+  63 A, 16 mm² 80 A, 25 mm² 100 A** (`RZH_RADA`, „ověřte podle výrobce hřebenu") —
+  nový hřeben dostane nejmenší vyhovující; při změně jen upozornění „Hřeben 10 mm²
+  nestačí pro zátěž 80 A – navrhuji 16 mm²" + Použít.
+- **Kontroly** (`rzhKontroly`, panel): zatížitelnost, hřeben přes chránič / vypínač
+  s jističi („hřeben pro chránič + jističe"), trojfázový přístroj na 1P hřebenu, fázový
+  zub na pólu N, přístroj s hřebenem i nataženým vodičem.
+- **PDF:** hřebeny v čelním pohledu, tabulka **„Propojovací materiál"** za seznamem
+  přístrojů (`rzhMaterial`: „Propojovací hřeben 3P 16 mm², 21 pólů (zkrátit z 57), 1 ks
+  + krytky 3 ks"). Do schématu se hřeben nekreslí (schéma čte `nadr`).
+
+Test: `testy/test-rozvadec-dilna.js` (oddíly 2–6, 8, 9: RS2, myš, vodič na hřeben,
+průřez, kontroly, knihovna, výkon 150 přístrojů + 10 hřebenů < 200 ms). V `test-mobil.js`
+stavy „rozvaděč – nástroj Hřeben a vybraný hřeben v panelu" a „…navrhnout hřebeny
+(okno)". **Upraveno:** `test-rozvadec.js` (kontextová nabídka má „🪮 Navrhnout
+hřebeny…" a „🪮 Propojit hřebenem").
+
 ### Výměna výkresů s CAD — export a import DXF (2026-11-02, bloky „ROZVADĚČ — VÝMĚNA S CAD")
 
 Zadání uživatele: technici kreslí ve Schématech CAD (Elmer), který ukládá
