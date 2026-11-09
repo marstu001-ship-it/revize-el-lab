@@ -1892,10 +1892,14 @@ In, kopie v rozvaděči), `skrin.penc`, nebo co technik zadá.
 Technickými údaji a Prohlášením):
 - **Jen DBO a InA ≤ 630 A** (`rotInA`: tech.ina → privodIn → QM), jinak
   stav `nelze` a řádek „platí jen pro jeden prostor do 630 A – ověřte jinak".
-- Řádky `ROT_KAT` (QM, FA, FI, FIFA, AFDD, FU, KM): Inc = ručně → Ib → In
-  (vývody × RDF); u chrániče a QM součet vývodů za ním (nejzatíženější fáze
-  u 3/4pólových), nejvýš In. **Pv při Inc = Pv/pól × póly × (Inc / In)²**,
-  „Inc ≤ 0,8 In" [ověřit]. Chybí Pv → oranžový řádek „doplňte Pv", výsledek
+- Řádky `ROT_KAT` (QM, FA, FI, FIFA, AFDD, FU, KM): Inc = ručně → Ib →
+  **0,8 In** (čl. 10.10.4.1 e — oprava 2026-11-09, dřív plné In: všechny vývody
+  hlásily „> 0,8 In" a Pv vycházelo o 56 % vyšší; náznak v poli „0,8 In = 12,8",
+  `rotIncPh`) (vývody × RDF); u chrániče a QM součet vývodů za ním (nejzatíženější fáze
+  u 3/4pólových), nejvýš In. **Pv při Inc = Pv/pól × póly × (Inc / In)²**.
+  „> 0,8 In" jen u Inc zadaného ručně nebo z Ib (u chrániče / QM jen když
+  součet obsahuje ruční Inc nebo Ib vývodu). Mění výsledek a PDF oteplení jen
+  u rozvaděčů bez Inc a Ib; data se nemění. Chybí Pv → oranžový řádek „doplňte Pv", výsledek
   neúplné. **Pv psané v tabulce jde do kopie přístroje (`x.p.pv`), ne do
   knihovny.**
 - Pevné ztráty (W), přirážka **50 % (odhad BEAMA) / 30 % (Schneider – jen

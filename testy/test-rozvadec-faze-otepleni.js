@@ -266,7 +266,7 @@ const w = ms => new Promise(r => setTimeout(r, ms));
     const v2 = rozvOteplVypocet(d2), q = o => v2.radky.filter(y => y.x.ozn === o)[0];
     r.ot2 = ['-T1', '-G1'].map(o => q(o).pvInc).join(',') + '|' + v2.stav;
     r.sumPv = Math.round(v2.sumPv * 1000) / 1000;
-    // In 16 A, Ib/In: jistič (16/16)² × 2 = 2, zásuvka (16/16)² × 0,5 × 2 póly (1+N) = 1, trafo 1,5 a zdroj 4 celkem = 8,5 W
+    // In 16 A, bez Ib → Inc 0,8 In (čl. 10.10.4.1 e): jistič 0,64 × 2 = 1,28, zásuvka 0,64 × 0,5 × 2 póly (1+N) = 0,64, trafo 1,5 a zdroj 4 celkem = 7,42 W
     await dokUlozitOtevreny();
     return r;
   });
@@ -275,7 +275,7 @@ const w = ms => new Promise(r => setTimeout(r, ms));
   check('fáze: s vyplněným Ib se zdroj počítá z Ib (L2 0,3 A) a z „bez In" zmizí', tz.s2 === '16,0.3,16,1' && /bez In: 1 přístroj/.test(tz.pan2), tz.s2 + ' / ' + tz.pan2);
   check('oteplení: transformátor a zdroj jako řádky „Pv celkem", bez Pv „doplňte Pv" a výsledek neúplný',
     /-T1:konst:doplňte Pv/.test(tz.ot1) && /-G1:konst:doplňte Pv/.test(tz.ot1) && /-XS1:In:doplňte Pv/.test(tz.ot1) && tz.stav1 === 'neuplne', tz.ot1 + ' / ' + tz.stav1);
-  check('oteplení: Pv transformátoru a zdroje se nepřepočítává proudem (1,5 W a 4 W), ΣPv 8,5 W', tz.ot2 === '1.5,4|vyhovuje' && tz.sumPv === 8.5, tz.ot2 + ' / ' + tz.sumPv);
+  check('oteplení: Pv transformátoru a zdroje se nepřepočítává proudem (1,5 W a 4 W), ΣPv 7,42 W (jistič a zásuvka při 0,8 In)', tz.ot2 === '1.5,4|vyhovuje' && tz.sumPv === 7.42, tz.ot2 + ' / ' + tz.sumPv);
 
   // ── 4. starý rozvaděč, data revizí, telefon ───────────────────────────
   const st = await p.evaluate(async () => {

@@ -12,6 +12,8 @@ const { chromium } = require('./pw');
 const path = require('path');
 const PORT = process.env.PORT || 8901, STARA = process.env.STARA_PORT || 8902;
 const res = []; const check = (n, ok, d) => res.push((ok ? '✅' : '❌') + ' ' + n + (d ? ' — ' + d : ''));
+// 2026-11-09: výchozí Inc 0,8 In (oprava čl. 10.10.4.1 e) mění Inc a Pv proti starší verzi záměrně — porovnává se bez nich
+const bezIncJ = t => JSON.stringify(JSON.parse(t, (k, v) => ['odv', 'odv08', 'inc', 'eff', 'nad08', 'zadano', 'pvInc', 'sumPv', 'celkem', 'prirW', 'rezerva', 'rezervaPct', 'stav'].indexOf(k) !== -1 ? undefined : v));
 const w = ms => new Promise(r => setTimeout(r, ms));
 const M = 17.5;
 
@@ -89,7 +91,7 @@ async function stranka(b, port, init) {
   check('… schéma zapojení (všechny listy) stejné jako ve staré verzi', BN(JSON.stringify(nove.out.schema)) === BN(JSON.stringify(stary.out.schema)), nove.out.schema.length + ' listů');
   check('… popisky pod přístroje stejné jako ve staré verzi', nove.out.popisky === stary.out.popisky);
   // v9.131 přidala do souhrnu fází seznam vývodů bez In (trafa, zdroje) — u bytu je prázdný (stará verze ho mít může i nemusí)
-  check('… součty fází a oteplení stejné jako ve staré verzi', nove.out.faze.replace(',"bezIn":[]', '') === stary.out.faze.replace(',"bezIn":[]', '') && nove.out.otepl === stary.out.otepl);
+  check('… součty fází a oteplení stejné jako ve staré verzi', nove.out.faze.replace(',"bezIn":[]', '') === stary.out.faze.replace(',"bezIn":[]', '') && bezIncJ(nove.out.otepl) === bezIncJ(stary.out.otepl));
   check('… PDF (titul, čelní pohled bez kresby přístrojů, seznam) stejné jako ve staré verzi', BN(BK(nove.out.seznam)) === BN(BK(stary.out.seznam)));
   await S.ctx.close();
 

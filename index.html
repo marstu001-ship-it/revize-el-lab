@@ -39563,24 +39563,27 @@ function rozvOteplVypocet(d) {
   } else if ((d.rezim || 'DBO') !== 'DBO' || (ina.In !== '' && ina.In > 630)) { r.stav = 'nelze'; return r; }
   if (ina.In === '') chybi.push('jmenovitý proud rozvaděče InA');
   var vse = rfVse(d.rady), incRucne = o.inc || {}, k = rdf.k == null ? 1 : rdf.k;
-  // vývody: Inc = ručně zadané, jinak Ib, jinak In; do výpočtu × RDF
+  // vývody: Inc = ručně zadané, jinak Ib, jinak 0,8 In (čl. 10.10.4.1 e); do výpočtu × RDF
   var vyp = {};
   vse.forEach(function (x) {
     if (!rfVyvod(x) && x.p.kat !== 'KM') return;
     var In = rfNum(x.p.In), ru = rfNum(incRucne[x.uid]), ib = rfNum(x.ib);
-    var inc = ru !== '' ? ru : ib !== '' ? ib : In;
+    var v08 = In === '' ? '' : Math.round(0.8 * In * 1000) / 1000;
+    var inc = ru !== '' ? ru : ib !== '' ? ib : v08;
+    var zdroj = ru !== '' ? 'rucne' : ib !== '' ? 'ib' : 'vychozi';
     var kx = (r.psc && rdf.rezim === 'tabulka' && rotMotor(x)) ? rotMotorK(x) : k;   // PSC: motory podle tab. 101
     if (!r.psc && rdf.rezim === 'tabulka' && rdf.evfv && rotEvFv(x)) kx = 1;   // DBO: EV / FV bez řízení zátěže × 1
-    vyp[x.uid] = { inc: inc, odv: ib !== '' ? ib : In, eff: inc === '' ? '' : (rfVyvod(x) ? inc * kx : inc) };
+    vyp[x.uid] = { inc: inc, odv: ib !== '' ? ib : v08, odv08: ib === '' && v08 !== '', zdroj: zdroj, eff: inc === '' ? '' : (rfVyvod(x) ? inc * kx : inc) };
   });
   // proud jistící skupiny po fázích (chránič: jeho vývody; hlavní vypínač: všechny vývody)
   var fazovy = function (clenove) {
-    var F = { L1: 0, L2: 0, L3: 0 }, bez = 0;
+    var F = { L1: 0, L2: 0, L3: 0 }, bez = 0, zadano = false;
     clenove.forEach(function (x) {
       var v = vyp[x.uid]; if (!v || v.eff === '') return;
+      if (v.zdroj !== 'vychozi') zadano = true;
       var f = rfFaze(x); if (f === '3f') RF_FAZE.forEach(function (q) { F[q] += v.eff; }); else if (f) F[f] += v.eff; else bez += v.eff;
     });
-    return { max: Math.max(F.L1, F.L2, F.L3) + bez, soucet: F.L1 + F.L2 + F.L3 + bez };
+    return { max: Math.max(F.L1, F.L2, F.L3) + bez, soucet: F.L1 + F.L2 + F.L3 + bez, zadano: zadano };
   };
   var rod = rozvRodice(d.rady), vyvody = vse.filter(function (x) { return rfVyvod(x) && !rod[x.uid]; });
   vse.forEach(function (x) { if (rod[x.uid] && vyp[x.uid] && rfVyvod(x)) delete vyp[x.uid]; });   // napájecí přístroj větve: Inc = jeho vývody
@@ -39591,13 +39594,13 @@ function rozvOteplVypocet(d) {
     var radek = { x: x, In: In, polu: polu, pv: pv, rucne: ru !== '' };
     if (konst) {   // transformátor, zdroj, ostatní: Pv jen z dat, celkem za přístroj
       radek.konst = true;
-      if (vyp[x.uid]) { radek.odv = vyp[x.uid].odv; radek.inc = vyp[x.uid].inc; radek.eff = vyp[x.uid].eff; }
+      if (vyp[x.uid]) { radek.odv = vyp[x.uid].odv; radek.odv08 = vyp[x.uid].odv08; radek.inc = vyp[x.uid].inc; radek.eff = vyp[x.uid].eff; }
       radek.pvIn = pv; radek.pvInc = pv; radek.nad08 = false;
       if (pv === '') radek.chybi = 'doplňte Pv';
       r.radky.push(radek);
       return;
     }
-    if (vyp[x.uid]) { radek.odv = vyp[x.uid].odv; radek.inc = vyp[x.uid].inc; radek.eff = vyp[x.uid].eff; }
+    if (vyp[x.uid]) { radek.odv = vyp[x.uid].odv; radek.odv08 = vyp[x.uid].odv08; radek.inc = vyp[x.uid].inc; radek.eff = vyp[x.uid].eff; radek.zadano = vyp[x.uid].zdroj !== 'vychozi'; }
     else {
       var cl = p.kat === 'FI' || (rod[x.uid] && !(p.kat === 'QM' && (!x.nadr || x.uid === rozvKoren(d.rady)))) ? (function () {
         var m = {}; rozvPotomci(x.uid, d.rady).forEach(function (y) { m[y.uid] = 1; });
@@ -39605,12 +39608,13 @@ function rozvOteplVypocet(d) {
       })() : vyvody;
       var s = fazovy(cl), odv = rsTrif(p) || (p.kat === 'QM' || x.privod === true) && !/^(1|1\+N|2)$/.test(String(p.poly)) ? s.max : s.soucet;
       odv = In !== '' ? Math.min(In, Math.round(odv * 100) / 100) : Math.round(odv * 100) / 100;
-      radek.odv = odv; radek.inc = ru !== '' ? ru : odv; radek.eff = radek.inc;
+      radek.odv = odv; radek.inc = ru !== '' ? ru : odv; radek.eff = radek.inc; radek.zadano = ru !== '' || s.zadano;
     }
     if (p.pvCelkem) radek.pvCelkem = true;   // MCCB: Pv celkem za přístroj při In (údaj výrobce)
     radek.pvIn = pv !== '' ? (p.pvCelkem ? pv : pv * polu) : '';
     radek.pvInc = (pv !== '' && In !== '' && In > 0 && radek.eff !== '') ? radek.pvIn * Math.pow(radek.eff / In, 2) : '';
-    radek.nad08 = In !== '' && radek.eff !== '' && radek.eff > 0.8 * In + 1e-9;
+    // „> 0,8 In" jen u Inc zadaného ručně nebo z Ib (výchozí 0,8 In je mez sama, součet jen z výchozích taky)
+    radek.nad08 = !!radek.zadano && In !== '' && radek.eff !== '' && radek.eff > 0.8 * In + 1e-9;
     if (pv === '') radek.chybi = 'doplňte Pv'; else if (In === '') radek.chybi = 'doplňte In';
     r.radky.push(radek);
   });
@@ -39645,6 +39649,10 @@ function rozvOteplVypocet(d) {
   r.stav = r.celkem <= r.penc + 1e-9 ? 'vyhovuje' : 'nevyhovuje';
   return r;
 }
+function rotIncPh(q) {   // náznak v poli Inc: „0,8 In = 12,8", Ib, nebo součet za chráničem
+  if (q.odv === '' || q.odv == null) return '';
+  return (q.odv08 ? '0,8 In = ' : '') + rozvCisloText(Math.round(q.odv * 100) / 100);
+}
 function rotW(n) { return n === '' || n == null ? '' : rozvCisloText(Math.round(n * 10) / 10) + ' W'; }
 function rotA(n) { return n === '' || n == null ? '' : rozvCisloText(Math.round(n * 100) / 100) + ' A'; }
 function rozvOteplVysledekHtml(v) {
@@ -39676,8 +39684,8 @@ function rozvOteplHtml(d) {
     var x = q.x;
     return '<tr data-uid="' + esc(x.uid) + '"' + (q.chybi ? ' class="rot-chybi"' : '') + '><td><b>' + esc(x.ozn || x.p.kat) + '</b><br><small>' + esc(rozvNazev(x.p)) + '</small></td>' +
       '<td class="c">' + esc(rotA(q.In) || (q.konst ? '–' : '?')) + '</td>' +
-      '<td><input type="text" class="rot-inc" data-uid="' + esc(x.uid) + '" value="' + esc(q.rucne ? rozvCisloText(q.inc) : '') + '" placeholder="' + esc(q.odv === '' ? '' : rozvCisloText(q.odv)) +
-        '" inputmode="decimal" autocomplete="off" title="Prázdné = ' + (rfVyvod(x) || x.p.kat === 'KM' ? 'Ib, chybí-li, In' : 'součet proudů vývodů za přístrojem (nejvíc zatížená fáze), nejvýš In') + '"></td>' +
+      '<td><input type="text" class="rot-inc" data-uid="' + esc(x.uid) + '" value="' + esc(q.rucne ? rozvCisloText(q.inc) : '') + '" placeholder="' + esc(rotIncPh(q)) +
+        '" inputmode="decimal" autocomplete="off" title="Prázdné = ' + (rfVyvod(x) || x.p.kat === 'KM' ? 'Ib, chybí-li Ib, 0,8 In (čl. 10.10.4.1 e)' : 'součet proudů vývodů za přístrojem (nejvíc zatížená fáze), nejvýš In') + '"></td>' +
       '<td><input type="text" class="rot-pv" data-uid="' + esc(x.uid) + '" value="' + esc(q.pv === '' ? '' : rozvCisloText(q.pv)) + '" placeholder="doplňte" inputmode="decimal" autocomplete="off"' +
         ' title="' + (q.konst || q.pvCelkem ? 'Ztrátový výkon celkem za přístroj (katalog výrobce)' : 'Ztrátový výkon na pól při In (katalog výrobce)') + '. Uloží se do přístroje v tomto rozvaděči, ne do knihovny."> <small>' + (q.konst || q.pvCelkem ? 'celkem' : '× ' + q.polu) + '</small></td>' +
       '<td class="c" data-rot="pvin">' + esc(rotW(q.pvIn)) + '</td><td class="c" data-rot="pvinc">' + (q.chybi ? '<span class="rot-chybi-t">' + q.chybi + '</span>' : esc(rotW(q.pvInc))) + '</td>' +
@@ -39690,7 +39698,7 @@ function rozvOteplHtml(d) {
       '(čl. 10.10.4.1 e — neplatí pro elektronické přístroje s vlastním nuceným větráním); vodiče přímo připojené k přístrojům dimenzované nejméně na 125 % skupinového jmenovitého proudu (čl. 10.10.4.1 f) — potvrďte níž.</div>' +
     '<div class="rot-ram"><table class="rot-tab"><colgroup><col><col style="width:4.2rem"><col style="width:5.6rem"><col style="width:7.4rem"><col style="width:4.8rem"><col style="width:5.6rem"><col style="width:4.6rem"></colgroup>' +
       '<tr><th>Přístroj</th><th>In</th><th>Inc (A)</th><th>Pv W/pól při In</th><th>Pv při In</th><th>Pv při Inc</th><th title="čl. 10.10.4.1 e)">Inc ≤ 0,8 In</th></tr>' + radky + '</table></div>' +
-    '<div class="dk-pozn">Pv při Inc = Pv při In × (Inc / In)². Prázdné Inc = Ib, chybí-li Ib, In (konzervativně); u chráničů a hlavního vypínače součet proudů vývodů za nimi.</div>' +
+    '<div class="dk-pozn">Pv při Inc = Pv při In × (Inc / In)². Prázdné Inc = Ib; chybí-li Ib, 0,8 In (čl. 10.10.4.1 e). U chráničů a hlavního vypínače součet proudů vývodů za nimi.</div>' +
     '<div class="g3">' +
       dkPole('otepleni.pevne', 'Pevné ztráty (cívky, elektroměr, signálky) W', o.pevne || '', { nepov: true, attr: ' inputmode="decimal"', ph: '0' }) +
       rzVolba(d, odv, 'otepleni.prirazka', 'Přirážka za vodiče a spoje', ROT_PRIRAZKY) +
@@ -39723,7 +39731,7 @@ function rozvOteplObnovit() {
     tr.querySelector('[data-rot="pvin"]').textContent = rotW(q.pvIn);
     tr.querySelector('[data-rot="pvinc"]').innerHTML = q.chybi ? '<span class="rot-chybi-t">' + q.chybi + '</span>' : esc(rotW(q.pvInc));
     tr.querySelector('[data-rot="08"]').innerHTML = q.nad08 ? '<span class="rot-08">&gt; 0,8 In</span>' : (q.eff === '' ? '' : '✓');
-    var inc = tr.querySelector('.rot-inc'); if (inc && document.activeElement !== inc) inc.placeholder = q.odv === '' ? '' : rozvCisloText(q.odv);
+    var inc = tr.querySelector('.rot-inc'); if (inc && document.activeElement !== inc) inc.placeholder = rotIncPh(q);
   });
   box.innerHTML = rozvOteplVysledekHtml(v);
   var ri = f.querySelector('#rot-rdf-info'); if (ri) ri.textContent = v.rdf.text;
@@ -39792,7 +39800,7 @@ function rozvPdfOtepleni(d, e) {
     '<tr><td class="l">Vyzářitelný ztrátový výkon skříně Penc</td><td>' + esc(rotW(v.penc)) + (v.pencZdroj ? ' (' + esc(v.pencZdroj) + ')' : '') + '</td></tr>' +
     '<tr><td class="l"><b>Výsledek</b></td><td><b>' + esc(vys) + '</b></td></tr></table>' });
   var pred = ['Pv při Inc = Pv při In × (Inc / In)²; Pv při In = údaj výrobce přístroje na pól × počet pólů.',
-    'Zatěžovací proud Inc: zadaný technikem, jinak provozní proud Ib, jinak jmenovitý proud In (konzervativně).',
+    'Zatěžovací proud Inc: zadaný technikem, jinak provozní proud Ib, jinak 0,8 × In (čl. 10.10.4.1 e); u chráničů a hlavního vypínače součet proudů vývodů za nimi.',
     'Součinitel soudobosti: ' + v.rdf.text + '.',
     'Nejnižší maximální provozní teplota vzduchu přístrojů (údaj výrobce): ' + (v.tmaxPotvrzeno ? rozvCisloText(v.tmax) + ' °C' : 'neuvedena') + '; denní průměrná teplota okolí ' + rozvCisloText(v.okoliT) +
       ' °C; dovolené oteplení vzduchu v krytu ' + (v.tmaxPotvrzeno ? rozvCisloText(Math.round(v.dovolene * 10) / 10) + ' K' : '—') + ' (čl. 10.10.4.2.1).',

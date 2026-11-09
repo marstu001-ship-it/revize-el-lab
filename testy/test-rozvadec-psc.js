@@ -540,9 +540,10 @@ const presahy = (p, svg) => p.evaluate(svg => {
     const d2 = dokKopie(d); d2.tech.ina = '800'; const v2 = rozvOteplVypocet(d2);
     return { stav: v.stav, privod: qf.privod, pvIn: rq && rq.pvIn, pvInc: rq && Math.round(rq.pvInc * 1000) / 1000, inc: rq && rq.eff, penc: v.penc, celkem: Math.round(v.celkem * 100) / 100, stav2: v2.stav, rad: v.radky.length };
   });
-  // QF přívod 250 A: Inc = nejvíc zatížená fáze = 32 + 16 = 48 A → 30 × (48/250)² = 1,106 W; FA 3P: 3×3 = 9 W; B16 1P 2 W → Σ 12,106 × 1,3 = 15,74 W
+  // bez Ib → Inc 0,8 In (2026-11-09): QF přívod 250 A: Inc = nejvíc zatížená fáze = 25,6 + 12,8 = 38,4 A → 30 × (38,4/250)² = 0,708 W;
+  // FA 3P C32: 3×3×0,64 = 5,76 W; B16 1P 2×0,64 = 1,28 W → Σ 7,748 × 1,3 = 10,07 W
   check('5b oteplení jedno pole do 630 A: počítá se, Penc z pole, Pv MCCB celkem (ne × póly), Inc = vývody za přívodem', o1.stav === 'vyhovuje' && o1.privod === true && o1.pvIn === 30 &&
-    o1.inc === 48 && o1.pvInc === 1.106 && o1.penc === 150 && o1.celkem === 15.74, JSON.stringify(o1));
+    o1.inc === 38.4 && o1.pvInc === 0.708 && o1.penc === 150 && o1.celkem === 10.07, JSON.stringify(o1));
   check('5b oteplení PSC nad 630 A: výpočet se nedělá', o1.stav2 === 'nelze', o1.stav2);
   await p.evaluate(async () => { const u = __dokOtevreny.uid; await dokNacist(); DOK.dokumenty = DOK.dokumenty.filter(x => x.uid !== u); await dokZapsat(); });
 
@@ -628,6 +629,13 @@ const presahy = (p, svg) => p.evaluate(svg => {
       // „nechat prázdné" a dokumentace pro jiného výrobce (2026-11-05)
       .replace(/<label class="teren-radek rz-zatrh rz-bez-profilu">.*?<\/label>/g, '').replace(/<button type="button" class="rz-odv-btn"[^>]*>[^<]*<\/button>/g, '').replace(/ rz-odv-f"/g, '"');
     A.dbo5b.dok = bezD4(A.dbo5b.dok); B.dbo5b.dok = bezD4(B.dbo5b.dok);
+    // 2026-11-09: výchozí Inc 0,8 In (oprava čl. 10.10.4.1 e) a tlačítko „Doplnit Pv z knihovny" — záměrně; hlídá test-otepleni-pv.js
+    const bezInc = t => t.replace(/<div class="rot-pvk-lista"[^>]*>.*?<\/div>/g, '').replace(/(class="rot-inc"[^>]*?) placeholder="[^"]*"/g, '$1')
+      .replace(/(class="rot-inc"[^>]*?) title="[^"]*"/g, '$1').replace(/Prázdné Inc = Ib[^<]*<\/div>/g, '</div>')
+      .replace(/<td class="c" data-rot="(?:pvinc|08)">.*?<\/td>/g, '').replace(/<div id="rot-vysledek"><div class="rot-vys[^"]*">.*?<\/div>(?:<div class="rot-souc">.*?<\/div>)?<\/div>/g, '<div id="rot-vysledek"></div>');
+    A.dbo5b.dok = bezInc(A.dbo5b.dok); B.dbo5b.dok = bezInc(B.dbo5b.dok);
+    const bezIncJ = t => JSON.stringify(JSON.parse(t, (k, v) => ['odv', 'odv08', 'inc', 'eff', 'nad08', 'zadano', 'pvInc', 'sumPv', 'celkem', 'prirW', 'rezerva', 'rezervaPct', 'stav'].indexOf(k) !== -1 ? undefined : v));
+    A.dbo5b.otepl = bezIncJ(A.dbo5b.otepl); B.dbo5b.otepl = bezIncJ(B.dbo5b.otepl);
     for (const [k, n] of [['dok', 'záložka Dokumenty'], ['stitek', 'štítek'], ['schema', 'schéma zapojení (všechny listy)'], ['otepl', 'výpočet oteplení'], ['faze', 'součty fází'], ['pdfVse', 'celé PDF dokumentace']])
       check('DBO (etapa 5b): ' + n + ' znak po znaku stejné jako ve předchozí verzi', A.dbo5b[k] === B.dbo5b[k], A.dbo5b[k] === B.dbo5b[k] ? A.dbo5b[k].length + ' znaků' : rozdil(A.dbo5b[k], B.dbo5b[k]));
     await s.evaluate(() => TD_AKCE.tdPdfZpet && TD_AKCE.tdPdfZpet());

@@ -18,6 +18,8 @@ const path = require('path');
 const PORT = process.env.PORT || 8901, URL = 'http://127.0.0.1:' + PORT + '/index.html';
 const STARA = process.env.STARA_PORT || 8902, URL_STARA = 'http://127.0.0.1:' + STARA + '/index.html';
 const res = []; const check = (n, ok, d) => { const t = (ok ? '✅' : '❌') + ' ' + n + (d ? ' — ' + d : ''); res.push(t); if (process.env.LADIT) console.log(t); };
+// 2026-11-09: výchozí Inc 0,8 In (oprava čl. 10.10.4.1 e) mění Inc a Pv proti starší verzi záměrně — porovnává se bez nich
+const bezIncJ = t => JSON.stringify(JSON.parse(t, (k, v) => ['odv', 'odv08', 'inc', 'eff', 'nad08', 'zadano', 'pvInc', 'sumPv', 'celkem', 'prirW', 'rezerva', 'rezervaPct', 'stav'].indexOf(k) !== -1 ? undefined : v));
 const w = ms => new Promise(r => setTimeout(r, ms));
 const CHROME = '/opt/pw-browsers/chromium-1194/chrome-linux/chrome';
 const SNIMKY = process.env.SNIMKY || '';
@@ -772,7 +774,7 @@ async function stranka(ctx, url, err) {
     check('starý rozvaděč: otevření a uložení (bez Dokumentů) — data bajtově jako uložená', nov.jenOtevrit === JSON.stringify(JSON.parse(stary).data), rozdil(nov.jenOtevrit, JSON.stringify(JSON.parse(stary).data)));
     const BN = require('./bez-n');   // 2026-11-09: N jističochrániče a popisky N-FI se mění záměrně
     check('starý rozvaděč: schéma znak po znaku jako předchozí verze (bez odboček N/PE a popisků N-…)', BN(nov.listy) === BN(puv.listy), rozdil(BN(nov.listy), BN(puv.listy)));
-    check('starý rozvaděč: oteplení, fáze a soudobost jako předchozí verze', nov.otepl === puv.otepl && nov.faze === puv.faze && nov.soud === puv.soud);
+    check('starý rozvaděč: oteplení, fáze a soudobost jako předchozí verze', bezIncJ(nov.otepl) === bezIncJ(puv.otepl) && nov.faze === puv.faze && nov.soud === puv.soud);
     // lab v1.64: čelní pohled má novou kresbu přístrojů a vývodku — porovnává se bez nich (require('./bez-kresby'))
     const BK = require('./bez-kresby');
     check('starý rozvaděč: PDF dokumentace (bloky, čelní pohled bez kresby přístrojů) a DXF jako předchozí verze', BN(BK(nov.pdf)) === BN(BK(puv.pdf)) && BN(nov.dxf) === BN(puv.dxf), rozdil(BN(BK(nov.pdf)), BN(BK(puv.pdf))) || rozdil(BN(nov.dxf), BN(puv.dxf)));
