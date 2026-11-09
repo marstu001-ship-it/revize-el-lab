@@ -1945,6 +1945,15 @@ ruční přepsání Pv ji smaže). Co v řadě není, okno vypíše „-FA7 B16 
 OEZ LTN není – doplňte ručně" a zůstane bez Pv. Celé doplnění vrátí jedno
 ZPĚT / Ctrl+Z. **Žádné „typické" Pv bez výrobce.**
 
+**Penc skříně z knihovny** (2026-11-09, týž dialog): řádek **„Skříň – Penc"**
+(u PSC „Pole – Penc") jen když skříň / první pole nemá Penc a technik ho
+nezadal ručně (`rozvPencPotreba`) a knihovna má skříně (u PSC pole) s Penc.
+Nabídka seřazená podle shody (`rozvPencKandidati`: řady × moduly, u pole šířka
+× výška, provedení, materiál), filtr výrobce, výchozí „— nedoplňovat —".
+Zapíše se **jen `skrin.penc` a `skrin.pencZdroj`** = „výrobce typ" (rozměry,
+řady ani přístroje se nemění); u pole Penc šedá poznámka „z OEZ RZG-N-4S56".
+Ctrl+Z vrátí Pv i Penc najednou.
+
 Test: `testy/test-otepleni-pv.js` (výchozí Inc 0,8 In, ruční Inc a Ib nad
 0,8 In, náznak, poznámka; vymyšlené řady „Test LSN / LFN / ASN", tlačítko jen
 s knihovnou, skupiny, předvolba, C16 a RCBO bez shody, zápis jen pv + zdroj,

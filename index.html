@@ -5430,7 +5430,7 @@ html.dark .rz-imp-chyby{background:#3a1f1c;border-color:#6b2c25}
 </div>
 <div class="modal-overlay" id="modal-rz-pvknih">
   <div class="modal" style="max-width:620px">
-    <div class="modal-title">📚 Doplnit Pv z knihovny výrobců</div>
+    <div class="modal-title">📚 Doplnit Pv (a Penc) z knihovny výrobců</div>
     <div id="rz-pvk-obsah"></div>
     <div class="modal-actions" id="rz-pvk-akce">
       <button class="btn btn-ghost" style="background:var(--bg);color:var(--text);border:1px solid var(--border)" data-action="tdRPvkZavrit">Zrušit</button>
@@ -39728,7 +39728,8 @@ function rozvOteplHtml(d) {
       : rzVolba(d, odv, 'otepleni.rdfRezim', 'Součinitel soudobosti RDF', [['bez', 'bez RDF — vývody plným Inc (konzervativní)'], ['tabulka', 'podle RDF z tabulky pro ČSN EN 61439-3'], ['vyrobce', 'RDF zadané výrobcem systému']],
         { labelHtml: 'Součinitel soudobosti RDF <span class="dk-nepov">ČSN EN IEC 61439-3 ed. 2, čl. 5.4, tab. 101</span>' })) +
       '<div class="f rot-rdf-vl"' + (o.rdfRezim === 'vyrobce' ? '' : ' hidden') + '><label>RDF výrobce systému</label><input type="text" data-dk="otepleni.rdfVyrobce" value="' + esc(o.rdfVyrobce || '') + '" inputmode="decimal" placeholder="např. 0,7" autocomplete="off"></div>' +
-      rzPole(d, odv, 'otepleni.penc', 'Vyzářitelný ztrátový výkon skříně Penc (W)', { ph: 'katalog výrobce skříně', attr: ' inputmode="decimal"' }) +
+      rzPole(d, odv, 'otepleni.penc', 'Vyzářitelný ztrátový výkon skříně Penc (W)', { ph: 'katalog výrobce skříně', attr: ' inputmode="decimal"',
+        za: sk.pencZdroj && sk.penc !== '' && sk.penc != null && !o.penc ? '<small class="rot-pvz" title="Penc převzaté z knihovny výrobců">z ' + esc(sk.pencZdroj) + '</small>' : '' }) +
       rzPole(d, odv, 'otepleni.dt', 'ΔT, pro které Penc platí (K)', { ph: 'z katalogu', attr: ' inputmode="decimal"', nepov: true }) +
       '<div class="f"><label>Nejnižší maximální provozní teplota vzduchu přístrojů (°C)' + (v.tmaxVychozi ? ' <span class="rz-ceka" title="Výchozí hodnota — údaj patří z katalogu výrobce přístrojů.">ověřte u výrobce</span>' : '') + '</label>' +
         '<input type="text" data-dk="otepleni.tmax" value="' + esc(o.tmax || (o.okoli55 === true ? '55' : '')) + '"' + (o.okoli55 === true && !o.tmax ? ' data-odv="55"' : '') +
@@ -39754,7 +39755,7 @@ function rozvOteplObnovit() {
     var inc = tr.querySelector('.rot-inc'); if (inc && document.activeElement !== inc) inc.placeholder = rotIncPh(q);
   });
   box.innerHTML = rozvOteplVysledekHtml(v);
-  var pk = f.querySelector('.rot-pvk-lista'); if (pk) pk.hidden = !rozvPvKnihSkupiny(v).length;
+  var pk = f.querySelector('.rot-pvk-lista'); if (pk) pk.hidden = !(rozvPvKnihSkupiny(v).length || rozvPencPotreba(v));
   var ri = f.querySelector('#rot-rdf-info'); if (ri) ri.textContent = v.rdf.text;
   var rd = f.querySelector('#rot-dovolene'); if (rd) rd.innerHTML = rotDovoleneText(v);
   var pv = f.querySelector('.rot-prir-vl'); if (pv) pv.hidden = String((d.otepleni || {}).prirazka || '50') !== '@';
@@ -39825,9 +39826,37 @@ function rozvPvKnihSkupiny(v) {
     return g;
   });
 }
+// Penc skříně (DBO) / pole (PSC) z knihovny — jen když ho nemá skříň ani technik nezadal ručně.
+function rozvPencCil() { if (!__rz || !__rz.skrin) return null; return pscJe(__rz) ? ((__rz.skrin.pole || [])[0] || null) : __rz.skrin; }
+function rozvPencKandidati() {
+  var cil = rozvPencCil(); if (!cil) return [];
+  var druh = pscJe(__rz) ? 'pole' : 'skrin', n = function (x) { return rozvNorm(String(x == null ? '' : x).trim()); };
+  return rozvKnihovnaVse().filter(function (it) { return it.druh === druh && it.penc !== '' && it.penc != null; }).map(function (it) {
+    var sc = 0;
+    if (druh === 'skrin') {
+      if (+it.rady === +cil.rady) sc += 4; if (+it.modulu === +cil.modulu) sc += 4;
+      if (it.rady && cil.rady) sc -= Math.min(3, Math.abs(it.rady - cil.rady)); if (it.modulu && cil.modulu) sc -= Math.min(3, Math.abs(it.modulu - cil.modulu) / 6);
+    } else {
+      if (+it.sirkaMm === +cil.sirkaMm) sc += 4; if (+it.vyskaMm === +cil.vyskaMm) sc += 4;
+    }
+    if (it.provedeni && n(it.provedeni) === n(cil.provedeni)) sc += 2;
+    if (it.material && n(it.material) === n(cil.material)) sc += 2;
+    return { it: it, sc: sc };
+  }).sort(function (a, b) { return b.sc - a.sc || String(a.it.vyrobce).localeCompare(String(b.it.vyrobce), 'cs') || String(a.it.typ || a.it.nazev).localeCompare(String(b.it.typ || b.it.nazev), 'cs'); })
+    .map(function (q) { return q.it; });
+}
+function rozvPencPotreba(v) {
+  var cil = rozvPencCil();
+  return !!(v && v.stav !== 'nelze' && cil && (cil.penc === '' || cil.penc == null) && (v.penc === '' || v.penc == null) && rozvPencKandidati().length);
+}
+function rozvPencPopis(it) {
+  var r = it.druh === 'pole' ? [it.sirkaMm && it.vyskaMm ? rozvCisloText(it.sirkaMm) + '×' + rozvCisloText(it.vyskaMm) + ' mm' : '']
+    : [it.rady && it.modulu ? it.rady + '×' + it.modulu + ' M' : ''];
+  return [[it.vyrobce, it.typ || it.nazev].filter(Boolean).join(' ')].concat(r, [[it.provedeni, it.material].filter(Boolean).join(', '), 'Penc ' + rozvCisloText(it.penc) + ' W']).filter(Boolean).join(' · ');
+}
 function rozvPvKnihTlacitko(v) {
-  var sk = rozvPvKnihSkupiny(v);
-  return '<div class="rot-pvk-lista"' + (sk.length ? '' : ' hidden') + '><button type="button" class="dok-mini" data-action="tdRPvkOtevrit" title="Doplní Pv přístrojům bez Pv z řady výrobce v knihovně – jen kde se najde stejný přístroj (In, charakteristika, póly).">📚 Doplnit Pv z knihovny…</button></div>';
+  var sk = rozvPvKnihSkupiny(v).length || rozvPencPotreba(v);
+  return '<div class="rot-pvk-lista"' + (sk ? '' : ' hidden') + '><button type="button" class="dok-mini" data-action="tdRPvkOtevrit" title="Doplní Pv přístrojům bez Pv z řady výrobce v knihovně – jen kde se najde stejný přístroj (In, charakteristika, póly).">📚 Doplnit Pv z knihovny…</button></div>';
 }
 function rozvPvKnihRadyProSkupinu(g, rady) {   // řady, které mají Pv u této kategorie
   return rady.filter(function (r) { return r.polozky.some(function (it) { return it.kat === g.kat; }); });
@@ -39866,9 +39895,25 @@ function rozvPvKnihPrekreslit() {
           return '<option value="' + esc(r.klic) + '"' + (q.volba[g.klic] === r.klic ? ' selected' : '') + '>' + esc(rozvPvKnihRadaText(r)) + '</option>'; }).join('') + '</select>' +
         '<div class="rz-pvk-stav' + (n ? ' ne' : '') + '">' + (!rady.length ? 'V knihovně není řada s Pv pro tuto kategorii.' : !q.volba[g.klic] ? 'Nic se nedoplní.'
           : 'Pv se doplní u ' + z + ' z ' + g.prvky.length + (n ? ' · ' + n + ' v řadě není' : '')) + '</div></div>';
-    }).join('') +
+    }).join('') + rozvPencRadekHtml() +
     (vys.pres.length ? '<ul class="rz-pvk-pres">' + vys.pres.map(function (a) { return '<li>' + esc(a.text) + '</li>'; }).join('') + '</ul>' : '');
-  var b = document.getElementById('rz-pvk-pouzit'); if (b) { b.disabled = !vys.zapis.length; b.textContent = '✓ Doplnit Pv' + (vys.zapis.length ? ' (' + vys.zapis.length + ')' : ''); }
+  var nPenc = q.penc ? 1 : 0, b = document.getElementById('rz-pvk-pouzit');
+  if (b) { b.disabled = !vys.zapis.length && !nPenc; b.textContent = '✓ Doplnit ' + (vys.zapis.length && nPenc ? 'Pv a Penc' : nPenc ? 'Penc' : 'Pv') + (vys.zapis.length ? ' (' + vys.zapis.length + ')' : ''); }
+}
+function rozvPencRadekHtml() {
+  var q = __rzPvk; if (!q || !q.pencNabidka) return '';
+  var vse = rozvPencKandidati(), vyr = [];
+  vse.forEach(function (it) { if (it.vyrobce && vyr.indexOf(it.vyrobce) === -1) vyr.push(it.vyrobce); });
+  vyr.sort(function (a, b) { return a.localeCompare(b, 'cs'); });
+  var L = vse.filter(function (it) { return !q.pencVyr || it.vyrobce === q.pencVyr; });
+  var vyb = q.penc ? vse.filter(function (it) { return it.id === q.penc; })[0] : null;
+  return '<div class="rz-pvk-sk rz-pvk-penc"><b>' + (pscJe(__rz) ? 'Pole' : 'Skříň') + ' – Penc</b>' +
+    '<select data-pvk-penc-vyr title="Filtr podle výrobce"><option value="">všichni výrobci</option>' + vyr.map(function (x) {
+      return '<option value="' + esc(x) + '"' + (q.pencVyr === x ? ' selected' : '') + '>' + esc(x) + '</option>'; }).join('') + '</select>' +
+    '<select data-pvk-penc style="grid-column:1/-1"><option value="">— nedoplňovat —</option>' + L.map(function (it) {
+      return '<option value="' + esc(it.id) + '"' + (q.penc === it.id ? ' selected' : '') + '>' + esc(rozvPencPopis(it)) + '</option>'; }).join('') + '</select>' +
+    '<div class="rz-pvk-stav">' + (vyb ? 'Zapíše se jen Penc ' + rozvCisloText(vyb.penc) + ' W — rozměry, řady ani přístroje se nemění.'
+      : 'Skříň nemá Penc. Nahoře jsou skříně nejpodobnější té vaší (řady × moduly, provedení, materiál).') + '</div></div>';
 }
 function rozvPvKnihObnovitDok() {
   if (__rz && __rz.zalozka === 'dok') rozvZalozkaNastavit('dok'); else rozvOteplObnovit();
@@ -39877,20 +39922,30 @@ function rozvPvKnihObnovitDok() {
 TD_AKCE.tdRPvkOtevrit = function () {
   var f = dokForm(); if (!f || !__rz || window.__formReadOnly) return;
   var v = rozvOteplVypocet(DOK_TYPY.rozv.cist(f)), sk = rozvPvKnihSkupiny(v), rady = rozvPvKnihRady();
-  if (!sk.length) { showToast(rady.length ? 'Všechny přístroje už Pv mají.' : 'V knihovně nejsou data výrobců s Pv.'); return; }
-  __rzPvk = { skupiny: sk, rady: rady, volba: {} };
+  var pencN = rozvPencPotreba(v);
+  if (!sk.length && !pencN) { showToast(rady.length ? 'Všechny přístroje už Pv mají.' : 'V knihovně nejsou data výrobců s Pv.'); return; }
+  __rzPvk = { skupiny: sk, rady: rady, volba: {}, pencNabidka: pencN, penc: '', pencVyr: '' };
   sk.forEach(function (g) { __rzPvk.volba[g.klic] = rozvPvKnihPredvolba(g, rozvPvKnihRadyProSkupinu(g, rady)); });
   rozvPvKnihPrekreslit();
   document.getElementById('modal-rz-pvknih').classList.add('open');
 };
 TD_AKCE.tdRPvkZavrit = function () { closeModal('modal-rz-pvknih'); __rzPvk = null; };
 document.addEventListener('change', function (e) {
-  var t = e.target; if (!t || !t.matches || !t.matches('#rz-pvk-obsah select[data-pvk]') || !__rzPvk) return;
+  var t = e.target; if (!t || !t.matches || !__rzPvk) return;
+  if (t.matches('#rz-pvk-obsah select[data-pvk-penc-vyr]')) { __rzPvk.pencVyr = t.value; rozvPvKnihPrekreslit(); return; }
+  if (t.matches('#rz-pvk-obsah select[data-pvk-penc]')) { __rzPvk.penc = t.value; rozvPvKnihPrekreslit(); return; }
+  if (!t.matches('#rz-pvk-obsah select[data-pvk]')) return;
   __rzPvk.volba[t.getAttribute('data-pvk')] = t.value; rozvPvKnihPrekreslit();
 });
 TD_AKCE.tdRPvkPouzit = function () {
-  var vys = rozvPvKnihVysledek(); if (!__rz || !vys.zapis.length) return;
-  var pred = {}, rz = __rz;
+  var vys = rozvPvKnihVysledek(), q0 = __rzPvk || {};
+  var pencIt = q0.penc ? rozvPencKandidati().filter(function (it) { return it.id === q0.penc; })[0] : null, cil = rozvPencCil();
+  if (!__rz || (!vys.zapis.length && !pencIt)) return;
+  var pred = {}, rz = __rz, predPenc = null;
+  if (pencIt && cil) {
+    predPenc = { cil: cil, penc: cil.penc, zdroj: Object.prototype.hasOwnProperty.call(cil, 'pencZdroj') ? cil.pencZdroj : undefined };
+    cil.penc = pencIt.penc; cil.pencZdroj = [pencIt.vyrobce, pencIt.typ || pencIt.nazev].filter(Boolean).join(' ');
+  }
   vys.zapis.forEach(function (a) {
     var z = rozvNajit(a.uid); if (!z) return;
     pred[a.uid] = { pv: z.x.p.pv, zdroj: Object.prototype.hasOwnProperty.call(z.x.p, 'pvZdroj') ? z.x.p.pvZdroj : undefined };
@@ -39899,8 +39954,10 @@ TD_AKCE.tdRPvkPouzit = function () {
   closeModal('modal-rz-pvknih'); __rzPvk = null;
   dokZmena(); rozvPvKnihObnovitDok();
   var n = Object.keys(pred).length;
-  showToast('Pv doplněno u ' + dokPocetTvar(n, ['přístroje', 'přístrojů', 'přístrojů']) + (vys.pres.length ? ' · ' + vys.pres.length + ' v řadě není – doplňte ručně' : '') + '.', { timeout: 9000, actionLabel: '↩ ZPĚT', action: function () {
+  var txt = [n ? 'Pv doplněno u ' + dokPocetTvar(n, ['přístroje', 'přístrojů', 'přístrojů']) : '', predPenc ? 'Penc ' + rozvCisloText(pencIt.penc) + ' W z ' + cil.pencZdroj : ''].filter(Boolean).join(' · ');
+  showToast(txt + (vys.pres.length && n ? ' · ' + vys.pres.length + ' v řadě není – doplňte ručně' : '') + '.', { timeout: 9000, actionLabel: '↩ ZPĚT', action: function () {
     if (__rz !== rz) return;
+    if (predPenc) { predPenc.cil.penc = predPenc.penc; if (predPenc.zdroj === undefined) delete predPenc.cil.pencZdroj; else predPenc.cil.pencZdroj = predPenc.zdroj; }
     Object.keys(pred).forEach(function (u) {
       var z = rozvNajit(u); if (!z) return;
       z.x.p.pv = pred[u].pv; if (pred[u].zdroj === undefined) delete z.x.p.pvZdroj; else z.x.p.pvZdroj = pred[u].zdroj;

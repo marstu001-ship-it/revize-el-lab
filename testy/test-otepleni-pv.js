@@ -5,6 +5,8 @@
 //    a „Test LFN" (chránič): tlačítko jen s knihovnou a chybějícím Pv, skupiny,
 //    předvolba řady podle chrániče v rozvaděči, zapíše jen p.pv + p.pvZdroj,
 //    RCBO a C16 bez shody vypíše, poznámka „z Test LSN …", Ctrl+Z vrátí vše;
+// 2b) Penc skříně z knihovny: řádek jen u skříně bez Penc, řazení podle podobnosti,
+//    filtr výrobce, zapíše jen penc + pencZdroj, rozložení beze změny, Ctrl+Z;
 // 3) starý rozvaděč: otevření a uložení data bajtově nemění.
 // Žádná data výrobců — vše vymyšlené.
 const { chromium } = require('./pw');
@@ -157,6 +159,59 @@ const w = ms => new Promise(r => setTimeout(r, ms));
   // uložení a znovu otevření drží pvZdroj
   const u1 = await p.evaluate(async () => { await dokUlozitOtevreny(); const uid = window.__dokOtevreny.uid; await dokOtevrit(uid); return { fa4: __T.naj('-FA4').p.pvZdroj }; });
   check('po uložení a otevření zůstane pvZdroj („Test LSN 10B/1")', u1.fa4 === 'Test LSN 10B/1', JSON.stringify(u1));
+
+  // ── 2b. Penc skříně z knihovny ───────────────────────────────────────
+  const p0 = await p.evaluate(async () => {
+    await dokNacist();
+    const S = o => DOK.rozvKnihovna.push(rozvPolozkaNorm(Object.assign({ druh: 'skrin', zdroj: 'import' }, o), 'skrin'));
+    S({ id: 'u-t-sk-424', vyrobce: 'Test', typ: 'RZG-4x24', nazev: 'Rozvodnice 4×24', rady: 4, modulu: 24, material: 'oceloplech', provedeni: 'nástěnná', penc: 80 });
+    S({ id: 'u-t-sk-212', vyrobce: 'Test', typ: 'RZP-2x12', nazev: 'Rozvodnice 2×12', rady: 2, modulu: 12, material: 'plast', provedeni: 'nástěnná', penc: 30 });
+    S({ id: 'u-b-sk-212', vyrobce: 'Výrobce B', typ: 'B-212', nazev: 'Skříň 2×12', rady: 2, modulu: 12, material: 'plast', provedeni: 'zapuštěná', penc: 25 });
+    S({ id: 'u-t-sk-bez', vyrobce: 'Test', typ: 'BEZ-PENC', rady: 2, modulu: 12, material: 'plast', provedeni: 'nástěnná' });
+    await dokZapsat();
+    rozvZalozkaNastavit('dok'); document.querySelector('[data-oddil="otepleni"]').open = true;
+    return { skrin: JSON.stringify(__rz.skrin), rady: JSON.stringify(__rz.rady), rad: __rz.skrin.rady, mod: __rz.skrin.modulu, penc: __rz.skrin.penc,
+      lista: !document.querySelector('.rot-pvk-lista').hidden };
+  });
+  check('skříň bez Penc a knihovna se skříněmi s Penc → tlačítko je vidět', p0.lista && (p0.penc === '' || p0.penc == null), JSON.stringify([p0.lista, p0.penc, p0.rad, p0.mod]));
+  await p.click('.rot-pvk-lista button'); await w(300);
+  const p1 = await p.evaluate(() => {
+    const r = document.querySelector('#rz-pvk-obsah .rz-pvk-penc');
+    return { je: !!r, t: r && r.querySelector('b').textContent, o: r ? Array.from(r.querySelectorAll('select[data-pvk-penc] option')).map(x => x.value) : [],
+      v: r ? Array.from(r.querySelectorAll('select[data-pvk-penc-vyr] option')).map(x => x.value) : [] };
+  });
+  check('dialog má řádek „Skříň – Penc", jen skříně s Penc, nejpodobnější (2×12 plast nástěnná) nahoře', p1.je && p1.t === 'Skříň – Penc' && p1.o[1] === 'u-t-sk-212' && p1.o[2] === 'u-b-sk-212' && p1.o.indexOf('u-t-sk-bez') === -1 && p1.o.indexOf('u-t-sk-424') === 3, JSON.stringify(p1));
+  await p.selectOption('#rz-pvk-obsah select[data-pvk-penc-vyr]', 'Výrobce B'); await w(150);
+  const p2 = await p.evaluate(() => Array.from(document.querySelectorAll('#rz-pvk-obsah select[data-pvk-penc] option')).map(x => x.value));
+  check('filtr podle výrobce nabídne jen jeho skříně', p2.join(',') === ',u-b-sk-212', p2.join(','));
+  await p.selectOption('#rz-pvk-obsah select[data-pvk-penc-vyr]', ''); await w(100);
+  await p.selectOption('#rz-pvk-obsah select[data-pvk-penc]', 'u-t-sk-212'); await w(150);
+  await p.selectOption('#rz-pvk-obsah select[data-pvk="FA|1"]', '').catch(() => {});
+  await p.evaluate(() => document.querySelectorAll('#rz-pvk-obsah select[data-pvk]').forEach(s => { s.value = ''; s.dispatchEvent(new Event('change', { bubbles: true })); }));
+  await w(150);
+  const pBtn = await p.evaluate(() => document.getElementById('rz-pvk-pouzit').textContent);
+  await p.screenshot({ path: path.join(__dirname, '_beh', 'otepleni-penc-dialog.png'), clip: await p.evaluate(() => { const r = document.querySelector('#modal-rz-pvknih .modal').getBoundingClientRect(); return { x: r.x - 8, y: r.y - 8, width: r.width + 16, height: r.height + 16 }; }) });
+  await p.click('#rz-pvk-pouzit'); await w(400);
+  const p3 = await p.evaluate(() => {
+    const D = __T.cist(), sk = Object.assign({}, D.skrin); const pz = (document.querySelector('[data-oddil="otepleni"] .rot-pvz[title*="Penc"]') || {}).textContent;
+    const v = rozvOteplVypocet(D); delete sk.penc; delete sk.pencZdroj;
+    return { penc: D.skrin.penc, zdroj: D.skrin.pencZdroj, sk: JSON.stringify(sk), rady: JSON.stringify(__rz.rady), pz, vpenc: v.penc, pole: (dokForm().querySelector('[data-dk="otepleni.penc"]') || {}).value };
+  });
+  check('tlačítko jen pro Penc: „✓ Doplnit Penc"', /Doplnit Penc$/.test(pBtn), pBtn);
+  check('po výběru se zapíše jen Penc 30 a zdroj „Test RZP-2x12"; výpočet bere Penc 30', p3.penc === 30 && p3.zdroj === 'Test RZP-2x12' && p3.vpenc === 30, JSON.stringify([p3.penc, p3.zdroj, p3.vpenc, p3.pole]));
+  const skPred = JSON.parse(p0.skrin); delete skPred.penc; delete skPred.pencZdroj;
+  check('rozměry, řady skříně i rozložení přístrojů beze změny', p3.sk === JSON.stringify(skPred) && p3.rady === p0.rady, '');
+  check('u Penc šedá poznámka „z Test RZP-2x12"', p3.pz === 'z Test RZP-2x12', p3.pz);
+  await p.keyboard.press('Control+z'); await w(400);
+  const p4 = await p.evaluate(() => ({ penc: __rz.skrin.penc, z: __rz.skrin.pencZdroj }));
+  check('Ctrl+Z vrátí Penc i zdroj', (p4.penc === '' || p4.penc == null) && p4.z === undefined, JSON.stringify(p4));
+  const p5 = await p.evaluate(async () => {
+    __rz.skrin.penc = 45; dokZmena(); rozvZalozkaNastavit('dok'); document.querySelector('[data-oddil="otepleni"]').open = true;
+    TD_AKCE.tdRPvkOtevrit(); await new Promise(r => setTimeout(r, 150));
+    const r = { radek: !!document.querySelector('#rz-pvk-obsah .rz-pvk-penc'), open: document.getElementById('modal-rz-pvknih').classList.contains('open') };
+    TD_AKCE.tdRPvkZavrit(); __rz.skrin.penc = ''; dokZmena(); return r;
+  });
+  check('skříň s vyplněným Penc → řádek „Skříň – Penc" se neukáže', !p5.radek, JSON.stringify(p5));
 
   // ── 3. starý rozvaděč bajtově ────────────────────────────────────────
   const staryPo = await p.evaluate(async () => {
