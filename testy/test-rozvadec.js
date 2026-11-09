@@ -2276,7 +2276,7 @@ function pomocnik() {
     const ps = await c3.newPage(); await ps.goto('http://127.0.0.1:' + (process.env.STARA_PORT || 8902) + '/index.html'); await w(1200);
     const stara = await html(ps).catch(e => ({ dok: 'chyba ' + e.message }));
     await c3.close();
-    check('CAD: PDF dokumentace (čelní pohled bez kresby přístrojů) i schématu beze změny proti předchozí verzi (stránky náhledu znak po znaku)', nyni.dok.length > 5000 && require('./bez-kresby')(nyni.dok) === require('./bez-kresby')(stara.dok) && nyni.sch === stara.sch,   // lab v1.64: kresba přístrojů v čelním pohledu se mění záměrně
+    check('CAD: PDF dokumentace (čelní pohled bez kresby přístrojů) i schématu beze změny proti předchozí verzi (stránky náhledu znak po znaku)', nyni.dok.length > 5000 && require('./bez-n')(require('./bez-kresby')(nyni.dok)) === require('./bez-n')(require('./bez-kresby')(stara.dok)) && require('./bez-n')(nyni.sch) === require('./bez-n')(stara.sch),   // 2026-11-09: N jističochrániče a popisky N-FI záměrně   // lab v1.64: kresba přístrojů v čelním pohledu se mění záměrně
       nyni.dok.length + ' / ' + (stara.dok || '').length);
 
     // ── import vymyšleného „elmerovského" výkresu ──

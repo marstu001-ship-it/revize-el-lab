@@ -770,11 +770,12 @@ async function stranka(ctx, url, err) {
     const rozdil = (a, b2) => { if (a === b2) return ''; let i = 0; while (a[i] === b2[i]) i++; return a.slice(Math.max(0, i - 60), i + 80) + ' ≠ ' + b2.slice(Math.max(0, i - 60), i + 80); };
     check('starý rozvaděč: otevření, Dokumenty, Schéma a uložení — data bajtově jako v předchozí verzi', nov.data === puv.data, rozdil(nov.data, puv.data));
     check('starý rozvaděč: otevření a uložení (bez Dokumentů) — data bajtově jako uložená', nov.jenOtevrit === JSON.stringify(JSON.parse(stary).data), rozdil(nov.jenOtevrit, JSON.stringify(JSON.parse(stary).data)));
-    check('starý rozvaděč: schéma znak po znaku jako předchozí verze', nov.listy === puv.listy, rozdil(nov.listy, puv.listy));
+    const BN = require('./bez-n');   // 2026-11-09: N jističochrániče a popisky N-FI se mění záměrně
+    check('starý rozvaděč: schéma znak po znaku jako předchozí verze (bez odboček N/PE a popisků N-…)', BN(nov.listy) === BN(puv.listy), rozdil(BN(nov.listy), BN(puv.listy)));
     check('starý rozvaděč: oteplení, fáze a soudobost jako předchozí verze', nov.otepl === puv.otepl && nov.faze === puv.faze && nov.soud === puv.soud);
     // lab v1.64: čelní pohled má novou kresbu přístrojů a vývodku — porovnává se bez nich (require('./bez-kresby'))
     const BK = require('./bez-kresby');
-    check('starý rozvaděč: PDF dokumentace (bloky, čelní pohled bez kresby přístrojů) a DXF jako předchozí verze', BK(nov.pdf) === BK(puv.pdf) && nov.dxf === puv.dxf, rozdil(BK(nov.pdf), BK(puv.pdf)) || rozdil(nov.dxf, puv.dxf));
+    check('starý rozvaděč: PDF dokumentace (bloky, čelní pohled bez kresby přístrojů) a DXF jako předchozí verze', BN(BK(nov.pdf)) === BN(BK(puv.pdf)) && BN(nov.dxf) === BN(puv.dxf), rozdil(BN(BK(nov.pdf)), BN(BK(puv.pdf))) || rozdil(BN(nov.dxf), BN(puv.dxf)));
     check('starý rozvaděč: ruční volba „Napájen z" se v režimu Zapojení kreslí jako automatické (čárkované) spojení ze správného zdroje, data bez vodičů', nov.autoRucni === true);
     check('předchozí verze i nová bez chyb', errS.length === 0 && errN.length === 0, errS.concat(errN).join(' | '));
     await ctxN.close();

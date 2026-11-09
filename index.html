@@ -41516,6 +41516,13 @@ function rsSloupecHtml(x, g, sl, kus, c) {
     h += rsCara(xx, g.yD + z.h, xx, g.yD + z.h + 0.3) + sk.h + rsCara(xx, g.yD + z.h + 0.3 + sk.dy, xx, ySp);
   } else
   h += rsCara(xx, g.yD + z.h, xx, ySp);
+  if (kat === 'FIFA') {
+    // Jističochránič (RCBO) má vlastní průchozí pól N: pracovní N vývodu vede z jeho
+    // výstupu (N-FI/FA1), ne ze společné sběrnice — jinak by zpětný proud šel mimo
+    // součtový transformátor a přístroj by vybavil (připomínka uživatele 2026-11-09).
+    h += rsCara(xx + 1.6, g.yD + z.h, xx + 1.6, yJ, { carky: true, w: RS_TENKA }) + rsCara(xx + 1.6, yJ, xx, yJ + 1.8, { carky: true, w: RS_TENKA });
+    if (!(ve && rcdH) && !(podH && rsRcd(podH))) h += rsText(xx + 3, g.yN - 0.8, rsVejit('N-' + String(x.ozn || 'FI/FA').replace(/^-/, ''), g.yN - 0.8 - (g.yD + z.h) - 1, 1.6), { fs: 1.6, svisle: true });
+  } else
   h += rsBod(xx + 1.6, nZdroj) + rsCara(xx + 1.6, nZdroj, xx + 1.6, yJ, { carky: true, w: RS_TENKA }) + rsCara(xx + 1.6, yJ, xx, yJ + 1.8, { carky: true, w: RS_TENKA });
   h += rsBod(xx + 3.2, g.yPE) + rsCara(xx + 3.2, g.yPE, xx + 3.2, yJ, { carky: true, w: RS_TENKA }) + rsCara(xx + 3.2, yJ, xx, yJ + 3.2, { carky: true, w: RS_TENKA });
   var tri = rsTrif(p);
@@ -41598,7 +41605,10 @@ function rsListSchema(d, list, idx, listy, c, model) {
     var za = k.pred ? g.c0 - 6 : a, zb = k.dalsi && posl === k.od + k.n - 1 ? g.c1 + 4 : b;
     var zbN = k.dalsi ? g.c1 + 4 : xs[k.od + k.n - 1];
     if (zb > za) h += rsCara(za, g.yG, zb, g.yG, { w: 0.55 });
-    if (zbN > za && rsRcd(k.fi)) h += rsCara(za + (k.pred ? 0 : 1.6), g.yGN, zbN + 1.6, g.yGN, { w: 0.45 });
+    if (zbN > za && rsRcd(k.fi)) {
+      h += rsCara(za + (k.pred ? 0 : 1.6), g.yGN, zbN + 1.6, g.yGN, { w: 0.45 });
+      h += rsText(za + 1.2, g.yGN - 0.6, 'N-' + String(k.fi.ozn || 'FI').replace(/^-/, ''), { fs: 1.6, zar: 'end' });   // vlastní N skupiny chrániče
+    }
     if (k.pred) {
       var pg2 = k.pred.list.g, pc = rsSloupecX(pg2, k.pred.od + k.pred.n - 1);
       h += rsText(za, g.yG - 1.3, (k.fi.ozn || 'chránič') + ' (pokračování z /' + (listy.indexOf(k.pred.list) + 2) + '.' + rsZona(pg2, pc) + ')', { fs: 1.9, tucne: true });
@@ -41765,8 +41775,9 @@ function rozvSchChybiHtml(d) {
   if (ch.kabel.length) cast.push(ch.kabel.length + '× kabel (' + odkazy(ch.kabel) + ')');
   var ov = rozvOvlKontrola(d), ovHtml = ov.length ? '<div class="rz-ovl-kontrola">⚠ Ovládání: ' + ov.map(function (q) {
       return q.uid ? '<button type="button" class="rz-odkaz" data-action="tdRSchVybrat" data-uid="' + esc(q.uid) + '">' + esc(q.text) + '</button>' : esc(q.text); }).join(' · ') + '</div>' : '';
+  if (!d.soustava) ovHtml = '<div class="rz-ovl-kontrola">⚠ Není vybraná rozvodná soustava — na sběrnici schématu chybí její popis (doplňte v hlavičce rozvaděče).</div>' + ovHtml;
   return cast.length ? { chybi: true, html: 'Ve schématu chybí: ' + cast.join(', ') + ' — doplňte ve vlastnostech přístroje.' + ovHtml }
-    : { chybi: !!ov.length, html: '✓ Fáze i kabely vývodů jsou vyplněné.' + ovHtml };
+    : { chybi: !!ov.length || !d.soustava, html: '✓ Fáze i kabely vývodů jsou vyplněné.' + ovHtml };
 }
 function rozvSchKreslit() {
   var ram = document.getElementById('rz-sch-ram'), f = dokForm(); if (!ram || !f) return;

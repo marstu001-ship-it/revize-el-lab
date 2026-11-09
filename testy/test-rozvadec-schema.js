@@ -147,6 +147,16 @@ const presahy = (p, svg) => p.evaluate(svg => {
     JSON.stringify(sl['-FI1']));
   check('RCBO -FI/FA1 (značka RCBO, B16 30 mA typ A) a AFDD -FA14', sl['-FI/FA1'] && /^rcbo,/.test(sl['-FI/FA1'].zn) && /B16 30 mA typ A/.test(sl['-FI/FA1'].t) &&
     sl['-FA14'] && /^afdd,/.test(sl['-FA14'].zn) && /AFDD B16/.test(sl['-FA14'].t), JSON.stringify([sl['-FI/FA1'], sl['-FA14']]));
+  // 2026-11-09 (výkres kolegy): N jističochrániče z jeho vlastního výstupu, skupinové N chráničů s popiskem
+  const nRcbo = await p.evaluate(svg => {
+    const d = document.createElement('div'); d.innerHTML = svg;
+    const g = Array.from(d.querySelectorAll('svg > g[data-puid]')).filter(q => { const x = rozvNajit(q.getAttribute('data-puid')); return x && x.x.ozn === '-FI/FA1'; })[0];
+    if (!g) return null;
+    return { texty: Array.from(g.querySelectorAll('text')).map(e => e.textContent), body: Array.from(g.querySelectorAll('circle')).map(c => +c.getAttribute('cy')),
+      nZVystupu: Array.from(g.querySelectorAll('line[stroke-dasharray]')).some(l => +l.getAttribute('y1') === 86) };
+  }, L[1].svg);
+  check('RCBO -FI/FA1: N vývodu z jeho výstupu (popisek N-FI/FA1), ne ze společné sběrnice N', nRcbo && nRcbo.texty.includes('N-FI/FA1') && nRcbo.nZVystupu && nRcbo.body.indexOf(95) === -1, JSON.stringify(nRcbo));
+  check('skupinové N sběrnice chráničů mají popisky N-FI1 a N-FI2', t2.includes('N-FI1') && t2.includes('N-FI2'));
   check('spotřebič z názvu: „Osvětlení" → světlo, „Zásuvky" → zásuvka, „Kuchyň – linka" → jiné, ručně motor',
     /,svetlo$/.test(sl['-FA2'].zn) && /,zasuvka$/.test(sl['-FA4'].zn) && /,jine$/.test(sl['-FA8'].zn) && /,motor$/.test(sl['-FA7'].zn), [sl['-FA2'].zn, sl['-FA4'].zn, sl['-FA8'].zn, sl['-FA7'].zn].join(' '));
   check('1f bez fáze → „L? · CYKY-J 3×2,5" (červeně)', /L\? · CYKY-J 3×2,5/.test(sl['-FA4'].t) && /fill="#b00000"[^>]*>L\? ·/.test(L[1].svg), sl['-FA4'].t);

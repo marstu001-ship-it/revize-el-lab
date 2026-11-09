@@ -1761,8 +1761,13 @@ co chybí, je prázdné, „L?" nebo „–".
   „z RH1 (-FA3)" u napájeného rozvaděče, **čárkovaný „Elektroměrový rozvaděč"
   s předřazeným jističem jen při vyplněném `privodJistic`** (hlavička,
   + `privodIn`), **první hlavní vypínač (QM) na přívodu**. **Chránič** visí
-  z L, má vlastní sběrnici skupiny a vlastní N můstek; přístroje bez chrániče
-  visí přímo z L. Každý vývod = jeden sloupec 11 mm: značka se svorkami 1/2,
+  z L, má vlastní sběrnici skupiny a vlastní N můstek s popiskem **„N-FI1"**;
+  přístroje bez chrániče visí přímo z L. **Jističochránič (RCBO) má vlastní
+  průchozí N** — N vývodu vede čárkovaně z jeho výstupu (popisek „N-FI/FA1"),
+  ne ze společné sběrnice; přes ni přechází bez tečky (připomínka uživatele
+  2026-11-09 podle výkresu kolegy: N ze sběrnice by šel mimo součtový
+  transformátor a RCBO by vybavil). Prázdná soustava v hlavičce = upozornění
+  v řádku „Ve schématu chybí" (na sběrnici by zůstalo jen „50 Hz"). Každý vývod = jeden sloupec 11 mm: značka se svorkami 1/2,
   označení nad ní, svisle hodnota (B16 6 kA, 40 A 30 mA typ A…) a typ, L plnou
   čarou ven, **N a PE čárkovanými odbočkami**, lomítka podle počtu vodičů,
   svisle „L1 · CYKY-J 3×2,5" a název vývodu, dole **značka spotřebiče**
