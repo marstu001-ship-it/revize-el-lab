@@ -2440,7 +2440,7 @@ function pomocnik() {
   rozvOteplCistNavic(f0, dd); r.evData = JSON.stringify(dd.otepleni || {});
   return r;
     });
-    check('61439-3 tab. 101: 6 vývodů, 1 EV → n = 5, k = 0,7, EV × 1', r.rdf1.n === 5 && r.rdf1.k === 0.7 && r.rdf1.evfv === 1 && r.inc.ev === 25 && Math.abs(r.inc.zas - 11.2) < 1e-9, JSON.stringify([r.rdf1, r.inc]));
+    check('61439-3 tab. 101: 6 vývodů, 1 EV → n = 5, k = 0,7, EV × 1', r.rdf1.n === 5 && r.rdf1.k === 0.7 && r.rdf1.evfv === 1 && r.inc.ev === 20 && Math.abs(r.inc.zas - 8.96) < 1e-9 /* bez Ib: Inc 0,8 In (2026-11-09) — EV 0,8 × 25 × 1, zásuvky 0,8 × 16 × 0,7 */, JSON.stringify([r.rdf1, r.inc]));
     check('61439-3 tab. 101: text RDF uvádí činitel 1 u EV/FV a citaci', r.rdf1.text === 'RDF 0,7 podle počtu vývodů (5); vývody nabíjení EV / FV (1) činitel 1 — ČSN EN IEC 61439-3 ed. 2, tab. 101', r.rdf1.text);
     check('61439-3 tab. 101: zaškrtnuté řízení zátěže → n = 6, k = 0,6', r.rdf2.n === 6 && r.rdf2.k === 0.6, JSON.stringify(r.rdf2));
     check('61439-3: evRizeni se do dat zapíše jen zaškrtnuté', !/evRizeni/.test(r.evData) && r.evZatrh, r.evData);
