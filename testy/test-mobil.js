@@ -645,6 +645,15 @@ function vsechnyStavy(zalozky) {
     document.querySelector('#rz-pi-obsah .rz-pi-nastaveni').open = true;
     if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); await __M.w(100);
   }), '#modal-rz-pi');
+  add('rozvaděč – doplnit Pv z knihovny výrobců (okno)', 'Tvorba dokumentace', E(async () => {
+    await __M.rozv(); document.getElementById('toast-wrap').innerHTML = '';
+    const pred = DOK.rozvKnihovna.slice();
+    [['FA', '1', 10, 'B', 'LSN 10B/1'], ['FA', '1', 16, 'B', 'LSN 16B/1'], ['FI', '4', 40, '', 'LFN 40/4/030/A']].forEach(a => DOK.rozvKnihovna.push(rozvPolozkaNorm({
+      id: 'u-m-' + a[4], druh: 'pristroj', kat: a[0], poly: a[1], In: a[2], char: a[3], idn: a[0] === 'FI' ? 30 : '', rcdTyp: a[0] === 'FI' ? 'A' : '',
+      vyrobce: 'Výrobce A', rada: a[4].split(' ')[0], typ: a[4], pv: 2, sirka: 1, zdroj: 'import' }, 'pristroj')));
+    rozvZalozkaNastavit('dok'); TD_AKCE.tdRPvkOtevrit(); await __M.w(150);
+    setTimeout(() => { DOK.rozvKnihovna = pred; }, 3000);
+  }), '#modal-rz-pvknih');
   add('rozvaděč – vývod s odhadem Pi ve vlastnostech', 'Tvorba dokumentace', E(async () => {
     await __M.rozv(); const x = __rz.rady[1].prvky[3]; x.pi = '1,6'; x.piOdhad = '8 zásuvek × 0,2 kW';
     __rz.vyber = x.uid; rozvPohledVykreslit(); rozvVlastnostiVykreslit();

@@ -1927,6 +1927,30 @@ s 2P skupinou, zámkem, 3f, náhled + Zrušit, Použít + Ctrl+Z, jen vybrané;
 oteplení na W přesně, (Inc/In)², přirážka 30 %, RDF tabulka, ruční Inc,
 chybějící Pv / Penc / 55 °C, Pv do kopie, nevyhovuje, nad 630 A, PDF stránka
 a odkazy jen při vyhovuje, uložená data, starý rozvaděč, data revizí, telefon).
+
+**Doplnit Pv z knihovny výrobců** (2026-11-09, blok „Doplnit Pv z knihovny
+výrobců" za `rozvOteplObnovit`): obecné položky Pv nemají a vypisovat ho
+u 40 jističů ručně nikdo nechce. Nad tabulkou oteplení **„📚 Doplnit Pv
+z knihovny…"** — vidět jen s načtenou knihovnou výrobců (položky mimo
+vestavěné s Pv) a aspoň jedním řádkem bez Pv (`rozvPvKnihSkupiny`; jen
+`ROT_KAT`, TR / ZD / JINE ne). Okno `#modal-rz-pvknih`: skupiny podle
+kategorie a pólů („Jistič 1P – 40 ks", „RCBO 1+N", „Hlavní vypínač 4P"),
+u každé výběr **řady výrobce, která má Pv u té kategorie** (`rozvPvKnihRady`,
+klíč výrobce|řada). Předvolba (`rozvPvKnihPredvolba`): řada, kterou v rozvaděči
+už má přístroj téže kategorie (FI1 = OEZ LFN), jinak řada výrobce, jehož přístroj
+v rozvaděči je, jinak „— nedoplňovat —". Shoda (`rozvPvKnihShoda`): kategorie,
+póly, In, charakteristika, u FI / FIFA i IΔn a typ; zapíše se **jen `p.pv`
+a `p.pvZdroj` = „výrobce typ"** (v tabulce šedá poznámka „z OEZ LSN 16B/1",
+ruční přepsání Pv ji smaže). Co v řadě není, okno vypíše „-FA7 B16 1P: v řadě
+OEZ LTN není – doplňte ručně" a zůstane bez Pv. Celé doplnění vrátí jedno
+ZPĚT / Ctrl+Z. **Žádné „typické" Pv bez výrobce.**
+
+Test: `testy/test-otepleni-pv.js` (výchozí Inc 0,8 In, ruční Inc a Ib nad
+0,8 In, náznak, poznámka; vymyšlené řady „Test LSN / LFN / ASN", tlačítko jen
+s knihovnou, skupiny, předvolba, C16 a RCBO bez shody, zápis jen pv + zdroj,
+Ctrl+Z, ruční přepsání, uložení, starý rozvaděč bajtově). V `test-mobil.js`
+stav „rozvaděč – doplnit Pv z knihovny výrobců (okno)". **Upraveno:**
+`test-rozvadec-faze-otepleni.js` (ΣPv 7,42 W — jistič a zásuvka při 0,8 In).
 V `test-mobil.js` stavy „rozvaděč – panel fází…", „…přefázovat, náhled změn"
 a „…oteplení výpočtem (Dokumenty)".
 

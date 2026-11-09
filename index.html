@@ -1967,6 +1967,14 @@ html.dark .rz-faze-nad{background:#3a2c14!important;color:#f0c27a}
 .rot-tab tr.rot-chybi td{background:#fff1dc}
 html.dark .rot-tab tr.rot-chybi td{background:#3a2c14}
 .rot-chybi-t,.rot-08{color:#a85a00;font-weight:600;font-size:.8rem}
+.rot-pvz{display:block;color:var(--muted);font-size:.68rem;line-height:1.2;margin-top:.1rem}
+.rot-pvk-lista{margin:.4rem 0 .5rem}
+.rz-pvk-sk{display:grid;grid-template-columns:minmax(0,1fr) minmax(0,1.2fr);gap:.35rem .8rem;align-items:center;padding:.5rem 0;border-bottom:1px solid var(--border)}
+.rz-pvk-sk b{font-size:.88rem}
+.rz-pvk-sk select{width:100%;padding:.4rem;font-size:.85rem}
+.rz-pvk-stav{grid-column:1/-1;font-size:.76rem;color:var(--muted)}
+.rz-pvk-stav.ne{color:#a85a00}
+.rz-pvk-pres{margin:.6rem 0 0;padding-left:1.1rem;font-size:.8rem;color:#a85a00}
 .rot-vys{margin:.6rem 0 .2rem;padding:.5rem .7rem;border-radius:6px;font-weight:700}
 .rot-ok{background:#e3f4e8;color:#0f5c33}.rot-chyba{background:#fde4e1;color:#9a1d10}.rot-neuplne{background:#fff1dc;color:#8a4b00}.rot-nelze{background:var(--bg);font-weight:400}
 html.dark .rot-ok{background:#16351f;color:#9fe0b3}html.dark .rot-chyba{background:#3b1714;color:#f4a49a}html.dark .rot-neuplne{background:#3a2c14;color:#f0c27a}
@@ -5417,6 +5425,16 @@ html.dark .rz-imp-chyby{background:#3a1f1c;border-color:#6b2c25}
     <div class="modal-actions">
       <button class="btn btn-ghost" style="background:var(--bg);color:var(--text);border:1px solid var(--border)" data-action="tdRHrNavrhZavrit">Zrušit</button>
       <button class="btn btn-gold" id="rz-hr-pouzit" data-action="tdRHrNavrhPouzit">✓ Přidat vybrané hřebeny</button>
+    </div>
+  </div>
+</div>
+<div class="modal-overlay" id="modal-rz-pvknih">
+  <div class="modal" style="max-width:620px">
+    <div class="modal-title">📚 Doplnit Pv z knihovny výrobců</div>
+    <div id="rz-pvk-obsah"></div>
+    <div class="modal-actions" id="rz-pvk-akce">
+      <button class="btn btn-ghost" style="background:var(--bg);color:var(--text);border:1px solid var(--border)" data-action="tdRPvkZavrit">Zrušit</button>
+      <button class="btn btn-gold" id="rz-pvk-pouzit" data-action="tdRPvkPouzit">✓ Doplnit Pv</button>
     </div>
   </div>
 </div>
@@ -39687,7 +39705,8 @@ function rozvOteplHtml(d) {
       '<td><input type="text" class="rot-inc" data-uid="' + esc(x.uid) + '" value="' + esc(q.rucne ? rozvCisloText(q.inc) : '') + '" placeholder="' + esc(rotIncPh(q)) +
         '" inputmode="decimal" autocomplete="off" title="Prázdné = ' + (rfVyvod(x) || x.p.kat === 'KM' ? 'Ib, chybí-li Ib, 0,8 In (čl. 10.10.4.1 e)' : 'součet proudů vývodů za přístrojem (nejvíc zatížená fáze), nejvýš In') + '"></td>' +
       '<td><input type="text" class="rot-pv" data-uid="' + esc(x.uid) + '" value="' + esc(q.pv === '' ? '' : rozvCisloText(q.pv)) + '" placeholder="doplňte" inputmode="decimal" autocomplete="off"' +
-        ' title="' + (q.konst || q.pvCelkem ? 'Ztrátový výkon celkem za přístroj (katalog výrobce)' : 'Ztrátový výkon na pól při In (katalog výrobce)') + '. Uloží se do přístroje v tomto rozvaděči, ne do knihovny."> <small>' + (q.konst || q.pvCelkem ? 'celkem' : '× ' + q.polu) + '</small></td>' +
+        ' title="' + (q.konst || q.pvCelkem ? 'Ztrátový výkon celkem za přístroj (katalog výrobce)' : 'Ztrátový výkon na pól při In (katalog výrobce)') + '. Uloží se do přístroje v tomto rozvaděči, ne do knihovny."> <small>' + (q.konst || q.pvCelkem ? 'celkem' : '× ' + q.polu) + '</small>' +
+        (x.p.pvZdroj && q.pv !== '' ? '<small class="rot-pvz" title="Pv převzaté z knihovny výrobců">z ' + esc(x.p.pvZdroj) + '</small>' : '') + '</td>' +
       '<td class="c" data-rot="pvin">' + esc(rotW(q.pvIn)) + '</td><td class="c" data-rot="pvinc">' + (q.chybi ? '<span class="rot-chybi-t">' + q.chybi + '</span>' : esc(rotW(q.pvInc))) + '</td>' +
       '<td class="c" data-rot="08">' + (q.nad08 ? '<span class="rot-08">&gt; 0,8 In</span>' : (q.eff === '' ? '' : '✓')) + '</td></tr>';
   }).join('');
@@ -39696,6 +39715,7 @@ function rozvOteplHtml(d) {
       'Přirážka za vodiče a spoje' + (psc ? '' : ' a tabulka RDF pro DBO jsou') + (psc ? ' je' : '') + ' z technických podkladů (BEAMA, Schneider, IET), ne z textu normy.</div>' +
     '<div class="rot-podm">Podmínky výpočtu (čl. 10.10.4.1): denní průměrná teplota okolí 35 °C (čl. 7.1.1); skupinový jmenovitý proud obvodu nejvýš 80 % Ith, není-li znám, 80 % In přístrojů v obvodu ' +
       '(čl. 10.10.4.1 e — neplatí pro elektronické přístroje s vlastním nuceným větráním); vodiče přímo připojené k přístrojům dimenzované nejméně na 125 % skupinového jmenovitého proudu (čl. 10.10.4.1 f) — potvrďte níž.</div>' +
+    rozvPvKnihTlacitko(v) +
     '<div class="rot-ram"><table class="rot-tab"><colgroup><col><col style="width:4.2rem"><col style="width:5.6rem"><col style="width:7.4rem"><col style="width:4.8rem"><col style="width:5.6rem"><col style="width:4.6rem"></colgroup>' +
       '<tr><th>Přístroj</th><th>In</th><th>Inc (A)</th><th>Pv W/pól při In</th><th>Pv při In</th><th>Pv při Inc</th><th title="čl. 10.10.4.1 e)">Inc ≤ 0,8 In</th></tr>' + radky + '</table></div>' +
     '<div class="dk-pozn">Pv při Inc = Pv při In × (Inc / In)². Prázdné Inc = Ib; chybí-li Ib, 0,8 In (čl. 10.10.4.1 e). U chráničů a hlavního vypínače součet proudů vývodů za nimi.</div>' +
@@ -39734,6 +39754,7 @@ function rozvOteplObnovit() {
     var inc = tr.querySelector('.rot-inc'); if (inc && document.activeElement !== inc) inc.placeholder = rotIncPh(q);
   });
   box.innerHTML = rozvOteplVysledekHtml(v);
+  var pk = f.querySelector('.rot-pvk-lista'); if (pk) pk.hidden = !rozvPvKnihSkupiny(v).length;
   var ri = f.querySelector('#rot-rdf-info'); if (ri) ri.textContent = v.rdf.text;
   var rd = f.querySelector('#rot-dovolene'); if (rd) rd.innerHTML = rotDovoleneText(v);
   var pv = f.querySelector('.rot-prir-vl'); if (pv) pv.hidden = String((d.otepleni || {}).prirazka || '50') !== '@';
@@ -39746,13 +39767,147 @@ function rozvOteplObnovit() {
 document.addEventListener('input', function (e) {
   var t = e.target; if (!t || !t.closest || !t.closest('#rz-pan-dok')) return;
   if (t.classList.contains('rot-pv') && __rz) {   // Pv do kopie přístroje v tomto rozvaděči (ne do knihovny)
-    var z = rozvNajit(t.getAttribute('data-uid')); if (z) z.x.p.pv = rozvCislo(t.value);
+    var z = rozvNajit(t.getAttribute('data-uid'));
+    if (z) { z.x.p.pv = rozvCislo(t.value); if (z.x.p.pvZdroj) { delete z.x.p.pvZdroj; var pz = t.parentNode.querySelector('.rot-pvz'); if (pz) pz.remove(); } }
   }
   if (t.closest('[data-oddil="otepleni"]') || t.closest('.rz-dok-vyber')) rozvOteplObnovit();
 });
 document.addEventListener('change', function (e) {
   var t = e.target; if (t && t.closest && t.closest('[data-oddil="otepleni"]')) rozvOteplObnovit();
 });
+// ── Doplnit Pv z knihovny výrobců (2026-11-09) ──────────────────────────
+// Obecné přístroje Pv nemají. Technik vybere pro každou skupinu (kategorie +
+// póly) řadu výrobce z knihovny; ke každému přístroji se najde položka řady se
+// stejnou kategorií, In, charakteristikou a póly (u chráničů i IΔn a typem)
+// a do přístroje se zapíše JEN p.pv a p.pvZdroj. Nic se neodhaduje — co v řadě
+// není, se vypíše a technik doplní ručně (čl. 10.10.4.2: údaje výrobce).
+var __rzPvk = null;
+function rozvPvKnihRady() {   // řady výrobců v knihovně, které mají aspoň jednu položku s Pv
+  var m = {};
+  rozvKnihovnaVse().forEach(function (it) {
+    if (it.druh !== 'pristroj' || it.zdroj === 'vestaveny' || !it.vyrobce || rozvNorm(it.vyrobce) === 'obecny' || it.pv === '' || it.pv == null) return;
+    var k = it.vyrobce + '|' + (it.rada || '');
+    (m[k] = m[k] || { klic: k, vyrobce: it.vyrobce, rada: it.rada || '', polozky: [] }).polozky.push(it);
+  });
+  return Object.keys(m).sort(function (a, b) { return a.localeCompare(b, 'cs'); }).map(function (k) { return m[k]; });
+}
+function rozvPvKnihRadaText(r) { return [r.vyrobce, r.rada].filter(Boolean).join(' '); }
+function rozvPvKnihPoly(p) { return p.poly ? (/N/.test(p.poly) ? p.poly : p.poly + 'P') : ''; }
+function rozvPvKnihShoda(it, p) {
+  if (it.kat !== p.kat || String(it.poly || '') !== String(p.poly || '')) return false;
+  if (rfNum(it.In) === '' || +it.In !== +rfNum(p.In)) return false;
+  if ((it.char || '') !== (p.char || '')) return false;
+  if (p.kat === 'FI' || p.kat === 'FIFA') {
+    if (p.idn !== '' && p.idn != null && +it.idn !== +p.idn) return false;
+    if (p.rcdTyp && it.rcdTyp !== p.rcdTyp) return false;
+  }
+  return true;
+}
+function rozvPvKnihNajit(rada, p) {
+  var sh = rada.polozky.filter(function (it) { return rozvPvKnihShoda(it, p); });
+  sh.sort(function (a, b) { return (b.overeno === true) - (a.overeno === true); });
+  return sh[0] || null;
+}
+// Skupiny přístrojů bez Pv (jen ty, u kterých se Pv počítá proudem — ROT_KAT).
+function rozvPvKnihSkupiny(v) {
+  if (!v || !v.radky || !rozvPvKnihRady().length) return [];
+  var m = {}, hl = __rz ? rozvHlavniVypinace(__rz.rady) : [];
+  v.radky.forEach(function (q) {
+    if (q.konst || q.pv !== '') return;
+    var p = q.x.p, k = p.kat + '|' + (p.poly || '');
+    (m[k] = m[k] || { klic: k, kat: p.kat, poly: p.poly || '', prvky: [] }).prvky.push(q.x);
+  });
+  return Object.keys(m).map(function (k) {
+    var g = m[k], kat = rozvKat(g.kat) || { nazev: g.kat };
+    var nazev = { FA: 'Jistič', FIFA: 'RCBO', FI: 'Chránič', AFDD: 'AFDD', FU: 'Pojistkový odpínač', KM: 'Stykač' }[g.kat] ||
+      (g.kat === 'QM' ? (g.prvky.every(function (x) { return hl.indexOf(x.uid) !== -1; }) ? 'Hlavní vypínač' : 'Vypínač') : kat.nazev);
+    g.nazev = [nazev, rozvPvKnihPoly({ poly: g.poly })].filter(Boolean).join(' ');
+    return g;
+  });
+}
+function rozvPvKnihTlacitko(v) {
+  var sk = rozvPvKnihSkupiny(v);
+  return '<div class="rot-pvk-lista"' + (sk.length ? '' : ' hidden') + '><button type="button" class="dok-mini" data-action="tdRPvkOtevrit" title="Doplní Pv přístrojům bez Pv z řady výrobce v knihovně – jen kde se najde stejný přístroj (In, charakteristika, póly).">📚 Doplnit Pv z knihovny…</button></div>';
+}
+function rozvPvKnihRadyProSkupinu(g, rady) {   // řady, které mají Pv u této kategorie
+  return rady.filter(function (r) { return r.polozky.some(function (it) { return it.kat === g.kat; }); });
+}
+function rozvPvKnihPredvolba(g, rady) {
+  var vse = rozvVse(), kl = function (p) { return (p.vyrobce || '') + '|' + (p.rada || ''); };
+  var ok = function (k) { return rady.some(function (r) { return r.klic === k; }) ? k : ''; };
+  var stejna = vse.filter(function (x) { return x.p.kat === g.kat && x.p.vyrobce && rozvNorm(x.p.vyrobce) !== 'obecny'; });
+  for (var i = 0; i < stejna.length; i++) { var a = ok(kl(stejna[i].p)); if (a) return a; }
+  var vyr = vse.filter(function (x) { return x.p.vyrobce && rozvNorm(x.p.vyrobce) !== 'obecny'; }).map(function (x) { return rozvNorm(x.p.vyrobce); });
+  for (var j = 0; j < rady.length; j++) if (vyr.indexOf(rozvNorm(rady[j].vyrobce)) !== -1) return rady[j].klic;
+  return '';
+}
+function rozvPvKnihVysledek() {   // co doplnění udělá při zvolených řadách
+  var q = __rzPvk, out = { zapis: [], pres: [] }; if (!q) return out;
+  q.skupiny.forEach(function (g) {
+    var r = q.rady.filter(function (x) { return x.klic === q.volba[g.klic]; })[0]; if (!r) return;
+    g.prvky.forEach(function (x) {
+      var it = rozvPvKnihNajit(r, x.p);
+      if (it) out.zapis.push({ uid: x.uid, pv: it.pv, zdroj: [r.vyrobce, it.typ || it.nazev || r.rada].filter(Boolean).join(' '), g: g.klic });
+      else out.pres.push({ g: g.klic, text: (x.ozn || x.p.kat) + ' ' + [rozvPopiskaHodnota(x.p) || (x.p.In !== '' && x.p.In != null ? rozvCisloText(x.p.In) + ' A' : ''), rozvPvKnihPoly(x.p)].filter(Boolean).join(' ') +
+        ': v řadě ' + rozvPvKnihRadaText(r) + ' není – doplňte ručně' });
+    });
+  });
+  return out;
+}
+function rozvPvKnihPrekreslit() {
+  var q = __rzPvk, box = document.getElementById('rz-pvk-obsah'); if (!q || !box) return;
+  var vys = rozvPvKnihVysledek();
+  box.innerHTML = '<div class="dk-pozn">Pro každou skupinu přístrojů bez Pv vyberte řadu výrobce z knihovny. Ke každému přístroji se najde položka se stejnou kategorií, In, charakteristikou a póly; ' +
+    'zapíše se jen Pv, ostatní údaje přístroje se nemění. Co v řadě není, zůstane bez Pv.</div>' +
+    q.skupiny.map(function (g) {
+      var rady = rozvPvKnihRadyProSkupinu(g, q.rady), z = vys.zapis.filter(function (a) { return a.g === g.klic; }).length, n = vys.pres.filter(function (a) { return a.g === g.klic; }).length;
+      return '<div class="rz-pvk-sk"><b>' + esc(g.nazev) + ' – ' + g.prvky.length + ' ks</b>' +
+        '<select data-pvk="' + esc(g.klic) + '"><option value="">— nedoplňovat —</option>' + rady.map(function (r) {
+          return '<option value="' + esc(r.klic) + '"' + (q.volba[g.klic] === r.klic ? ' selected' : '') + '>' + esc(rozvPvKnihRadaText(r)) + '</option>'; }).join('') + '</select>' +
+        '<div class="rz-pvk-stav' + (n ? ' ne' : '') + '">' + (!rady.length ? 'V knihovně není řada s Pv pro tuto kategorii.' : !q.volba[g.klic] ? 'Nic se nedoplní.'
+          : 'Pv se doplní u ' + z + ' z ' + g.prvky.length + (n ? ' · ' + n + ' v řadě není' : '')) + '</div></div>';
+    }).join('') +
+    (vys.pres.length ? '<ul class="rz-pvk-pres">' + vys.pres.map(function (a) { return '<li>' + esc(a.text) + '</li>'; }).join('') + '</ul>' : '');
+  var b = document.getElementById('rz-pvk-pouzit'); if (b) { b.disabled = !vys.zapis.length; b.textContent = '✓ Doplnit Pv' + (vys.zapis.length ? ' (' + vys.zapis.length + ')' : ''); }
+}
+function rozvPvKnihObnovitDok() {
+  if (__rz && __rz.zalozka === 'dok') rozvZalozkaNastavit('dok'); else rozvOteplObnovit();
+  rozvOteplUkazatel();
+}
+TD_AKCE.tdRPvkOtevrit = function () {
+  var f = dokForm(); if (!f || !__rz || window.__formReadOnly) return;
+  var v = rozvOteplVypocet(DOK_TYPY.rozv.cist(f)), sk = rozvPvKnihSkupiny(v), rady = rozvPvKnihRady();
+  if (!sk.length) { showToast(rady.length ? 'Všechny přístroje už Pv mají.' : 'V knihovně nejsou data výrobců s Pv.'); return; }
+  __rzPvk = { skupiny: sk, rady: rady, volba: {} };
+  sk.forEach(function (g) { __rzPvk.volba[g.klic] = rozvPvKnihPredvolba(g, rozvPvKnihRadyProSkupinu(g, rady)); });
+  rozvPvKnihPrekreslit();
+  document.getElementById('modal-rz-pvknih').classList.add('open');
+};
+TD_AKCE.tdRPvkZavrit = function () { closeModal('modal-rz-pvknih'); __rzPvk = null; };
+document.addEventListener('change', function (e) {
+  var t = e.target; if (!t || !t.matches || !t.matches('#rz-pvk-obsah select[data-pvk]') || !__rzPvk) return;
+  __rzPvk.volba[t.getAttribute('data-pvk')] = t.value; rozvPvKnihPrekreslit();
+});
+TD_AKCE.tdRPvkPouzit = function () {
+  var vys = rozvPvKnihVysledek(); if (!__rz || !vys.zapis.length) return;
+  var pred = {}, rz = __rz;
+  vys.zapis.forEach(function (a) {
+    var z = rozvNajit(a.uid); if (!z) return;
+    pred[a.uid] = { pv: z.x.p.pv, zdroj: Object.prototype.hasOwnProperty.call(z.x.p, 'pvZdroj') ? z.x.p.pvZdroj : undefined };
+    z.x.p.pv = a.pv; z.x.p.pvZdroj = a.zdroj;
+  });
+  closeModal('modal-rz-pvknih'); __rzPvk = null;
+  dokZmena(); rozvPvKnihObnovitDok();
+  var n = Object.keys(pred).length;
+  showToast('Pv doplněno u ' + dokPocetTvar(n, ['přístroje', 'přístrojů', 'přístrojů']) + (vys.pres.length ? ' · ' + vys.pres.length + ' v řadě není – doplňte ručně' : '') + '.', { timeout: 9000, actionLabel: '↩ ZPĚT', action: function () {
+    if (__rz !== rz) return;
+    Object.keys(pred).forEach(function (u) {
+      var z = rozvNajit(u); if (!z) return;
+      z.x.p.pv = pred[u].pv; if (pred[u].zdroj === undefined) delete z.x.p.pvZdroj; else z.x.p.pvZdroj = pred[u].zdroj;
+    });
+    dokZmena(); rozvPvKnihObnovitDok();
+  } });
+};
 // Ruční Inc — v datech jen vyplněné (prázdné = odvozené).
 function rozvOteplCistNavic(koren, d) {
   var pole = koren.querySelectorAll('.rot-inc');
