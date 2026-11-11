@@ -593,6 +593,37 @@ function vsechnyStavy(zalozky) {
     await __M.rozv(); document.getElementById('toast-wrap').innerHTML = '';
     rzhNavrhyOtevrit(); await __M.w(100);
   }), '#modal-rz-hrebeny');
+  // čelní pohled „jako v dílně", fáze 2 (2026-11-11): pole příkazu s náhledem, lišta akcí dole, chránič nad, výměna, průvodce
+  add('rozvaděč – pole příkazu s náhledem (22x B10)', 'Tvorba dokumentace', E(async () => {
+    await __M.rozv(); document.getElementById('toast-wrap').innerHTML = '';
+    rozvVyberNastavit([]); rozvPohledVykreslit();
+    const p = document.getElementById('rzc-pole'); p.value = '22x B10'; rzcNahled();
+    p.scrollIntoView({ block: 'start' }); await __M.w(100);
+  }));
+  add('rozvaděč – lišta akcí u výběru (dole na obrazovce)', 'Tvorba dokumentace', E(async () => {
+    await __M.rozv(); document.getElementById('toast-wrap').innerHTML = '';
+    const r = __rz.rady[1].prvky.filter(x => x.p.kat === 'FA'); rozvVyberNastavit(r.map(x => x.uid)); rozvPohledVykreslit(); rozvVlastnostiVykreslit();
+    document.getElementById('rz-svg-ram').scrollIntoView({ block: 'start' }); await __M.w(100);
+    setTimeout(() => { if (__rz) { rozvVyberNastavit([]); const e = document.getElementById('rz-akce'); if (e) e.remove(); } }, 3000);
+  }));
+  add('rozvaděč – lišta akcí: chránič nad (návrh parametrů)', 'Tvorba dokumentace', E(async () => {
+    await __M.rozv(); document.getElementById('toast-wrap').innerHTML = '';
+    const r = __rz.rady[1].prvky.filter(x => x.p.kat === 'FA'); rozvVyberNastavit(r.map(x => x.uid)); rozvPohledVykreslit(); rozvVlastnostiVykreslit();
+    TD_AKCE.tdRaChranic();
+    document.getElementById('rz-svg-ram').scrollIntoView({ block: 'start' }); await __M.w(100);
+    setTimeout(() => { if (__rz) { __rz.akceFi = null; rozvVyberNastavit([]); const e = document.getElementById('rz-akce'); if (e) e.remove(); } }, 3000);
+  }));
+  add('rozvaděč – vyměnit za… (okno)', 'Tvorba dokumentace', E(async () => {
+    await __M.rozv(); document.getElementById('toast-wrap').innerHTML = '';
+    const r = __rz.rady[1].prvky.filter(x => x.p.kat === 'FA'); rozvVyberNastavit([r[0].uid]); rozvPohledVykreslit();
+    TD_AKCE.tdRaVymenit(); await __M.w(100);
+    setTimeout(() => { if (__rz) { rozvVyberNastavit([]); const e = document.getElementById('rz-akce'); if (e) e.remove(); } }, 3000);
+  }), '#modal-rz-vymena');
+  add('rozvaděč – průvodce prvním rozvaděčem (krok 1)', 'Tvorba dokumentace', E(async () => {
+    await __M.rozv(); document.getElementById('toast-wrap').innerHTML = '';
+    rozvVyberNastavit([]); rozvPohledVykreslit(); rzvStart(); await __M.w(150);
+    setTimeout(() => { rzvKonec(); }, 3000);
+  }));
   add('rozvaděč – režim Zapojení, vodič s průřezem a barvou', 'Tvorba dokumentace', E(async () => {
     await __M.rozv(); document.getElementById('toast-wrap').innerHTML = '';
     TD_AKCE.tdRNapRezim();
@@ -608,7 +639,7 @@ function vsechnyStavy(zalozky) {
   }));
   add('rozvaděč – svorkovnice ve vlastnostech a svorkové lišty', 'Tvorba dokumentace', E(async () => {
     await __M.rozv(); const x = rozvVlozit('v-x-svork', 2, __rz.rady[2].prvky.length); __rz.rady[2].svorky = true;
-    __rz.vyber = x.uid; rozvPohledVykreslit(); rozvVlastnostiVykreslit();
+    __rz.vyber = x.uid; rozvPohledVykreslit(); rozvVlastnostiVykreslit(); document.getElementById('toast-wrap').innerHTML = '';
     document.querySelector('#rz-vlastnosti .rp-svorkovnice').scrollIntoView({ block: 'start' }); await __M.w(100);
   }));
   add('rozvaděč – Dokumenty: nechat prázdné a jiný výrobce', 'Tvorba dokumentace', E(async () => {
@@ -770,7 +801,8 @@ function vsechnyStavy(zalozky) {
   }));
   add('rozvaděč – náhled PDF', 'Tvorba dokumentace', E(async () => { await __M.rozv(); await dokNahled(); await __M.w(400); }));
   add('rozvaděč – přeplněná řada', 'Tvorba dokumentace', E(async () => {
-    await __M.rozv(); rozvVlozit('v-fa-3-C32', 0, 0); document.getElementById('rz-pohled').scrollIntoView({ block: 'start' }); await __M.w(100);
+    await __M.rozv(); rozvVlozit('v-fa-3-C32', 0, 0); document.getElementById('toast-wrap').innerHTML = '';   // hláška by na telefonu stála nad lištou akcí a zakryla tlačítka vlastností (přeplnění hlásí i pruh v pohledu)
+    document.getElementById('rz-pohled').scrollIntoView({ block: 'start' }); await __M.w(100);
   }));
   // rozvaděč PSC (etapa 5a)
   add('rozvaděč – výstraha DBO nad 250 A (převést na PSC)', 'Tvorba dokumentace', E(async () => {

@@ -91,7 +91,7 @@ async function prikaz(p, txt, o) {
   // 22x B10 do řady se 24 volnými moduly
   n = await prikaz(p, '22x B10', { bezEnter: true });
   check('příkaz: náhled „22× Jistič 1P B10 → řada 1 · zabere 22 M, zbude 2 M" ještě před Enterem', /^ok: 22× Jistič 1P B10 → řada 1 · zabere 22 M, zbude 2 M/.test(n), n);
-  if (SNIMKY) { await p.evaluate(() => window.scrollTo(0, document.getElementById('rz-pohled').getBoundingClientRect().top + scrollY - 90)); await p.screenshot({ path: SNIMKY + '/1-pole-prikazu-nahled.png' }); }
+  if (SNIMKY) { await p.evaluate(() => { document.getElementById('toast-wrap').innerHTML = ''; window.scrollTo(0, document.getElementById('rz-pohled').getBoundingClientRect().top + scrollY - 90); }); await p.screenshot({ path: SNIMKY + '/1-pole-prikazu-nahled.png' }); }
   await p.keyboard.press('Enter'); await w(80);
   st = await p.evaluate(() => ({ r0: __T.rada(0), pocet: rozvVse().length, vyber: rozvVybrane().length, f: document.activeElement.id, v: document.getElementById('rzc-pole').value, kid: __rz.rady[0].prvky[0].knih, mez: __rz.rady[0].prvky.some(x => x.mezera) }));
   const fa22 = Array.from({ length: 22 }, (_, i) => '-FA' + (i + 1)).join(' ');
@@ -199,7 +199,7 @@ async function prikaz(p, txt, o) {
   await prikaz(p, '20x B16'); await p.evaluate(() => document.activeElement.blur());
   L = await lista();
   check('lišta: u 20 jističů v řadě přibude Hřeben a Rozdělit fáze; lišta je nad výběrem a nezakrývá ho', L && /🪮 Hřeben/.test(L.tl) && /⚖ Rozdělit fáze/.test(L.tl) && /^Vybráno 20/.test(await p.evaluate(() => document.querySelector('#rz-akce .rza-pocet').textContent)) && L.nadPrvni && !L.prekryv, JSON.stringify(L));
-  if (SNIMKY) { await p.evaluate(() => window.scrollTo(0, document.getElementById('rz-pohled').getBoundingClientRect().top + scrollY - 90)); await w(100); await p.screenshot({ path: SNIMKY + '/2-lista-akci.png' }); }
+  if (SNIMKY) { await p.evaluate(() => { document.getElementById('toast-wrap').innerHTML = ''; window.scrollTo(0, document.getElementById('rz-pohled').getBoundingClientRect().top + scrollY - 90); }); await w(100); await p.screenshot({ path: SNIMKY + '/2-lista-akci.png' }); }
   await klikA('tdRaHreben');
   st = await p.evaluate(() => { const h = (__rz.hrebeny || [])[0]; return h && { n: __rz.hrebeny.length, rada: h.rada, od: h.od, do: h.do, poly: h.poly, strana: h.strana, kryte: rzhKryte(h).length, vyb: rozvVybrane().length, lista: !!document.getElementById('rz-akce'), d: (__T.cist().hrebeny || []).length }; });
   check('lišta: Hřeben natáhne hřeben přes 20 vybraných jističů (1P, shora, moduly 0–20), výběr zůstane', st && st.n === 1 && st.rada === 1 && st.od === 0 && st.do === 20 && st.poly === '1' && st.strana === 'nahore' && st.kryte === 20 && st.vyb === 20 && st.lista && st.d === 1, JSON.stringify(st));
@@ -315,6 +315,171 @@ async function prikaz(p, txt, o) {
     });
     check('lišta: na šířce 360 px je dole na obrazovce přes celou šířku, tlačítka aspoň 44 px, pole příkazu má písmo 16 px a stránka se nerozšíří', M.pos === 'fixed' && M.dole === 0 && M.l === 0 && M.w === 360 && M.tl && M.pismo === '16px' && M.sirkaStr <= 360, JSON.stringify(M));
     await ctxM.close();
+  }
+
+  // ── 3. průvodce prvním rozvaděčem ─────────────────────────────────────
+  {
+    const cv = await kontext(b), ev = [];
+    const v = await stranka(cv, URL, ev);
+    const pruv = () => v.evaluate(() => { const e = document.getElementById('rz-pruvodce'); if (!e || e.style.visibility === 'hidden') return null; const c = document.querySelector('.rz-pruv-cil');
+      const cb = c ? c.getBoundingClientRect() : null, eb = e.getBoundingClientRect();
+      return { videt: !!cb && cb.top >= 100 && (cb.height > 240 ? cb.top < innerHeight - 200 : cb.bottom <= innerHeight) && (cb.height > 240 || eb.bottom <= cb.top || eb.top >= cb.bottom || eb.right <= cb.left || eb.left >= cb.right), t: e.querySelector('b').textContent, cil: c ? (c.id || c.className.replace(/\s*rz-pruv-cil/, '')) : null, tl: [...e.querySelectorAll('button')].map(x => x.textContent).join('|'), vOkne: (r => r.top >= 0 && r.left >= 0 && r.bottom <= innerHeight && r.right <= innerWidth)(e.getBoundingClientRect()), pe: getComputedStyle(e).pointerEvents }; });
+    await v.evaluate(async () => { await dokNovy('rozv'); });
+    check('průvodce: před výběrem skříně se neukazuje', await pruv() === null);
+    await v.click('#rz-seznam [data-kid="v-sk-4x24-ocel"] [data-action="tdRSkrinPouzit"]'); await w(300);
+    let P = await pruv();
+    check('průvodce: při prvním novém rozvaděči (po výběru skříně) krok 1 ukazuje na pole příkazu — „Napiš, co vložit – třeba 22x B10" (pole je vidět pod lištami a bublina ho nezakrývá)', P && /^1 \/ 4 · Napiš, co vložit – třeba 22x B10$/.test(P.t) && P.cil === 'rzc-pole' && P.tl === 'Přeskočit|Další →' && P.vOkne && P.pe === 'none' && P.videt, JSON.stringify(P));
+    if (SNIMKY) { await v.evaluate(() => { const tw = document.getElementById('toast-wrap'); if (tw) tw.innerHTML = ''; }); await w(100); await v.screenshot({ path: SNIMKY + '/3-pruvodce.png' }); }
+    const kroky = [];
+    for (let i = 0; i < 3; i++) { await v.click('#rz-pruvodce [data-action="tdRPruvDalsi"]'); await w(150); kroky.push(await pruv()); }
+    check('průvodce: krok 2 „Vyber jističe a dej Hřeben nebo Chránič nad" (čelní pohled / lišta akcí), krok 3 „Zapojení: natáhni vodič z kabelu na hlavní vypínač" (tlačítko Zapojení), krok 4 „Hotovo – dokumentaci najdeš v záložce Dokumenty" (záložka)',
+      kroky[0] && /^2 \/ 4 · Vyber jističe a dej Hřeben nebo Chránič nad$/.test(kroky[0].t) && /rz-svg-ram|rz-akce/.test(kroky[0].cil) &&
+      kroky[1] && /^3 \/ 4 · Zapojení: natáhni vodič z kabelu na hlavní vypínač$/.test(kroky[1].t) && /rz-nap-btn/.test(kroky[1].cil) &&
+      kroky[2] && /^4 \/ 4 · Hotovo – dokumentaci najdeš v záložce Dokumenty$/.test(kroky[2].t) && /rz-zal/.test(kroky[2].cil) && /✓ Hotovo/.test(kroky[2].tl) && kroky.every(q => q.vOkne && q.videt), JSON.stringify(kroky));
+    await v.click('#rz-pruvodce .rz-pruv-dalsi'); await w(100);
+    let stv = await v.evaluate(() => ({ p: !!document.getElementById('rz-pruvodce'), cil: document.querySelectorAll('.rz-pruv-cil').length, n: rozvVse().length, data: JSON.stringify(DOK_TYPY.rozv.cist(dokForm()).rady), klic: localStorage.getItem('revize_el_rz_pruvodce') }));
+    check('průvodce: Hotovo ho zavře, nic sám nevložil a zapamatuje se v prohlížeči', !stv.p && !stv.cil && stv.n === 0 && !/uid/.test(stv.data) && stv.klic === '1', JSON.stringify(stv));
+    // podruhé se sám neukáže; odkaz „Ukázat průvodce" ho spustí, Přeskočit zavře
+    await v.evaluate(async () => { await dokNovy('rozv'); });
+    await v.click('#rz-seznam [data-kid="v-sk-4x24-ocel"] [data-action="tdRSkrinPouzit"]'); await w(300);
+    check('průvodce: u dalšího nového rozvaděče se už sám neukáže (jen poprvé)', await pruv() === null);
+    await v.click('#rz-pohled .rz-pruv-odkaz'); await w(200);
+    P = await pruv();
+    check('průvodce: „❓ Ukázat průvodce" pod čelním pohledem ho spustí znovu od kroku 1', P && /^1 \/ 4/.test(P.t), JSON.stringify(P));
+    await v.keyboard.press('/'); await v.keyboard.type('3x B10'); await v.keyboard.press('Enter'); await w(100);
+    stv = await v.evaluate(() => ({ n: rozvVse().length, p: !!document.getElementById('rz-pruvodce') }));
+    check('průvodce: nepřekáží — s otevřeným průvodcem jde normálně vkládat příkazem', stv.n === 3 && stv.p, JSON.stringify(stv));
+    await v.click('#rz-pruvodce .rz-pruv-preskocit'); await w(100);
+    check('průvodce: Přeskočit ho zavře', await v.evaluate(() => !document.getElementById('rz-pruvodce') && !document.querySelector('.rz-pruv-cil')));
+    check('průvodce: žádná chyba JavaScriptu', !ev.length, ev.slice(0, 2).join(' | '));
+    await cv.close();
+    // bez localStorage (vyhazuje výjimku) program nespadne
+    const cx = await kontext(b), ex = [];
+    await cx.addInitScript(() => {
+      const re = /rz_(pruvodce|rada|fi_hreben)/, g = Storage.prototype.getItem, s = Storage.prototype.setItem, r = Storage.prototype.removeItem;
+      Storage.prototype.getItem = function (k) { if (re.test(k)) throw new Error('úložiště nejde'); return g.apply(this, arguments); };
+      Storage.prototype.setItem = function (k) { if (re.test(k)) throw new Error('úložiště nejde'); return s.apply(this, arguments); };
+      Storage.prototype.removeItem = function (k) { if (re.test(k)) throw new Error('úložiště nejde'); return r.apply(this, arguments); };
+    });
+    const x = await stranka(cx, URL, ex);
+    await x.evaluate(async () => { await dokNovy('rozv'); });
+    await x.click('#rz-seznam [data-kid="v-sk-4x24-ocel"] [data-action="tdRSkrinPouzit"]'); await w(300);
+    const bezA = await x.evaluate(() => !!document.getElementById('rz-pruvodce'));
+    await x.keyboard.press('/'); await x.keyboard.type('4x B16'); await x.keyboard.press('Enter'); await w(100);
+    await x.evaluate(() => document.activeElement.blur());
+    await x.click('#rz-akce [data-action="tdRaChranic"]'); await w(80); await x.click('#rz-akce [data-action="tdRaChranicVlozit"]'); await w(100);
+    await x.evaluate(() => { rozvVyberNastavit([]); rozvPohledVykreslit(); rozvVlastnostiVykreslit(); const c = document.querySelector('.rza-nast-fi'); if (c) c.click(); });
+    await x.click('#rz-pohled .rz-pruv-odkaz'); await w(200);
+    const bez = await x.evaluate(() => ({ p: !!document.getElementById('rz-pruvodce'), r: __rz.rady[0].prvky.map(q => q.ozn).join(' ') }));
+    check('bez localStorage (čtení i zápis vyhazuje výjimku): program nespadne, průvodce se sám neukáže, „Ukázat průvodce" i vkládání fungují', !ex.length && !bezA && bez.p && bez.r === '-FI1 -FA1 -FA2 -FA3 -FA4', JSON.stringify(bez) + ' ' + ex.slice(0, 2).join(' | '));
+    await cx.close();
+  }
+
+  // ── 4. RS2 na nejvýš 25 akcí ──────────────────────────────────────────
+  {
+    const cr = await kontext(b, { viewport: { width: 1600, height: 1300 } }), er = [];
+    const r = await stranka(cr, URL, er);
+    await r.evaluate(async () => {
+      localStorage.setItem('revize_el_rz_pruvodce', '1'); delete STORE.technik.rz_hreben_strana;
+      await dokNovy('rozv');
+      __T.u = o => o === '@privod' ? '@privod' : __T.naj(o).uid;
+      __T.videt = el => { let bb = el.getBoundingClientRect(); if (bb.top < 110 || bb.bottom > innerHeight - 50) { window.scrollBy(0, bb.top - innerHeight / 2); bb = el.getBoundingClientRect(); } return { x: bb.left + bb.width / 2, y: bb.top + bb.height / 2 }; };
+      __T.sv = (o, s, k) => { const e = document.querySelector('#rz-pohled [data-sv="' + __T.u(o) + '|' + s + '|' + (k || 0) + '"]'); return e ? __T.videt(e) : null; };
+      __T.radaBod = i => { const svg = document.querySelector('#rz-pohled .rz-svg'); let M = svg.getScreenCTM(); const mm = { x: RZG.okraj + 2.5 * RZG.M, y: rozvRadaY(i) + RZG.H / 2 };
+        let q = new DOMPoint(mm.x, mm.y).matrixTransform(M); if (q.y < 110 || q.y > innerHeight - 50) { window.scrollBy(0, q.y - innerHeight / 2); M = svg.getScreenCTM(); q = new DOMPoint(mm.x, mm.y).matrixTransform(M); } return { x: q.x, y: q.y }; };
+    });
+    let akce = 0;
+    const A = {
+      async skrin(kid) { akce++; await r.click('#rz-seznam [data-kid="' + kid + '"] [data-action="tdRSkrinPouzit"]'); await w(250); },
+      async prikaz(txt) { akce++; await r.evaluate(() => { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); }); await r.keyboard.press('/'); await r.keyboard.type(txt); await r.keyboard.press('Enter'); await w(120); },
+      async tlacitko(sel) { akce++; await r.evaluate(() => { if (document.activeElement && document.activeElement.blur) document.activeElement.blur(); }); await r.click(sel); await w(150); },
+      async klikRada(i) { akce++; const c = await r.evaluate(i => __T.radaBod(i), i); await r.mouse.click(c.x, c.y); await w(120); },
+      async tah(odkud, kam) { akce++; const a = await r.evaluate(q => __T.sv(q[0], q[1], q[2]), odkud); await r.mouse.move(a.x, a.y); await w(40); await r.mouse.down(); await r.mouse.move(a.x + 9, a.y + 9, { steps: 3 });
+        const cil = () => r.evaluate(q => { const e = document.querySelector('#rz-pohled [data-sv="' + __T.u(q[0]) + '|' + q[1] + '|' + (q[2] || 0) + '"]').getBoundingClientRect(); return { x: e.left + e.width / 2, y: e.top + e.height / 2 }; }, kam);
+        // u kraje rámečku se pohled při tažení sám posouvá — cíl se dorovná jako očima (pořád jeden tah)
+        for (let i = 0; i < 6; i++) { const c = await cil(); await r.mouse.move(c.x, c.y, { steps: i ? 3 : 12 }); await w(120); const c2 = await cil(); if (Math.abs(c2.x - c.x) + Math.abs(c2.y - c.y) < 2) break; }
+        if (process.env.LADIT) console.log('   tah', JSON.stringify(odkud), '→', JSON.stringify(kam), await r.evaluate(() => { const e = document.getElementById('rz-nap-stitek'); return e ? e.textContent : ''; }));
+        await r.mouse.up(); await w(180); }
+    };
+    await A.skrin('v-sk-4x24-ocel');
+    await A.prikaz('3x svorka 10');
+    await A.prikaz('hl 63 3p');
+    await A.prikaz('pojistky 3p 14x51');
+    await A.prikaz('spd t2 3+1');
+    await A.klikRada(1);
+    await A.prikaz('22x B10');
+    await A.tlacitko('#rz-akce [data-action="tdRaHreben"]');
+    await A.prikaz('2x B40 3P');
+    await A.klikRada(3);
+    await A.prikaz('fi 40/30 4p');
+    await A.prikaz('20x B16');
+    await A.tlacitko('#rz-akce [data-action="tdRaHreben"]');
+    await A.tlacitko('#rz-pohled .rz-nap-btn');
+    for (let i = 0; i < 3; i++) await A.tah(['@privod', 'o', i], ['-X' + (i + 1), 't', 0]);
+    for (let i = 0; i < 3; i++) await A.tah(['-X' + (i + 1), 'b', 0], ['-QH1', 't', i]);
+    await A.tah(['-FU1', 't', 0], ['SPD1', 't', 0]);   // -FU1 je napájen zespodu (z výstupu -QH1 v téže mezeře), jeho výstup je nahoře
+    const R = await r.evaluate(() => {
+      const zd = x => { const z = rozvZdrojEff(x, __rz.rady); return z === '@privod' ? 'přívod' : (z && rozvNajit(z) ? rozvNajit(z).x.ozn : String(z)); };
+      const vse = []; __rz.rady.forEach(a => a.prvky.forEach(x => vse.push(x)));
+      const sk = {}; vse.forEach(x => { const z = x.p.kat === 'QM' ? 'svorky ' + rozvOznRada((x.nadrSvorky || []).map(u => rozvNajit(u).x)) : zd(x); (sk[z] = sk[z] || []).push(x.ozn); });
+      const d = __T.cist(), S = rzpStav(__rz);
+      return { rady: __rz.rady.map(a => a.prvky.length).join(), strom: Object.keys(sk).map(z => z + ' → ' + sk[z].join(' ')).join(' ¦ '), hreb: (d.hrebeny || []).map(h => h.rada + ':' + h.od + '-' + h.do + ':' + h.poly + ':' + rzhKryte(h).length).join(), vod: (d.vodice || []).length,
+        pre: rozvPreplnene(__rz).length, panel: document.getElementById('rz-vlastnosti').innerText, bezNapeti: vse.filter(x => rzpFaziX(x) > 0 && !(S.vys[x.uid] && S.vys[x.uid].pod)).map(x => x.ozn).join(), fazeB16: __rz.rady[3].prvky.slice(1, 7).map(x => x.faze).join(), ozn: vse.map(x => x.ozn).join(' ') };
+    });
+    const fa = (a, c) => Array.from({ length: c - a + 1 }, (_, i) => '-FA' + (a + i)).join(' ');
+    const stromCekam = 'přívod → -X1 -X2 -X3 ¦ svorky -X1…X3 → -QH1 ¦ -QH1 → -FU1 ' + fa(1, 22) + ' ' + fa(23, 24) + ' -FI1 ¦ -FU1 → SPD1 ¦ -FI1 → ' + fa(25, 44);
+    check('RS2: sestaven na nejvýš 25 akcí (skříň, 8 příkazů, 2 kliknutí do řady, 2× Hřeben, Zapojení, 7 tahů vodičů) — akcí: ' + akce, akce <= 25, 'akcí ' + akce);
+    check('RS2: strom „kdo koho napájí": přívod → -X1…X3 → -QH1 → { -FU1 → SPD1; -FA1…FA22; -FA23, -FA24; -FI1 → -FA25…FA44 }', R.strom === stromCekam, R.strom);
+    check('RS2: 51 přístrojů ve 4 řadách bez přeplnění, 2 hřebeny (22 a 20 pólů), 7 vodičů, všechno pod napětím', R.rady === '6,22,2,21' && R.pre === 0 && R.hreb === '1:0-22:3:22,3:4-24:3:20' && R.vod === 7 && R.bezNapeti === '', JSON.stringify({ rady: R.rady, hreb: R.hreb, vod: R.vod, bez: R.bezNapeti }));
+    check('RS2: panel „Kdo koho napájí" ukazuje totéž (-QH1 z -X1…X3, -FA25…FA44 pod -FI1) a jističe pod chráničem mají fáze ze zubů L1, L2, L3…', /-QH1 63 A \[L1,L2,L3\]\s+z -X1…X3/.test(R.panel) && /-FA25…FA44 B16/.test(R.panel) && R.fazeB16 === 'L1,L2,L3,L1,L2,L3', R.fazeB16 + ' ' + (R.panel.match(/-QH1[^\n]*/) || [''])[0]);
+    check('RS2: žádná chyba JavaScriptu', !er.length, er.slice(0, 2).join(' | '));
+    await cr.close();
+  }
+
+  // ── 5. starý rozvaděč: data, čelní pohled, PDF, schéma, DXF beze změny proti předchozí verzi ──
+  {
+    const rs2 = require('./rozvadec-rs2.js').toString();
+    const postav = async (pg) => { await pg.evaluate('window.__rs2 = ' + rs2); return pg.evaluate(async () => {
+      await dokNovy('rozv');
+      const dk = (s, v) => { const e = dokForm().querySelector(s); e.value = v; e.dispatchEvent(new Event('input', { bubbles: true })); e.dispatchEvent(new Event('change', { bubbles: true })); };
+      dk('[data-dk="oznaceni"]', 'RS2'); dk('[data-dk="soustava"]', '3NPE ~400/230 V TN-S'); dk('[data-dk="datum"]', '2026-11-01');
+      rozvSkrinNastavit(rozvKnihPolozka('v-sk-4x24-ocel')); __rs2();
+      __rz.rady[0].prvky[5].mezera = 0; __rz.rady[1].prvky[0].pi = '1,2';
+      if (typeof rzhNavrhy === 'function') { const N = rzhNavrhy(); N.forEach(q => { __rz.hrebeny = (__rz.hrebeny || []).concat([q.h]); if (q.w) __rz.vodice = (__rz.vodice || []).concat([q.w]); }); rozvZmena('hřebeny', () => {}); }
+      dokZmena(); await dokUlozitOtevreny();
+      return JSON.stringify(DOK.dokumenty.filter(x => x.uid === window.__dokOtevreny.uid)[0]);
+    }); };
+    const projit = async (pg, js) => pg.evaluate(async (js) => {
+      const dok = JSON.parse(js), d0 = JSON.parse(JSON.stringify(dok.data)), ven = {};
+      const t0 = STORE.technik; STORE.technik = { jmeno: 'Petr Vymyšlený', firma: 'Vymyšlená elektro s.r.o.', ico: '12345678', mesto: 'Kyjov' };
+      ven.listy = rozvSchemaListy(d0).map(l => l.svg).join('\n');
+      ven.dxf = rozvDxfListy(d0).map(l => l.svg).join('\n');
+      ven.pdf = DOK_TYPY.rozv.pdf(d0).map(q => q.html || q.cela || '').join('\n');
+      STORE.technik = t0;
+      await dokNacist();
+      DOK.dokumenty = DOK.dokumenty.filter(x => x.uid !== dok.uid).concat([dok]); await dokZapsat();
+      await dokOtevrit(dok.uid); await new Promise(r => setTimeout(r, 300));
+      ven.celni = rozvSvg(__rz, { tisk: true, k: 0.5 }); ven.obr = rozvSvg(__rz, { k: 3 });
+      dokZmena(); await dokUlozitOtevreny(); ven.jenOtevrit = JSON.stringify(DOK.dokumenty.filter(x => x.uid === dok.uid)[0].data);
+      rozvZalozkaNastavit('dok'); await new Promise(r => setTimeout(r, 250)); rozvZalozkaNastavit('sch'); await new Promise(r => setTimeout(r, 250)); rozvZalozkaNastavit('navrh'); await new Promise(r => setTimeout(r, 100));
+      dokZmena(); await dokUlozitOtevreny();
+      ven.data = JSON.stringify(DOK.dokumenty.filter(x => x.uid === dok.uid)[0].data);
+      ven.nahled = !!document.getElementById('rzc-pole');
+      return ven;
+    }, js);
+    const cs = await kontext(b), es = [];
+    const s = await stranka(cs, URL0, es);
+    const stary = await postav(s), puv = await projit(s, stary);
+    await cs.close();
+    const cn = await kontext(b), en = [];
+    const nn = await stranka(cn, URL, en);
+    const nov = await projit(nn, stary);
+    await cn.close();
+    const rozdil = (a, c) => { if (a === c) return ''; let i = 0; while (a[i] === c[i]) i++; return i + ': …' + a.slice(Math.max(0, i - 60), i + 80) + ' ≠ …' + c.slice(Math.max(0, i - 60), i + 80); };
+    check('starý rozvaděč (RS2 s hřebeny a vodiči z předchozí verze): otevření a uložení — data bajtově jako uložená; po Dokumentech a Schématu jako v předchozí verzi', nov.jenOtevrit === JSON.stringify(JSON.parse(stary).data) && nov.data === puv.data && nov.nahled, rozdil(nov.jenOtevrit, JSON.stringify(JSON.parse(stary).data)) || rozdil(nov.data, puv.data));
+    check('starý rozvaděč: čelní pohled (obrazovka i tisk) znak po znaku jako předchozí verze', nov.celni === puv.celni && nov.obr === puv.obr, rozdil(nov.celni, puv.celni) || rozdil(nov.obr, puv.obr));
+    check('starý rozvaděč: PDF dokumentace, schéma i DXF znak po znaku jako předchozí verze', nov.pdf === puv.pdf && nov.listy === puv.listy && nov.dxf === puv.dxf && nov.pdf.length > 5000 && nov.listy.length > 5000 && nov.dxf.length > 5000, rozdil(nov.pdf, puv.pdf) || rozdil(nov.listy, puv.listy) || rozdil(nov.dxf, puv.dxf));
+    check('starý rozvaděč: žádná chyba JavaScriptu', !es.length && !en.length, es.concat(en).slice(0, 2).join(' | '));
   }
 
   check('žádná chyba JavaScriptu', !err.length, err.slice(0, 3).join(' | '));

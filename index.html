@@ -2166,6 +2166,18 @@ html.dark .rza-fi-info.chyba{color:#f3b0a6}
 .rz-vym-n{flex:1 1 auto;min-width:0;display:flex;flex-direction:column;font-size:.86rem}
 .rz-vym-n small{color:var(--muted);font-size:.74rem}
 .rz-vym-b{flex:0 0 auto;font-size:.78rem;padding:.35rem .6rem}
+.rz-pruv{position:fixed;z-index:450;max-width:19.5rem;background:#1f497d;color:#fff;border-radius:8px;padding:.6rem .75rem .55rem;font-size:.82rem;line-height:1.4;
+  box-shadow:0 6px 22px rgba(0,0,0,.35);pointer-events:none}
+.rz-pruv b{display:block;margin-bottom:.2rem;font-size:.86rem}
+.rz-pruv code{background:rgba(255,255,255,.18);padding:0 .25rem;border-radius:3px;font-family:var(--mono)}
+.rz-pruv-akce{display:flex;justify-content:space-between;align-items:center;gap:.6rem;margin-top:.5rem}
+.rz-pruv button{pointer-events:auto;font-family:var(--sans);font-size:.78rem;border-radius:4px;padding:.3rem .65rem;cursor:pointer}
+.rz-pruv-preskocit{background:transparent;color:#dbe6f5;border:1px solid rgba(255,255,255,.4)}
+.rz-pruv-dalsi{background:#fff;color:#1f497d;border:1px solid #fff;font-weight:700}
+.rz-pruv-cil{outline:3px solid #f0a000!important;outline-offset:2px;animation:rzPruvCil 1.3s ease-in-out infinite}
+@keyframes rzPruvCil{0%,100%{outline-color:#f0a000}50%{outline-color:rgba(240,160,0,.25)}}
+@media print{.rz-pruv{display:none!important}}
+.rz-pruv-odkaz{background:none;border:0;padding:0;margin-left:.3rem;color:var(--accent2);font:inherit;cursor:pointer;text-decoration:underline}
 .rz-lista{display:flex;flex-wrap:wrap;align-items:center;gap:.4rem .9rem;margin-bottom:.5rem;font-size:.82rem}
 .rz-skrin-n{flex:1 1 220px;min-width:0;color:var(--muted);overflow-wrap:anywhere}
 .rz-volno b{color:#0f7b5f}
@@ -2666,7 +2678,14 @@ html.dark .rz-imp-chyby{background:#3a1f1c;border-color:#6b2c25}
   /* lišta akcí u výběru: dole na obrazovce, jedna řada (posouvá se do strany) */
   .rz-akce{position:fixed!important;left:0!important;right:0;top:auto!important;bottom:0;max-width:none!important;z-index:400;border-radius:0;border-width:1px 0 0;
     flex-wrap:nowrap;overflow-x:auto;padding:.3rem .4rem calc(.3rem + env(safe-area-inset-bottom));box-shadow:0 -3px 12px rgba(0,0,0,.22)}
-  .rz-akce.rz-akce-form{flex-wrap:wrap}
+  .rz-akce.rz-akce-form{flex-wrap:wrap;overflow-x:visible}
+  .rz-akce-form .rza-pocet{display:none}   /* co se vkládá, říká řádek pod tlačítky — lišta nesmí zabrat čtvrtinu displeje */
+  .rz-akce-form .rza-fl{flex:1 1 21%;min-width:0;flex-direction:column;align-items:stretch;gap:0;font-size:.66rem;color:var(--muted)}
+  .rz-akce-form .rza-fl select{width:100%;padding:.1rem}
+  .rz-akce-form .rza-b{flex:1 1 40%}
+  .rz-akce-form .rza-fi-info{font-size:.68rem;line-height:1.25}
+  body:has(#rz-akce) .voice-fab{bottom:calc(var(--rza-h,58px) + 10px)}   /* diktování a hlášky nad lištu akcí */
+  body:has(#rz-akce) #toast-wrap{bottom:calc(var(--rza-h,58px) + 10px)}
   .rz-akce .rza-b{min-height:44px;min-width:44px;flex-shrink:0;font-size:.8rem}
   .rz-akce .rza-n input,.rz-akce .rza-fl select{font-size:16px;min-height:44px}
   .rz-akce .rza-n input{width:3.2rem}
@@ -2675,6 +2694,9 @@ html.dark .rz-imp-chyby{background:#3a1f1c;border-color:#6b2c25}
   .rz-vym-b{min-height:44px;flex:1 1 100%}
   .rzc-pole{font-size:16px;min-height:44px;max-width:none}
   .rzc-klav{display:none}
+  .rz-pruv{max-width:min(19.5rem,calc(100vw - 16px))}
+  .rz-pruv button{min-height:44px;min-width:44px;font-size:.86rem}
+  .rz-pruv-odkaz{display:inline-flex;align-items:center;min-height:44px;margin-left:0}
   .rzc-nast select{font-size:16px;min-height:44px;max-width:100%}
   .rz-zal{flex:1 1 auto;min-height:44px;padding:.5rem .3rem;font-size:.86rem}   /* 4 záložky (i 🧊 3D) se vejdou do 360 px */
   .rot-tab input{width:100%;min-width:3.6rem}
@@ -2760,6 +2782,12 @@ html.dark .rz-imp-chyby{background:#3a1f1c;border-color:#6b2c25}
 @media (max-width:600px), (pointer:coarse) and (max-height:500px){
   .rz-odv-btn{min-width:44px;min-height:44px;bottom:0;right:0}
   .rz-odv-f > input{padding-right:3rem}
+}
+/* telefon na šířku: formulář chrániče v liště akcí v jedné řadě (lišta nesmí zabrat čtvrtinu nízkého displeje) */
+@media (pointer:coarse) and (max-height:500px){
+  .rz-akce-form .rza-fl{flex:0 1 auto;flex-direction:row;align-items:center;gap:.2rem}
+  .rz-akce-form .rza-fl select{width:auto}
+  .rz-akce-form .rza-b{flex:0 0 auto}
 }
 /* ═══ /MOBIL ═══ */
 </style>
@@ -2943,6 +2971,9 @@ html.dark .rz-imp-chyby{background:#3a1f1c;border-color:#6b2c25}
         <li>Hřebeny osazujete shora, nebo zespodu? Volí se v liště nástroje Hřeben a program si to pamatuje.</li>
         <li>V režimu <strong>🔌 Zapojení</strong> natáhnete vodič ze svorky hlavního vypínače na hřeben — kdo koho napájí, program spočítá sám. U vodiče jde zadat <strong>průřez a barvu</strong>; hřebeny, krytky a propojky jdou do seznamu materiálu v PDF.</li>
         <li>Kabelová vývodka se kreslí shora nebo zespodu podle pole <strong>Přívod do skříně</strong> v hlavičce.</li>
+        <li><strong>Vkládání příkazem:</strong> do pole nad čelním pohledem (skočí do něj klávesa <strong>/</strong>) napište, co chcete vložit — <strong>22x B10</strong>, <strong>B16 3P</strong>, <strong>fi 40/30 4p</strong>, <strong>hl 63 3p</strong>, <strong>spd t2</strong>, <strong>pojistky 3p 14x51</strong>, <strong>svorky 20</strong>, <strong>rezerva 2</strong>. Pod polem hned vidíte, co a kam se vloží (i když přístroje přetečou do další řady), Enter je vloží a označení naváže. V „⚙ Nastavení konfigurátoru" jde zvolit výchozí řada výrobce.</li>
+        <li><strong>Lišta akcí u výběru:</strong> u vybraných přístrojů se objeví malá lišta — <strong>Duplikovat ×n</strong>, <strong>Hřeben</strong> přes vybrané jističe, <strong>Chránič nad</strong> (vloží chránič před jističe a napojí je), <strong>Rozdělit fáze</strong> L1, L2, L3, <strong>Vyměnit za…</strong> jiný přístroj se stejnými parametry a <strong>Smazat</strong>. Na telefonu je dole na obrazovce.</li>
+        <li><strong>Průvodce:</strong> u prvního nového rozvaděče vás čtyřmi kroky provede průvodce; kdykoli ho pustíte znovu odkazem <strong>❓ Ukázat průvodce</strong> pod čelním pohledem.</li>
       </ul>
     </div>
   </div>
@@ -32566,8 +32597,8 @@ function rozvSkrinKopie(it) {
 }
 
 TD_AKCE.tdRSkrinPouzit = function (el) {
-  var it = rozvKnihPolozka(el.closest('[data-kid]').getAttribute('data-kid'));
-  if (it) rozvSkrinNastavit(it);
+  var it = rozvKnihPolozka(el.closest('[data-kid]').getAttribute('data-kid')), mel = !!(__rz && __rz.skrin);
+  if (it) { rozvSkrinNastavit(it); rzvPoSkrini(mel); }
 };
 
 function rozvSkrinNastavit(it) {
@@ -34526,7 +34557,8 @@ function rozvPohledVykreslit() {
       ? 'Klepněte na přístroj v knihovně a pak na místo v řadě (＋ Vložit ho dá na konec vybrané řady). Klepnutím na přístroj v pohledu ho vyberete — pod pohledem pak vyplníte vývod, fázi a kabel. Delší podržení prstu nabídne další akce.'
       : 'Přístroj táhněte myší z knihovny do řady (nebo klepněte na něj a pak na místo v řadě; ＋ Vložit dá na konec vybrané řady). ' +
         'Klepnutím na přístroj ho vyberete — vpravo vyplníte vývod, fázi a kabel. Víc přístrojů vyberete s Ctrl nebo Shift, nebo tažením rámečku v prázdném místě. ' +
-        'Pravý klik nabídne další akce; Delete smaže, Ctrl+C / Ctrl+V kopíruje, Ctrl+Z vrátí, šipky posouvají.') + '</div>';
+        'Pravý klik nabídne další akce; Delete smaže, Ctrl+C / Ctrl+V kopíruje, Ctrl+Z vrátí, šipky posouvají.') +
+      (__rz.rezim !== 'PSC' ? ' <button type="button" class="rz-pruv-odkaz" data-action="tdRPruvodce" title="Čtyři kroky: vložení příkazem, lišta akcí u výběru, zapojení, dokumenty">❓ Ukázat průvodce</button>' : '') + '</div>';
   var rzcS = rzcStav();   // pole příkazu: hodnota a kurzor přežijí překreslení
   box.innerHTML = h;
   rzcObnov(rzcS);
@@ -34548,6 +34580,7 @@ function rozvPohledVykreslit() {
   rozvOteplUkazatelHned();   // hned — lišta se nesmí posunout až po vykreslení
   rozvSoudUkazatelHned();
   rzaObnovit();   // lišta akcí u výběru
+  if (__rzv) rzvObnovit();   // průvodce: cíl se překreslil
 }
 
 // Jen obsah rámečku (bez lišty a nápovědy) — rámeček zůstane, posuvník taky.
@@ -37102,7 +37135,7 @@ document.addEventListener('click', function (e) {
   var knih = t.closest('#dok-form-obsah .rz-polozka[data-kid]');
   if (knih && !t.closest('button')) {
     var it = rozvKnihPolozka(knih.getAttribute('data-kid')); if (!it) return;
-    if (it.druh === 'skrin') { rozvSkrinNastavit(it); return; }
+    if (it.druh === 'skrin') { var melSk = !!__rz.skrin; rozvSkrinNastavit(it); rzvPoSkrini(melSk); return; }
     __rz.knihVyber = __rz.knihVyber === it.id ? null : it.id;
     __rz.presun = null;
     rozvKnihovnaVykreslit(); rozvPohledVykreslit();
@@ -37722,6 +37755,7 @@ function rzaUmistit() {
   var left = Math.max(rb.left + 4, Math.min(U1.l, rb.right - bw - 4));
   el.style.top = Math.round(top - pb.top) + 'px'; el.style.left = Math.round(left - pb.left) + 'px';
   el.setAttribute('data-kde', kde);
+  document.documentElement.style.setProperty('--rza-h', bh + 'px');   // telefon: lišta je dole, hlášky a diktování se posunou nad ni
 }
 document.addEventListener('scroll', function (e) { if (e.target && e.target.id === 'rz-svg-ram' && document.getElementById('rz-akce')) rzaUmistit(); }, true);
 window.addEventListener('resize', function () { if (document.getElementById('rz-akce')) rzaUmistit(); });
@@ -37749,9 +37783,14 @@ TD_AKCE.tdRaHreben = function () {
   var I = rzaInfo(); if (I.n < 2) return;
   if (!I.vedle) { showToast('Hřeben vede jen po jedné řadě — vyberte sousední přístroje v jedné řadě.', { timeout: 5000 }); return; }
   var kr = rzhKryteVse(); if (I.s.every(function (q) { return kr[q.x.uid]; })) { showToast('Vybrané přístroje už na hřebenu jsou.', { timeout: 4000 }); return; }
-  var uidy = rozvVybrane(), hl = __rz.vyber, pred = rzhVse().length;
-  TD_AKCE.tdRHrVybrane();
-  var h = rzhVse().length > pred ? rzhVse()[rzhVse().length - 1] : null;
+  var uidy = rozvVybrane(), hl = __rz.vyber, r = I.rada;
+  var poz = rozvPozice(__rz.rady[r]), a = Infinity, b = -Infinity;
+  I.s.forEach(function (q) { a = Math.min(a, poz[q.i]); b = Math.max(b, poz[q.i] + rozvW(q.x)); });
+  var od = Math.floor(a * 2 + 1e-6) / 2, dd = od + Math.max(1, Math.ceil(b - od - 1e-6));
+  // póly jako u „Navrhnout hřebeny": společný trojfázový zdroj → 3P (fáze L1, L2, L3… ze zubů), jinak podle přístrojů
+  var z = rozvZdrojEff(I.s[0].x, __rz.rady), spol = I.s.every(function (q) { return rozvZdrojEff(q.x, __rz.rady) === z; });
+  var fz = !spol || z == null ? 0 : z === '@privod' ? 3 : (rzpX(z) ? rzpFaziX(rzpX(z)) : 0);
+  var h = rzhPridat(rzhNovy(r, od, dd, fz >= 3 ? '3' : rzhPolyNavrh(r, od, dd)), 'Hřeben přes vybrané');
   __rz.hrVyber = null; rozvVyberNastavit(uidy, hl);
   rozvPohledVykreslit(); rozvVlastnostiVykreslit();
   if (h) showToast('🪮 Hřeben ' + (RZH_POLY[h.poly] || {}).t + ' ' + h.prurez + ' mm² přes ' + I.ozn + ' (' + (h.strana === 'dole' ? 'zespodu' : 'shora') + '). Klepnutím na hřeben ho upravíte.', { timeout: 5000 });
@@ -37888,6 +37927,86 @@ function rzaNastaveniHtml() {
   if (!__rz || __rz.rezim === 'PSC') return '';
   return '<label class="teren-radek rza-nast"><input type="checkbox" class="rza-nast-fi"' + (rzaFiHreben() ? ' checked' : '') + '> Při vkládání chrániče natáhnout hřeben <small>(tlačítko „🛡 Chránič nad" v liště u výběru; jinak se jističe napojí jako dosud — chránič vlevo v řadě)</small></label>';
 }
+
+
+// ═══════════════════════════════════════════════════════════════════════
+// ROZVADĚČ — PRŮVODCE PRVNÍM ROZVADĚČEM (čelní pohled „jako v dílně", fáze 2, 2026-11-11)
+// Čtyři nenápadné bubliny, každá ukazuje na skutečný prvek stránky (zvýrazní
+// ho). Ukáže se jednou na uživatele — po výběru skříně u prvního nového
+// rozvaděče (localStorage revize_el_rz_pruvodce, s try/catch; bez úložiště se
+// sám neukáže). Nic nevkládá. Znovu: „❓ Ukázat průvodce" v nápovědě pod pohledem.
+// Bublina nebere klepnutí (pointer-events jen na tlačítkách). Jen DBO.
+// ═══════════════════════════════════════════════════════════════════════
+var RZV_KLIC = 'revize_el_rz_pruvodce';
+var RZV_KROKY = [
+  { cil: function () { return document.getElementById('rzc-pole'); },
+    t: 'Napiš, co vložit – třeba <code>22x B10</code>', p: 'Do pole nad čelním pohledem (skočí do něj klávesa /). Pod polem hned vidíte, co a kam se vloží; Enter to vloží.' },
+  { cil: function () { return document.getElementById('rz-akce') || document.getElementById('rz-svg-ram'); },
+    t: 'Vyber jističe a dej Hřeben nebo Chránič nad', p: 'Vložené přístroje jsou rovnou vybrané (jinak Ctrl+klik, Shift+klik nebo tažení rámečku). U výběru se objeví lišta: Duplikovat, Hřeben, Chránič nad, Rozdělit fáze…' },
+  { cil: function () { return document.querySelector('#rz-pohled .rz-nap-btn'); },
+    t: 'Zapojení: natáhni vodič z kabelu na hlavní vypínač', p: 'Tlačítko 🔌 Zapojení: vodič se táhne ze svorky na svorku. Kdo koho napájí, spočítá program sám.' },
+  { cil: function () { return document.querySelector('#screen-dok-form .rz-zal[data-z="dok"]'); },
+    t: 'Hotovo – dokumentaci najdeš v záložce Dokumenty', p: 'Štítek, prohlášení o shodě, protokol o kusovém ověření, schéma i výpočty se skládají z návrhu.' }
+];
+var __rzv = null, __rzvT = null;
+function rzvVideno() { try { return !!localStorage.getItem(RZV_KLIC); } catch (e) { return true; } }   // bez úložiště se sám neukazuje
+function rzvZapsat() { try { localStorage.setItem(RZV_KLIC, '1'); } catch (e) {} }
+function rzvStart() {
+  if (!__rz || __rz.rezim === 'PSC' || !__rz.skrin) { showToast('Průvodce ukazuje skládání rozvaděče — nejdřív vyberte skříň.', { timeout: 4000 }); return; }
+  if ((__rz.zalozka || 'navrh') !== 'navrh') rozvZalozkaNastavit('navrh');
+  if (__rz.napRezim) TD_AKCE.tdRNapRezim();
+  rzvZapsat();
+  __rzv = { i: 0 };
+  clearInterval(__rzvT); __rzvT = setInterval(rzvObnovit, 400);
+  rzvObnovit(true);
+}
+function rzvKonec() {
+  __rzv = null; clearInterval(__rzvT); __rzvT = null;
+  var el = document.getElementById('rz-pruvodce'); if (el) el.remove();
+  document.querySelectorAll('.rz-pruv-cil').forEach(function (e) { e.classList.remove('rz-pruv-cil'); });
+}
+// První nový rozvaděč: po výběru skříně (z obrazovky) — jednou na uživatele.
+function rzvPoSkrini(melSkrin) {
+  if (melSkrin || __rzv || !__rz || !__rz.skrin || __rz.rezim === 'PSC' || rzvVideno()) return;
+  rzvStart();
+}
+function rzvObnovit(ukazat) {
+  if (!__rzv) return;
+  var f = document.getElementById('screen-dok-form');
+  if (!__rz || !f || !f.classList.contains('active') || !rozvTyp(f.getAttribute('data-typ'))) { rzvKonec(); return; }
+  var k = RZV_KROKY[__rzv.i], cil = k.cil(), el = document.getElementById('rz-pruvodce');
+  document.querySelectorAll('.rz-pruv-cil').forEach(function (e) { if (e !== cil) e.classList.remove('rz-pruv-cil'); });
+  if (!el) {
+    el = document.createElement('div'); el.id = 'rz-pruvodce'; el.className = 'rz-pruv'; el.setAttribute('role', 'status'); el.setAttribute('aria-live', 'polite');
+    document.body.appendChild(el);
+  }
+  if (el.__krok !== __rzv.i) {
+    el.__krok = __rzv.i;
+    var posl = __rzv.i === RZV_KROKY.length - 1;
+    el.innerHTML = '<b>' + (__rzv.i + 1) + ' / ' + RZV_KROKY.length + ' · ' + k.t + '</b><span>' + esc(k.p) + '</span>' +
+      '<div class="rz-pruv-akce"><button type="button" class="rz-pruv-preskocit" data-action="tdRPruvKonec">' + (posl ? 'Zavřít' : 'Přeskočit') + '</button>' +
+      (posl ? '<button type="button" class="rz-pruv-dalsi" data-action="tdRPruvKonec">✓ Hotovo</button>' : '<button type="button" class="rz-pruv-dalsi" data-action="tdRPruvDalsi">Další →</button>') + '</div>';
+    ukazat = true;
+  }
+  if (!cil || !cil.getBoundingClientRect().width) { el.style.visibility = 'hidden'; return; }
+  cil.classList.add('rz-pruv-cil');
+  if (ukazat) {   // cíl nesmí zůstat pod přilepenými lištami nahoře ani u spodního kraje
+    var T0 = cil.getBoundingClientRect();
+    if (T0.height > 240) { if (T0.top < 130 || T0.top > window.innerHeight * 0.5) window.scrollBy(0, T0.top - 140); }   // velký cíl (čelní pohled): horní hrana pod lišty
+    else if (T0.top < 130 || T0.bottom > window.innerHeight - 40) { try { cil.scrollIntoView({ block: 'center', inline: 'nearest' }); } catch (e) {} }
+  }
+  var T = cil.getBoundingClientRect(), bw = el.offsetWidth, bh = el.offsetHeight, top, left, m = 10;
+  if (T.height > 240) { top = Math.max(T.top + 12, 130); left = T.right - bw - 12; }   // velký cíl (čelní pohled): bublina uvnitř nahoře
+  else { top = T.bottom + m; if (top + bh > window.innerHeight - 8) top = T.top - bh - m; left = T.left; }
+  el.style.top = Math.round(Math.max(8, Math.min(top, window.innerHeight - bh - 8))) + 'px';
+  el.style.left = Math.round(Math.max(8, Math.min(left, window.innerWidth - bw - 8))) + 'px';
+  el.style.visibility = '';
+}
+TD_AKCE.tdRPruvDalsi = function () { if (!__rzv) return; __rzv.i = Math.min(RZV_KROKY.length - 1, __rzv.i + 1); rzvObnovit(true); };
+TD_AKCE.tdRPruvKonec = function () { rzvKonec(); };
+TD_AKCE.tdRPruvodce = function () { rzvKonec(); rzvStart(); };
+window.addEventListener('scroll', function () { if (__rzv) rzvObnovit(); }, true);
+window.addEventListener('resize', function () { if (__rzv) rzvObnovit(); });
 
 
 // ── Zakreslení z revizní zprávy (2026-10-19) ────────────────────────────

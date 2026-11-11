@@ -3325,12 +3325,13 @@ bez pole příkazu a nastavení výchozí řady).
   `rozvPohledVykreslit` a `rozvSvgPrekreslit`, `rzaUmistit` i při posunu rámečku a změně okna): **nad
   první řadou výběru**, když tam není místo (první řada skříně), **pod výběrem** (`data-kde`); výběr
   nezakrývá. **Telefon: dole na obrazovce** (`position:fixed`, jedna řada, posouvá se do strany — blok
-  MOBIL). Při tažení přístroje, vodiče i rámečku se schová (CSS `body.rz-tahne / rz-oznacuje`), v režimu
+  MOBIL; tlačítko diktování a hlášky se posunou nad ni — `--rza-h`). Při tažení přístroje, vodiče i rámečku se schová (CSS `body.rz-tahne / rz-oznacuje`), v režimu
   🔌 Zapojení, s nástrojem Hřeben a při vkládání / přesunu klepnutím se neukazuje. Esc zruší výběr i lištu.
 - **⧉ Duplikovat ×n** — klik = 1 kopie hned vedle; počet do políčka `#rza-n` + Enter (kopie bloku,
   `rozvVlozitBlok`, pokračování do další řady).
-- **🪮 Hřeben** (≥ 2 sousední přístroje v jedné řadě, jinak hláška a nic) — `tdRHrVybrane` z fáze 1
-  (strana z profilu, průřez podle zátěže); výběr přístrojů zůstane.
+- **🪮 Hřeben** (≥ 2 sousední přístroje v jedné řadě, jinak hláška a nic) — `rzhPridat` z fáze 1
+  (strana z profilu, průřez podle zátěže; **póly jako u „Navrhnout hřebeny“**: společný trojfázový
+  zdroj → 3P a fáze L1, L2, L3… ze zubů, jinak podle přístrojů); výběr přístrojů zůstane.
 - **🛡 Chránič nad** (jen jističe FA / AFDD v jedné řadě) — lišta se změní na malý formulář s návrhem
   (`rzaFiNavrh`): **40 A, nebo 63 A když je mezi vybranými jistič nad 40 A**, 30 mA, typ A, 4P (2P
   u soustavy 1f nebo jističů na jedné fázi); ukáže položku knihovny (i z výchozí řady), součet In
@@ -3347,6 +3348,35 @@ bez pole příkazu a nastavení výchozí řady).
 - **🗑 Smazat** = `tdRSmazat`. Všechno přes `rozvZmena` (jedno ZPĚT / Ctrl+Z).
 
 Test: `testy/test-rozvadec-ovladani.js` (oddíl 2, i geometrie lišty a telefon 360 px).
+
+#### Průvodce prvním rozvaděčem (blok „ROZVADĚČ — PRŮVODCE PRVNÍM ROZVADĚČEM")
+
+- Čtyři bubliny (`RZV_KROKY`, `#rz-pruvodce`), každá **zvýrazní skutečný prvek** (`.rz-pruv-cil`) a stojí
+  u něj: 1. pole příkazu „Napiš, co vložit – třeba 22x B10", 2. lišta akcí (není-li výběr, čelní pohled)
+  „Vyber jističe a dej Hřeben nebo Chránič nad", 3. tlačítko 🔌 Zapojení „Zapojení: natáhni vodič
+  z kabelu na hlavní vypínač", 4. záložka Dokumenty „Hotovo – dokumentaci najdeš v záložce Dokumenty".
+  Další → / Přeskočit / ✓ Hotovo. **Nic nevkládá.**
+- **Bublina nebere klepnutí** (`pointer-events:none`, jen její tlačítka) — pod ní jde dál pracovat.
+- **Jednou na uživatele:** spustí se po výběru skříně **z obrazovky** (`rzvPoSkrini` v `tdRSkrinPouzit`
+  a v klepnutí na skříň v knihovně) u rozvaděče, který skříň neměl; localStorage `revize_el_rz_pruvodce`
+  (try/catch — bez úložiště se sám neukáže a program běží dál). Programové `rozvSkrinNastavit` (testy,
+  zakreslení z revize, CAD) ho nespouští.
+- **Znovu:** odkaz **„❓ Ukázat průvodce"** v nápovědě pod čelním pohledem (`tdRPruvodce`).
+- Odchod z editoru průvodce zavře (`rzvObnovit` každých 400 ms a při posunu / změně okna).
+
+**RS2 na 21 akcí** (`test-rozvadec-ovladani.js` oddíl 4): skříň, `3x svorka 10`, `hl 63 3p`,
+`pojistky 3p 14x51`, `spd t2 3+1`, klepnutí do řady 2, `22x B10`, Hřeben, `2x B40 3P`, klepnutí do
+řady 4, `fi 40/30 4p`, `20x B16`, Hřeben, 🔌 Zapojení, 3 tahy kabel → X1…X3, 3 tahy X → -QH1, tah
+-FU1 (výstup nahoře) → SPD1. **Past v testu:** u levého kraje rámečku se pohled při tažení sám
+posouvá — cíl tahu se musí dorovnat (jako očima), jinak myš pustí vodič vedle.
+
+Karta v Novinkách „🛠 Čelní pohled jako v dílně" doplněna o tři odrážky (příkaz, lišta, průvodce);
+datum karty se nezměnilo. V `test-mobil.js` stavy „rozvaděč – pole příkazu s náhledem (22x B10)",
+„…lišta akcí u výběru (dole na obrazovce)", „…lišta akcí: chránič nad (návrh parametrů)",
+„…vyměnit za… (okno)" a „…průvodce prvním rozvaděčem (krok 1)".
+
+Test: `testy/test-rozvadec-ovladani.js` (65 kontrol — oddíly 3 až 5: průvodce, RS2, starý rozvaděč
+proti `STARA_PORT`; při přenosu pustit se `STARA=<předchozí vydání>`).
 
 ### Výměna výkresů s CAD — export a import DXF (2026-11-02, bloky „ROZVADĚČ — VÝMĚNA S CAD")
 
