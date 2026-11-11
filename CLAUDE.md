@@ -3280,6 +3280,45 @@ hřebeny…" a „🪮 Propojit hřebenem").
 Test: `testy/test-rozvadec-dilna.js` (oddíly 1 vývodka a 7). V `test-mobil.js` stav
 „rozvaděč – režim Zapojení, vodič s průřezem a barvou".
 
+### Čelní pohled „jako v dílně" — fáze 2: ovládání (2026-11-11)
+
+Fáze 2 zrychluje **skládání** (zadání uživatele: RS2 nanejvýš na 25 akcí; akce = příkaz, klik na
+tlačítko nebo tah myší — počítá `test-rozvadec-ovladani.js`). **Data se nemění** — vkládají se tytéž
+položky knihovny jako tažením, výpočty se nedotkly; starý rozvaděč se otevře a uloží bajtově stejně
+a má stejné PDF, schéma i DXF (test proti předchozí verzi). Jen DBO.
+
+#### Vkládání příkazem (blok „ROZVADĚČ — VKLÁDÁNÍ PŘÍKAZEM")
+
+- Pole **„Napiš, co vložit… (např. 22x B10)"** nad čelním pohledem (`#rzc-pole`, `rzcBoxHtml`, v `#rz-pohled`
+  hned pod lištou; překreslení pohledu vrací hodnotu, kurzor i fokus — `rzcStav` / `rzcObnov`). Klávesa
+  **/** do něj skočí (když se nepíše do pole).
+- **Rozbor `rzcRozbor(text)`** — bez háčků a velikosti písmen, `x` i `×` = počet, čárka = tečka; co po
+  rozboru zbude, je chyba („Nerozumím „B10x“ – zkuste např. 22x B10"). Zápisy: `22x B10`, `22 B10`,
+  `B16 3P`, `2x B25 3f` (3f = 3P), `B10 1+N`, `fi 40/30 4p` / `chránič 40 30mA 4P` / `FI 40A 30mA typ A`
+  (výchozí 4P, 30 mA, typ A), `rcbo b16 30` / `fi/fa b16 30mA`, `hl 63 3p` / `vypínač 63A 3P` (proud povinný),
+  `spd t2`, `spd t1+t2 3+1` (třída povinná; „3+1" u T2 = položka Svodič T2 3+1), `pojistky 3p 14x51`,
+  `fu 3p 40gG` (vložka → `x.vlozka`, nad 32 A odpojovač 14×51), `rezerva 2`, `2 M volno`, `svorky 20`
+  (2,5 mm²), `20x svorka 4`, `afdd b16`. Počet 1–200.
+- **Položka `rzcPolozka(q)`**: obecná vestavěná podle parametrů (`rzcShoda`); je-li v Nastavení
+  konfigurátoru zvolená **Výchozí řada** pro kategorii (`rzcNastaveniHtml`, výběr z řad v knihovně —
+  jističe, chrániče, RCBO, AFDD, vypínače, SPD, pojistky; localStorage `revize_el_rz_rada`, jen
+  v prohlížeči) a má shodný přístroj, vloží se ten (i s Pv). Co knihovna nemá, se nevloží a řekne to.
+- **Kam `rzcPlan`**: za vybraný přístroj (i s jeho příslušenstvím), jinak na konec vybrané řady, jinak
+  do první řady s místem (`rozvRadaProVlozeni`). Co se nevejde, pokračuje v další řadě (`rozvRozmistit`,
+  stejné pravidlo jako přesun bloku). Když se nevejde všechno, vloží se **jen kolik se vejde** (řady se
+  nepřeplní) a náhled to říká předem.
+- **Náhled pod polem** (`#rzc-nahled`, při psaní): „22× Jistič 1P B10 · OEZ LSN 10B/1 → řada 4 za -FA22 ·
+  zabere 22 M, zbude 2 M", u přetečení „14 do řady 4, 8 do řady 5", „⚠ Vejde se jen 44 z 50 — Enter
+  vloží 44", u plné skříně chyba. Prázdné pole ukazuje příklady.
+- **Enter** vloží jednou `rozvZmena` (jedno ZPĚT), označení plynule (`rozvDalsiOzn`), vložené přístroje
+  jsou vybrané (další příkaz jde za ně) a pole zůstane připravené. **Esc** pole vyprázdní a opustí,
+  **↑ ↓** historie příkazů (jen v paměti), **Ctrl+Z v prázdném poli** vrátí poslední změnu (v poli
+  s textem vrací psaní prohlížeč).
+- Hřebeny v řadě, které leží od místa vložení vpravo, se posunou s přístroji (`rzhPosunout`).
+
+Test: `testy/test-rozvadec-ovladani.js` (oddíl 1). **Upraveno:** `test-rozvadec-psc.js` (porovnání DBO
+bez pole příkazu a nastavení výchozí řady).
+
 ### Výměna výkresů s CAD — export a import DXF (2026-11-02, bloky „ROZVADĚČ — VÝMĚNA S CAD")
 
 Zadání uživatele: technici kreslí ve Schématech CAD (Elmer), který ukládá

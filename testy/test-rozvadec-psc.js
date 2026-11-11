@@ -590,7 +590,7 @@ const presahy = (p, svg) => p.evaluate(svg => {
       const html = document.querySelector('#screen-dok-form .dok-wrap').innerHTML;
       // knihovna se od 2026-10-22 záměrně liší (kategorie Trafa a zdroje, nové obecné položky) — editor bez ní musí být stejný
       // etapa 5c: záložka „🧊 3D" (tlačítko a prázdný panel) přibyla záměrně
-      const kopie = document.querySelector('#screen-dok-form .dok-wrap').cloneNode(true); kopie.querySelectorAll('.rz-knihovna, .rz-zal[data-z="3d"], #rz-pan-3d, .rz-ovl-btn, .rz-sch-ovl, #rz-soud-ukaz, .rz-soud-zap, .rz-soud-nast, .rz-nap-btn, .rz-svorky-rady').forEach(e => e.remove());
+      const kopie = document.querySelector('#screen-dok-form .dok-wrap').cloneNode(true); kopie.querySelectorAll('.rz-knihovna, .rz-zal[data-z="3d"], #rz-pan-3d, .rz-ovl-btn, .rz-sch-ovl, #rz-soud-ukaz, .rz-soud-zap, .rz-soud-nast, .rz-nap-btn, .rz-svorky-rady, .rzc-box, .rzc-nast, .rza-nast, #rz-akce, .rz-pruv-odkaz').forEach(e => e.remove());   // + fáze 2 ovládání (2026-11-11): pole příkazu, lišta akcí, průvodce
       kopie.querySelectorAll('.rz-vstup-nast-box').forEach(e => e.remove());   // 2026-11-06: nastavení „Přístroje napájím shora / zespodu"   // + tlačítko ⚡ Ovládání (ovládací obvody, 2026-10-29); + souhrn, sbalený panel a nastavení soudobosti (2026-10-29); + 🔗 Napájení a svorkové lišty (2026-11-05)
       // oprava skákajícího zoomu (2026-11-06): dřív se kreslilo první vykreslení o 2 px širší než všechna další —
       // měřítko čelního pohledu na obrazovce se proto porovnává bez rozměrů SVG (obsah stejný)
