@@ -40,7 +40,7 @@ Co blok přesměruje (program sám pořád píše `revize_el_…`, `revize-el-db
 
 | ostrý program | lab |
 |---|---|
-| localStorage / sessionStorage `revize_el_X` (store, autosave, novinky_seen, email_rezim, email_migrace, banner_dismissed, theme, view, form_archiv, form_archiv_sirka, archiv_razeni, rz_info — sbalení pruhu v knihovně rozvaděčů, rz_cisla — čísla pozic v čelním pohledu, rz_predlohy — fotky předloh bez IndexedDB, rz_soud — výchozí β soudobosti, rlps_td — poslední Td ve výpočtu rizika LPS; v sessionStorage `obnova` — návrat na obrazovku po načtení stránky) | `revize_lab_X`; jiný klíč `K` → `revize_lab__K`; `key()`/`length`/`clear()` vidí a mažou jen labové |
+| localStorage / sessionStorage `revize_el_X` (store, autosave, novinky_seen, email_rezim, email_migrace, banner_dismissed, theme, view, form_archiv, form_archiv_sirka, archiv_razeni, rz_info — sbalení pruhu v knihovně rozvaděčů, rz_cisla — čísla pozic v čelním pohledu, rz_predlohy — fotky předloh bez IndexedDB, rz_soud — výchozí β soudobosti, rlps_td — poslední Td ve výpočtu rizika LPS; rz_rada — výchozí řada výrobce pro vkládání příkazem, rz_fi_hreben — chránič s hřebenem z lišty akcí, rz_pruvodce — průvodce prvním rozvaděčem už viděn; v sessionStorage `obnova` — návrat na obrazovku po načtení stránky) | `revize_lab_X`; jiný klíč `K` → `revize_lab__K`; `key()`/`length`/`clear()` vidí a mažou jen labové |
 | událost `storage` | zápisy ostrého programu se zahodí, labové dostane program pod `revize_el_…` |
 | IndexedDB `revize-el-db` (i s odkazem na složku zálohy `backup_dir_handle` a fotkami předloh rozvaděčů `dok_rzPredlohy`) | `revize-lab-db` (jiný název `N` → `revize-lab--N`) |
 | `BroadcastChannel('revize-el-store')` (hlídání dvou oken) | `revize-lab-store` |
