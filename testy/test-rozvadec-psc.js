@@ -594,7 +594,7 @@ const presahy = (p, svg) => p.evaluate(svg => {
       kopie.querySelectorAll('.rz-vstup-nast-box').forEach(e => e.remove());   // 2026-11-06: nastavení „Přístroje napájím shora / zespodu"   // + tlačítko ⚡ Ovládání (ovládací obvody, 2026-10-29); + souhrn, sbalený panel a nastavení soudobosti (2026-10-29); + 🔗 Napájení a svorkové lišty (2026-11-05)
       // oprava skákajícího zoomu (2026-11-06): dřív se kreslilo první vykreslení o 2 px širší než všechna další —
       // měřítko čelního pohledu na obrazovce se proto porovnává bez rozměrů SVG (obsah stejný)
-      const htmlBez = kopie.innerHTML.replace(/(class="rz-svg" viewBox="[^"]*") width="\d+" height="\d+"/g, '$1').replace(/(<text class="rz-cislo"[^>]*?) font-size="[\d.]+"/g, '$1');
+      const htmlBez = kopie.innerHTML.replace(/(šipky posouvají\.) (<\/div>)/, '$1$2')   /* mezera před odebraným odkazem „Ukázat průvodce" */.replace(/(class="rz-svg" viewBox="[^"]*") width="\d+" height="\d+"/g, '$1').replace(/(<text class="rz-cislo"[^>]*?) font-size="[\d.]+"/g, '$1');
       const knih = document.getElementById('rz-seznam').innerHTML;
       // etapa 5b: dokumenty, štítek, schéma, oteplení, fáze a celé PDF DBO se nesmí změnit (stejný technik v obou verzích)
       const t0 = STORE.technik; STORE.technik = { jmeno: 'Petr Vymyšlený', firma: 'Vymyšlená elektro s.r.o.', ico: '12345678', mesto: 'Kyjov' };
