@@ -1425,6 +1425,7 @@ function pomocnik() {
   check('předloha: uložená JPEG ≤ 1600 px v IndexedDB (dok_rzPredlohy), NE v datech rozvaděče ani v localStorage kopii',
     pre.rec && pre.rec.jpeg && pre.rec.w <= 1600 && pre.rec.w > 300 && !pre.vDok && !pre.vLs, JSON.stringify(pre));
   // přístroje jdou dál vybírat klepnutím přes předlohu
+  await p.evaluate(() => { document.getElementById('toast-wrap').innerHTML = ''; });   // hláška u dolního okraje by klik zachytila (pole příkazu posunulo skříň níž)
   const prKlik = await p.evaluate(() => { const g = document.querySelector('#rz-svg-ram .rz-pr[data-puid]'), b = g.getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height * 0.7, uid: g.getAttribute('data-puid') }; });
   await p.mouse.click(prKlik.x, prKlik.y); await w(200);
   check('předloha: přístroj pod fotkou jde dál vybrat myší', await p.evaluate(u => __rz.vyber === u, prKlik.uid));

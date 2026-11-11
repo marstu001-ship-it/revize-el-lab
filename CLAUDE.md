@@ -3327,6 +3327,10 @@ bez pole příkazu a nastavení výchozí řady).
   nezakrývá. **Telefon: dole na obrazovce** (`position:fixed`, jedna řada, posouvá se do strany — blok
   MOBIL; tlačítko diktování a hlášky se posunou nad ni — `--rza-h`). Při tažení přístroje, vodiče i rámečku se schová (CSS `body.rz-tahne / rz-oznacuje`), v režimu
   🔌 Zapojení, s nástrojem Hřeben a při vkládání / přesunu klepnutím se neukazuje. Esc zruší výběr i lištu.
+  **Lišta je vždy jedna řada** (`flex-wrap:nowrap`, na úzkém rámečku se posouvá do strany) — dvouřadá by
+  z mezery mezi řadami přesáhla na sousední přístroje. **Se stisknutým Ctrl / Shift se schová**
+  (`rzaMod`, `body.rz-mod`): tehdy se výběr upravuje klikem nebo rámečkem taženým právě z mezery, kde lišta
+  leží (našla regrese — `test-rozvadec.js` „Ctrl + obdélník přidá k výběru").
 - **⧉ Duplikovat ×n** — klik = 1 kopie hned vedle; počet do políčka `#rza-n` + Enter (kopie bloku,
   `rozvVlozitBlok`, pokračování do další řady).
 - **🪮 Hřeben** (≥ 2 sousední přístroje v jedné řadě, jinak hláška a nic) — `rzhPridat` z fáze 1

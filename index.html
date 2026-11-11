@@ -2140,11 +2140,13 @@ html.dark .rz-polozka.vybrana{background:#3d3410}
 .rz-polozka>button{flex:0 0 auto}
 .rz-vlastni-btn{margin-top:.5rem}
 .rz-pohled{min-width:0;position:relative}
-.rz-akce{position:absolute;z-index:40;display:flex;flex-wrap:wrap;align-items:center;gap:.25rem;padding:.22rem .3rem;background:var(--surface);color:var(--text);
+.rz-akce{position:absolute;z-index:40;display:flex;flex-wrap:nowrap;overflow-x:auto;align-items:center;gap:.25rem;padding:.22rem .3rem;background:var(--surface);color:var(--text);
   border:1px solid var(--border-dark);border-radius:6px;box-shadow:0 3px 12px rgba(0,0,0,.25);font-size:.76rem;line-height:1.2}
-body.rz-tahne .rz-akce,body.rz-oznacuje .rz-akce{display:none}
+body.rz-tahne .rz-akce,body.rz-oznacuje .rz-akce,body.rz-mod .rz-akce{display:none}
 @media print{.rz-akce{display:none!important}}
-.rza-pocet{font-weight:700;padding:0 .3rem;white-space:nowrap}
+.rz-akce.rz-akce-form{flex-wrap:wrap;overflow-x:visible}
+.rza-pocet{font-weight:700;padding:0 .3rem;white-space:nowrap;flex-shrink:0}
+.rz-akce .rza-b,.rz-akce .rza-dup{flex-shrink:0}
 .rza-b{font-family:var(--sans);font-size:.76rem;padding:.26rem .5rem;border:1px solid var(--border);border-radius:4px;background:var(--bg);color:var(--text);cursor:pointer;white-space:nowrap}
 .rza-b:hover{border-color:#0f7b5f;background:var(--surface)}
 .rza-b:disabled{opacity:.5;cursor:default}
@@ -37759,6 +37761,15 @@ function rzaUmistit() {
 }
 document.addEventListener('scroll', function (e) { if (e.target && e.target.id === 'rz-svg-ram' && document.getElementById('rz-akce')) rzaUmistit(); }, true);
 window.addEventListener('resize', function () { if (document.getElementById('rz-akce')) rzaUmistit(); });
+
+// S Ctrl / Shift se výběr upravuje (klik, rámeček) — lišta se po tu dobu schová, ať nepřekáží v mezeře mezi řadami.
+function rzaMod(e) {
+  var a = document.activeElement, pise = a && (a.isContentEditable || /^(INPUT|TEXTAREA|SELECT)$/.test(a.tagName));
+  document.body.classList.toggle('rz-mod', !!(e && e.type === 'keydown' && (e.ctrlKey || e.metaKey || e.shiftKey) && !pise && document.getElementById('rz-akce')));
+}
+document.addEventListener('keydown', function (e) { if (e.key === 'Control' || e.key === 'Meta' || e.key === 'Shift') rzaMod(e); });
+document.addEventListener('keyup', function (e) { if (e.key === 'Control' || e.key === 'Meta' || e.key === 'Shift') rzaMod(null); });
+window.addEventListener('blur', function () { document.body.classList.remove('rz-mod'); });
 
 // ── Duplikovat ×n ──
 function rzaPocet() { var i = document.getElementById('rza-n'), n = i ? parseInt(String(i.value).replace(/\D/g, ''), 10) : 1; return n >= 1 ? n : 1; }
