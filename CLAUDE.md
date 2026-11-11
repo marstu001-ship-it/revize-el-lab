@@ -3319,6 +3319,35 @@ a má stejné PDF, schéma i DXF (test proti předchozí verzi). Jen DBO.
 Test: `testy/test-rozvadec-ovladani.js` (oddíl 1). **Upraveno:** `test-rozvadec-psc.js` (porovnání DBO
 bez pole příkazu a nastavení výchozí řady).
 
+#### Lišta akcí u výběru (blok „ROZVADĚČ — LIŠTA AKCÍ U VÝBĚRU")
+
+- Malá plovoucí lišta `#rz-akce` (v `#rz-pohled`, `position:absolute`; `rzaObnovit` na konci
+  `rozvPohledVykreslit` a `rozvSvgPrekreslit`, `rzaUmistit` i při posunu rámečku a změně okna): **nad
+  první řadou výběru**, když tam není místo (první řada skříně), **pod výběrem** (`data-kde`); výběr
+  nezakrývá. **Telefon: dole na obrazovce** (`position:fixed`, jedna řada, posouvá se do strany — blok
+  MOBIL). Při tažení přístroje, vodiče i rámečku se schová (CSS `body.rz-tahne / rz-oznacuje`), v režimu
+  🔌 Zapojení, s nástrojem Hřeben a při vkládání / přesunu klepnutím se neukazuje. Esc zruší výběr i lištu.
+- **⧉ Duplikovat ×n** — klik = 1 kopie hned vedle; počet do políčka `#rza-n` + Enter (kopie bloku,
+  `rozvVlozitBlok`, pokračování do další řady).
+- **🪮 Hřeben** (≥ 2 sousední přístroje v jedné řadě, jinak hláška a nic) — `tdRHrVybrane` z fáze 1
+  (strana z profilu, průřez podle zátěže); výběr přístrojů zůstane.
+- **🛡 Chránič nad** (jen jističe FA / AFDD v jedné řadě) — lišta se změní na malý formulář s návrhem
+  (`rzaFiNavrh`): **40 A, nebo 63 A když je mezi vybranými jistič nad 40 A**, 30 mA, typ A, 4P (2P
+  u soustavy 1f nebo jističů na jedné fázi); ukáže položku knihovny (i z výchozí řady), součet In
+  jističů jako informaci („In chrániče ověřte podle předřazeného jištění") a jde změnit. **„✓ Vložit
+  chránič"** ho vloží vlevo před první vybraný jistič; jističe jdou pod něj automatikou (chránič
+  vlevo v řadě), nebo — s volbou **„Při vkládání chrániče natáhnout hřeben"** (Nastavení
+  konfigurátoru, localStorage `revize_el_rz_fi_hreben`) — hřebenem s vodičem z výstupu chrániče
+  (jako „Navrhnout hřebeny"). Není-li v řadě místo, tlačítko je vypnuté a řekne proč.
+- **⚖ Rozdělit fáze** (≥ 2 jednopólové) — L1, L2, L3, L1…; zamčené fáze vynechá, přístroje na hřebenu
+  nebo vodiči nemění (fáze plyne ze zapojení) a hláška to spočítá.
+- **🔁 Vyměnit za…** (stejné přístroje: kategorie, póly, In, charakteristika, IΔn, typ) — okno
+  `#modal-rz-vymena` s položkami knihovny se stejnými parametry (`rzaVymenaKandidati`); výběr nahradí
+  `x.p` a `x.knih` u všech vybraných, označení, pozice, vývod, kabel i fáze zůstanou.
+- **🗑 Smazat** = `tdRSmazat`. Všechno přes `rozvZmena` (jedno ZPĚT / Ctrl+Z).
+
+Test: `testy/test-rozvadec-ovladani.js` (oddíl 2, i geometrie lišty a telefon 360 px).
+
 ### Výměna výkresů s CAD — export a import DXF (2026-11-02, bloky „ROZVADĚČ — VÝMĚNA S CAD")
 
 Zadání uživatele: technici kreslí ve Schématech CAD (Elmer), který ukládá

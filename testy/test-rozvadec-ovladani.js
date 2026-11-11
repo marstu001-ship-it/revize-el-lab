@@ -150,6 +150,7 @@ async function prikaz(p, txt, o) {
     await __T.novy('v-sk-4x24-ocel');
     DOK.rozvKnihovna = [mk('FA', 'LSN 10B/1', { rada: 'LSN', poly: '1', In: 10, char: 'B', pv: 1.4 }), mk('FA', 'LSN 16B/1', { rada: 'LSN', poly: '1', In: 16, char: 'B', pv: 2.1 }),
       mk('FI', 'LFN 40-4-030A', { rada: 'LFN', poly: '4', In: 40, idn: 30, rcdTyp: 'A', sirka: 4, pv: 3.2 })].map(x => rozvPolozkaNorm(x, 'pristroj'));
+    await dokZapsat(); await __T.w(100);
     rozvVlastnostiVykreslit();
     const sel = [...document.querySelectorAll('.rzc-rada')].map(s => s.getAttribute('data-kat') + ':' + [...s.options].map(o => o.textContent).join('/'));
     const s = document.querySelector('.rzc-rada[data-kat="FA"]'); s.value = 'Test|LSN'; s.dispatchEvent(new Event('change', { bubbles: true }));
@@ -162,7 +163,159 @@ async function prikaz(p, txt, o) {
   st = await p.evaluate(() => ({ a: __rz.rady[0].prvky.map(x => x.knih + ':' + x.p.pv + ':' + (x.p.vyrobce || '')).join(' '), d: JSON.stringify(__T.cist().rady[0].prvky[0].p) }));
   check('výchozí řada: „3x B10" vloží přístroj z řady (Test LSN 10B/1 s Pv 1,4), náhled řadu jmenuje; co v řadě není (C16), je obecné',
     st.a === 'u-LSN 10B/1:1.4:Test u-LSN 10B/1:1.4:Test u-LSN 10B/1:1.4:Test v-fa-1-C16::obecný' && /3× Jistič 1P B10 · Test LSN 10B\/1 →/.test(n) && !/Test/.test(n2), st.a + ' | ' + n);
-  await p.evaluate(() => { DOK.rozvKnihovna = []; localStorage.removeItem('revize_el_rz_rada'); });
+  await p.evaluate(async () => { DOK.rozvKnihovna = []; await dokZapsat(); localStorage.removeItem('revize_el_rz_rada'); });
+
+  // ── 2. lišta akcí u výběru ────────────────────────────────────────────
+  const klikA = async (akce) => { await p.click('#rz-akce [data-action="' + akce + '"]'); await w(80); };
+  const lista = () => p.evaluate(() => {
+    const el = document.getElementById('rz-akce'); if (!el) return null;
+    const b = el.getBoundingClientRect(), ram = document.getElementById('rz-svg-ram').getBoundingClientRect();
+    const sel = rozvVybrane().map(u => document.querySelector('#rz-svg-ram [data-puid="' + u + '"]').getBoundingClientRect());
+    const prekryv = sel.some(s => !(b.right <= s.left || b.left >= s.right || b.bottom <= s.top || b.top >= s.bottom));
+    return { kde: el.getAttribute('data-kde'), tl: [...el.querySelectorAll('button')].map(x => x.textContent.trim()).join(' | '), prekryv, vRamu: b.top >= ram.top && b.bottom <= ram.bottom + 1 && b.left >= ram.left && b.right <= ram.right + 1,
+      nadPrvni: b.bottom <= Math.min(...sel.map(s => s.top)), podPosl: b.top >= Math.max(...sel.map(s => s.bottom)), h: Math.round(b.height), pos: getComputedStyle(el).position };
+  });
+  await p.evaluate(async () => { await __T.novy('v-sk-4x24-ocel'); __rz.aktRada = 1; rozvPohledVykreslit(); });
+  let L = await lista();
+  check('lišta: bez výběru není', L === null, JSON.stringify(L));
+  await prikaz(p, 'B16');
+  await p.evaluate(() => document.activeElement.blur());
+  L = await lista();
+  check('lišta: u jednoho jističe Duplikovat, Chránič nad, Vyměnit za…, Smazat — nad výběrem a nezakrývá ho',
+    L && L.tl === '⧉ Duplikovat | 🛡 Chránič nad | 🔁 Vyměnit za… | 🗑 Smazat' && L.kde === 'nad' && L.nadPrvni && !L.prekryv && L.vRamu, JSON.stringify(L));
+  // Duplikovat: klik = 1 kopie vedle; ×10 + Enter
+  await klikA('tdRaDuplikovat');
+  st = await p.evaluate(() => ({ r: __T.rada(1), vyb: rozvVybrane().length }));
+  check('lišta: Duplikovat přidá 1 kopii hned vedle (-FA2) a vybere ji', st.r === '-FA1 -FA2' && st.vyb === 1, JSON.stringify(st));
+  await p.click('#rza-n'); await p.keyboard.press('Control+a'); await p.keyboard.type('10'); await p.keyboard.press('Enter'); await w(100);
+  st = await p.evaluate(() => ({ r: __rz.rady[1].prvky.length, posl: __rz.rady[1].prvky[11].ozn, vyb: rozvVybrane().length, stejne: __rz.rady[1].prvky.every(x => x.knih === 'v-fa-1-B16') }));
+  check('lišta: Duplikovat ×10 (číslo do políčka + Enter) přidá 10 kopií, označení -FA3 … -FA12, kopie jsou vybrané', st.r === 12 && st.posl === '-FA12' && st.vyb === 10 && st.stejne, JSON.stringify(st));
+  await p.keyboard.press('Control+z'); await w(80);
+  st = await p.evaluate(() => __rz.rady[1].prvky.length);
+  check('lišta: Ctrl+Z vrátí všech 10 kopií najednou', st === 2, 'zbylo ' + st);
+
+  // Hřeben přes 20 jističů; odmítnutí přes dvě řady
+  await p.evaluate(async () => { await __T.novy('v-sk-4x24-ocel'); delete STORE.technik.rz_hreben_strana; __rz.aktRada = 1; rozvPohledVykreslit(); });
+  await prikaz(p, '20x B16'); await p.evaluate(() => document.activeElement.blur());
+  L = await lista();
+  check('lišta: u 20 jističů v řadě přibude Hřeben a Rozdělit fáze; lišta je nad výběrem a nezakrývá ho', L && /🪮 Hřeben/.test(L.tl) && /⚖ Rozdělit fáze/.test(L.tl) && /^Vybráno 20/.test(await p.evaluate(() => document.querySelector('#rz-akce .rza-pocet').textContent)) && L.nadPrvni && !L.prekryv, JSON.stringify(L));
+  if (SNIMKY) { await p.evaluate(() => window.scrollTo(0, document.getElementById('rz-pohled').getBoundingClientRect().top + scrollY - 90)); await w(100); await p.screenshot({ path: SNIMKY + '/2-lista-akci.png' }); }
+  await klikA('tdRaHreben');
+  st = await p.evaluate(() => { const h = (__rz.hrebeny || [])[0]; return h && { n: __rz.hrebeny.length, rada: h.rada, od: h.od, do: h.do, poly: h.poly, strana: h.strana, kryte: rzhKryte(h).length, vyb: rozvVybrane().length, lista: !!document.getElementById('rz-akce'), d: (__T.cist().hrebeny || []).length }; });
+  check('lišta: Hřeben natáhne hřeben přes 20 vybraných jističů (1P, shora, moduly 0–20), výběr zůstane', st && st.n === 1 && st.rada === 1 && st.od === 0 && st.do === 20 && st.poly === '1' && st.strana === 'nahore' && st.kryte === 20 && st.vyb === 20 && st.lista && st.d === 1, JSON.stringify(st));
+  await p.keyboard.press('Control+z'); await w(80);
+  st = await p.evaluate(() => (__rz.hrebeny || []).length);
+  check('lišta: Ctrl+Z hřeben vrátí', st === 0, 'hřebenů ' + st);
+  await p.evaluate(() => { rozvVyberNastavit([]); rozvPohledVykreslit(); });
+  await prikaz(p, '6x B10'); await p.evaluate(() => document.activeElement.blur());   // 4 do řady 2, 2 do řady 3
+  st = await p.evaluate(() => ({ rozl: __rz.rady.map(a => a.prvky.length).join(), cls: document.querySelector('#rz-akce [data-action="tdRaHreben"]').className, tit: document.querySelector('#rz-akce [data-action="tdRaHreben"]').title }));
+  await klikA('tdRaHreben');
+  const st2 = await p.evaluate(() => ({ h: (__rz.hrebeny || []).length, toast: [...document.querySelectorAll('#toast-wrap > *')].map(x => x.textContent).join(' ¦ ') }));
+  check('lišta: Hřeben přes dvě řady odmítne („jen po jedné řadě") a nic neudělá', st.rozl === '0,24,2,0' && /rza-ne/.test(st.cls) && /v jedné řadě/.test(st.tit) && st2.h === 0 && /Hřeben vede jen po jedné řadě/.test(st2.toast), JSON.stringify(st) + ' ' + st2.toast.slice(0, 200));
+
+  // Chránič nad 20 jističi
+  await p.evaluate(async () => { await __T.novy('v-sk-4x24-ocel'); localStorage.removeItem('revize_el_rz_fi_hreben'); });
+  await prikaz(p, 'hl 63 3p'); await p.evaluate(() => { rozvVyberNastavit([]); __rz.aktRada = 1; rozvPohledVykreslit(); });
+  await prikaz(p, '20x B16'); await p.evaluate(() => document.activeElement.blur());
+  await klikA('tdRaChranic');
+  st = await p.evaluate(() => { const g = k => document.querySelector('#rz-akce .rza-fi[data-fi="' + k + '"]').value; return { In: g('In'), idn: g('idn'), typ: g('typ'), poly: g('poly'), info: document.querySelector('.rza-fi-info').textContent, pocet: rozvVse().length, tl: [...document.querySelectorAll('#rz-akce button')].map(x => x.textContent).join('|') }; });
+  check('lišta: Chránič nad nejdřív ukáže návrh 40 A / 30 mA / typ A / 4P (dá se změnit) a nic nevloží', st.In === '40' && st.idn === '30' && st.typ === 'A' && st.poly === '4' && st.pocet === 21 && /Chránič 4P 40 A \/ 30 mA typ A/.test(st.info) && /součet In jističů 320 A/.test(st.info) && /✓ Vložit chránič\|Zrušit/.test(st.tl), JSON.stringify(st));
+  await p.selectOption('#rz-akce .rza-fi[data-fi="In"]', '63'); await w(60);
+  st = await p.evaluate(() => document.querySelector('.rza-fi-info').textContent);
+  check('lišta: parametry chrániče jdou před vložením změnit (63 A)', /Chránič 4P 63 A \/ 30 mA typ A/.test(st), st);
+  await p.selectOption('#rz-akce .rza-fi[data-fi="In"]', '40'); await w(60);
+  await klikA('tdRaChranicVlozit');
+  st = await p.evaluate(() => { const fi = __T.naj('-FI1'), r = __rz.rady[1].prvky; return fi && { prvni: r[0].ozn, kid: fi.knih, n: r.length, pod: r.slice(1).every(x => x.nadr === fi.uid && !x.nadrRucne), vyb: rozvVybrane().length, strom: rozvDeti(fi.uid).length, hreb: (__rz.hrebeny || []).length }; });
+  check('lišta: chránič -FI1 40 A / 30 mA 4P je vlevo před prvním jističem a všech 20 jističů je pod ním (automatikou, bez hřebenu)', st && st.prvni === '-FI1' && st.kid === 'v-fi-4-40-30-A' && st.n === 21 && st.pod && st.strom === 20 && st.vyb === 20 && st.hreb === 0, JSON.stringify(st));
+  await p.keyboard.press('Control+z'); await w(80);
+  // s nastavením „natáhnout hřeben"
+  st = await p.evaluate(() => { rozvVyberNastavit([]); rozvPohledVykreslit(); rozvVlastnostiVykreslit(); const c = document.querySelector('.rza-nast-fi'); if (!c) return null; c.click(); const u = localStorage.getItem('revize_el_rz_fi_hreben'); rozvVyberNastavit(__rz.rady[1].prvky.map(x => x.uid)); rozvPohledVykreslit(); return { u, n: __rz.rady[1].prvky.length, popis: c.closest('label').textContent }; });
+  check('lišta: nastavení „Při vkládání chrániče natáhnout hřeben" je v Nastavení konfigurátoru (jen v prohlížeči)', st && st.u === '1' && st.n === 20 && /Při vkládání chrániče natáhnout hřeben/.test(st.popis), JSON.stringify(st));
+  await klikA('tdRaChranic'); await klikA('tdRaChranicVlozit');
+  st = await p.evaluate(() => { const fi = __T.naj('-FI1'), h = (__rz.hrebeny || [])[0], wv = (__rz.vodice || [])[0], r = __rz.rady[1].prvky; return fi && h && wv && { od: h.od, do: h.do, poly: h.poly, kryte: rzhKryte(h).length, zFi: wv.a.uid === fi.uid && wv.b.uid === h.uid, pod: r.slice(1).every(x => x.nadr === fi.uid), faze: r.slice(1, 7).map(x => x.faze).join() }; });
+  check('lišta: se zapnutým nastavením chránič napojí jističe hřebenem 3P s vodičem z výstupu chrániče (fáze L1, L2, L3… ze zubů)', st && st.od === 4 && st.do === 24 && st.poly === '3' && st.kryte === 20 && st.zFi && st.pod && st.faze === 'L1,L2,L3,L1,L2,L3', JSON.stringify(st));
+  await p.keyboard.press('Control+z'); await w(80);
+  st = await p.evaluate(() => ({ n: __rz.rady[1].prvky.length, h: (__rz.hrebeny || []).length, v: (__rz.vodice || []).length }));
+  check('lišta: Ctrl+Z vrátí chránič, hřeben i vodič najednou', st.n === 20 && st.h === 0 && st.v === 0, JSON.stringify(st));
+  // není místo v řadě
+  await p.evaluate(() => { localStorage.removeItem('revize_el_rz_fi_hreben'); rozvVyberNastavit([__rz.rady[1].prvky[19].uid]); rozvPohledVykreslit(); });
+  await prikaz(p, '2x B10 3P'); await p.evaluate(() => { document.activeElement.blur(); rozvVyberNastavit(__rz.rady[1].prvky.slice(0, 5).map(x => x.uid)); rozvPohledVykreslit(); });
+  await klikA('tdRaChranic');
+  st = await p.evaluate(() => ({ dis: document.querySelector('#rz-akce [data-action="tdRaChranicVlozit"]').disabled, info: document.querySelector('.rza-fi-info').textContent, n: __rz.rady[1].prvky.length }));
+  check('lišta: když v řadě není místo pro chránič, upozorní a nic neudělá', st.dis && /V řadě 2 není místo pro chránič \(4 moduly, volno 1 modul\)/.test(st.info) && st.n === 21, JSON.stringify(st));
+  await klikA('tdRaChranicZrusit');
+
+  // Rozdělit fáze (se zamčenou fází a přístrojem na hřebenu)
+  await p.evaluate(async () => { await __T.novy('v-sk-4x24-ocel'); });
+  await prikaz(p, '9x B10'); await p.evaluate(() => { document.activeElement.blur(); const r = __rz.rady[0].prvky; r[1].faze = 'L3'; r[1].fazeZamek = true; rozvPohledVykreslit(); });
+  await klikA('tdRaFaze');
+  st = await p.evaluate(() => ({ f: __rz.rady[0].prvky.map(x => x.faze).join(), toast: [...document.querySelectorAll('#toast-wrap > *')].map(x => x.textContent).join(' ¦ ') }));
+  check('lišta: Rozdělit fáze dá L1, L2, L3, L1… a zamčenou fázi vynechá (zůstane L3)', st.f === 'L1,L3,L2,L3,L1,L2,L3,L1,L2' && /1 se zamčenou fází vynecháno/.test(st.toast), st.f + ' ' + st.toast.slice(0, 160));
+  await p.keyboard.press('Control+z'); await w(60);
+  await p.evaluate(() => { const r = __rz.rady[0].prvky; rozvVyberNastavit(r.slice(0, 4).map(x => x.uid)); rozvPohledVykreslit(); });
+  await klikA('tdRaHreben');
+  await p.evaluate(() => { rozvVyberNastavit(__rz.rady[0].prvky.map(x => x.uid)); rozvPohledVykreslit(); });
+  const fPred = await p.evaluate(() => __rz.rady[0].prvky.slice(0, 4).map(x => x.faze).join());
+  await klikA('tdRaFaze');
+  st = await p.evaluate(() => ({ f4: __rz.rady[0].prvky.slice(0, 4).map(x => x.faze).join(), f: __rz.rady[0].prvky.slice(4).map(x => x.faze).join(), toast: [...document.querySelectorAll('#toast-wrap > *')].map(x => x.textContent).join(' ¦ ') }));
+  check('lišta: u přístrojů na hřebenu Rozdělit fáze jen upozorní, že fáze plyne ze zapojení (ostatní rozdělí)', st.f4 === fPred && st.f === 'L1,L2,L3,L1,L2' && /má fázi ze zapojení \(hřeben \/ vodič\)/.test(st.toast), JSON.stringify({ fPred, f4: st.f4, f: st.f }) + st.toast.slice(-200));
+
+  // Vyměnit za…
+  st = await p.evaluate(async () => {
+    await __T.novy('v-sk-4x24-ocel');
+    DOK.rozvKnihovna = [{ id: 'u-lsn10', druh: 'pristroj', kat: 'FA', nazev: 'Jistič LSN 10B/1', vyrobce: 'Test', rada: 'LSN', typ: 'LSN 10B/1', poly: '1', In: 10, char: 'B', sirka: 1, pv: 1.4, zdroj: 'import', overeno: true },
+      { id: 'u-lsn16', druh: 'pristroj', kat: 'FA', nazev: 'Jistič LSN 16B/1', vyrobce: 'Test', rada: 'LSN', typ: 'LSN 16B/1', poly: '1', In: 16, char: 'B', sirka: 1, pv: 2.1, zdroj: 'import', overeno: true }].map(x => rozvPolozkaNorm(x, 'pristroj'));
+    await dokZapsat(); await __T.w(100);
+    return rozvKnihovnaVse().filter(x => x.vyrobce === 'Test').length;
+  });
+  await prikaz(p, '5x B10'); await p.evaluate(() => { document.activeElement.blur(); const r = __rz.rady[0].prvky; r.forEach((x, i) => { x.vyvod = 'Světla ' + (i + 1); x.kabel = 'CYKY-J'; x.prurez = '3×1,5'; x.faze = ['L1', 'L2', 'L3'][i % 3]; }); r[2].mezera = 1; rozvPohledVykreslit(); });
+  await klikA('tdRaVymenit');
+  st = await p.evaluate(() => ({ open: document.getElementById('modal-rz-vymena').classList.contains('open'), pol: [...document.querySelectorAll('.rz-vym-pol')].map(e => e.querySelector('b').textContent + (e.querySelector('button').disabled ? ' (nyní)' : '')).join(' | '), text: document.getElementById('rz-vym-obsah').textContent.slice(0, 160) }));
+  check('lišta: Vyměnit za… otevře knihovnu předfiltrovanou na stejnou kategorii, póly, In a charakteristiku (jen B10 1P, bez B16)', st.open && st.pol === 'Jistič LSN 10B/1 | Jistič 1P B10 (nyní)' && /Jistič · 1P · B10/.test(st.text), JSON.stringify(st));
+  await p.click('.rz-vym-pol [data-kid="u-lsn10"]'); await w(100);
+  st = await p.evaluate(() => { const r = __rz.rady[0].prvky; return { knih: r.map(x => x.knih).join(), pv: r.map(x => x.p.pv).join(), ozn: r.map(x => x.ozn).join(), vyv: r[4].vyvod + '|' + r[4].kabel + '|' + r[4].prurez + '|' + r[4].faze, mez: r[2].mezera, open: document.getElementById('modal-rz-vymena').classList.contains('open') }; });
+  check('lišta: výběr nahradí všech 5 přístrojů (Pv 1,4) — označení, pozice (mezera), vývod, kabel i fáze zůstanou', st.knih === 'u-lsn10,u-lsn10,u-lsn10,u-lsn10,u-lsn10' && st.pv === '1.4,1.4,1.4,1.4,1.4' && st.ozn === '-FA1,-FA2,-FA3,-FA4,-FA5' && st.vyv === 'Světla 5|CYKY-J|3×1,5|L2' && st.mez === 1 && !st.open, JSON.stringify(st));
+  await p.keyboard.press('Control+z'); await w(60);
+  st = await p.evaluate(() => __rz.rady[0].prvky.map(x => x.knih).join());
+  check('lišta: Ctrl+Z výměnu vrátí', st === 'v-fa-1-B10,v-fa-1-B10,v-fa-1-B10,v-fa-1-B10,v-fa-1-B10', st);
+  await p.evaluate(() => { rozvVyberNastavit(__rz.rady[0].prvky.map(x => x.uid)); rozvPohledVykreslit(); });
+  // Smazat + Ctrl+Z, Esc zavře lištu i výběr
+  await klikA('tdRSmazat');
+  st = await p.evaluate(() => ({ n: rozvVse().length, lista: !!document.getElementById('rz-akce') }));
+  await p.keyboard.press('Control+z'); await w(60);
+  const poZ = await p.evaluate(() => rozvVse().length);
+  check('lišta: Smazat smaže vybrané (lišta zmizí), Ctrl+Z je vrátí', st.n === 0 && !st.lista && poZ === 5, JSON.stringify(st) + ' ' + poZ);
+  await p.evaluate(() => { rozvVyberNastavit(__rz.rady[0].prvky.map(x => x.uid)); rozvPohledVykreslit(); });
+  await p.keyboard.press('Escape'); await w(60);
+  st = await p.evaluate(() => ({ lista: !!document.getElementById('rz-akce'), vyb: rozvVybrane().length }));
+  check('lišta: Esc ji zavře i s výběrem', !st.lista && st.vyb === 0, JSON.stringify(st));
+  // první řada nahoře: nad ní není místo → lišta pod výběrem; režim Zapojení a tažení lištu schovají
+  await p.evaluate(() => { rozvVyberNastavit(__rz.rady[0].prvky.map(x => x.uid)); __rz.kRucni = 2.3; rozvPohledVykreslit(); });
+  L = await lista();
+  check('lišta: když nad výběrem není místo (první řada), je pod ním a výběr nezakrývá', L && L.kde === 'pod' && L.podPosl && !L.prekryv && L.vRamu, JSON.stringify(L));
+  const g1 = await p.evaluate(() => { const b = document.querySelector('#rz-svg-ram [data-puid="' + __rz.rady[0].prvky[0].uid + '"]').getBoundingClientRect(); return { x: b.left + b.width / 2, y: b.top + b.height / 2 }; });
+  await p.mouse.move(g1.x, g1.y); await p.mouse.down(); await p.mouse.move(g1.x + 40, g1.y + 60, { steps: 4 });
+  const priTahu = await p.evaluate(() => { const e = document.getElementById('rz-akce'); return !e || getComputedStyle(e).display === 'none'; });
+  await p.keyboard.press('Escape'); await p.mouse.up(); await w(80);
+  await p.evaluate(() => { TD_AKCE.tdRNapRezim(); });
+  const vZap = await p.evaluate(() => !!document.getElementById('rz-akce'));
+  await p.evaluate(() => { TD_AKCE.tdRNapRezim(); __rz.kRucni = null; rozvPohledVykreslit(); });
+  check('lišta: při tažení přístroje se schová a v režimu Zapojení se neukazuje', priTahu && !vZap, JSON.stringify({ priTahu, vZap }));
+  await p.evaluate(async () => { DOK.rozvKnihovna = []; await dokZapsat(); });
+
+  // telefon 360 px: lišta je dole na obrazovce
+  {
+    const ctxM = await kontext(b, { viewport: { width: 360, height: 740 }, hasTouch: true, isMobile: true });
+    const pm = await stranka(ctxM, URL, err);
+    const M = await pm.evaluate(async () => {
+      await __T.novy('v-sk-2x12-n'); const a = rozvVlozit('v-fa-1-B16', 0, 0), c = rozvVlozit('v-fa-1-B16', 0, 1);
+      rozvVyberNastavit([a.uid, c.uid]); rozvPohledVykreslit(); await __T.w(60);
+      const el = document.getElementById('rz-akce'), bb = el.getBoundingClientRect(), pole = document.getElementById('rzc-pole');
+      return { pos: getComputedStyle(el).position, dole: Math.round(innerHeight - bb.bottom), l: Math.round(bb.left), w: Math.round(bb.width), h: Math.round(bb.height), tl: [...el.querySelectorAll('button')].every(x => x.getBoundingClientRect().height >= 44), pismo: getComputedStyle(pole).fontSize, sirkaStr: document.documentElement.scrollWidth };
+    });
+    check('lišta: na šířce 360 px je dole na obrazovce přes celou šířku, tlačítka aspoň 44 px, pole příkazu má písmo 16 px a stránka se nerozšíří', M.pos === 'fixed' && M.dole === 0 && M.l === 0 && M.w === 360 && M.tl && M.pismo === '16px' && M.sirkaStr <= 360, JSON.stringify(M));
+    await ctxM.close();
+  }
 
   check('žádná chyba JavaScriptu', !err.length, err.slice(0, 3).join(' | '));
   await b.close();
