@@ -1,4 +1,4 @@
-// Čelní pohled „jako v dílně" — fáze 1 (lab v1.64): věrné kresby prvků, propojovací
+// Čelní pohled „jako v dílně" — fáze 1 (2026-11-08): věrné kresby prvků, propojovací
 // hřebeny, průřez a barva vodičů, vývodka. Test hlídá:
 //  - každý druh prvku má vlastní kresbu (páčka, tlačítko T, okénko SPD, víčka pojistek,
 //    A1/A2 stykače, svorky v barvě funkce, svorkovnice = řada úzkých svorek, mosazná přípojnice,

@@ -2,7 +2,7 @@
 // Test hlídá:
 //  - datový model napájení (rozvDeti, rozvPotomci, kruh, upozornění In, smazání → automatika),
 //  - volbu „Napájen z" v panelu a „→ napájí",
-//  - režim 🔌 Zapojení podle schváleného vzoru (v1.63): vodiče po pólech ze svorky na svorku,
+//  - režim 🔌 Zapojení podle schváleného vzoru (2026-11-06): vodiče po pólech ze svorky na svorku,
 //    napětí od kabelu, bubliny s předpovědí, paralelně na vstup, odpojení do prázdna, přepojení
 //    pulzujícím koncem, svazek 3f v barvách fází, N neuchopitelný, přehozené fáze, geometrie tras,
 //    telefon 360 px (podržení svorky),
@@ -160,7 +160,7 @@ async function stranka(ctx, url, err) {
   check('panel: změna volby zapíše nadr (ručně), -FA23 pak „→ napájí: -FA25", ZPĚT vrátí', pan.nove && /→ napájí: -FA25/.test(pan.fa23) && pan.zpet);
   check('panel: hlavní vypínač má volbu „Napájen z" (z přívodu / svorky / přístroje před ním), svodič taky; pojistka má pole Vložka', /^z přívodu( \||$)/.test(pan.qh) && !/-FA|-FI/.test(pan.qh) && pan.spd && pan.vlozka, pan.qh);
 
-  // ── 3. režim 🔌 Zapojení podle schváleného vzoru (v1.63) ────────────────
+  // ── 3. režim 🔌 Zapojení podle schváleného vzoru (2026-11-06) ────────────────
   // Scénáře, které uživatel zkoušel ve vzoru vzor-zapojeni.html — skutečnou myší.
   {
     const cz = await kontext(b, { viewport: { width: 1366, height: 1500 } }), ez = [];
@@ -633,7 +633,7 @@ async function stranka(ctx, url, err) {
     const doc = new DOMParser().parseFromString(sv, 'image/svg+xml');
     r.schPoradi = U.map(u => +doc.querySelector('[data-puid="' + u + '"] circle').getAttribute('cx')).every(cx => cx < 65 - 8);
     window.__schSvg = sv;
-    // přívodní svorky leží uvnitř čárkovaného rámu rozvaděče (oprava v1.61)
+    // přívodní svorky leží uvnitř čárkovaného rámu rozvaděče (oprava 2026-11-06)
     const ram = Array.from(doc.querySelectorAll('rect[stroke-dasharray="3 1.6"]')).sort((a, b2) => +b2.getAttribute('width') - +a.getAttribute('width'))[0];
     const rx = +ram.getAttribute('x'), ry = +ram.getAttribute('y'), rw = +ram.getAttribute('width'), rh = +ram.getAttribute('height');
     r.svUvnitr = Array.from(doc.querySelectorAll('[data-privodni] circle')).map(c => { const cx = +c.getAttribute('cx'), cy = +c.getAttribute('cy'), rr = +c.getAttribute('r');
@@ -723,14 +723,14 @@ async function stranka(ctx, url, err) {
       __T.dk('[data-dk="oznaceni"]', 'RH1'); __T.dk('[data-dk="soustava"]', '3NPE ~400/230 V TN-S'); __T.dk('[data-dk="datum"]', '2026-11-01');
       __T.dk('[data-dk="privodKabel"]', 'CYKY'); __T.dk('[data-dk="privodPrurez"]', '5×10');
       rozvSkrinNastavit(rozvKnihPolozka('v-sk-4x24-ocel'));
-      // položky, které má i ostrý program v9.140 (bez polí z labu); pojistka a SPD podle kategorie
+      // položky, které má i ostrý program v9.140 (bez nových polí); pojistka a SPD podle kategorie
       const kn = (kid, f) => rozvKnihPolozka(kid) ? kid : (rozvVestavene().filter(f)[0] || {}).id;
       rozvVlozit('v-qm-3-63', 0, 0); const fu = rozvVlozit(kn('v-fu-3-1038', it => it.kat === 'FU' && String(it.poly) === '3'), 0, 1); rozvVlozit(kn('v-spd-2-3N', it => it.kat === 'SPD'), 0, 2);
       rozvVlozit('v-fi-4-40-30-A', 1, 0);
       for (let i = 0; i < 6; i++) Object.assign(rozvVlozit('v-fa-1-B16', 1, i + 1), { vyvod: 'Zásuvky ' + i, faze: ['L1', 'L2', 'L3'][i % 3], kabel: 'CYKY-J', prurez: '3×2,5', pi: '1,2' });
       Object.assign(rozvVlozit('v-fa-3-B25', 2, 0), { vyvod: 'Sporák', kabel: 'CYKY-J', prurez: '5×2,5', pi: '9' });
       rozvVlozit('v-x-rad', 2, 1);
-      if (rozvKnihPolozka('v-x-svork')) { const svb = rozvVlozit('v-x-svork', 2, 2); svb.privodni = true; }   // blok přívodních svorek (lab v1.57–v1.59; v9.140 ho nemá)
+      if (rozvKnihPolozka('v-x-svork')) { const svb = rozvVlozit('v-x-svork', 2, 2); svb.privodni = true; }   // blok přívodních svorek (mezikrok vývoje 2026-11-05; v9.140 ho nemá)
       Object.assign(rozvVlozit('v-fa-1-B6', 2, 3), { predHlavnim: true, vyvod: 'Ovládání – CENTRAL STOP', faze: 'L1' });   // jistič ovládání na přívodu
       fu.pozn = 'vložka 25 gG';
       rozvPrecislovat(); dokZmena(); await dokUlozitOtevreny();
@@ -775,7 +775,7 @@ async function stranka(ctx, url, err) {
     const BN = require('./bez-n');   // 2026-11-09: N jističochrániče a popisky N-FI se mění záměrně
     check('starý rozvaděč: schéma znak po znaku jako předchozí verze (bez odboček N/PE a popisků N-…)', BN(nov.listy) === BN(puv.listy), rozdil(BN(nov.listy), BN(puv.listy)));
     check('starý rozvaděč: oteplení, fáze a soudobost jako předchozí verze', bezIncJ(nov.otepl) === bezIncJ(puv.otepl) && nov.faze === puv.faze && nov.soud === puv.soud);
-    // lab v1.64: čelní pohled má novou kresbu přístrojů a vývodku — porovnává se bez nich (require('./bez-kresby'))
+    // 2026-11-08: čelní pohled má novou kresbu přístrojů a vývodku — porovnává se bez nich (require('./bez-kresby'))
     const BK = require('./bez-kresby');
     check('starý rozvaděč: PDF dokumentace (bloky, čelní pohled bez kresby přístrojů) a DXF jako předchozí verze', BN(BK(nov.pdf)) === BN(BK(puv.pdf)) && BN(nov.dxf) === BN(puv.dxf), rozdil(BN(BK(nov.pdf)), BN(BK(puv.pdf))) || rozdil(BN(nov.dxf), BN(puv.dxf)));
     check('starý rozvaděč: ruční volba „Napájen z" se v režimu Zapojení kreslí jako automatické (čárkované) spojení ze správného zdroje, data bez vodičů', nov.autoRucni === true);

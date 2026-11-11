@@ -1,4 +1,4 @@
-// Čelní pohled „jako v dílně" (lab v1.64): přístroje mají novou kresbu (cpKresba) a skříň
+// Čelní pohled „jako v dílně" (2026-11-08): přístroje mají novou kresbu (cpKresba) a skříň
 // vývodku přívodu. Testy, které porovnávají rozvaděč se starou verzí znak po znaku, porovnávají
 // čelní pohled BEZ kresby přístrojů: každá skupina <g class="rz-pr …">…</g> se nahradí značkou
 // s data-puid a vývodka se vypustí. Jinde (schéma, seznam, štítek, data, DXF) dál znak po znaku.

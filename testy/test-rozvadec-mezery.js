@@ -85,7 +85,7 @@ async function stranka(b, port, init) {
   check('starý rozvaděč se načte bajtově beze změny', nove.nacteno === stary.data);
   check('… řady v editoru jsou stejné jako uložené a nemají klíč „mezera"', nove.rady === JSON.stringify(sd.rady) && nove.mezer === -1);
   check('… otevřený a uložený beze změny řad', nove.ulozeno === JSON.stringify(sd.rady));
-  const BK = require('./bez-kresby');   // lab v1.64: kresba přístrojů a vývodka se mění záměrně
+  const BK = require('./bez-kresby');   // 2026-11-08: kresba přístrojů a vývodka se mění záměrně
   const BN = require('./bez-n');        // 2026-11-09: N jističochrániče a popisky N-FI se mění záměrně
   check('… čelní pohled (SVG do PDF, bez kresby přístrojů) znak po znaku stejný jako ve staré verzi', BK(nove.out.svg) === BK(stary.out.svg));
   check('… schéma zapojení (všechny listy) stejné jako ve staré verzi', BN(JSON.stringify(nove.out.schema)) === BN(JSON.stringify(stary.out.schema)), nove.out.schema.length + ' listů');

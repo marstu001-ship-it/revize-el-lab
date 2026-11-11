@@ -33,7 +33,7 @@
 <script>
 (function() {
   'use strict';
-  var LAB_VERZE = 'v1.67 · 2026-11-09';   // bumpni spolu s CACHE_NAME v sw.js
+  var LAB_VERZE = 'v1.68 · 2026-11-11';   // bumpni spolu s CACHE_NAME v sw.js
 
   // ── klíče localStorage / sessionStorage ────────────────────────────────
   function klic(k) {
@@ -2275,7 +2275,7 @@ html.dark .rz-banner-hr{background:#2e2618;border-color:#6b5534}
 .rz-hr-navrh{align-items:flex-start;margin:.35rem 0}
 .rz-hr-navrh small{color:var(--muted,#666)}
 html.dark .rz-nap-btn.akt{background:#3d3410}
-/* režim 🔌 Zapojení (v1.63, podle vzoru): vodiče po pólech ze svorky na svorku */
+/* režim 🔌 Zapojení (2026-11-06, podle vzoru): vodiče po pólech ze svorky na svorku */
 .rz-wire.vybrany .rz-w,.rz-wire.hov .rz-w{stroke-width:1.3}
 .rz-wire.rz-wire-tazeny .rz-w{stroke-opacity:.35}
 .rz-wire .rz-w-hit{cursor:pointer}
@@ -2715,7 +2715,7 @@ html.dark .rz-imp-chyby{background:#3a1f1c;border-color:#6b2c25}
 <body>
 
 <div class="topbar">
-  <div class="brand" data-action="home" style="cursor:pointer" title="Hlavní stránka">⚡ Revize <em>EL</em> <span class="ver">v9.140<span class="ver-date"> · 2026-11-04</span></span></div>
+  <div class="brand" data-action="home" style="cursor:pointer" title="Hlavní stránka">⚡ Revize <em>EL</em> <span class="ver">v9.142<span class="ver-date"> · 2026-11-10</span></span></div>
   <div class="topbar-right">
     <button class="btn btn-ghost" id="theme-toggle" data-action="toggleTheme" title="Přepnout světlý / tmavý režim">🌙</button>
     <button class="btn btn-ghost" id="view-toggle" data-action="toggleView" title="Přepnout zobrazení PC / Mobil">💻 PC</button>
@@ -31860,7 +31860,7 @@ function rozvVestavene() {
   P('prisl-nap', 'PRISL', 'Napěťová spoušť 230 V AC', { prislTyp: 'nap', uc: '230 V AC', sirka: 1 });
   P('prisl-podp', 'PRISL', 'Podpěťová spoušť 230 V AC', { prislTyp: 'podp', uc: '230 V AC', sirka: 1 });
   P('prisl-pom', 'PRISL', 'Pomocný kontakt 1Z1V', { prislTyp: 'pom', kontakty: '1Z1V', sirka: 0.5 });
-  // propojovací hřebeny (lab v1.64) — obecné, zatížitelnost podle průřezu (ověřte podle výrobce hřebenu)
+  // propojovací hřebeny (2026-11-08) — obecné, zatížitelnost podle průřezu (ověřte podle výrobce hřebenu)
   [['1', '1P'], ['3', '3P']].forEach(function (pp) {
     [10, 16, 25].forEach(function (pr) { P('hreben-' + pp[0] + '-' + pr, 'PRISL', 'Propojovací hřeben ' + pp[1] + ' ' + pr + ' mm², 57 pólů', { prislTyp: 'hreben', poly: pp[0], prurez: pr + ' mm²', sirka: 1 }); });
   });
@@ -31879,7 +31879,7 @@ function rozvVestavene() {
   P('zd-12-15', 'ZD', 'Napájecí zdroj 12 V DC 15 W', { uVstup: '230', uVystup: '12 DC', vykon: 15, sirka: 1 });
   P('xs-16', 'XS', 'Zásuvka na DIN lištu 16 A', { poly: '1+N', In: 16, sirka: 3 });
   P('x-rad', 'X', 'Svorka řadová (½ modulu)', { sirka: 0.5 });
-  // řadové svorky ve skutečné šířce (lab v1.64): 2,5 mm² 5,2 mm, 4 mm² 6,2 mm, 10 mm² 8,2 mm — šířka v modulech
+  // řadové svorky ve skutečné šířce (2026-11-08): 2,5 mm² 5,2 mm, 4 mm² 6,2 mm, 10 mm² 8,2 mm — šířka v modulech
   P('x-rad-25', 'X', 'Svorka řadová 2,5 mm² (5,2 mm)', { prurez: '2,5 mm²', sirkaMm: 5.2, sirka: 0.3 });
   P('x-rad-4', 'X', 'Svorka řadová 4 mm² (6,2 mm)', { prurez: '4 mm²', sirkaMm: 6.2, sirka: 0.35 });
   P('x-rad-10', 'X', 'Svorka řadová 10 mm² (8,2 mm)', { prurez: '10 mm²', sirkaMm: 8.2, sirka: 0.47 });
@@ -32463,8 +32463,8 @@ DOK_TYPY.rozv.cist = function (koren) {
   var tII = koren.querySelector('[data-dk="stitek.tridaII"]');
   if (tII && d.stitek && d.stitek.tridaII === '' && puv.stitek && typeof puv.stitek.tridaII === 'boolean' && puv.stitek.tridaII === tII.checked) d.stitek.tridaII = puv.stitek.tridaII;
   if (__rz) { if (__rz.vnejsi && __rz.vnejsi.length) d.vnejsi = dokKopie(__rz.vnejsi); else delete d.vnejsi; }   // prvky mimo rozvaděč (ovládání)
-  if (__rz) { if (__rz.vodice && __rz.vodice.length) d.vodice = dokKopie(__rz.vodice); else delete d.vodice; }   // natažené vodiče (režim Zapojení, v1.63)
-  if (__rz) { if (__rz.hrebeny && __rz.hrebeny.length) d.hrebeny = dokKopie(__rz.hrebeny); else delete d.hrebeny; }   // propojovací hřebeny (v1.64)
+  if (__rz) { if (__rz.vodice && __rz.vodice.length) d.vodice = dokKopie(__rz.vodice); else delete d.vodice; }   // natažené vodiče (režim Zapojení, 2026-11-06)
+  if (__rz) { if (__rz.hrebeny && __rz.hrebeny.length) d.hrebeny = dokKopie(__rz.hrebeny); else delete d.hrebeny; }   // propojovací hřebeny (2026-11-08)
   if (d.bezProfilu !== true) delete d.bezProfilu;   // dokumentace pro jiného výrobce — ukládá se jen zaškrtnutá
   if (d.bezOdv) {   // „nechat prázdné" platí, dokud do pole technik nic nenapíše
     Object.keys(d.bezOdv).forEach(function (k) { var v = dkCesta(d, k); if (!d.bezOdv[k] || (v != null && String(v).trim() !== '')) delete d.bezOdv[k]; });
@@ -32978,7 +32978,7 @@ function rozvZnackaText(z, w, fs) {
   return rozvZkratit(z.kr || z.text, max);
 }
 
-// ═══ ČELNÍ POHLED „JAKO V DÍLNĚ" — věrné kresby prvků (lab v1.64, fáze 1) ═══
+// ═══ ČELNÍ POHLED „JAKO V DÍLNĚ" — věrné kresby prvků (2026-11-08, fáze 1) ═══
 // Každý druh prvku má vlastní kresbu ve stylu čistého technického výkresu
 // (cpKresba): šedé tělo, světlé čelo, bílý štítek, šrouby svorek nahoře a dole;
 // barevné je jen to, co je barevné i ve skutečnosti (páčka hlavního vypínače,
@@ -33247,7 +33247,7 @@ function rozvPrvekSvg(d, x, y, o) {
     }
     return h + '</g>';
   }
-  if (!o.h) return rozvPrvekDinSvg(d, x, y, o);   // modulový přístroj: věrná kresba (lab v1.64)
+  if (!o.h) return rozvPrvekDinSvg(d, x, y, o);   // modulový přístroj: věrná kresba (2026-11-08)
   var sk = o.h ? Math.max(1, Math.min(2.4, Math.min(w, H) / 42)) : 1;   // velký přístroj na desce (PSC) — větší písmo
   var zna = rozvVyrZnacka(p), dz = zna ? 1 : 0;   // dz: posun textů pod pruh se značkou
   var ampT = zna && rozvBarvyRezim() === 'proud' ? rozvAmpBarva(p) : null;
@@ -35046,7 +35046,7 @@ function rozvNadrazeneAuto(rady) {
   rozvPresSrovnat(rady, vse);
 }
 // Paralelní připojení na vstupní svorky jiného přístroje (`x.pres = { uid, strana: 'vstup' }`,
-// v1.62): přístroj má stejný zdroj jako ten, na jehož vstup je připojen. Když se zdroj
+// 2026-11-06): přístroj má stejný zdroj jako ten, na jehož vstup je připojen. Když se zdroj
 // vzoru změní, jde s ním; vzor zmizel / nedává smysl → `pres` se smaže (nadr zůstane).
 function rozvPresSrovnat(rady, vse) {
   rozvPrvkyVse(rady).forEach(function (x) {
@@ -35404,7 +35404,7 @@ function rozvSvorkovnicePanelHtml(x) {
     '<div class="dk-pozn">' + esc(rozvSvorkyRozsah(x)) + ' · šířka ' + esc(rozvSirkaText(p.sirka)) + '</div>' +
     (p.prip ? '' : rozvPrivodniHtml(x));
 }
-// Funkce řadové svorky (barva jako ve skutečnosti): fáze šedá, N modrá, PE zelenožlutá (lab v1.64).
+// Funkce řadové svorky (barva jako ve skutečnosti): fáze šedá, N modrá, PE zelenožlutá (2026-11-08).
 function rozvSvorkaFunkceHtml(x) {
   var v = x.funkce === 'L' || x.funkce === 'N' || x.funkce === 'PE' ? x.funkce : '', odh = rozvSvorkaFunkce(Object.assign({}, x, { funkce: '' }));
   var o = function (k, t) { return '<option value="' + k + '"' + (v === k ? ' selected' : '') + '>' + t + '</option>'; };
@@ -35784,7 +35784,7 @@ document.addEventListener('touchmove', function (e) {
 document.addEventListener('pointerup', function (e) { rozvTahKonec(e, false); });
 document.addEventListener('pointercancel', function (e) { rozvTahKonec(e, true); });
 
-// ═══ ROZVADĚČ — REŽIM ZAPOJENÍ (v1.63, podle schváleného vzoru vzor-zapojeni.html) ═══
+// ═══ ROZVADĚČ — REŽIM ZAPOJENÍ (2026-11-06, podle schváleného vzoru vzor-zapojeni.html) ═══
 // Přepínač „🔌 Zapojení" v liště čelního pohledu. Každý pól přístroje má vlastní
 // svorku nahoře i dole (uzel `uid:t:k` / `uid:b:k`), uvnitř přístroje je pól k
 // propojený shora dolů (kromě SPD). Kabel ve vývodce má jen L1, L2, L3
@@ -35835,7 +35835,7 @@ function rozvPrivodPopis() {
   return [kab, rozvHlavicka('soustava')].filter(Boolean).join(' · ');
 }
 function rozvPrivodShora() { return rozvHlavicka('privodSmer') !== 'zespodu'; }
-// Vývodka na okraji skříně v čelním pohledu (lab v1.64): „Přívod do skříně" v hlavičce, výchozí shora.
+// Vývodka na okraji skříně v čelním pohledu (2026-11-08): „Přívod do skříně" v hlavičce, výchozí shora.
 function rozvVyvodkaSvg(rz, W, Hsvg) {
   var Z = rozvZaokr, sm = rz.privodSmer != null ? rz.privodSmer : (rz === __rz ? rozvHlavicka('privodSmer') : ''), shora = sm !== 'zespodu';
   var cx = RZG.okraj / 2 + 0.6, nw = 8, y0 = shora ? 0.4 : Hsvg - 0.4, sg = shora ? 1 : -1;
@@ -36070,7 +36070,7 @@ function rzpSync() {
   });
 }
 // Volá rozvZmena po každé změně: neplatné vodiče pryč (smazaný přístroj), přístroj bez
-// nataženého vodiče zpátky na automatiku, odvozená pole z napětí. `vstup` z labu v1.61–v1.62 se zahodí.
+// nataženého vodiče zpátky na automatiku, odvozená pole z napětí. `vstup` z mezikroků vývoje se zahodí.
 function rzpPoZmene(vodPred, predRz) {
   if (!__rz) return;
   rzhUklid();
@@ -36096,8 +36096,8 @@ function rzpNaSvorce(s) {   // natažené vodiče, které na svorce končí
 function rzpPopisW(w) { return w ? rzpOzn(w.a.uid) + ' → ' + rzpOzn(w.b.uid) : ''; }
 function rzpWNajit(uid) { return rzpVodice(__rz).filter(function (w) { return w.uid === uid; })[0] || null; }
 
-// ═══ ROZVADĚČ — PROPOJOVACÍ HŘEBENY (lab v1.64, čelní pohled „jako v dílně") ═══
-// Hřeben je součást zapojení po pólech (stejný model jako vodiče z v1.63):
+// ═══ ROZVADĚČ — PROPOJOVACÍ HŘEBENY (2026-11-08, čelní pohled „jako v dílně") ═══
+// Hřeben je součást zapojení po pólech (stejný model jako vodiče po pólech):
 // uvnitř má sběrnice podle počtu fází (uzly `<uid>:h:k`), každý zub spojí svorku
 // přístroje na straně hřebenu (nahoře `t`, dole `b`) se sběrnicí své fáze
 // (1P: všechny zuby L; 3P: L1, L2, L3, L1…; 1P+N / 3P+N: N zub se nezapojuje).
@@ -36573,7 +36573,7 @@ function rzhZKnihovny(it) {
   showToast('Táhněte myší přes přístroje v řadě, kudy má hřeben vést.', { timeout: 5000 });
   return null;
 }
-// ── Vodiče (propojky): průřez a barva (lab v1.64) ───────────────────────
+// ── Vodiče (propojky): průřez a barva (2026-11-08) ───────────────────────
 // `vodice[i].prurez` (text v mm², „10") a `vodice[i].barva` (klíč RZV_BARVY) se
 // ukládají jen po zadání. Výchozí průřez je jen návrh podle In zdroje, barva podle fáze.
 var RZV_BARVA_HEX = { hneda: '#8B4513', cerna: '#1c1c1c', seda: '#8c8c8c', modra: '#1f6fd1', zz: '#3c9a3c', cervena: '#c62828' };
@@ -38205,7 +38205,7 @@ DOK_TYPY.rozv.pdf = function (d) {
   if (seznam.length) B.push({ delit: true, html: '<table class="rz-pdf-tab"><colgroup><col style="width:' + (psc ? 18 : 20) + 'mm"><col style="width:' + (psc ? 40 : 58) + 'mm"><col><col style="width:14mm"><col style="width:12mm">' +
       '<col style="width:12mm"><col style="width:20mm"><col style="width:12mm"><col style="width:' + (psc ? 26 : 32) + 'mm">' + (psc ? '<col style="width:24mm"><col style="width:20mm">' : '') + '</colgroup>' + hlava +
       seznam.map(radek).join('') + '</table>' });
-  var mat = rzhMaterial(d).concat(rzvMaterial(d));   // propojovací materiál (lab v1.64): hřebeny, krytky, propojky
+  var mat = rzhMaterial(d).concat(rzvMaterial(d));   // propojovací materiál (2026-11-08): hřebeny, krytky, propojky
   if (mat.length) B.push({ delit: true, html: '<table class="rz-pdf-tab rz-pdf-mat"><colgroup><col style="width:20mm"><col></colgroup><tr><th colspan="2">Propojovací materiál</th></tr>' +
     mat.map(function (m) { return '<tr><td class="c">–</td><td>' + esc(m) + '</td></tr>'; }).join('') + '</table>' });
   if (neover) B.push({ html: '<p class="rz-pdf-pozn">* Údaje přístroje nejsou ověřené (obecná položka knihovny nebo neověřený záznam) — před výrobou je ověřte podle katalogu výrobce.</p>' });
@@ -41410,7 +41410,7 @@ function rozvSvorkyRozsah(x) {
 function rozvSvorkySirka(n) { n = Math.max(1, Math.round(+n || 1)); return Math.max(0.5, Math.ceil(n * 6 / ROZV_MODUL_MM * 2) / 2); }
 function rozvJeSvorkovnice(p) { return !!(p && p.kat === 'X' && p.svorky); }
 function rsRcd(x) { return !!(x && x.p && (x.p.kat === 'FI' || x.p.kat === 'FIFA')); }
-// Přívodní svorky zapojené z přívodu / do hlavního vypínače (v1.60+). Leží v rozvaděči, takže
+// Přívodní svorky zapojené z přívodu / do hlavního vypínače (2026-11-06). Leží v rozvaděči, takže
 // čárkovaný rám na prvním listu sahá až před ně (kabel vstupuje do rámu zvenku). Rozvaděč
 // jen se starším blokem `privodni` (nebo bez svorek) má rám jako dřív.
 function rsSvorkyNove(d, model) {
@@ -41774,7 +41774,7 @@ function rsListSchema(d, list, idx, listy, c, model) {
   var xs = list.sloupce.map(function (x, i) { return rsSloupecX(g, i); });
   var posl = xs.length ? xs[xs.length - 1] : g.xQ + 6;
   // čárkovaný obrys rozvaděče, označení nahoře uprostřed
-  var xRam = rsRamLevy(d, g, model);   // s přívodními svorkami (v1.61) rám sahá až za ně — svorky jsou v rozvaděči
+  var xRam = rsRamLevy(d, g, model);   // s přívodními svorkami (2026-11-06) rám sahá až za ně — svorky jsou v rozvaděči
   h += rsObd(xRam, g.y0, g.x1 - xRam, g.yB - g.y0, { carky: '3 1.6', w: RS_TENKA });
   h += rsText((g.x0 + g.x1) / 2, g.y0 + 4.6, 'Rozvaděč ' + (d.oznaceni || '') + (predL ? ' — pokračování' : ''), { fs: 3.4, tucne: true, zar: 'middle' });
   // sběrnice

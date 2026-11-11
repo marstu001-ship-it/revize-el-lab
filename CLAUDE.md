@@ -209,7 +209,7 @@ Revize EL je single-page PWA (HTML + JS + service worker). Obsah se cachuje
 v prohlížeči přes `sw.js`, takže uživatel nevidí změny, dokud se neinvalidně
 cache.
 
-**Aktuální verze: v9.140 · 2026-11-04**
+**Aktuální verze: v9.142 · 2026-11-10**
 
 ## Povinné při každé změně kódu před commitem
 
@@ -579,7 +579,7 @@ nedělala (pokyn uživatele).
 i otevřené z archivu a znovu uložené; zmrazený čas a náhoda) je ve verzi
 před funkcí a po ní **bajtově shodný** (archiv i `getData()`, sha256).
 
-## Normy – stav ověření citací (kontrola 2026-11-04, v9.140)
+## Normy – stav ověření citací (kontrola 2026-11-04 a 2026-11-05, v9.141)
 
 Citace a hodnoty se kontrolovaly proti plnému znění norem, které má uživatel.
 Podrobnosti po dávkách jsou v oddílech níž. **Do repozitáře jdou jen čísla
@@ -2928,7 +2928,7 @@ s ovládáním…", „…prvek mimo rozvaděč…" a „…list ovládacích ob
 
 Připomínka uživatele: skutečný rozvaděč RS2 (škola) nešel v programu
 zreprodukovat — pojistkový odpojovač před svodičem, jističe přímo z hlavního
-vypínače, chránič se dvaceti jističi. Do v1.57 smělo `x.nadr` ukazovat jen na
+vypínače, chránič se dvaceti jističi. Dřív smělo `x.nadr` ukazovat jen na
 chránič.
 
 - **Data se nemění, jen rozšiřuje význam `x.nadr` / `x.nadrRucne`:** `nadr` =
@@ -2952,7 +2952,7 @@ chránič.
   (`rozvNapajeciPopis`: „-FU1 Pojistkový odpojovač 50 A 3P"). U nadřazeného
   řádek **„→ napájí: -SPD1, -FA25…FA44"** (`rozvOznRada`). Totéž ve výběru víc.
   Změna jde přes `rozvZmena` (ZPĚT, Ctrl+Z) — `rozvNapajeniNastavit`.
-- **Režim 🔌 Zapojení** (do v1.60 „🔗 Napájení" se šipkami; od v1.63 vodiče po
+- **Režim 🔌 Zapojení** (nejdřív „🔗 Napájení" se šipkami; teď vodiče po
   pólech podle schváleného vzoru — oddíl „Zapojení podle vzoru" níž). Přesouvání
   tažením je v režimu vypnuté. Do PDF nic.
 - **Fáze, oteplení, soudobost:** napájecí přístroj větve se nepočítá, počítají
@@ -3012,8 +3012,8 @@ chránič.
   `rozvDokEff`, takže obrazovka i PDF ukazují totéž. Údaje výrobce
   předvyplněné při založení jsou uložená data — nemění se.
 
-**Napájení z přívodu, přes svorky a před hlavním vypínačem (2026-11-06,
-v1.60):** zásada uživatele „bez takových možností, jaké jsou v reálu, to
+**Napájení z přívodu, přes svorky a před hlavním vypínačem (2026-11-06):**
+zásada uživatele „bez takových možností, jaké jsou v reálu, to
 nejsem schopný udělat" — napájení jde zadat u každého prvku včetně hlavního
 vypínače, svorek a SPD (kromě REZ, PRISL, VNEJSI).
 - **Data (jen co uživatel nastaví):** `x.nadr = '@privod'` = přímo z přívodu
@@ -3038,14 +3038,14 @@ vypínače, svorek a SPD (kromě REZ, PRISL, VNEJSI).
   hlavním vypínačem)"; „→ napájí: -QH1 (L1)" u svorky s fází.
 - **Režim Zapojení:** nad skříní (u spodního přívodu pod ní) pás s kabelovou
   vývodkou (`rozvNapPas`, `rozvVyvodkaGeom`, popis z hlavičky — kabel, průřez,
-  soustava; jen obrazovka, jen DBO). Ovládání od v1.63 viz „Zapojení podle
+  soustava; jen obrazovka, jen DBO). Ovládání viz „Zapojení podle
   vzoru" níž; sada svorek hlavního vypínače vzniká natažením vodičů z X1…X3.
 - **Schéma (`rsPrivod`):** přívod → přívodní svorky (z `'@privod'`,
   `nadrSvorky`, `privodni`) s označením „-X1…X3" a fázemi → hlavní vypínač;
   prvky z přívodu, které nejsou svorky, odbočí před hlavním vypínačem stejně
   jako jistič ovládání (`rsPredHl`, i řetěz FU → SPD přes `rsHlavaHtml`).
   Rozvaděč jen se starým blokem `privodni` a `predHlavnim` beze změny.
-  **Přívodní svorky leží UVNITŘ čárkovaného rámu** (oprava v1.61,
+  **Přívodní svorky leží UVNITŘ čárkovaného rámu** (oprava 2026-11-06,
   `rsSvorkyNove`, `rsRamLevy`): s nimi rám na prvním listu začíná na x 36
   (s předřazeným jističem 41), svorky od rámu + 3,5 mm, lomítka a popis kabelu
   vně rámu (kabel do rozvaděče vstupuje zvenku). Bez nových přívodních svorek
@@ -3059,8 +3059,8 @@ Test: `test-rozvadec-napajeni.js` oddíl 10 (RS2 s `x-rad` -X1…X3, sada svorek
 Ctrl+Z, kruh, SPD z přívodu ve schématu, kontroly) a starý rozvaděč proti
 předchozí verzi.
 
-**Zapojení podle vzoru (2026-11-06, v1.63, blok „ROZVADĚČ — REŽIM ZAPOJENÍ").**
-Tři kola (v1.60–v1.62) se slovním zadáním nevyšla, uživatel si ovládání odladil
+**Zapojení podle vzoru (2026-11-06, blok „ROZVADĚČ — REŽIM ZAPOJENÍ").**
+Tři kola se slovním zadáním nevyšla, uživatel si ovládání odladil
 na samostatném vzoru (`vzor-zapojeni.html`, schválen: „takhle jsem si to
 představoval"). **Vzor je závazný** — pravidla, chování myši i texty bublin;
 kód vzoru (`vodic`, `autoWires`, `spocti`, `predpoved`) je přenesený jako
@@ -3122,7 +3122,7 @@ kód vzoru (`vodic`, `autoWires`, `spocti`, `predpoved`) je přenesený jako
   [L1,L2,L3]", „∥ paralelně na vstup", „(zespodu)", „z -X1…X3") a seznam
   přístrojů s výsledkem („-QH1 z -X1…X3, vstup shora, L1,L2,L3", oranžově
   „bez napětí" a „– chybí fáze") — `rzpPanelHtml`.
-- **Pole z labu v1.59–v1.62:** `x.vstup` se už nečte a zahodí se při první
+- **Pole z mezikroků vývoje (2026-11-05 a 06):** `x.vstup` se už nečte a zahodí se při první
   změně zapojení přístroje; `pres` zůstává jako odvozené pole (automatika ho
   kreslí od vstupních svorek vzoru); ruční „šipky" (`nadrRucne` + `nadr`) se
   kreslí jako automatické spojení. Nastavení „Přístroje napájím shora /
@@ -3175,7 +3175,7 @@ na tomhle?" – takhle to být nesmí." Každá další fáze čelního pohledu 
    pohled přes `testy/bez-kresby.js` (skupina `<g class="rz-pr">` → značka s
    `data-puid`, vývodka pryč); vše ostatní dál znak po znaku.
 
-#### Fáze 1a — věrné kresby prvků (lab v1.64, blok „ČELNÍ POHLED „JAKO V DÍLNĚ"")
+#### Fáze 1a — věrné kresby prvků (2026-11-08, blok „ČELNÍ POHLED „JAKO V DÍLNĚ"")
 
 - **`rozvPrvekDinSvg(d, x, y, o)`** kreslí modulový přístroj na DIN liště (obrazovka,
   PDF, duch při tažení, čela ve 3D); tělo podle druhu dělá **`cpKresba`** (vrací SVG
@@ -3208,14 +3208,14 @@ Test: `testy/test-rozvadec-dilna.js` (oddíl 1). **Upraveno:** `test-rozvadec-ps
 `test-rozvadec-mezery.js`, `test-rozvadec-napajeni.js`, `test-rozvadec.js` (CAD) —
 porovnání se starou verzí přes `bez-kresby.js`.
 
-#### Fáze 1b — propojovací hřebeny (lab v1.64, blok „ROZVADĚČ — PROPOJOVACÍ HŘEBENY")
+#### Fáze 1b — propojovací hřebeny (2026-11-08, blok „ROZVADĚČ — PROPOJOVACÍ HŘEBENY")
 
 - **Data:** `d.hrebeny = [{ uid, rada, od, do, poly, strana, prurez, krytky, In? }]`
   (`od`/`do` = pozice v řadě v modulech, `poly` `'1' | '3' | '1+N' | '3+N'`, `strana`
   `'nahore' | 'dole'`, `krytky` = indexy zubů, `In` jen z položky knihovny výrobce).
   Pole vznikne s prvním hřebenem (`cist`), v `rozvZmena` je ve snímku pro ZPĚT, úklid
   `rzhUklid` (neexistující řada, konec za skříní). **Jen DBO** (`rzhVse` u PSC prázdné).
-- **Hřeben je součást zapojení po pólech** (model v1.63): sběrnice podle fází jako uzly
+- **Hřeben je součást zapojení po pólech** (model zapojenÃ­ podle vzoru): sběrnice podle fází jako uzly
   `<uid>:h:k`; každý zub (`rzhZuby`) spojí svorku přístroje na straně hřebenu (nahoře
   `t`, dole `b`) se sběrnicí své fáze — 1P všechny L, **3P L1, L2, L3, L1…**, 1P+N / 3P+N
   N zub se nezapojuje (`rzhHrany` → `rzpSpocti`). Krytka nebo volné místo = zub nic
@@ -3262,7 +3262,7 @@ stavy „rozvaděč – nástroj Hřeben a vybraný hřeben v panelu" a „…na
 (okno)". **Upraveno:** `test-rozvadec.js` (kontextová nabídka má „🪮 Navrhnout
 hřebeny…" a „🪮 Propojit hřebenem").
 
-#### Fáze 1c — průřez a barva vodičů, vývodka (lab v1.64)
+#### Fáze 1c — průřez a barva vodičů, vývodka (2026-11-08)
 
 - U vybraného vodiče (režim 🔌 Zapojení) **Průřez** a **Barva** (`vodice[i].prurez`,
   `vodice[i].barva`, jen po zadání; přepojení je drží). Výchozí průřez je jen návrh

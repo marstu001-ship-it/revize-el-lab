@@ -564,7 +564,7 @@ function vsechnyStavy(zalozky) {
   add('rozvaděč – čelní pohled', 'Tvorba dokumentace', E(async () => {
     await __M.rozv(); document.getElementById('rz-pohled').scrollIntoView({ block: 'start' }); await __M.w(100);
   }));
-  // kdo koho napájí (v1.63 zapojení podle vzoru): režim 🔌 Zapojení s panelem „Kdo koho napájí" a vybraný vodič
+  // kdo koho napájí (zapojení podle vzoru): režim 🔌 Zapojení s panelem „Kdo koho napájí" a vybraný vodič
   add('rozvaděč – režim Zapojení, panel Kdo koho napájí', 'Tvorba dokumentace', E(async () => {
     await __M.rozv(); document.getElementById('toast-wrap').innerHTML = '';
     TD_AKCE.tdRNapRezim();
