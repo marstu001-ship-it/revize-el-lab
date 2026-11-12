@@ -2213,6 +2213,22 @@ html.dark .rz-pi-odhad{background:#3a2c0e;color:#f3c76b;border-color:#7a5c1c}
 html.dark .rz-pi-rucne{color:#f0a35e}
 .rz-pi-nastaveni .rz-pi-nr{display:flex;align-items:center;gap:.4rem;font-size:.85rem;margin:.2rem 0;text-transform:none;letter-spacing:0;font-family:inherit}
 .rz-pi-nastaveni .rz-pi-nr input{width:4.2rem!important;flex:0 0 auto;margin-left:auto}
+.rz-chybi{margin:.3rem 0;border:1px solid var(--border);border-radius:4px;background:var(--surface);font-size:.85rem}
+.rz-chybi>summary{cursor:pointer;padding:.25rem .6rem;list-style:none}
+.rz-chybi>summary::-webkit-details-marker{display:none}
+.rzs-souhrn-ok{color:#1d6b3a}
+.rzs-souhrn-upoz{color:#8a4b00}
+.rzs-souhrn-chyba{color:#9b2c1f;font-weight:600}
+html.dark .rzs-souhrn-ok{color:#7fcf9a}
+html.dark .rzs-souhrn-upoz{color:#f0b46a}
+html.dark .rzs-souhrn-chyba{color:#f3b0a6}
+.rzs-seznam{list-style:none;margin:0;padding:.2rem .6rem .5rem;max-height:14rem;overflow:auto}
+.rzs-n{display:flex;gap:.4rem;align-items:baseline;flex-wrap:wrap;padding:.12rem 0;border-top:1px solid var(--border)}
+.rzs-n:first-child{border-top:0}
+.rzs-n-chyba .rzs-n-znak{color:#b5291c}
+.rzs-n-upoz .rzs-n-znak{color:#b8700a}
+.rzs-n-tip{color:var(--muted)}
+.rzs-n-text{text-align:left;font:inherit}
 .rzs-akce{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin:.5rem 0}
 .rzs-hlavni{min-height:2.2rem}
 .rzs-upoz{font-size:.85rem;color:#8a4b00;margin:.35rem 0}
@@ -34539,7 +34555,7 @@ function rozvPohledVykreslit() {
           '" title="Propojovací hřeben: táhněte myší přes přístroje v řadě; kraj hřebenu pak jde roztáhnout nebo zkrátit">🪮 Hřeben</button>' : '') +
         '<button class="dok-mini rz-precislovat" data-action="tdRPrecislovat" title="Označení podle pořadí v řadách zleva doprava: -QH1, -FA1, -FA2… (jde vzít zpět)">🔢 Přečíslovat označení</button>' +
         rozvBarvyPrepinacHtml() + '</span>' +
-    '</div>' + rzcBoxHtml() + rozvQmUpozHtml() + rzpListaHtml();
+    '</div>' + rzcBoxHtml() + rozvQmUpozHtml() + rzpListaHtml() + rzsChybiPruhHtml();
   if (__rz.napRezim) h += rozvNapBannerHtml();
   if (__rz.hrNastroj && __rz.rezim !== 'PSC') h += rzhBannerHtml();
   if (vybrany || presun || (presunVic && presunVic.length)) {
@@ -34594,6 +34610,7 @@ function rozvPohledVykreslit() {
   rozvOteplUkazatelHned();   // hned — lišta se nesmí posunout až po vykreslení
   rozvSoudUkazatelHned();
   rzaObnovit();   // lišta akcí u výběru
+  rzsChybiNaplanovat();   // pruh „Co ještě chybí"
   if (__rzv) rzvObnovit();   // průvodce: cíl se překreslil
 }
 
@@ -34604,7 +34621,7 @@ function rozvSvgPrekreslit() {
   rozvFazeUkazatel();
   rozvOteplUkazatel();
   rozvSoudUkazatel();
-  if (!__rzTah) rzaObnovit();
+  if (!__rzTah) { rzaObnovit(); rzsChybiNaplanovat(); }
 }
 
 // ── Průběžná „předtucha" oteplení v liště (2026-10-27) ──────────────────
@@ -39259,6 +39276,7 @@ function rozvDokHtml(d) {
     '<div class="rz-dok-chybi" id="rz-dok-chybi"></div>' +
     '<div class="dk-pozn">Naměřené hodnoty a výsledky zkoušek vyplňujete vy — program je nikdy nedoplní. Štítek „' + ROZV_DOK_CEKA +
       '" = údaj z rešerše norem, ne z jejich textu.</div></div>';
+  h += rzOddil('chybi', '✅ Co ještě chybí', '<div id="rzs-chybi-dok">' + rzsChybiSeznamHtml(rzsKontrola()) + '</div>', true);
   // Výroba a značení
   h += rzOddil('vyroba', '🏭 Výroba a značení',
     '<div class="g3">' +
@@ -46561,6 +46579,118 @@ TD_AKCE.tdRSvNaPocet = function (el) {
   var n = z.n + Math.max(1, g.potreba - g.kap);
   rozvZmena('Počet svorek přípojnice', function () { z.x.p.pocet = n; z.x.p.sirka = rozvSvorkySirka(n); delete z.x.pocet; });
   rzsObnovitOddil(); showToast('Přípojnice ' + (z.x.ozn || '') + ': ' + n + ' svorek.', { timeout: 4000 });
+};
+// ── Kontrola „Co ještě chybí" ───────────────────────────────────────────
+// Seznam nálezů o zapojení a doplnění rozvaděče; nikam se neukládá, počítá se pokaždé znovu
+// (rzsKontrola). Úroveň: chyba (červená, brání ověření) / upozornění (oranžová) / tip (šedá).
+// Klepnutí na nález vybere přístroj (nebo hřeben) v čelním pohledu. Pruh nad čelním pohledem se
+// přepočítá se zpožděním (při tažení se nepočítá), stejný seznam je v Dokumentech.
+function rzsSkup(rady, seznam) { return seznam.length > 3 ? rozvOznRada(seznam.slice(0, 3)).replace(/,\s*$/, '') + ' a ' + (seznam.length - 3) + ' dalších' : rozvOznRada(seznam); }
+function rzsKontrola() {
+  if (!__rz || !__rz.skrin) return [];
+  var rady = __rz.rady, out = [], nm = function (x) { return x.ozn || rozvNazev(x.p); };
+  var add = function (u, text, o) { out.push(Object.assign({ u: u, text: text }, o || {})); };
+  var psc = pscJe(__rz), vse = rozvPrvkyVse(rady).filter(function (x) { return x.p.kat !== 'REZ'; });
+  if (!vse.length) return out;
+  var S = null; try { S = rzpStav(__rz); } catch (e) { S = null; }
+  // 1. přístroj bez napětí, chybějící fáze
+  var bez = [], fz = [];
+  if (S) vse.forEach(function (x) {
+    if (!rzpZapojitelny(x) || x.p.kat === 'X') return;
+    var r = S.vys[x.uid];
+    if (!r || !r.pod) { bez.push(x); return; }
+    var n = rzpFaziX(x); if (n > 1 && r.faze.length < n) fz.push(x);
+  });
+  bez.forEach(function (x) { add('chyba', nm(x) + ' není nikam zapojený (bez napětí) — napájejte ho z hlavního vypínače, přístroje nebo hřebenu.', { uid: x.uid }); });
+  fz.forEach(function (x) { add('chyba', nm(x) + ': chybí fáze — pod napětím je jen část pólů.', { uid: x.uid }); });
+  // 2. vývody bez názvu, kabelu, svorky
+  var vyv = vse.filter(function (x) { return rzsJeVyvod(x, rady, __rz.vnejsi); });
+  var seznam = function (kriterium, text, tip) {
+    var s = vyv.filter(kriterium); if (!s.length) return;
+    add('upoz', dokPocetTvar(s.length, ['vývod', 'vývody', 'vývodů']) + ' ' + text + ': ' + rzsSkup(rady, s) + '.', { uidy: s.map(function (x) { return x.uid; }) });
+  };
+  seznam(function (x) { return !String(x.vyvod || '').trim(); }, 'bez názvu');
+  seznam(function (x) { return !String(x.kabel || '').trim(); }, 'bez kabelu');
+  if (rzsMaSvorky(rady)) { var M = rzsModel(rady, __rz), nes = M.V.filter(function (v) { return v.chybi > 0; }).map(function (v) { return v.x; }); if (nes.length) add('upoz', dokPocetTvar(nes.length, ['vývod', 'vývody', 'vývodů']) + ' bez svorky: ' + rzsSkup(rady, nes) + '.', { uidy: nes.map(function (x) { return x.uid; }), akce: { a: 'tdRSvPrirad', t: 'Přiřadit svorky' } }); }
+  // 3. N a PE (přípojnice, počty svorek), ochranné pospojování
+  if (!psc) {
+    var np = rzsNP(rady, __rz);
+    if (np) {
+      if (np.PE.kap < 2) add('chyba', 'Méně než 2 svorky PE pro ochranné pospojování (ČSN EN IEC 61439-3, čl. 8.8) — v rozvaděči ' + (np.PE.kap ? 'je jen ' + np.PE.kap : 'není přípojnice PE') + '.',
+        { akce: { a: np.PE.kap ? 'tdRSvNaPocet' : 'tdRSvPridatPrip', t: np.PE.kap ? 'Upravit počet' : 'Přidat přípojnici PE (' + np.PE.potreba + ' svorek)', f: 'PE', fi: '', n: np.PE.potreba } });
+      rzsNPNaleza(rady, __rz).forEach(function (n) {
+        var g = n.skupina; if (g.nazev === 'PE' && np.PE.kap < 2) return;
+        add('upoz', n.text, { akce: { a: n.druh === 'malo' ? 'tdRSvNaPocet' : 'tdRSvPridatPrip', t: n.akce, f: g.nazev === 'PE' ? 'PE' : 'N', fi: g.fi ? g.fi.uid : '', n: g.potreba } });
+      });
+    }
+  }
+  // 4. hřebeny, vložka, SPD, napájení
+  if (S) rzhVse(__rz).forEach(function (h) { rzhKontroly(h, S).forEach(function (k) { add('prurez' in k ? 'chyba' : 'upoz', rzhPopis(h).replace(/^h/, 'H') + ': ' + k.t.replace(/^Hřeben /, 'hřeben '), { hr: h.uid }); }); });
+  vse.forEach(function (x) {
+    var v = rozvVlozkaUpoz(x); if (v) add('chyba', nm(x) + ': ' + v, { uid: x.uid });
+    if (x.p.kat === 'SPD') {
+      var z = rozvZdrojEff(x, rady), zx = z && z !== '@privod' ? rozvPrvkyVse(rady).filter(function (q) { return q.uid === z; })[0] : null;
+      if (z === '@privod' || (zx && ['FA', 'FU', 'QF', 'FIFA', 'AFDD', 'MS', 'X'].indexOf(zx.p.kat) === -1)) add('upoz', nm(x) + ' nemá předjištění — napájí ho ' + (zx ? nm(zx) : 'přívod') + ' (svodič se jistí jističem nebo pojistkou).', { uid: x.uid });
+    }
+    rozvNapajeniUpoz(x, rady).forEach(function (t) { add('upoz', t.indexOf(nm(x)) === 0 ? t : nm(x) + ': ' + t, { uid: x.uid }); });
+  });
+  // 5. obecné přístroje bez Pv, je-li zapnuté oteplení výpočtem
+  try {
+    var d = rozvOteplData();
+    if (d && ((d.dokVyber && d.dokVyber.otepleni === true) || (d.otepleni && Object.keys(d.otepleni).length))) {
+      var ot = rozvOteplVypocet(d), chPv = ot.stav !== 'nelze' ? (ot.radky || []).filter(function (q) { return q.chybi === 'doplňte Pv'; }) : [];
+      if (chPv.length) add('tip', dokPocetTvar(chPv.length, ['přístroj', 'přístroje', 'přístrojů']) + ' bez Pv — výpočet oteplení je neúplný: ' + rzsSkup(rady, chPv.map(function (q) { return q.x; })) + '.',
+        { uidy: chPv.map(function (q) { return q.x.uid; }), akce: { a: 'tdRPvkOtevrit', t: '📚 Doplnit Pv z knihovny…' } });
+    }
+  } catch (e) {}
+  var poradi = { chyba: 0, upoz: 1, tip: 2 };
+  return out.map(function (n, i) { n.__i = i; return n; }).sort(function (a, b) { return poradi[a.u] - poradi[b.u] || a.__i - b.__i; });
+}
+var RZS_UROVEN = { chyba: ['chyba', 'chyby', 'chyb', '⛔'], upoz: ['upozornění', 'upozornění', 'upozornění', '⚠'], tip: ['tip', 'tipy', 'tipů', '💡'] };
+function rzsChybiSouhrnText(L) {
+  if (!L.length) return '✓ Všechno zapojené a doplněné';
+  var p = ['chyba', 'upoz', 'tip'].map(function (k) { var n = L.filter(function (x) { return x.u === k; }).length; return n ? n + ' ' + (k === 'upoz' ? 'upozornění' : dokPocetTvar(n, RZS_UROVEN[k].slice(0, 3)).replace(/^\d+\s*/, '')) : ''; }).filter(Boolean);
+  return (L.some(function (x) { return x.u === 'chyba'; }) ? '⛔' : '⚠') + ' Co ještě chybí: ' + p.join(' · ');
+}
+function rzsChybiSeznamHtml(L) {
+  if (!L.length) return '<div class="rzs-ok">✓ Všechno zapojené a doplněné.</div>';
+  return '<ul class="rzs-seznam">' + L.map(function (n, i) {
+    var a = n.akce;
+    return '<li class="rzs-n rzs-n-' + n.u + '"><span class="rzs-n-znak" aria-hidden="true">' + RZS_UROVEN[n.u][3] + '</span><button type="button" class="rz-odkaz rzs-n-text" data-action="tdRChybiKlik" data-i="' + i + '" title="Ukázat v čelním pohledu">' + esc(n.text) + '</button>' +
+      (a ? ' <button type="button" class="dok-mini rzs-n-akce" data-action="' + esc(a.a) + '"' + (a.f != null ? ' data-f="' + esc(a.f) + '" data-fi="' + esc(a.fi || '') + '" data-n="' + esc(a.n) + '"' : '') + '>' + esc(a.t) + '</button>' : '') + '</li>';
+  }).join('') + '</ul>';
+}
+function rzsChybiVnitrek(L) {
+  return '<summary class="rzs-souhrn rzs-souhrn-' + (!L.length ? 'ok' : L.some(function (x) { return x.u === 'chyba'; }) ? 'chyba' : 'upoz') + '">' + esc(rzsChybiSouhrnText(L)) + '</summary>' + rzsChybiSeznamHtml(L);
+}
+function rzsChybiPruhHtml() {
+  if (!__rz || !__rz.skrin) return '';
+  return '<details class="rz-chybi" id="rz-chybi"' + (__rz.__chybiHtml ? '' : ' hidden') + (__rz.chybiOtevr ? ' open' : '') + '>' + (__rz.__chybiHtml || '') + '</details>';
+}
+function rzsChybiVykreslit() {
+  if (!__rz || !__rz.skrin) return;
+  var L = rzsKontrola(); __rz.__chybi = L; __rz.__chybiHtml = rzsChybiVnitrek(L);
+  var el = document.getElementById('rz-chybi'); if (el) { el.innerHTML = __rz.__chybiHtml; el.hidden = false; }
+  var dk = document.getElementById('rzs-chybi-dok'); if (dk) dk.innerHTML = rzsChybiSeznamHtml(L);
+}
+var __rzsChybiT = null;
+function rzsChybiNaplanovat() {
+  clearTimeout(__rzsChybiT);
+  __rzsChybiT = setTimeout(function () { __rzsChybiT = null; if (!__rz || document.body.classList.contains('rz-tahne') || document.body.classList.contains('rz-oznacuje')) return; try { rzsChybiVykreslit(); } catch (e) {} }, 150);
+}
+document.addEventListener('toggle', function (e) {
+  var t = e.target; if (t && t.id === 'rz-chybi' && __rz) __rz.chybiOtevr = t.open;
+}, true);
+TD_AKCE.tdRChybiKlik = function (el) {
+  if (!__rz) return;
+  var n = (__rz.__chybi || [])[+el.getAttribute('data-i')]; if (!n) return;
+  if (__rz.zalozka && __rz.zalozka !== 'navrh') rozvZalozkaNastavit('navrh');
+  if (n.hr) { __rz.hrVyber = n.hr; __rz.vyber = null; __rz.vic = null; rozvPohledVykreslit(); rozvVlastnostiVykreslit(); return; }
+  var uidy = n.uidy || (n.uid ? [n.uid] : []);
+  if (!uidy.length) return;
+  if (uidy.length === 1) rozvVybrat(uidy[0], false);
+  else { rozvVyberNastavit(uidy); rozvPohledVykreslit(); rozvVlastnostiVykreslit(); }
+  setTimeout(function () { var g = document.querySelector('#rz-pohled [data-puid="' + uidy[0] + '"]'); if (g && g.scrollIntoView) g.scrollIntoView({ block: 'center', inline: 'center', behavior: 'smooth' }); }, 60);
 };
 var rzsCistPuv = DOK_TYPY.rozv.cist;
 DOK_TYPY.rozv.cist = function (koren) {

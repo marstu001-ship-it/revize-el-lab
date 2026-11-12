@@ -3432,6 +3432,28 @@ N a PE se nekreslí vodiči (rozhodnutí ze vzoru zapojení), ale musí sedět p
   chrániče, když se vejde); má málo svorek → „N-FI1 má 12 svorek, potřeba 21" a **„Upravit počet"**.
   Obojí jedno ZPĚT. U PSC se N a PE neodvozují (má vlastní přípojnice XN / XPE).
 
+#### Kontrola „Co ještě chybí" (`rzsKontrola`)
+
+Seznam nálezů o zapojení a doplnění; **nikam se neukládá**, počítá se pokaždé znovu. Úroveň: **chyba** (červená,
+brání ověření) / **upozornění** (oranžová) / **tip** (šedá); řazeno chyba → upozornění → tip. Prázdný seznam:
+„✓ Všechno zapojené a doplněné".
+
+- **Kde:** rozbalovací pruh `#rz-chybi` nad čelním pohledem (`rzsChybiPruhHtml`; sbalený, souhrn „⛔ Co ještě
+  chybí: 4 chyby · 9 upozornění · 1 tip", otevření se pamatuje v `__rz.chybiOtevr`) a oddíl „✅ Co ještě chybí"
+  hned pod hlavní kartou v Dokumentech. Pruh se po překreslení **přepočítá se zpožděním 150 ms**
+  (`rzsChybiNaplanovat`; při tažení se nepočítá) a mezitím ukazuje poslední výsledek — stovky přístrojů se tím
+  nezpomalí. Klepnutí na nález vybere přístroj / přístroje / hřeben v čelním pohledu (`tdRChybiKlik`); nález
+  může mít tlačítko akce („Přidat přípojnici …", „Přiřadit svorky", „📚 Doplnit Pv z knihovny…").
+- **Chyba:** přístroj bez napětí (nikam nezapojený, ani automaticky; svorky X se nehlásí), vícepólový přístroj
+  s chybějící fází, přetížený hřeben, vložka pojistky větší než odpojovač, méně než 2 svorky PE pro ochranné
+  pospojování (DBO, čl. 8.8).
+- **Upozornění:** vývody bez názvu / bez kabelu / bez svorky (jen když rozvaděč svorky má; seskupené do jedné
+  řádky „44 vývodů bez svorky: -FA1…FA3 a 41 dalších"), chybí přípojnice N / N-FI1 / PE nebo má málo svorek,
+  SPD bez předjištění (napájený přímo z přívodu / hlavního vypínače), přívodní svorka, která nic nenapájí,
+  ostatní upozornění k napájení (`rozvNapajeniUpoz`), ostatní kontroly hřebenu (`rzhKontroly`).
+- **Tip:** obecné přístroje bez Pv, **je-li oteplení výpočtem zapnuté** (`dokVyber.otepleni === true` nebo
+  vyplněná data oteplení) — odkaz na „Doplnit Pv z knihovny…".
+
 Test: `testy/test-rozvadec-svorky.js` (RS2 se třemi přívodními svorkami -X1…X3 a svorkovnicí -X4; starý
 rozvaděč proti `STARA_PORT` — při přenosu pustit se `STARA=<předchozí vydání>`).
 

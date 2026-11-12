@@ -192,6 +192,92 @@ async function otevri(b, url, vp) {
   check('N a PE: přípojnice s 12 svorkami → „N-FI1 má 12 svorek, potřeba 21" a „Upravit počet" ji srovná na 21', np.malo && np.upraveno === '21|0', np.upraveno);
   check('N a PE: jističochránič (RCBO) a 3P motor se na N nepočítají (N-FI1 zůstává 21, společná N 25, PE +2)', np.rcbo === '25,21 → 25,21 PE 49', np.rcbo);
 
+  // ── 3. kontrola „Co ještě chybí" ──────────────────────────────────────
+  const ko = await p.evaluate(async () => {
+    const r = {}, w = ms => new Promise(x => setTimeout(x, ms));
+    // hotový RS2: hlavní vypínač ze svorek -X1…X3, svorky vývodů, přípojnice N, N-FI1 a PE
+    const sv = await __T.rs2(48);
+    const [x1, x2, x3] = __rz.rady[2].prvky.slice(0, 3), qm = __T.naj('-QH1');
+    rozvZmena('priv', () => { ['L1', 'L2', 'L3'].forEach((f, i) => { [x1, x2, x3][i].faze = f; }); qm.nadrSvorky = [x1.uid, x2.uid, x3.uid]; qm.nadr = x1.uid; qm.nadrRucne = true; });
+    TD_AKCE.tdRSvPrirad(); await w(50);
+    rozvZalozkaNastavit('dok'); await w(50);
+    for (let i = 0; i < 3; i++) { const b = document.querySelector('#rzs-obsah [data-action="tdRSvPridatPrip"]'); if (b) { TD_AKCE.tdRSvPridatPrip(b); await w(50); } }
+    rozvZalozkaNastavit('navrh'); await w(400);
+    r.hotovy = rzsKontrola().map(n => n.u + ': ' + n.text);
+    r.pruh = document.getElementById('rz-chybi').innerText.trim();
+    r.pruhOtevreno = document.getElementById('rz-chybi').open;
+    r.zel = document.querySelector('#rz-chybi summary').classList.contains('rzs-souhrn-ok');
+    // oddíl v Dokumentech
+    rozvZalozkaNastavit('dok'); await w(100);
+    r.dok = (document.querySelector('#rz-pan-dok [data-oddil="chybi"]') || {}).innerText || '';
+    rozvZalozkaNastavit('navrh'); await w(100);
+    return r;
+  });
+  check('Co ještě chybí: hotový RS2 (hlavní vypínač ze svorek, svorky, přípojnice N / N-FI1 / PE) → žádný nález', ko.hotovy.length === 0, ko.hotovy.join(' | '));
+  check('Co ještě chybí: pruh nad čelním pohledem „✓ Všechno zapojené a doplněné" (zeleně, sbalený) a totéž v Dokumentech', ko.pruh === '✓ Všechno zapojené a doplněné' && ko.zel && !ko.pruhOtevreno && /Všechno zapojené a doplněné/.test(ko.dok) && /Co ještě chybí/.test(ko.dok), ko.pruh + ' / ' + ko.dok.slice(0, 80));
+
+  const nk = await p.evaluate(async () => {
+    const r = {}, w = ms => new Promise(x => setTimeout(x, ms));
+    // úmyslně neúplný RS2: svorky nikdo nepřiřadil, přípojnice chybí, X1…X3 nic nenapájí, SPD bez předjištění, vložka, hřeben…
+    await __T.rs2(40);
+    const fu = __T.naj('-FU1'), fa5 = __T.naj('-FA5'), fa6 = __T.naj('-FA6');
+    fu.vlozka = '63 gG'; fa5.vyvod = ''; fa6.kabel = ''; fa6.prurez = '';
+    const spd2 = rozvVlozit('v-spd-2-3N', 3, __rz.rady[3].prvky.length); spd2.ozn = '-SPD2';
+    rzhNavrhyOtevrit(); await w(30); document.getElementById('rz-hr-pouzit').click(); await w(50);
+    __T.naj('-QH1').p.In = 80; __rz.hrebeny[0].prurez = 10;
+    rozvZmena('x', () => {});
+    __dokOtevreny.data.dokVyber = { otepleni: true };
+    rozvPohledVykreslit(); await w(400);
+    const L = rzsKontrola(); r.L = L;
+    const j = (u, re) => L.some(n => n.u === u && re.test(n.text));
+    r.txt = L.map(n => n.u + ': ' + n.text);
+    r.bezNazvu = j('upoz', /1 vývod bez názvu: -FA5/); r.bezKabelu = j('upoz', /1 vývod bez kabelu: -FA6/);
+    r.bezSvorky = j('upoz', /vývodů bez svorky/) || j('upoz', /vývody bez svorky/);
+    r.chybiN = j('upoz', /Chybí přípojnice N /) && j('upoz', /Chybí přípojnice N-FI1/);
+    r.pe = j('chyba', /Méně než 2 svorky PE/);
+    r.vlozka = j('chyba', /Vložka 63 A je větší než jmenovitý proud odpojovače 32 A/);
+    r.spd = j('upoz', /-SPD2 nemá předjištění/);
+    r.priv = j('upoz', /Svorka je připojena k přívodu, ale nic nenapájí/) || j('upoz', /je připojena k přívodu, ale nic nenapájí/);
+    r.hreben = L.some(n => n.u === 'chyba' && n.hr && /nestačí pro zátěž/.test(n.text));
+    r.pv = j('tip', /bez Pv/);
+    r.poradi = L.map(n => n.u).join(',').replace(/(chyba,)+/, 'chyba,').replace(/(upoz,)+/, 'upoz,').replace(/(tip,?)+/, 'tip');
+    r.pruh = document.getElementById('rz-chybi').querySelector('summary').innerText.trim();
+    r.cerv = document.querySelector('#rz-chybi summary').classList.contains('rzs-souhrn-chyba');
+    // klik na nález vybere přístroj
+    document.getElementById('rz-chybi').open = true;
+    const tl = [...document.querySelectorAll('#rz-chybi .rzs-n-text')].filter(b => /-FA5/.test(b.textContent))[0];
+    tl.click(); await w(100);
+    r.vybran = (rozvNajit(__rz.vyber) || { x: {} }).x.ozn;
+    const hr = [...document.querySelectorAll('#rz-chybi .rzs-n-text')].filter(b => /nestačí pro zátěž/.test(b.textContent))[0];
+    hr.click(); await w(100); r.hrVyber = !!__rz.hrVyber && !!rzhNajit(__rz.hrVyber);
+    // tlačítko „Přidat přípojnici" přímo z pruhu
+    const pb = document.querySelector('#rz-chybi [data-action="tdRSvPridatPrip"][data-f="PE"]'); r.tlPE = !!pb;
+    pb.click(); await w(400);
+    r.poPE = rzsNP(__rz.rady, __rz).PE.kap;
+    r.zmizelo = !rzsKontrola().some(n => /Méně než 2 svorky PE/.test(n.text));
+    return r;
+  });
+  check('Co ještě chybí: neúplný RS2 — vývod bez názvu / bez kabelu / bez svorky', nk.bezNazvu && nk.bezKabelu && nk.bezSvorky, nk.txt.join(' | '));
+  check('Co ještě chybí: chybí přípojnice N a N-FI1, méně než 2 svorky PE (chyba), vložka větší než odpojovač (chyba)', nk.chybiN && nk.pe && nk.vlozka, nk.txt.join(' | '));
+  check('Co ještě chybí: SPD bez předjištění, přívodní svorky nic nenapájí, přetížený hřeben (chyba), přístroje bez Pv při zapnutém oteplení (tip)', nk.spd && nk.priv && nk.hreben && nk.pv, nk.txt.join(' | '));
+  check('Co ještě chybí: pořadí chyba → upozornění → tip, souhrn v pruhu červeně', /^chyba,upoz,tip$/.test(nk.poradi) && nk.cerv && /^⛔ Co ještě chybí: \d+ chyb\w* · \d+ upozornění · 1 tip$/.test(nk.pruh), nk.poradi + ' / ' + nk.pruh);
+  check('Co ještě chybí: klepnutí na nález vybere přístroj (-FA5) nebo hřeben; tlačítko „Přidat přípojnici PE" v pruhu nález odstraní', nk.vybran === '-FA5' && nk.hrVyber && nk.tlPE && nk.poPE === 47 && nk.zmizelo, nk.vybran + ' ' + nk.poPE);
+
+  // bez napětí a chybějící fáze
+  const bn = await p.evaluate(async () => {
+    const r = {}, w = ms => new Promise(x => setTimeout(x, ms));
+    await dokNovy('rozv'); rozvSkrinNastavit(rozvKnihPolozka('v-sk-4x24-ocel'));
+    const v = k => rozvVlozit(k, 0, __rz.rady[0].prvky.length);
+    const fa = v('v-fa-1-B10'); fa.vyvod = 'Světla'; fa.kabel = 'CYKY-J';
+    r.bez = rzsKontrola().filter(n => n.u === 'chyba' && n.uid === fa.uid).map(n => n.text);
+    const qm = v('v-qm-3-63'), x1 = v('v-x-rad-25'); x1.nadr = '@privod'; x1.nadrRucne = true; x1.faze = 'L1';
+    rozvZmena('priv', () => { qm.nadrSvorky = [x1.uid]; qm.nadr = x1.uid; qm.nadrRucne = true; });
+    r.fazi = rzsKontrola().filter(n => n.u === 'chyba' && /chybí fáze/.test(n.text)).map(n => n.text);
+    r.bezPoQm = rzsKontrola().filter(n => /nikam zapojený/.test(n.text)).length;
+    return r;
+  });
+  check('Co ještě chybí: přístroj bez hlavního vypínače je „bez napětí" (chyba); hlavní vypínač jen z jedné fáze → „chybí fáze"', bn.bez.length === 1 && /-FA1 není nikam zapojený/.test(bn.bez[0]) && bn.fazi.length >= 1 && /chybí fáze/.test(bn.fazi[0]) && bn.bezPoQm === 0, JSON.stringify(bn));
+
   // ── starý rozvaděč: data i PDF beze změny proti staré verzi ──
   const nov = await p.evaluate(async () => {
     await dokNovy('rozv'); rozvSkrinNastavit(rozvKnihPolozka('v-sk-4x24-ocel')); window.__rs2(); await __T.w(100);
