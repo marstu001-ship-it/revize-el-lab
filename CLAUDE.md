@@ -3508,6 +3508,38 @@ odbočka (roh) a vodiče -FA4 / -FA5 přes sběrnici L ne, jedna velikost 1 mm a
 `test-rozvadec-napajeni.js` (odbočka SPD se hledá mezi `circle[data-spoj]`), `test-rozvadec-ovladani.js`
 a `test-rozvadec-svorky.js` (porovnání přes `bez-n`).
 
+### Přípojnice N/PE kolmo na DIN lištu (2026-11-12, blok „ČELNÍ POHLED „JAKO V DÍLNĚ"")
+
+Zadání uživatele: v praxi se přípojnice N a PE osazují i kolmo na lištu (svislá mosazná lišta přes DIN lištu,
+svorky nad sebou). Jen DBO (PSC má vlastní přípojnice XN / XPE); obecné i z knihovny (`kat X`, `p.svorky`, `p.prip`).
+
+- **Data (volitelná):** `x.orientace = 'kolmo'`; **podél lišty = klíč chybí**, takže starý rozvaděč se otevře
+  i uloží bajtově stejně a jeho čelní pohled se nemění (test proti `STARA_PORT`). Při přepnutí na kolmo si
+  `p.sirkaPodel` pamatuje původní šířku (`rozvSvorkySirka(počet)`) a **`p.sirka` je skutečná šířka v řadě**
+  (1 modul, nebo `p.sirkaKolmo` z knihovny) — proto pohled, volné místo, přeplnění, popisky, tažení i 3D
+  nepotřebovaly žádnou úpravu. Počet svorek se mění přes `rozvPripPocetNastavit` (kolmo zůstává 1 M).
+- **Přepnutí** `rozvPripOrientace(uidy, kolmo)` = jedna `rozvZmena` (ZPĚT, Ctrl+Z): uvolněné místo zavřou jen
+  přístroje těsně za přípojnicí (za mezerou zůstanou), při zvětšení (zpět podél) se přístroje vpravo posunou jen
+  tolik, kolik je potřeba (`rozvZPozic`). Šest svorek podél lišty = 2,5 M, kolmo 1 M.
+- **Kde se přepíná:** vlastnosti přípojnice (volba **Osazení: podél lišty / kolmo na lištu**), **lišta akcí u
+  výběru** (`↕ Kolmo na lištu` / `↔ Podél lišty`, i pro víc přípojnic naráz) a **pravý klik** (`tdRaPrip`).
+- **Nastavení konfigurátoru „Přípojnice N/PE osazuji: podél / kolmo"** (v rozbalovátku „Vkládání příkazem a lišta
+  akcí"; localStorage `revize_el_rz_pripojnice`, jen v prohlížeči, výchozí podél) platí **jen pro nově vložené**
+  přípojnice (`rozvNovyPrvek`); do dat jde klíč jen u kolmých.
+- **Kresba (`cpKresba`):** svislá mosazná lišta (`.cp-pripojnice-kolmo`), šrouby po 6 mm nad sebou, izolátory na
+  obou koncích, štítek N (modrý) / PE (zelenožlutý) nahoře, označení `-X1…X6` ve štítku, počet svorek pod lištou.
+  Celek (štítek 5,4 + 2 × 3,2 izolátor + n × 6 mm) se vystředí na výšku řady (`rozvPripKolmoDelka`).
+- **Přesah:** je-li celek vyšší než řada (`rozvPripPresah`, nad ~6 svorek při řadě 50 mm), kreslí se přes mezeru
+  k sousední řadě a program napíše **„Přípojnice přesahuje řadu – ověřte místo ve skříni"** (vlastnosti přípojnice,
+  hláška po přepnutí a nález „Co ještě chybí"). Nic se neblokuje.
+- **Beze změny:** svorková lišta (řada `svorky`) se do volného místa nepočítá ani s kolmou přípojnicí; svorkový plán
+  a kontrola počtu svorek (fáze 3) berou počet svorek z `x.pocet || p.pocet`, takže fungují stejně; do PDF
+  (seznam přístrojů, popisky) jde jen skutečná šířka.
+
+Test: `testy/test-rozvadec-pripojnice.js` (kresba svisle, 6 šroubů, štítek nahoře, 2,5 → 1 M a přisunutí přístroje,
+ZPĚT, lišta akcí, kontext, vlastnosti, PE štítek, přesah 30 svorek, nastavení kolmo pro nově vložené, svorková lišta,
+starý rozvaděč beze změny). Novinky se nedělaly.
+
 ### Výměna výkresů s CAD — export a import DXF (2026-11-02, bloky „ROZVADĚČ — VÝMĚNA S CAD")
 
 Zadání uživatele: technici kreslí ve Schématech CAD (Elmer), který ukládá

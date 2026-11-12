@@ -32750,6 +32750,46 @@ function rozvBodMm(cx, cy) {
 // Poloha přístroje v řadě = součet šířek a mezer před ním. Mezera není
 // přístroj: schéma, fáze, oteplení ani seznam ji nevidí (chodí po prvcích).
 function rozvW(x) { return +(x && x.p && x.p.sirka) || 1; }
+// Přípojnice N / PE kolmo na DIN lištu (2026-11-12): x.orientace = 'kolmo' (podél = klíč chybí). V řadě zabírá
+// 1 modul (p.sirkaKolmo z knihovny), původní šířku podél lišty si p.sirkaPodel pamatuje — p.sirka je vždy skutečná
+// šířka v řadě, takže pohled, popisky, volné místo i 3D se nemusely měnit.
+var RZ_PRIP_KLIC = 'revize_el_rz_pripojnice';
+function rozvPripJe(x) { return !!(x && x.p && x.p.kat === 'X' && x.p.svorky && x.p.prip); }
+function rozvPripKolmo(x) { return rozvPripJe(x) && x.orientace === 'kolmo'; }
+function rozvPripNastaveni() { try { return localStorage.getItem(RZ_PRIP_KLIC) === 'kolmo' ? 'kolmo' : 'podel'; } catch (e) { return 'podel'; } }
+function rozvPripPocet(x) { return Math.max(1, Math.round(+(x.pocet || (x.p || {}).pocet) || 1)); }
+// Svislá kresba: štítek 5,4 mm nahoře, izolátor, svorky po 6 mm, izolátor.
+var RZ_PRIP_ZNACKA = 5.4, RZ_PRIP_IZOL = 3.2, RZ_PRIP_SVORKA = 6;
+function rozvPripKolmoDelka(x) { return RZ_PRIP_ZNACKA + 2 * RZ_PRIP_IZOL + rozvPripPocet(x) * RZ_PRIP_SVORKA; }
+function rozvPripPresah(x) { return rozvPripKolmo(x) && rozvPripKolmoDelka(x) > RZG.H + 0.01; }
+function rozvPripNastavit(x, kolmo) {
+  var p = x.p;
+  if (kolmo) { if (p.sirkaPodel == null) p.sirkaPodel = p.sirka; p.sirka = +p.sirkaKolmo || 1; x.orientace = 'kolmo'; }
+  else { if (p.sirkaPodel != null) { p.sirka = p.sirkaPodel; delete p.sirkaPodel; } delete x.orientace; }
+}
+// Počet svorek → šířka podél lišty (kolmo zůstává 1 M)
+function rozvPripPocetNastavit(x, n) {
+  x.p.pocet = n; delete x.pocet;
+  var sir = rozvSvorkySirka(n);
+  if (rozvPripKolmo(x)) x.p.sirkaPodel = sir; else x.p.sirka = sir;
+}
+// Přepnutí podél ↔ kolmo (jedna změna pro ZPĚT): uvolněné místo se zavře jen u přístrojů těsně za ní,
+// přístroje vpravo se posunou jen když je potřeba místo (rozvZPozic).
+function rozvPripOrientace(uidy, kolmo) {
+  var z = uidy.map(rozvNajit).filter(function (q) { return q && rozvPripJe(q.x) && rozvPripKolmo(q.x) !== !!kolmo; });
+  if (!z.length) return 0;
+  rozvZmena(kolmo ? 'Přípojnice kolmo na lištu' : 'Přípojnice podél lišty', function () {
+    z.forEach(function (q) {
+      var rada = __rz.rady[q.r], i = rada.prvky.indexOf(q.x), poz = rozvPozice(rada), stara = rozvW(q.x);
+      rozvPripNastavit(q.x, kolmo);
+      var delta = stara - rozvW(q.x);
+      if (delta > 0.001) for (var j = i + 1; j < rada.prvky.length; j++) { if (rozvMez(rada.prvky[j]) > 0.001) break; poz[j] -= delta; }
+      rozvZPozic(rada, poz);
+    });
+  });
+  z.forEach(function (q) { if (rozvPripPresah(rozvNajit(q.x.uid).x)) showToast('⚠ Přípojnice přesahuje řadu – ověřte místo ve skříni.', { timeout: 5000 }); });
+  return z.length;
+}
 function rozvMez(x) { var m = +(x && x.mezera) || 0; return m > 0 ? m : 0; }
 function rozvPozice(rada) {
   var s = 0;
@@ -33193,6 +33233,23 @@ function cpKresba(d, x, y, w, H, o) {
   }
   if (kat === 'X') {
     r.bezZnacky = true;
+    if (rozvJeSvorkovnice(p) && p.prip && d.orientace === 'kolmo') {   // přípojnice kolmo na DIN lištu: svislá mosazná lišta přes lištu
+      var kf = p.prip === 'PE' ? 'PE' : 'N', kix = RZ_PRIP_IZOL, kdy = RZ_PRIP_SVORKA, kn = rozvPripPocet(d), kL = rozvPripKolmoDelka(d), kt = y + H / 2 - kL / 2,
+          kcx = x + w / 2, kbw = Math.min(8, w - 2), kby = kt + RZ_PRIP_ZNACKA + kix, kbh = kn * kdy;
+      r.h = cpRect(kcx - kbw / 2, kt + RZ_PRIP_ZNACKA, kbw, kix, CP.izol, { rx: 0.6, cls: 'cp-izolator' }) +
+        cpRect(kcx - kbw / 2, kby + kbh, kbw, kix, CP.izol, { rx: 0.6, cls: 'cp-izolator' }) +
+        cpRect(kcx - kbw / 2, kby - 0.6, kbw, kbh + 1.2, CP.mosaz, { rx: 0.6, s: CP.mosazO, sw: 0.3, cls: 'cp-pripojnice cp-pripojnice-' + kf + ' cp-pripojnice-kolmo' });
+      if (!lod || kn <= 24) for (var ki = 0; ki < kn; ki++) {
+        var kcy = kby + (ki + 0.5) * kdy;
+        r.h += '<g class="cp-sroub-p"><circle cx="' + cpZ(kcx) + '" cy="' + cpZ(kcy) + '" r="' + cpZ(Math.min(1.3, kbw * 0.16)) + '" fill="#e6c96c" stroke="' + CP.mosazO + '" stroke-width="0.25"/>' +
+          (lod ? '' : '<line x1="' + cpZ(kcx - 0.7) + '" y1="' + cpZ(kcy + 0.3) + '" x2="' + cpZ(kcx + 0.7) + '" y2="' + cpZ(kcy - 0.3) + '" stroke="' + CP.mosazO + '" stroke-width="0.25"/>') + '</g>';
+      }
+      var ksw = Math.min(14, w - 2), ksx = x + w / 2 - ksw / 2;
+      r.h += cpRect(ksx, kt, ksw, 5, kf === 'N' ? CP_SVORKA.N.b : CP_SVORKA.PE.b, { rx: 0.6, cls: 'cp-stitek-' + kf });
+      if (kf === 'PE') r.h += cpRect(ksx + ksw * 0.25, kt, ksw * 0.25, 5, CP_SVORKA.PE.pruh, {});
+      r.oznY = kt + 3.7; r.oznBarva = kf === 'N' ? '#fff' : '#111'; r.celoY = kby + kbh + kix + 3;
+      return r;
+    }
     if (rozvJeSvorkovnice(p) && p.prip) {   // přípojnice N / PE: mosazná lišta se šrouby, izolátory na koncích, štítek
       var pf = p.prip === 'PE' ? 'PE' : 'N', ix = 3.2, by = y + H / 2 - 4, pocet = Math.max(1, Math.round(+p.pocet || 1));
       r.h = cpRect(x + 0.4, y + 11, ix, H - 22, CP.izol, { rx: 0.6, cls: 'cp-izolator' }) + cpRect(x + w - 0.4 - ix, y + 11, ix, H - 22, CP.izol, { rx: 0.6, cls: 'cp-izolator' }) +
@@ -34826,8 +34883,10 @@ TD_AKCE.tdRQmNechat = function () {
 
 function rozvNovyPrvek(it) {
   var p = dokKopie(it); delete p.id;
-  return { uid: rozvUid(), knih: it.id, p: p, ozn: rozvDalsiOzn(it), vyvod: '',
+  var nx = { uid: rozvUid(), knih: it.id, p: p, ozn: rozvDalsiOzn(it), vyvod: '',
            faze: /^(3|3\+N|4)$/.test(it.poly) ? '3f' : '', kabel: '', prurez: '', nadr: '', nadrRucne: false, ib: '', pozn: '' };
+  if (rozvPripJe(nx) && rozvPripNastaveni() === 'kolmo') rozvPripNastavit(nx, true);   // výchozí osazení přípojnic z nastavení konfigurátoru
+  return nx;
 }
 
 // Kam dát přístroj „na konec řady": vybraná řada, když se tam vejde,
@@ -35539,7 +35598,9 @@ function rozvSvorkovnicePanelHtml(x) {
   var p = x.p;
   return '<div class="g2 rp-svorkovnice"><div class="f"><label>Počet svorek</label><input type="text" class="rp-pole" data-rp2="pocet" value="' + esc(p.pocet || '') + '" inputmode="numeric" autocomplete="off"></div>' +
     '<div class="f"><label>Průřez</label><input type="text" class="rp-pole" data-rp2="prurezSv" value="' + esc(p.prurez || '') + '" placeholder="2,5–4 mm²" autocomplete="off"></div></div>' +
-    '<div class="dk-pozn">' + esc(rozvSvorkyRozsah(x)) + ' · šířka ' + esc(rozvSirkaText(p.sirka)) + '</div>' +
+    (p.prip ? '<div class="f rp-prip-orient"><label>Osazení</label><select class="rp-pole" data-rp2="orientace"><option value="podel"' + (rozvPripKolmo(x) ? '' : ' selected') + '>podél lišty</option><option value="kolmo"' + (rozvPripKolmo(x) ? ' selected' : '') + '>kolmo na lištu</option></select></div>' +
+      '<div class="rz-upoz-prip" id="rp-prip-upoz"' + (rozvPripPresah(x) ? '' : ' hidden') + '>⚠ Přípojnice přesahuje řadu – ověřte místo ve skříni.</div>' : '') +
+    '<div class="dk-pozn">' + esc(rozvSvorkyRozsah(x)) + ' · šířka ' + esc(rozvSirkaText(p.sirka)) + (rozvPripKolmo(x) ? ' (kolmo na lištu)' : '') + '</div>' +
     (p.prip ? '' : rozvPrivodniHtml(x));
 }
 // Funkce řadové svorky (barva jako ve skutečnosti): fáze šedá, N modrá, PE zelenožlutá (2026-11-08).
@@ -35605,6 +35666,7 @@ document.addEventListener('change', function (e) {
 function rozvVlastnostZmena(el) {
   var z = __rz && __rz.vyber ? rozvNajit(__rz.vyber) : null; if (!z) return;
   var k = el.getAttribute('data-rp2'), v = el.value;
+  if (k === 'orientace') { rozvPripOrientace([z.x.uid], v === 'kolmo'); return; }
   if (k === 'funkce') {   // funkce svorky: jen barva v čelním pohledu, neukládá se odhad
     rozvZmena('Funkce svorky', function () { if (v === 'L' || v === 'N' || v === 'PE') z.x.funkce = v; else delete z.x.funkce; });
     return;
@@ -35665,7 +35727,7 @@ function rozvVlastnostZmena(el) {
   if (k === 'prurezSv') { z.x.p.prurez = v.trim(); delete z.x.prurezSv; }
   if (k === 'pocet') {   // svorkovnice: počet svorek → šířka (přes rozvZmena, mění se rozvržení)
     delete z.x.pocet; var n = Math.max(1, Math.round(+String(v).replace(',', '.')) || 0);
-    if (String(v).trim() && n) rozvZmena('Počet svorek', function () { z.x.p.pocet = n; z.x.p.sirka = rozvSvorkySirka(n); }, { bezVlastnosti: true });
+    if (String(v).trim() && n) rozvZmena('Počet svorek', function () { if (rozvPripJe(z.x)) rozvPripPocetNastavit(z.x, n); else { z.x.p.pocet = n; z.x.p.sirka = rozvSvorkySirka(n); } }, { bezVlastnosti: true });
     return;
   }
   if (k === 'privodni') {   // přívodní svorka = napájení z přívodu (staré privodni: true se čte stejně)
@@ -37349,6 +37411,7 @@ function rozvKontextPolozky(uid) {
     pol.push({ popis: 'Přesunout do ' + rozvRadaKam(i), oddel: prvni, fn: function () { rozvPresunout(uid, i, __rz.rady[i].prvky.length); } });
     prvni = false;
   });
+  if (rozvPripJe(z.x)) pol.push({ popis: rozvPripKolmo(z.x) ? '↔ Osadit podél lišty' : '↕ Osadit kolmo na lištu', oddel: true, fn: function () { rozvPripOrientace([uid], !rozvPripKolmo(z.x)); } });
   pol.push({ popis: '🔢 Přečíslovat označení', oddel: true, fn: function () { rozvPrecislovat(); } });
   if (__rz.rezim !== 'PSC') pol.push({ popis: '🪮 Navrhnout hřebeny…', fn: function () { rzhNavrhyOtevrit(); } });
   pol.push({ popis: 'Smazat', klavesa: 'Delete', fn: function () { rozvSmazat(uid); } });
@@ -37767,6 +37830,8 @@ function rzaInfo() {
   o.jednopol = s.filter(function (q) { return /^(1|1\+N)$/.test(String(q.x.p.poly || '')) && ['REZ', 'X', 'PRISL', 'SPD'].indexOf(q.x.p.kat) === -1; });
   var kl = function (p) { return [p.kat, p.poly, p.In, p.char, p.idn, p.rcdTyp, p.spdTrida].join('|'); };
   o.stejne = s.every(function (q) { return kl(q.x.p) === kl(s[0].x.p); }) && s[0].x.p.kat !== 'REZ' && !s[0].x.prislNa;
+  o.prip = s.every(function (q) { return rozvPripJe(q.x); });
+  o.pripKolmo = o.prip && s.every(function (q) { return rozvPripKolmo(q.x); });
   o.ozn = rozvOznRada(s.map(function (q) { return q.x; }));
   return o;
 }
@@ -37780,6 +37845,7 @@ function rzaHtml() {
       '<label class="rza-n" title="Počet kopií – napište číslo a Enter">×<input type="text" id="rza-n" value="1" inputmode="numeric" autocomplete="off" aria-label="Počet kopií"></label></span>' +
     (I.n > 1 ? b('tdRaHreben', '🪮 Hřeben', I.vedle ? 'Propojovací hřeben přes vybrané přístroje (strana a průřez podle nastavení a zátěže)' : 'Hřeben vede jen přes sousední přístroje v jedné řadě', I.vedle ? '' : 'rza-ne') : '') +
     (I.jistice ? b('tdRaChranic', '🛡 Chránič nad', I.rada != null ? 'Vloží chránič vlevo před první vybraný jistič a vybrané jističe na něj napojí (parametry nejdřív ukáže)' : 'Chránič nad jde vložit jen jističům v jedné řadě', I.rada != null ? '' : 'rza-ne') : '') +
+    (I.prip ? b('tdRaPrip', I.pripKolmo ? '↔ Podél lišty' : '↕ Kolmo na lištu', I.pripKolmo ? 'Přípojnici osadit podél DIN lišty (zabere víc modulů)' : 'Přípojnici osadit kolmo na DIN lištu (zabere 1 modul)') : '') +
     (I.jednopol.length > 1 ? b('tdRaFaze', '⚖ Rozdělit fáze', 'Jednopólovým přístrojům rozdělí fáze L1, L2, L3, L1… (zamčené vynechá)') : '') +
     b('tdRaVymenit', '🔁 Vyměnit za…', I.stejne ? 'Jiný přístroj se stejnými parametry (např. od výrobce) — označení, místo, vývod, kabel i fáze zůstanou' : 'Vyměnit jde jen stejné přístroje (kategorie, póly, proud, charakteristika)', I.stejne ? '' : 'rza-ne') +
     b('tdRSmazat', '🗑 Smazat', 'Smazat vybrané (Delete); jde vzít zpět (Ctrl+Z)', 'rza-smazat');
@@ -37908,6 +37974,8 @@ document.addEventListener('change', function (e) {
     var el = document.getElementById('rz-akce'), k = t.getAttribute('data-fi'); if (el) el.__klic = null;
     t.blur(); rzaObnovit();
     var n = document.querySelector('#rz-akce .rza-fi[data-fi="' + k + '"]'); if (n) try { n.focus({ preventScroll: true }); } catch (er) {}
+  } else if (t.classList.contains('rza-prip')) {
+    try { if (t.value === 'kolmo') localStorage.setItem(RZ_PRIP_KLIC, 'kolmo'); else localStorage.removeItem(RZ_PRIP_KLIC); } catch (er) {}
   } else if (t.classList.contains('rza-nast-fi')) {
     try { if (t.checked) localStorage.setItem(RZA_FI_HREBEN_KLIC, '1'); else localStorage.removeItem(RZA_FI_HREBEN_KLIC); } catch (er) {}
   }
@@ -37947,6 +38015,10 @@ TD_AKCE.tdRaChranicVlozit = function () {
 };
 
 // ── Rozdělit fáze ──
+TD_AKCE.tdRaPrip = function () {
+  var I = rzaInfo(); if (!I.prip) return;
+  rozvPripOrientace(I.s.map(function (q) { return q.x.uid; }), !I.pripKolmo);
+};
 TD_AKCE.tdRaFaze = function () {
   var I = rzaInfo(), kr = rzhKryteVse(), vod = {}; if (I.jednopol.length < 2) return;
   (__rz.vodice || []).forEach(function (wv) { vod[wv.b.uid] = 1; });
@@ -37995,7 +38067,8 @@ TD_AKCE.tdRaVymenaPouzit = function (el) {
 // Nastavení konfigurátoru: chránič s hřebenem.
 function rzaNastaveniHtml() {
   if (!__rz || __rz.rezim === 'PSC') return '';
-  return '<label class="teren-radek rza-nast"><input type="checkbox" class="rza-nast-fi"' + (rzaFiHreben() ? ' checked' : '') + '> Při vkládání chrániče natáhnout hřeben <small>(tlačítko „🛡 Chránič nad" v liště u výběru; jinak se jističe napojí jako dosud — chránič vlevo v řadě)</small></label>';
+  return '<label class="teren-radek rza-nast"><input type="checkbox" class="rza-nast-fi"' + (rzaFiHreben() ? ' checked' : '') + '> Při vkládání chrániče natáhnout hřeben <small>(tlačítko „🛡 Chránič nad" v liště u výběru; jinak se jističe napojí jako dosud — chránič vlevo v řadě)</small></label>' +
+    '<label class="rz-soud-nr rza-nast-prip"><span>Přípojnice N/PE osazuji:</span><select class="rza-prip" aria-label="Přípojnice N/PE osazuji"><option value="podel"' + (rozvPripNastaveni() === 'kolmo' ? '' : ' selected') + '>podél lišty</option><option value="kolmo"' + (rozvPripNastaveni() === 'kolmo' ? ' selected' : '') + '>kolmo na lištu</option></select></label>';
 }
 
 
@@ -46672,7 +46745,7 @@ TD_AKCE.tdRSvNaPocet = function (el) {
   var g = rzsNPSkupina(el.getAttribute('data-f'), el.getAttribute('data-fi')); if (!g) return;
   var bar = g.zas.filter(function (z) { return z.bar; }), z = bar[bar.length - 1] || g.zas[g.zas.length - 1]; if (!z) return;
   var n = z.n + Math.max(1, g.potreba - g.kap);
-  rozvZmena('Počet svorek přípojnice', function () { z.x.p.pocet = n; z.x.p.sirka = rozvSvorkySirka(n); delete z.x.pocet; });
+  rozvZmena('Počet svorek přípojnice', function () { rozvPripPocetNastavit(z.x, n); });
   rzsObnovitOddil(); showToast('Přípojnice ' + (z.x.ozn || '') + ': ' + n + ' svorek.', { timeout: 4000 });
 };
 // ── Kontrola „Co ještě chybí" ───────────────────────────────────────────
@@ -46706,6 +46779,7 @@ function rzsKontrola() {
   };
   seznam(function (x) { return !String(x.vyvod || '').trim(); }, 'bez názvu');
   seznam(function (x) { return !String(x.kabel || '').trim(); }, 'bez kabelu');
+  vse.forEach(function (x) { if (rozvPripPresah(x)) add('upoz', nm(x) + ': přípojnice přesahuje řadu – ověřte místo ve skříni.', { uid: x.uid }); });
   if (rzsMaSvorky(rady)) { var M = rzsModel(rady, __rz), nes = M.V.filter(function (v) { return v.chybi > 0; }).map(function (v) { return v.x; }); if (nes.length) add('upoz', dokPocetTvar(nes.length, ['vývod', 'vývody', 'vývodů']) + ' bez svorky: ' + rzsSkup(rady, nes) + '.', { uidy: nes.map(function (x) { return x.uid; }), akce: { a: 'tdRSvPrirad', t: 'Přiřadit svorky' } }); }
   // 3. N a PE (přípojnice, počty svorek), ochranné pospojování
   if (!psc) {
