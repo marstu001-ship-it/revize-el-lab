@@ -2236,7 +2236,7 @@ function pomocnik() {
     check('CAD export: ezdxf audit bez chyb a oprav, AC1018, ANSI_1250, jednotky mm', A.chyby === 0 && A.opravy === 0 && A.verze === 'AC1018' && A.codepage === 'ANSI_1250' && A.insunits === 4,
       JSON.stringify([A.chyby, A.opravy, A.verze, A.codepage, A.insunits, A.zpravy, A.chyba]));
     check('CAD export: vrstvy RAM, SILOVA, OVLADANI, POPISY, CELNI_POHLED, SVORKY', A.vrstvy && ['RAM', 'SILOVA', 'OVLADANI', 'POPISY', 'CELNI_POHLED', 'SVORKY'].every(v => A.vrstvy.includes(v)), (A.vrstvy || []).join());
-    const ins = (A.inserty || []).filter(i => i.vrstva === 'SILOVA');
+    const ins = (A.inserty || []).filter(i => i.vrstva === 'SILOVA' && i.blok !== 'SPOJ');
     check('CAD export: počet bloků přístrojů = počet přístrojů ve schématu, každý s ATTRIB a skrytým REVIZE_EL_ID', ins.length === ex.pristroju && ex.pristroju > 10 &&
       ins.every(i => i.atr.REVIZE_EL_ID && i.skryte.REVIZE_EL_ID && 'OZNACENI' in i.atr && 'TYP' in i.atr && 'IN' in i.atr && 'IDN' in i.atr && 'ICN' in i.atr && i.textu > 0), ins.length + ' / ' + ex.pristroju);
     const fa1 = ins.filter(i => i.atr.OZNACENI === '-FA1')[0] || { atr: {} };
