@@ -3454,8 +3454,28 @@ brání ověření) / **upozornění** (oranžová) / **tip** (šedá); řazeno 
 - **Tip:** obecné přístroje bez Pv, **je-li oteplení výpočtem zapnuté** (`dokVyber.otepleni === true` nebo
   vyplněná data oteplení) — odkaz na „Doplnit Pv z knihovny…".
 
-Test: `testy/test-rozvadec-svorky.js` (RS2 se třemi přívodními svorkami -X1…X3 a svorkovnicí -X4; starý
-rozvaděč proti `STARA_PORT` — při přenosu pustit se `STARA=<předchozí vydání>`).
+#### Vstup a výstup přístroje, čísla vodičů (režim 🔌 Zapojení)
+
+- **Vstup / výstup** (`rozvNapSvg`): svorky přístroje pod napětím mají na **vstupní** straně plnou výplň (jako dřív),
+  na **výstupní** straně malou šipku ven (`.rz-vyst`: ▼ dole, ▲ nahoře; `data-vyst` = strana) a titulek „vstup" /
+  „výstup" u svorky. SPD šipky nemá (nic dál nepouští). Při **tažení vodiče** se výstupní šipky přístroje, ze kterého
+  se táhne, zvětší a obarví (`.rz-vyst-akt`, `rzpTahPohyb`). Jen obrazovka — do PDF čelního pohledu nejdou.
+- **Čísla vodičů** (volitelná, výchozí **vypnuto**): tlačítko „Číslovat vodiče" nahoře v panelu Zapojení
+  (`tdRCislVod`, stav `__rz.cislVod`, součást snímku ZPĚT v `rozvZmena`). Čísla se přidělují **podle potenciálu**
+  (`rzsCislaDoplnit`): spojí se uzly všech natažených vodičů po pólech i zuby hřebenů, každý uzel má jedno číslo
+  (vodiče na témž uzlu, např. kabel L1 → -QH1 a kabel L1 → -X1, mají stejné); nové uzly dostanou další číslo,
+  existující se drží. Volá se z `rzpPoZmene`, takže každá změna zapojení doplní čísla. „Přečíslovat" (po potvrzení)
+  přidělí znovu od 1.
+- **Data:** `d.cislovatVodice = true` a `vodice[i].cislo` (číslo; u svazku pole čísel po pólech) **jen po zapnutí**;
+  vypnutí čísla smaže (jde ZPĚT), rozvaděč bez zapnutí je beze změny.
+- **Kde se ukážou:** u svorek v čelním pohledu v režimu Zapojení (`rzsCislaSvg`), v **materiálu propojek**
+  (`rzvMaterial`: „vodič 1, H07V-K 10 mm² hnědý – 2 ks") a ve sloupci „Vodič č." svorkového plánu (vodič mezi
+  vývodem a svorkou).
+
+Test: `testy/test-rozvadec-svorky.js` (42 kontrol — RS2 se třemi přívodními svorkami -X1…X3 a svorkovnicí -X4,
+pojistky napájené zespodu, čísla vodičů; starý rozvaděč proti `STARA_PORT` — při přenosu pustit se
+`STARA=<předchozí vydání>`). **Upraveno ve stejném vydání:** testy, které porovnávají rozvaděč se starou verzí
+(`test-rozvadec-psc.js` aj.), nově přeskakují pruh „Co ještě chybí" a oddíly Svorky / Co ještě chybí v Dokumentech.
 
 ### Výměna výkresů s CAD — export a import DXF (2026-11-02, bloky „ROZVADĚČ — VÝMĚNA S CAD")
 

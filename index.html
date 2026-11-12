@@ -2229,6 +2229,9 @@ html.dark .rzs-souhrn-chyba{color:#f3b0a6}
 .rzs-n-upoz .rzs-n-znak{color:#b8700a}
 .rzs-n-tip{color:var(--muted)}
 .rzs-n-text{text-align:left;font:inherit}
+.rz-vyst-akt{fill:#0f6b5a;transform-box:fill-box;transform-origin:center;transform:scale(2)}
+.rzs-cisla-akce{display:flex;gap:.4rem;align-items:center;margin:.2rem 0 .5rem}
+.rzs-cisla-btn.akt{border-color:var(--accent2);color:var(--accent2)}
 .rzs-akce{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin:.5rem 0}
 .rzs-hlavni{min-height:2.2rem}
 .rzs-upoz{font-size:.85rem;color:#8a4b00;margin:.35rem 0}
@@ -3003,6 +3006,10 @@ html.dark .rz-imp-chyby{background:#3a1f1c;border-color:#6b2c25}
         <li>Kabelová vývodka se kreslí shora nebo zespodu podle pole <strong>Přívod do skříně</strong> v hlavičce.</li>
         <li><strong>Vkládání příkazem:</strong> do pole nad čelním pohledem (skočí do něj klávesa <strong>/</strong>) napište, co chcete vložit — <strong>22x B10</strong>, <strong>B16 3P</strong>, <strong>fi 40/30 4p</strong>, <strong>hl 63 3p</strong>, <strong>spd t2</strong>, <strong>pojistky 3p 14x51</strong>, <strong>svorky 20</strong>, <strong>rezerva 2</strong>. Pod polem hned vidíte, co a kam se vloží (i když přístroje přetečou do další řady), Enter je vloží a označení naváže. V „⚙ Nastavení konfigurátoru" jde zvolit výchozí řada výrobce.</li>
         <li><strong>Lišta akcí u výběru:</strong> u vybraných přístrojů se objeví malá lišta — <strong>Duplikovat ×n</strong>, <strong>Hřeben</strong> přes vybrané jističe, <strong>Chránič nad</strong> (vloží chránič před jističe a napojí je), <strong>Rozdělit fáze</strong> L1, L2, L3, <strong>Vyměnit za…</strong> jiný přístroj se stejnými parametry a <strong>Smazat</strong>. Na telefonu je dole na obrazovce.</li>
+        <li><strong>Svorkový plán:</strong> v Dokumentech, v sekci <strong>🔌 Svorky</strong>, tlačítko <strong>Přiřadit svorky</strong> rozdělí vývody na svorky svorkovnice (3P jistič dostane tři). Ke každé svorce je vidět vývod, kabel a průřez; svorku jde v tabulce změnit, nebo natáhnout vodič z jističe na svorku. Chybí-li svorky, program nabídne <strong>Prodloužit svorkovnici</strong>. Zaškrtnutím <strong>Svorkový plán do dokumentace</strong> přibude stránka v PDF.</li>
+        <li><strong>N a PE podle vývodů:</strong> vývody s N patří na přípojnici N svého chrániče (N-FI1…), ostatní na společnou N; PE dostane každý vývod a navíc svorky pro přívod a ochranné pospojování. Chybí-li přípojnice nebo svorky, nabídne se <strong>Přidat přípojnici N-FI1 (21 svorek)</strong>.</li>
+        <li><strong>Co ještě chybí:</strong> pruh nad čelním pohledem (a oddíl v Dokumentech) ukáže, co v rozvaděči zbývá doplnit — nezapojený přístroj, chybějící fáze, přetížený hřeben, vývod bez názvu, kabelu nebo svorky, chybějící přípojnice. Klepnutím na nález se přístroj označí.</li>
+        <li><strong>Vstup a výstup:</strong> v režimu 🔌 Zapojení má strana, kterou přístroj dostává napětí, plné svorky a strana, kudy jde dál, malou šipku (po najetí „vstup" / „výstup"). Volitelně <strong>Číslovat vodiče</strong> (panel Zapojení): vodiče na stejném uzlu mají stejné číslo, vidět u svorek, ve svorkovém plánu a v materiálu propojek.</li>
         <li><strong>Průvodce:</strong> u prvního nového rozvaděče vás čtyřmi kroky provede průvodce; kdykoli ho pustíte znovu odkazem <strong>❓ Ukázat průvodce</strong> pod čelním pohledem.</li>
       </ul>
     </div>
@@ -32517,7 +32524,7 @@ DOK_TYPY.rozv.form = function (d) {
   __rz = { o: o, skrin: d.skrin ? dokKopie(d.skrin) : null, rady: dokKopie(d.rady || []),
            vyber: null, vic: null, kotva: null, rezimVyberu: false, knihVyber: null, presun: null, aktRada: 0, zoom: 1, kRucni: (__rz && __rz.o === o && __rz.kRucni) || null, zalozka: zal,
            faze: d.faze ? dokKopie(d.faze) : null, vnejsi: dokKopie(d.vnejsi || []), vyberVn: null,
-           soud: d.soudobost ? dokKopie(d.soudobost) : null, vodice: d.vodice ? dokKopie(d.vodice) : [], hrebeny: d.hrebeny ? dokKopie(d.hrebeny) : [] };
+           soud: d.soudobost ? dokKopie(d.soudobost) : null, vodice: d.vodice ? dokKopie(d.vodice) : [], hrebeny: d.hrebeny ? dokKopie(d.hrebeny) : [], cislVod: d.cislovatVodice === true };
   if (psc) {   // výkonový rozvaděč (etapa 5a): skříň = pole vedle sebe
     __rz.rezim = 'PSC'; __rz.pole = 0; __rz.dil = null; __rz.koty = true;
     if (!__rz.skrin || !__rz.skrin.pole) __rz.skrin = { pole: [] };
@@ -32660,7 +32667,7 @@ function rozvSkrinNastavit(it) {
 function rozvZmena(popis, fn, o) {
   if (!__rz) return;
   o = o || {};
-  var pred = { skrin: dokKopie(__rz.skrin), rady: dokKopie(__rz.rady), vnejsi: dokKopie(__rz.vnejsi || []), vodice: dokKopie(__rz.vodice || []), hrebeny: dokKopie(__rz.hrebeny || []) }, rz = __rz;
+  var pred = { skrin: dokKopie(__rz.skrin), rady: dokKopie(__rz.rady), vnejsi: dokKopie(__rz.vnejsi || []), vodice: dokKopie(__rz.vodice || []), hrebeny: dokKopie(__rz.hrebeny || []), cislVod: !!__rz.cislVod }, rz = __rz;
   fn();
   if (__rz.rezim === 'PSC') pscUklid();   // přístroje na desce dostanou místo, v řadě ho ztratí
   rozvPrislUklid();                        // příslušenství těsně k přístroji
@@ -32669,6 +32676,7 @@ function rozvZmena(popis, fn, o) {
   var vratit = function () {
     if (__rz !== rz || !document.body.contains(document.getElementById('rz-pohled'))) return;
     __rz.skrin = pred.skrin; __rz.rady = pred.rady; __rz.vnejsi = pred.vnejsi; __rz.vodice = pred.vodice; __rz.hrebeny = pred.hrebeny;
+    __rz.cislVod = pred.cislVod;
     if (__rz.hrVyber && !rzhNajit(__rz.hrVyber)) __rz.hrVyber = null;
     if (__rz.napVodic && !rzpWNajit(__rz.napVodic)) __rz.napVodic = null;
     if (__rz.vyber && !rozvNajit(__rz.vyber)) __rz.vyber = null;
@@ -36209,6 +36217,7 @@ function rzpPoZmene(vodPred, predRz) {
   var bez = __rz.__bezResetu || {}; __rz.__bezResetu = null;
   Object.keys(mPred).forEach(function (u) { if (!mPo[u] && !bez[u]) rzpReset(rzpX(u)); });
   if ((__rz.vodice && __rz.vodice.length) || rzhVse().length) rzpSync();
+  if (__rz.cislVod) rzsCislaDoplnit(false);   // čísla vodičů podle potenciálu (jen když jsou zapnutá)
 }
 // Ruční volba „Napájen z" v panelu u přístroje s nataženým vodičem: vodiče do něj se odpojí.
 function rzpOdebratPrichozi(uidy) {
@@ -36731,10 +36740,23 @@ function rzvMaterial(d) {
       sk[key]++;
     }
   });
-  return poradi.map(function (key) {
+  var ret = poradi.map(function (key) {
     var p = key.split('|');
     return 'Vodič H07V-K ' + p[0] + ' mm²' + (p[1] ? ' ' + RZV_BARVY[p[1]] : '') + ' – propojky ' + sk[key] + ' ks';
   });
+  // čísla vodičů (fáze 3): zapnutá čísla → řádek „vodič 12, H07V-K 10 mm² hnědý" za každé číslo
+  var cm = {}, cp = [];
+  (d.vodice || []).forEach(function (w) {
+    if (!w || !w.prurez || w.cislo == null) return;
+    [].concat(w.cislo).forEach(function (c, k) {
+      if (!(c > 0) || k >= (w.n || 1)) return;
+      var b = w.barva || RZV_FAZE_BARVA[rzvFazePolu(w, k, rz)] || '', key = c + '|' + w.prurez + '|' + b;
+      if (!cm[key]) { cm[key] = 0; cp.push({ c: c, key: key, p: w.prurez, b: b }); }
+      cm[key]++;
+    });
+  });
+  cp.sort(function (a, b) { return a.c - b.c; }).forEach(function (q) { ret.push('vodič ' + q.c + ', H07V-K ' + q.p + ' mm²' + (q.b ? ' ' + RZV_BARVY[q.b] : '') + (cm[q.key] > 1 ? ' – ' + cm[q.key] + ' ks' : '')); });
+  return ret;
 }
 function rzvPanelHtml(w) {
   var In = rzvZdrojIn(w), nv = rzvNavrhPrurez(In), xa = rzpX(w.a.uid), fz = w.a.uid === '@privod' ? RZP_FAZE[w.a.pol] : xa ? rozvPoly(xa)[w.a.pol] : '';
@@ -36868,6 +36890,7 @@ function rozvNapSvg(rz) {
   // natažené vodiče: každý pól svazku vlastní čarou v barvě fáze
   man.forEach(function (w) { kres.push(rzpVodicKresba(w, T, G, vy, S, sel, dotyk)); });
   kres.forEach(function (f) { h += f(); });
+  if (rz.cislVod) h += rzsCislaSvg(man, G, vy);   // čísla vodičů u svorek (fáze 3)
   // svorky (horní a dolní, po pólech); 4. pól N modře, neuchopitelný
   var konce = {};
   if (sel) ['a', 'b'].forEach(function (k) { for (var i = 0; i < sel.n; i++) konce[sel[k].uid + '|' + sel[k].strana + '|' + (sel[k].pol + i)] = 1; });
@@ -36890,8 +36913,13 @@ function rozvNapSvg(rz) {
         }
         var E = S.E[x.uid + ':' + s + ':' + k], ks = konce[x.uid + '|' + s + '|' + k];
         var fill = E && r.pod && r.vstup === s ? RZP_OK : '#fff', stroke = ks ? RZP_AKCENT : E ? RZP_OK : '#b0b0b0';
+        var smer = r.pod && x.p.kat !== 'SPD';   // vstup = plná výplň, výstup = malá šipka ven (fáze 3)
         h += '<circle class="rz-sv' + (ks ? ' rz-sv-sel' : '') + '" data-sv="' + esc(x.uid) + '|' + s + '|' + k + '" cx="' + Z(p.x) + '" cy="' + Z(p.y) + '" r="' + Z(ks ? r0 * 1.5 : r0) +
-          '" fill="' + fill + '" stroke="' + stroke + '" stroke-width="0.45"/>';
+          '" fill="' + fill + '" stroke="' + stroke + '" stroke-width="0.45">' + (smer ? '<title>' + (r.vstup === s ? 'vstup' : 'výstup') + '</title>' : '') + '</circle>';
+        if (smer && r.vstup !== s) {
+          var ay = p.y + (s === 't' ? -(r0 + 0.4) : r0 + 0.4), ad = s === 't' ? -1.7 : 1.7, aw = Math.min(0.95, g.w / pl.length * 0.22);
+          h += '<path class="rz-vyst" data-vyst="' + s + '" d="M' + Z(p.x - aw) + ' ' + Z(ay) + ' L' + Z(p.x + aw) + ' ' + Z(ay) + ' L' + Z(p.x) + ' ' + Z(ay + ad) + ' Z" fill="' + RZP_OK + '" pointer-events="none"/>';
+        }
       });
     });
     if (r.pod) {   // šipka směru proudu a fáze 1P přístroje
@@ -36994,6 +37022,7 @@ function rzpTahPohyb(d) {
   var tah = document.getElementById('rz-nap-tah'), G = rzpGeomMapa(), vy = pscJe(__rz) ? null : rozvVyvodkaGeom(__rz);
   var pev = d.druh === 'konec' ? d.pev : d.start, p0 = rzpBod(pev, G, vy), b = rozvBodMm(d.x, d.y);
   if (!tah || !p0 || !b) return;
+  if (!d.__vyst) { d.__vyst = 1; var vg = pev.uid !== '@privod' && document.querySelector('#rz-pohled [data-sv-uid="' + pev.uid + '"]'); if (vg) vg.querySelectorAll('.rz-vyst').forEach(function (e) { e.classList.add('rz-vyst-akt'); }); }   // výstupní strana přístroje, ze kterého se táhne
   var cil = rzpNajdi(d.x, d.y, pev, true);
   d.cil = cil ? { uid: cil.uid, strana: cil.strana, pol: cil.pol } : null;
   var pr = rzpPredpoved(pev, d.cil, d.druh === 'konec' ? d.w : null), T = rzpTrasovac(__rz, G, vy), body;
@@ -46691,6 +46720,60 @@ TD_AKCE.tdRChybiKlik = function (el) {
   if (uidy.length === 1) rozvVybrat(uidy[0], false);
   else { rozvVyberNastavit(uidy); rozvPohledVykreslit(); rozvVlastnostiVykreslit(); }
   setTimeout(function () { var g = document.querySelector('#rz-pohled [data-puid="' + uidy[0] + '"]'); if (g && g.scrollIntoView) g.scrollIntoView({ block: 'center', inline: 'center', behavior: 'smooth' }); }, 60);
+};
+// ── Čísla vodičů (volitelná, výchozí vypnuto) ───────────────────────────
+// Natažené vodiče dostanou čísla podle potenciálu: všechny vodiče (a póly svazku) na témž uzlu, včetně
+// zubů propojovacích hřebenů, mají stejné číslo. Ukládá se jen po zapnutí: `d.cislovatVodice = true`
+// a `vodice[i].cislo` (číslo, u svazku pole čísel po pólech). Vypnutí čísla smaže (jde ZPĚT).
+function rzsCisla(w) { return w && w.cislo != null ? [].concat(w.cislo) : []; }
+function rzsCislaDoplnit(znovu) {
+  var rz = __rz; if (!rz) return;
+  var ws = rzpVodice(rz), par = {};
+  var f = function (a) { if (par[a] === undefined) par[a] = a; while (par[a] !== a) { par[a] = par[par[a]]; a = par[a]; } return a; };
+  ws.forEach(function (w) { rzpUzly(w).forEach(function (q) { par[f(q[0])] = f(q[1]); }); });
+  rzhHrany(rz).forEach(function (q) { par[f(q[0])] = f(q[1]); });
+  if (znovu) ws.forEach(function (w) { delete w.cislo; });
+  var cis = {}, max = 0;
+  ws.forEach(function (w) { rzsCisla(w).forEach(function (c, k) { if (c > 0) { max = Math.max(max, c); var n = f(rzpK(w.a, k)); if (cis[n] == null) cis[n] = c; } }); });
+  ws.forEach(function (w) {
+    var a = []; for (var k = 0; k < w.n; k++) { var n = f(rzpK(w.a, k)); if (cis[n] == null) cis[n] = ++max; a.push(cis[n]); }
+    w.cislo = w.n === 1 ? a[0] : a;
+  });
+}
+function rzsCislaSvg(man, G, vy) {
+  var Z = rozvZaokr, h = '<g class="rz-w-cisla" pointer-events="none">';
+  man.forEach(function (w) {
+    var c = rzsCisla(w); if (!c.length) return;
+    [w.a, w.b].forEach(function (e) {
+      for (var k = 0; k < w.n; k++) {
+        var p = rzpBod({ uid: e.uid, strana: e.strana, pol: e.pol + k }, G, vy); if (!p || !(c[k] > 0)) continue;
+        h += '<text class="rz-w-cislo" x="' + Z(p.x + 1.3) + '" y="' + Z(p.y + 0.6) + '" font-size="1.9" font-weight="700" fill="#222" stroke="#fff" stroke-width="0.5" paint-order="stroke">' + c[k] + '</text>';
+      }
+    });
+  });
+  return h + '</g>';
+}
+TD_AKCE.tdRCislVod = function () {
+  if (!__rz) return;
+  if (__rz.cislVod) rozvZmena('Čísla vodičů vypnuta', function () { __rz.cislVod = false; (__rz.vodice || []).forEach(function (w) { delete w.cislo; }); });
+  else rozvZmena('Čísla vodičů', function () { __rz.cislVod = true; rzsCislaDoplnit(false); });
+};
+TD_AKCE.tdRCislPrecislovat = function () {
+  if (!__rz || !__rz.cislVod) return;
+  if (!confirm('Přečíslovat všechny vodiče? Dosavadní čísla se přidělí znovu od 1 (jde vzít zpět).')) return;
+  rozvZmena('Přečíslování vodičů', function () { rzsCislaDoplnit(true); });
+};
+var rzsPanelPuv = rzpPanelHtml;
+rzpPanelHtml = function () {
+  var on = !!(__rz && __rz.cislVod);
+  return '<div class="rp-t">Čísla vodičů</div><div class="rzs-cisla-akce"><button type="button" class="dok-mini rzs-cisla-btn' + (on ? ' akt' : '') + '" data-action="tdRCislVod" aria-pressed="' + on + '" title="Čísla podle potenciálu — vodiče na témž uzlu mají stejné číslo. Ukazují se u svorek, ve svorkovém plánu a v materiálu propojek.">' + (on ? '✓ Číslovat vodiče' : 'Číslovat vodiče') + '</button>' +
+    (on ? '<button type="button" class="dok-mini" data-action="tdRCislPrecislovat">Přečíslovat</button>' : '') + '</div>' + rzsPanelPuv();
+};
+var rzsCistPuv2 = DOK_TYPY.rozv.cist;
+DOK_TYPY.rozv.cist = function (koren) {
+  var d = rzsCistPuv2.call(this, koren);
+  if (__rz) { if (__rz.cislVod) d.cislovatVodice = true; else delete d.cislovatVodice; }
+  return d;
 };
 var rzsCistPuv = DOK_TYPY.rozv.cist;
 DOK_TYPY.rozv.cist = function (koren) {

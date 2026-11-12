@@ -278,6 +278,87 @@ async function otevri(b, url, vp) {
   });
   check('Co ještě chybí: přístroj bez hlavního vypínače je „bez napětí" (chyba); hlavní vypínač jen z jedné fáze → „chybí fáze"', bn.bez.length === 1 && /-FA1 není nikam zapojený/.test(bn.bez[0]) && bn.fazi.length >= 1 && /chybí fáze/.test(bn.fazi[0]) && bn.bezPoQm === 0, JSON.stringify(bn));
 
+  // ── 4. vstup a výstup přístroje na první pohled ────────────────────────
+  const vv = await p.evaluate(async () => {
+    const r = {}, w = ms => new Promise(x => setTimeout(x, ms));
+    await dokNovy('rozv'); rozvSkrinNastavit(rozvKnihPolozka('v-sk-4x24-ocel'));
+    const v = (k, ra) => rozvVlozit(k, ra, __rz.rady[ra].prvky.length);
+    const qm = v('v-qm-3-63', 0), fa = v('v-fa-1-B10', 0), fu = v('v-fu-3-1038', 1), spd = v('v-spd-2-3N', 1);
+    // pojistkový odpojovač napájený ZESPODU: vodič z výstupu hlavního vypínače na dolní svorky pojistek
+    const nw = rzpVodic({ uid: qm.uid, strana: 'b', pol: 0 }, { uid: fu.uid, strana: 'b', pol: 0 });
+    rozvZmena('vodic', () => { __rz.vodice = [nw]; }); await w(50);
+    TD_AKCE.tdRNapRezim(); await w(100);
+    const S = rzpStav(__rz); r.vstup = S.vys[fu.uid].vstup + '|' + S.vys[fu.uid].pod;
+    const g = x => document.querySelector('#rz-pohled [data-sv-uid="' + x.uid + '"]');
+    r.sipky = [...g(fu).querySelectorAll('.rz-vyst')].map(e => e.getAttribute('data-vyst')).join();
+    const kruh = (x, s) => [...g(x).querySelectorAll('.rz-sv')].filter(c => c.getAttribute('data-sv').split('|')[1] === s);
+    r.vstupVypln = kruh(fu, 'b').map(c => c.getAttribute('fill')).join() + ' / ' + kruh(fu, 't').map(c => c.getAttribute('fill')).join();
+    r.titulky = (kruh(fu, 'b')[0].querySelector('title') || {}).textContent + '|' + (kruh(fu, 't')[0].querySelector('title') || {}).textContent;
+    r.spd = g(spd).querySelectorAll('.rz-vyst').length;   // svodič nemá průtok — bez šipek
+    r.fa = g(fa).querySelectorAll('.rz-vyst').length + '|' + ((g(fa).querySelector('.rz-vyst') || {}).getAttribute ? g(fa).querySelector('.rz-vyst').getAttribute('data-vyst') : '-');
+    // hlavní vypínač napájený shora: výstupní šipky dole
+    r.qm = [...g(qm).querySelectorAll('.rz-vyst')].map(e => e.getAttribute('data-vyst')).join();
+    // při tažení ze svorky se výstupní strana přístroje zvýrazní
+    const bb = g(fu).getBoundingClientRect();
+    rzpTahPohyb({ druh: 'nap', start: { uid: fu.uid, strana: 't', pol: 0 }, x: bb.left + bb.width / 2, y: bb.top + bb.height / 2 });
+    r.akt = g(fu).querySelectorAll('.rz-vyst-akt').length;
+    rzpTahKonec({ druh: 'nap', cil: null, pr: {}, obs: null }); await w(50);
+    r.aktPo = g(fu).querySelectorAll('.rz-vyst-akt').length;
+    // PDF čelního pohledu se šipkami neznečistí
+    r.pdf = /rz-vyst/.test(rozvSvg(__rz, { tisk: true, k: 0.5 }));
+    TD_AKCE.tdRNapRezim();
+    return r;
+  });
+  check('vstup / výstup: pojistky napájené zespodu mají vstup dole (plná výplň) a výstup nahoře — tři šipky ▲ a titulky „vstup" / „výstup"', vv.vstup === 'b|true' && vv.sipky === 't,t,t' && /^#1d7a3a,#1d7a3a,#1d7a3a \/ #fff,#fff,#fff$/.test(vv.vstupVypln) && vv.titulky === 'vstup|výstup', JSON.stringify(vv));
+  check('vstup / výstup: jistič ve stejné řadě jako hlavní vypínač (napájený z mezery pod řadou) má vstup dole a jednu šipku ▲ nahoře, hlavní vypínač šipky dole, svodič šipky nemá', vv.fa === '1|t' && vv.qm === 'b,b,b' && vv.spd === 0, vv.fa + ' ' + vv.qm + ' ' + vv.spd);
+  check('vstup / výstup: při tažení vodiče je výstupní strana přístroje zvýrazněná, po puštění zase ne; do PDF šipky nejdou', vv.akt === 3 && vv.aktPo === 0 && vv.pdf === false, vv.akt + ' ' + vv.aktPo);
+
+  // ── čísla vodičů ──
+  const cv = await p.evaluate(async () => {
+    const r = {}, w = ms => new Promise(x => setTimeout(x, ms));
+    await dokNovy('rozv'); rozvSkrinNastavit(rozvKnihPolozka('v-sk-4x24-ocel'));
+    const v = (k, ra) => rozvVlozit(k, ra, __rz.rady[ra].prvky.length);
+    const qm = v('v-qm-3-63', 0), fu = v('v-fu-3-1038', 1), x1 = v('v-x-rad-25', 1), fa = v('v-fa-1-B10', 1), sv = v('v-x-svork', 2);
+    fa.vyvod = 'Světla'; x1.faze = 'L1';
+    const vod = (a, b) => { const nw = rzpVodic(a, b); nw.uid = rzpVodicUid(); nw.prurez = '10'; return nw; };
+    rozvZmena('w', () => { __rz.vodice = [vod({ uid: '@privod', strana: 'o', pol: 0 }, { uid: qm.uid, strana: 't', pol: 0 }), vod({ uid: '@privod', strana: 'o', pol: 0 }, { uid: x1.uid, strana: 't', pol: 0 }), vod({ uid: qm.uid, strana: 'b', pol: 0 }, { uid: fu.uid, strana: 't', pol: 0 })]; });
+    r.pred = JSON.stringify(__T.cist().vodice).indexOf('cislo') + '|' + ('cislovatVodice' in __T.cist());
+    TD_AKCE.tdRNapRezim(); await w(100);
+    r.tlacitko = !!document.querySelector('#rz-vlastnosti [data-action="tdRCislVod"]');
+    TD_AKCE.tdRCislVod(); await w(100);
+    const c = __rz.vodice.map(q => JSON.stringify(q.cislo));
+    r.cisla = c.join(' ');
+    r.stejny = JSON.stringify(__rz.vodice[0].cislo[0]) === JSON.stringify(__rz.vodice[1].cislo);   // fáze L1 z kabelu: stejný uzel = stejné číslo
+    r.ruzna = new Set([].concat(__rz.vodice[0].cislo, __rz.vodice[2].cislo)).size === 6;
+    r.data = __T.cist().cislovatVodice === true && __T.cist().vodice.every(q => q.cislo != null);
+    r.svg = [...document.querySelectorAll('#rz-pohled .rz-w-cislo')].map(e => e.textContent).join(',');
+    // materiál propojek a svorkový plán
+    const d = __T.cist();
+    r.mat = rzvMaterial(d).filter(m => /^vodič/.test(m)).join(' | ');
+    // nový vodič ze svorkovnice ke jističi: nový uzel, nové číslo; přepojení stávajícího uzlu číslo drží
+    rozvZmena('w2', () => { __rz.vodice = __rz.vodice.concat([vod({ uid: fa.uid, strana: 'b', pol: 0 }, { uid: sv.uid, strana: 't', pol: 0 })]); rzsVodicNaSvorku(__rz.vodice[3]); });
+    r.novy = JSON.stringify(__rz.vodice[3].cislo);
+    r.tab = rzsTabulkaHtml(rzsModel(__rz.rady, __rz), { cisla: true, vodice: __rz.vodice }).replace(/<[^>]+>/g, ' ');
+    r.sloupec = /Vodič č\./.test(r.tab) && new RegExp('-X' + (+/\d+$/.exec(sv.ozn)[0]) + '[^A-Za-z]*L[^-]*-FA1[^-]*Světla.*?' + r.novy).test(r.tab.replace(/\s+/g, ' '));
+    // Přečíslovat + Ctrl+Z
+    const pred = JSON.stringify(__rz.vodice.map(q => q.cislo));
+    TD_AKCE.tdRCislPrecislovat(); await w(100);
+    r.precisl = JSON.stringify(__rz.vodice.map(q => q.cislo));
+    zpetPosledni(); await w(100); r.zpetPrec = JSON.stringify(__rz.vodice.map(q => q.cislo)) === pred;
+    // vypnutí smaže čísla, v datech nic; Ctrl+Z je vrátí
+    TD_AKCE.tdRCislVod(); await w(100);
+    r.vyp = JSON.stringify(__T.cist().vodice).indexOf('cislo') + '|' + ('cislovatVodice' in __T.cist());
+    zpetPosledni(); await w(100); r.zpetVyp = __rz.cislVod === true && __rz.vodice.every(q => q.cislo != null);
+    TD_AKCE.tdRNapRezim();
+    return r;
+  });
+  check('čísla vodičů: výchozí vypnuto — v datech žádné `cislo` ani `cislovatVodice`; v panelu Zapojení je tlačítko', cv.pred === '-1|false' && cv.tlacitko, cv.pred);
+  check('čísla vodičů: zapnutí přidělí čísla podle potenciálu — vodič z kabelu (L1) do QH1 a do svorky -X1 má stejné číslo, jiné uzly jiná', cv.stejny && cv.ruzna, cv.cisla);
+  check('čísla vodičů: uložená jen po zapnutí (`cislovatVodice`, `vodice[i].cislo`), v čelním pohledu u svorek', cv.data && cv.svg.split(',').length >= 6, cv.svg);
+  check('čísla vodičů: v seznamu materiálu propojek „vodič 1, H07V-K 10 mm² …"', /^vodič 1, H07V-K 10 mm² hnědý/.test(cv.mat) && /vodič 4/.test(cv.mat), cv.mat);
+  check('čísla vodičů: nový vodič ze jističe na svorkovnici dostane nové číslo a objeví se ve svorkovém plánu', /^\d+$/.test(cv.novy) && cv.sloupec, cv.novy);
+  check('čísla vodičů: Přečíslovat přidělí čísla znovu od 1, Ctrl+Z je vrátí; vypnutí čísla smaže (v datech nic), Ctrl+Z je vrátí', /^\[\[1,2,3\],1,\[4,5,6\]/.test(cv.precisl) && cv.zpetPrec && cv.vyp === '-1|false' && cv.zpetVyp, cv.precisl + ' ' + cv.vyp);
+
   // ── starý rozvaděč: data i PDF beze změny proti staré verzi ──
   const nov = await p.evaluate(async () => {
     await dokNovy('rozv'); rozvSkrinNastavit(rozvKnihPolozka('v-sk-4x24-ocel')); window.__rs2(); await __T.w(100);
