@@ -72,7 +72,7 @@ async function otevri(b, url, vp) {
     r.fa44b = M2.V.filter(y => y.x.ozn === '-FA44')[0].slots.map(s => s.label).join('+');
     r.stav2 = document.getElementById('rzs-stav').innerText;
     // tabulka: řádky = 48 pólů, každý vývod právě jednou na svorku
-    const tr = [...document.querySelectorAll('#rz-pan-dok .rzs-tab tr')].slice(1);
+    const tr = [...document.querySelectorAll('#rz-pan-dok .rzs-tab tr')].slice(1).filter(x => !x.classList.contains('rzs-np'));
     r.radku = tr.length;
     r.radek1 = [...tr[0].children].map(td => td.querySelector('select') ? td.querySelector('select').selectedOptions[0].textContent : td.textContent).join('|');
     r.fa23r = tr.filter(t => t.children[2].textContent === '-FA23').map(t => t.children[1].textContent + ':' + t.querySelector('select').selectedOptions[0].textContent).join(',');
@@ -136,6 +136,61 @@ async function otevri(b, url, vp) {
   check('PDF: svorkový plán se bez zapnutí nepřidá', pdf.vyp === false);
   check('PDF: po zapnutí samostatná strana na výšku za seznamem přístrojů, 48 řádků svorek', pdf.zap && pdf.strana === 'vyska' && pdf.pozice && pdf.radku === 48 && pdf.hlavicka, JSON.stringify(pdf));
   check('PDF: zaškrtávátko „Svorkový plán do dokumentace" — v datech jen zapnuté', pdf.cb && pdf.dataPred === false && pdf.dataPo === true);
+
+  // ── 2. N a PE podle vývodů ────────────────────────────────────────────
+  const np = await p.evaluate(async () => {
+    const r = {};
+    await __T.rs2(48); TD_AKCE.tdRSvPrirad(); await __T.w(100);
+    let N = rzsNP(__rz.rady, __rz);
+    r.skup = N.N.map(g => g.nazev + ':' + g.vyvody.length + ':' + g.potreba + ':' + g.kap).join(' ');
+    r.pe = N.PE.potreba + ':' + N.PE.kap;
+    r.fi = N.N.filter(g => g.fi)[0].fi.ozn;
+    rozvZalozkaNastavit('dok'); await __T.w(100);
+    document.querySelector('#rz-pan-dok [data-oddil="svorky"]').open = true;
+    r.nalez = rzsNPNaleza(__rz.rady, __rz).map(n => n.druh).join();
+    r.stav = document.getElementById('rzs-obsah').innerText;
+    const tl = () => [...document.querySelectorAll('#rzs-obsah [data-action="tdRSvPridatPrip"]')];
+    r.tlacitka = tl().map(b => b.textContent).join(' | ');
+    // přidat N-FI1, společnou N a PE
+    for (const b of tl()) { TD_AKCE.tdRSvPridatPrip(b); await __T.w(100); }
+    N = rzsNP(__rz.rady, __rz);
+    r.po = N.N.map(g => g.nazev + ':' + g.kap).join(' ') + ' PE:' + N.PE.kap;
+    const bar = N.N.filter(g => g.fi)[0].zas[0].x;
+    r.nadr = bar.nadr === N.N.filter(g => g.fi)[0].fi.uid && bar.p.prip === 'N';
+    r.nalez2 = rzsNPNaleza(__rz.rady, __rz).length;
+    r.stav2 = document.getElementById('rzs-obsah').innerText.indexOf('N a PE: přípojnice mají dost svorek') > -1;
+    // svorky N a PE v plánu
+    const rows = rzsNPRadky(__rz.rady, __rz);
+    r.radku = rows.length;
+    const f = o => rows.filter(x => x.ozn === o).map(x => x.pot + '=' + x.svorka).join(',');
+    r.fa25 = f('-FA25'); r.fa44 = f('-FA44'); r.fa1 = f('-FA1'); r.fa23 = f('-FA23');
+    r.prvniFi = rows.filter(x => /přívod N/.test(x.vyvod)).map(x => x.svorka + '(' + x.ozn + ')').join(',');
+    r.pospoj = rows.filter(x => x.vyvod === 'ochranné pospojování').map(x => x.svorka).join(',');
+    const tabulka = document.getElementById('rzs-obsah').querySelector('.rzs-tab').innerText;
+    r.vTab = /N-FI1 · 21/.test(tabulka) && /PE · 47/.test(tabulka);
+    // N-FI1 s málo svorkami → „Upravit počet"
+    const barX = N.N.filter(g => g.fi)[0].zas[0].x;
+    rozvZmena('m', () => { barX.p.pocet = 12; barX.p.sirka = rozvSvorkySirka(12); }); rzsObnovitOddil();
+    r.malo = /N-FI1 má 12 svorek, potřeba 21/.test(document.getElementById('rzs-obsah').innerText);
+    TD_AKCE.tdRSvNaPocet(document.querySelector('#rzs-obsah [data-action="tdRSvNaPocet"]')); await __T.w(100);
+    r.upraveno = barX.p.pocet + '|' + rzsNPNaleza(__rz.rady, __rz).length;
+    // RCBO a 3P motor se na N nepočítají
+    const potrebaPred = rzsNP(__rz.rady, __rz).N.map(g => g.potreba).join();
+    const rc = rozvVlozit('v-fifa-1N-B16', 3, __rz.rady[3].prvky.length), ms = rozvVlozit('v-fa-3-B40', 3, __rz.rady[3].prvky.length);
+    ms.spotr = 'motor'; ms.vyvod = 'Motor'; rc.vyvod = 'RCBO'; rozvPrecislovat();
+    r.rcbo = potrebaPred + ' → ' + rzsNP(__rz.rady, __rz).N.map(g => g.potreba).join() + ' PE ' + rzsNP(__rz.rady, __rz).PE.potreba;
+    // ZPĚT vrátí přidání přípojnic
+    return r;
+  });
+  check('N a PE: vývody s N podle chrániče — společná N 24 vývodů (potřeba 25), N-FI1 20 vývodů (potřeba 21), chránič -FI1', np.skup === 'N:24:25:0 N-FI1:20:21:0' && np.fi === '-FI1', np.skup + ' ' + np.fi);
+  check('N a PE: PE = 44 vývodů + 1 přívod + 2 pospojování = 47', np.pe === '47:0', np.pe);
+  check('N a PE: bez přípojnic tři nálezy „chybí" a tři tlačítka „Přidat přípojnici …"', np.nalez === 'chybiN,chybiN,chybiPE' && /Přidat přípojnici N \(25 svorek\)/.test(np.tlacitka) && /Přidat přípojnici N-FI1 \(21 svorek\)/.test(np.tlacitka) && /Přidat přípojnici PE \(47 svorek\)/.test(np.tlacitka), np.tlacitka);
+  check('N a PE: „Přidat přípojnici" vloží přípojnice se správným počtem svorek, N-FI1 je napájena z chrániče -FI1', np.po === 'N:25 N-FI1:21 PE:47' && np.nadr === true && np.nalez2 === 0 && np.stav2, np.po + ' ' + np.nadr);
+  check('N a PE: svorky v plánu — -FA25 → N-FI1 · 2, -FA44 → N-FI1 · 21, -FA1 → N · 2, 3P -FA23 má N i PE', np.fa25 === 'N=N-FI1 · 2,PE=PE · 26' && np.fa44 === 'N=N-FI1 · 21,PE=PE · 45' && np.fa1 === 'N=N · 2,PE=PE · 2' && /^N=N · 24,PE=PE · 24$/.test(np.fa23), [np.fa25, np.fa44, np.fa1, np.fa23].join(' | '));
+  check('N a PE: první svorka skupiny = přívod N (N · 1, N-FI1 · 1), poslední dvě svorky PE = ochranné pospojování', np.prvniFi === 'N · 1(),N-FI1 · 1(-FI1)' && np.pospoj === 'PE · 46,PE · 47', np.prvniFi + ' ' + np.pospoj);
+  check('N a PE: počet řádků plánu 93 (N 25 + N-FI1 21 + PE 47) a svorky jsou v tabulce', np.radku === 93 && np.vTab, String(np.radku));
+  check('N a PE: přípojnice s 12 svorkami → „N-FI1 má 12 svorek, potřeba 21" a „Upravit počet" ji srovná na 21', np.malo && np.upraveno === '21|0', np.upraveno);
+  check('N a PE: jističochránič (RCBO) a 3P motor se na N nepočítají (N-FI1 zůstává 21, společná N 25, PE +2)', np.rcbo === '25,21 → 25,21 PE 49', np.rcbo);
 
   // ── starý rozvaděč: data i PDF beze změny proti staré verzi ──
   const nov = await p.evaluate(async () => {

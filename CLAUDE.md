@@ -3413,6 +3413,25 @@ Elektrikář potřebuje vědět, na kterou svorku jde který vývod a kabel. Vš
   v oddílu Svorky) → samostatná strana na výšku za seznamem přístrojů (`rzsPdf`, obal `DOK_TYPY.rozv.pdf`).
   Bez zaškrtnutí je PDF beze změny. Do DXF svorkový plán nejde (svorky mají označení jako dosud).
 
+#### N a PE podle vývodů (jen DBO)
+
+N a PE se nekreslí vodiči (rozhodnutí ze vzoru zapojení), ale musí sedět počty a přiřazení. Nic se neukládá —
+`rzsNP(rady, d)` odvozuje za běhu.
+
+- **Skupina N:** vývod, který potřebuje N (`rzsPotrebaN`: ne RCBO — má vlastní N z výstupu, ne motorový spouštěč /
+  Typ obvodu „motor", 3P jen když kabel nemá 4 žíly), patří na N přípojnici **svého chrániče** (nejbližší FI
+  nad ním v napájení, `rzsFiPredek`; jmenuje se `N-FI1`, `N-FI2` jako ve schématu), jinak na společnou `N`.
+  Přípojnici (X s `p.prip = 'N'`), řadovou svorku N i svorkovnici s funkcí N přiřadí ke skupině totéž pravidlo
+  (přípojnice N „Napájen z" chrániče = jeho skupina).
+- **Potřeba svorek:** N = vývody s N + 1 na přívod N; PE = všechny vývody + 1 na přívod + 2 pro ochranné
+  pospojování (ČSN EN IEC 61439-3, čl. 8.8). Svorka v plánu se odvozuje z pořadí (první = přívod, pak vývody
+  v pořadí čelního pohledu, na konci PE dvě pospojování): `N-FI1 · 3`, `PE · 26`. Vývod bez místa na přípojnici
+  má „—".
+- **Nálezy** (`rzsNPNaleza`, i v kontrole „Co ještě chybí"): přípojnice chybí → **„Přidat přípojnici N-FI1
+  (21 svorek)"** (vloží obecnou přípojnici se správným počtem svorek, N-FI1 s „Napájen z" chrániče, do řady
+  chrániče, když se vejde); má málo svorek → „N-FI1 má 12 svorek, potřeba 21" a **„Upravit počet"**.
+  Obojí jedno ZPĚT. U PSC se N a PE neodvozují (má vlastní přípojnice XN / XPE).
+
 Test: `testy/test-rozvadec-svorky.js` (RS2 se třemi přívodními svorkami -X1…X3 a svorkovnicí -X4; starý
 rozvaděč proti `STARA_PORT` — při přenosu pustit se `STARA=<předchozí vydání>`).
 

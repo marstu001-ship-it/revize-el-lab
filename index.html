@@ -46391,10 +46391,11 @@ TD_AKCE.tdRSvZnovu = function () {
   if (vysl) showToast('Přiřazeno ' + dokPocetTvar(vysl.prirazeno, ['svorka', 'svorky', 'svorek']) + (vysl.chybi ? ' — chybí ještě ' + vysl.chybi : ''), { timeout: 4000 });
 };
 // Nová svorkovnice (nebo přípojnice) s daným počtem svorek — jedno ZPĚT.
-function rzsVlozitZasobnik(kid, n, uprav) {
+function rzsVlozitZasobnik(kid, n, uprav, predRadaUid) {
   var it = rozvKnihPolozka(kid); if (!it || !__rz) return null;
   var x = rozvNovyPrvek(it); x.p.pocet = n; x.p.sirka = rozvSvorkySirka(n);
-  var r = rozvRadaProVlozeni(x.p.sirka);
+  var r = rozvRadaProVlozeni(x.p.sirka), pq = predRadaUid && rozvNajit(predRadaUid);   // přípojnice N rovnou do řady s chráničem, když se vejde
+  if (pq && rozvModR(pq.r) - rozvKonec(__rz.rady[pq.r]) >= x.p.sirka - 0.001) r = pq.r;
   if (uprav) uprav(x);
   rozvVlozitNa(__rz.rady[r], __rz.rady[r].prvky.length, [x]);
   __rz.aktRada = r;
@@ -46466,8 +46467,101 @@ function rzsPdf(d, e) {
   if (nez.length && !M.bezSvorek) B.push({ html: '<p class="rz-pdf-pozn">Vývody bez svorky: ' + esc(nez.map(function (v) { return v.x.ozn || ''; }).join(', ')) + '.</p>' });
   return B;
 }
-// Zatím bez N a PE (doplní další část): prázdné.
-function rzsNPRadky() { return []; }
+// ── N a PE podle vývodů (jen DBO) ───────────────────────────────────────
+// N a PE se nekreslí vodiči, ale musí sedět počty a přiřazení. Vývod s N patří na N přípojnici
+// svého chrániče (nejbližší FI nad ním v napájení: N-FI1, N-FI2…), jinak na společnou N. Jističochránič
+// (RCBO) má vlastní N z výstupu a na žádnou přípojnici se nepočítá. Svorka N / PE se odvozuje z pořadí
+// vývodů (nic se neukládá). Potřeba: N = vývody s N + 1 na přívod; PE = vývody + 1 na přívod
+// + 2 pro ochranné pospojování (ČSN EN IEC 61439-3, čl. 8.8).
+function rzsFiPredek(x, rady) { var u = x, krok = 0; while ((u = rozvNadrazeny(u, rady)) && krok++ < 60) if (u.p.kat === 'FI') return u; return null; }
+function rzsPotrebaN(x) {
+  var k = x.p.kat; if (k === 'FIFA') return false;   // vlastní N z výstupu
+  if (k === 'MS' || x.spotr === 'motor') return false;
+  if (String(x.p.poly) === '3') return !/^\s*4\s*[×x]/i.test(String(x.prurez || ''));   // 3P: N jen když kabel má 5 žil
+  return true;
+}
+function rzsNP(rady, d) {
+  d = d || {};
+  if (pscJe(d)) return null;
+  var vnejsi = d.vnejsi || (typeof __rz !== 'undefined' && __rz && __rz.vnejsi) || [], Z = rzsZasobniky(rady);
+  var vyv = rozvPrvkyVse(rady).filter(function (x) { return rzsJeVyvod(x, rady, vnejsi); });
+  var skupiny = [], mapa = {};
+  var sk = function (fi) {
+    var key = fi ? fi.uid : '';
+    if (!mapa[key]) { mapa[key] = { key: key, fi: fi || null, nazev: fi ? 'N-' + String(fi.ozn || 'FI').replace(/^-/, '') : 'N', vyvody: [], zas: [], kap: 0, potreba: 0, sloty: [] }; skupiny.push(mapa[key]); }
+    return mapa[key];
+  };
+  vyv.forEach(function (x) { if (rzsPotrebaN(x)) sk(rzsFiPredek(x, rady)).vyvody.push(x); });
+  Z.forEach(function (z) { if (z.f === 'N') { var g = sk(rzsFiPredek(z.x, rady)); g.zas.push(z); g.kap += z.n; } });
+  var poradiFi = function (g) { if (!g.fi) return -1; var q = rozvNajit(g.fi.uid); return q ? q.r * 1000 + q.i : 1e6; };
+  skupiny.sort(function (a, b) { return poradiFi(a) - poradiFi(b); });
+  skupiny.forEach(function (g) {
+    g.potreba = g.vyvody.length + 1;
+    var cnt = 0; g.zas.forEach(function (z) { for (var i = 1; i <= z.n; i++) g.sloty.push({ z: z, i: i, label: z.bar ? g.nazev + ' · ' + (++cnt) : rzsSvorkaOzn(z, i) }); });
+  });
+  var pe = { nazev: 'PE', vyvody: vyv, zas: Z.filter(function (z) { return z.f === 'PE'; }), kap: 0, potreba: vyv.length + 1 + 2, sloty: [] }, cp = 0;
+  pe.zas.forEach(function (z) { pe.kap += z.n; for (var i = 1; i <= z.n; i++) pe.sloty.push({ z: z, i: i, label: z.bar ? 'PE · ' + (++cp) : rzsSvorkaOzn(z, i) }); });
+  return { N: skupiny, PE: pe };
+}
+// Řádky svorek N a PE pro tabulku svorkového plánu.
+function rzsNPRadky(rady, d) {
+  var np = rzsNP(rady, d), out = []; if (!np || !np.PE.vyvody.length) return out;
+  var jmeno = function (x) { return x.ozn || ''; };
+  np.N.forEach(function (g) {
+    if (!g.vyvody.length && !g.zas.length) return;
+    var s = function (k) { return g.sloty[k] ? g.sloty[k].label : '—'; };
+    out.push({ svorka: s(0), pot: 'N', ozn: g.fi ? jmeno(g.fi) : '', vyvod: 'přívod N' + (g.fi ? ' (z chrániče ' + jmeno(g.fi) + ')' : ''), kabel: '', prurez: '' });
+    g.vyvody.forEach(function (x, j) { out.push({ svorka: s(j + 1), pot: 'N', ozn: jmeno(x), vyvod: x.vyvod || '', kabel: rzsKabelText(x), prurez: rzsPrurezVodice(x) }); });
+  });
+  var pe = np.PE, sp = function (k) { return pe.sloty[k] ? pe.sloty[k].label : '—'; };
+  out.push({ svorka: sp(0), pot: 'PE', ozn: '', vyvod: 'přívod PE', kabel: '', prurez: '' });
+  pe.vyvody.forEach(function (x, j) { out.push({ svorka: sp(j + 1), pot: 'PE', ozn: jmeno(x), vyvod: x.vyvod || '', kabel: rzsKabelText(x), prurez: rzsPrurezVodice(x) }); });
+  for (var q = 0; q < 2; q++) out.push({ svorka: sp(pe.vyvody.length + 1 + q), pot: 'PE', ozn: '', vyvod: 'ochranné pospojování', kabel: '', prurez: '' });
+  return out;
+}
+// Nálezy N a PE: chybí přípojnice, nebo má málo svorek.
+function rzsNPNaleza(rady, d) {
+  var np = rzsNP(rady, d), out = []; if (!np) return out;
+  np.N.forEach(function (g) {
+    if (!g.vyvody.length || g.kap >= g.potreba) return;
+    if (!g.kap) out.push({ druh: 'chybiN', skupina: g, text: 'Chybí přípojnice ' + g.nazev + ' — ' + dokPocetTvar(g.vyvody.length, ['vývod s N', 'vývody s N', 'vývodů s N']) + (g.fi ? ' pod chráničem ' + (g.fi.ozn || '') : '') + '.', akce: 'Přidat přípojnici ' + g.nazev + ' (' + g.potreba + ' svorek)' });
+    else out.push({ druh: 'malo', skupina: g, text: g.nazev + ' má ' + g.kap + ' svorek, potřeba ' + g.potreba + '.', akce: 'Upravit počet' });
+  });
+  var pe = np.PE;
+  if (pe.vyvody.length && pe.kap < pe.potreba) {
+    if (!pe.kap) out.push({ druh: 'chybiPE', skupina: pe, text: 'Chybí přípojnice PE — ' + dokPocetTvar(pe.vyvody.length, ['vývod', 'vývody', 'vývodů']) + ' potřebuje PE a 2 svorky pro ochranné pospojování.', akce: 'Přidat přípojnici PE (' + pe.potreba + ' svorek)' });
+    else out.push({ druh: 'malo', skupina: pe, text: 'PE má ' + pe.kap + ' svorek, potřeba ' + pe.potreba + ' (vývody, přívod a 2 pro ochranné pospojování, čl. 8.8).', akce: 'Upravit počet' });
+  }
+  return out;
+}
+function rzsNPStavHtml(rady, d) {
+  var nz = rzsNPNaleza(rady, d); if (!rzsNP(rady, d) || !rzsNP(rady, d).PE.vyvody.length) return '';
+  if (!nz.length) return '<div class="rzs-ok">✓ N a PE: přípojnice mají dost svorek (vývody s N na přípojnici svého chrániče, PE vývody + přívod + 2 pospojování).</div>';
+  return nz.map(function (n, i) {
+    var g = n.skupina;
+    return '<div class="rzs-upoz">⚠ ' + esc(n.text) + ' <button type="button" class="dok-mini" data-action="' + (n.druh === 'malo' ? 'tdRSvNaPocet' : 'tdRSvPridatPrip') + '" data-f="' + (g.nazev === 'PE' ? 'PE' : 'N') + '" data-fi="' + esc(g.fi ? g.fi.uid : '') + '" data-n="' + g.potreba + '">' + esc(n.akce) + '</button></div>';
+  }).join('');
+}
+function rzsNPSkupina(f, fi) {
+  var np = rzsNP(__rz.rady, __rz); if (!np) return null;
+  return f === 'PE' ? np.PE : np.N.filter(function (g) { return g.key === (fi || ''); })[0] || null;
+}
+TD_AKCE.tdRSvPridatPrip = function (el) {
+  if (!__rz) return;
+  var f = el.getAttribute('data-f'), fi = el.getAttribute('data-fi') || '', n = Math.max(2, Math.round(+el.getAttribute('data-n') || 2));
+  rozvZmena('Přípojnice ' + f, function () {
+    rzsVlozitZasobnik(f === 'PE' ? 'v-x-prip-pe' : 'v-x-prip-n', n, function (x) { if (fi) { x.nadr = fi; x.nadrRucne = true; } }, fi);
+  });
+  rzsObnovitOddil(); showToast('Přidána přípojnice ' + f + ' (' + n + ' svorek).', { timeout: 4000 });
+};
+TD_AKCE.tdRSvNaPocet = function (el) {
+  if (!__rz) return;
+  var g = rzsNPSkupina(el.getAttribute('data-f'), el.getAttribute('data-fi')); if (!g) return;
+  var bar = g.zas.filter(function (z) { return z.bar; }), z = bar[bar.length - 1] || g.zas[g.zas.length - 1]; if (!z) return;
+  var n = z.n + Math.max(1, g.potreba - g.kap);
+  rozvZmena('Počet svorek přípojnice', function () { z.x.p.pocet = n; z.x.p.sirka = rozvSvorkySirka(n); delete z.x.pocet; });
+  rzsObnovitOddil(); showToast('Přípojnice ' + (z.x.ozn || '') + ': ' + n + ' svorek.', { timeout: 4000 });
+};
 var rzsCistPuv = DOK_TYPY.rozv.cist;
 DOK_TYPY.rozv.cist = function (koren) {
   var d = rzsCistPuv.call(this, koren);
