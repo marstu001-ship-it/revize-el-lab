@@ -661,7 +661,7 @@ async function stranka(ctx, url, err) {
     const d2 = __T.cist(), m = rsModel(d2), s2 = rozvSchemaListy(d2)[1].svg;
     r.spdPrvni = m.jedn[0].sloupce[0].uid === spd.uid;
     const g2 = new DOMParser().parseFromString(s2, 'image/svg+xml').querySelector('[data-puid="' + spd.uid + '"]');
-    r.spdOdbocka = !!g2 && Array.from(g2.querySelectorAll('circle')).some(c => c.getAttribute('cx') === '65' && c.getAttribute('cy') === '30');
+    r.spdOdbocka = !!g2 && Array.from(new DOMParser().parseFromString(s2, 'image/svg+xml').querySelectorAll('circle[data-spoj]')).some(c => c.getAttribute('cx') === '65' && c.getAttribute('cy') === '30');
     r.spdInfo = rozvNapajeniInfo(spd).join('|');
     rozvVybrat(spd.uid, false); await __T.w(30); r.spdPanel = document.getElementById('rz-vlastnosti').innerText;
     r.spdDetiPrivod = rozvDeti('@privod').map(x => x.ozn).join();

@@ -8,5 +8,6 @@ module.exports = function bezN(s) {
   return String(s == null ? '' : s)
     .replace(/<text [^>]*>N-[^<]*<\/text>/g, '')
     .replace(/<line [^>]*stroke-dasharray=\\?"1\.6 1\\?"[^>]*?(?:\/>|><\/line>)/g, '')
-    .replace(/<circle [^>]*r=\\?"0\.45\\?"[^>]*?(?:\/>|><\/circle>)/g, '');
+    .replace(/<circle [^>]*r=\\?"0\.45\\?"[^>]*?(?:\/>|><\/circle>)/g, '')
+    .replace(/<circle [^>]*data-spoj=\\?"1\\?"[^>]*?(?:\/>|><\/circle>)/g, '');   // 2026-11-12: tečky vodivých spojů (OPRAVA schématu)
 };

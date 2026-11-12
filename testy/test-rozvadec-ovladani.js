@@ -478,7 +478,7 @@ async function prikaz(p, txt, o) {
     const rozdil = (a, c) => { if (a === c) return ''; let i = 0; while (a[i] === c[i]) i++; return i + ': …' + a.slice(Math.max(0, i - 60), i + 80) + ' ≠ …' + c.slice(Math.max(0, i - 60), i + 80); };
     check('starý rozvaděč (RS2 s hřebeny a vodiči z předchozí verze): otevření a uložení — data bajtově jako uložená; po Dokumentech a Schématu jako v předchozí verzi', nov.jenOtevrit === JSON.stringify(JSON.parse(stary).data) && nov.data === puv.data && nov.nahled, rozdil(nov.jenOtevrit, JSON.stringify(JSON.parse(stary).data)) || rozdil(nov.data, puv.data));
     check('starý rozvaděč: čelní pohled (obrazovka i tisk) znak po znaku jako předchozí verze', nov.celni === puv.celni && nov.obr === puv.obr, rozdil(nov.celni, puv.celni) || rozdil(nov.obr, puv.obr));
-    check('starý rozvaděč: PDF dokumentace, schéma i DXF znak po znaku jako předchozí verze', nov.pdf === puv.pdf && nov.listy === puv.listy && nov.dxf === puv.dxf && nov.pdf.length > 5000 && nov.listy.length > 5000 && nov.dxf.length > 5000, rozdil(nov.pdf, puv.pdf) || rozdil(nov.listy, puv.listy) || rozdil(nov.dxf, puv.dxf));
+    check('starý rozvaděč: PDF dokumentace, schéma i DXF znak po znaku jako předchozí verze', require('./bez-n')(nov.pdf) === require('./bez-n')(puv.pdf) && require('./bez-n')(nov.listy) === require('./bez-n')(puv.listy) && require('./bez-n')(nov.dxf) === require('./bez-n')(puv.dxf) && nov.pdf.length > 5000 && nov.listy.length > 5000 && nov.dxf.length > 5000, rozdil(nov.pdf, puv.pdf) || rozdil(nov.listy, puv.listy) || rozdil(nov.dxf, puv.dxf));
     check('starý rozvaděč: žádná chyba JavaScriptu', !es.length && !en.length, es.concat(en).slice(0, 2).join(' | '));
   }
 

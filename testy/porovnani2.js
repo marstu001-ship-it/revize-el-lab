@@ -40,6 +40,8 @@ async function otisk(page, v) {
 // Ve staré verzi se v textu PDF nahradí novým zněním, takže se porovnání
 // zastaví jen na jiném rozdílu. Které se opravdu uplatnily, se vypíše.
 const OPRAVY_TEXTU = [
+  // 2026-11-12: schéma rozvaděče — tečky vodivých spojů (zvětšené, přibyly u odboček). Revizní zprávy se netýká;
+  // záznam je tu jako soupis záměrných změn PDF/DXF (viz CLAUDE.md „Schéma: tečky vodivých spojů").
   // 2026-11-09: oteplení rozvaděče — výchozí Inc 0,8 In (čl. 10.10.4.1 e). Revizní zprávy se
   // netýká (porovnani2 rozvaděče nekreslí); záznam je tu jako soupis záměrných změn textu PDF.
   ['Zatěžovací proud Inc: zadaný technikem, jinak provozní proud Ib, jinak jmenovitý proud In (konzervativně).', 'Zatěžovací proud Inc: zadaný technikem, jinak provozní proud Ib, jinak 0,8 × In (čl. 10.10.4.1 e); u chráničů a hlavního vypínače součet proudů vývodů za nimi.'],

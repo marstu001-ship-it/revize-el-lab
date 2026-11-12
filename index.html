@@ -41982,7 +41982,7 @@ function rsN(n) { return Math.round(n * 100) / 100; }
 function rsCara(x1, y1, x2, y2, o) {
   o = o || {};
   return '<line x1="' + rsN(x1) + '" y1="' + rsN(y1) + '" x2="' + rsN(x2) + '" y2="' + rsN(y2) + '" stroke="#000" stroke-width="' + (o.w || RS_CARA) + '"' +
-    (o.carky ? ' stroke-dasharray="' + (o.carky === true ? '1.6 1' : o.carky) + '"' : '') + ' fill="none"/>';
+    (o.carky ? ' stroke-dasharray="' + (o.carky === true ? '1.6 1' : o.carky) + '"' : '') + (o.nb ? ' data-nb="1"' : '') + ' fill="none"/>';
 }
 function rsObd(x, y, w, h, o) {
   o = o || {};
@@ -42365,7 +42365,61 @@ function rsLomitkaVodorovne(x, y, n) {
   for (var i = 0; i < n; i++) h += rsCara(x + i * 1.1 - 0.6, y + 1, x + i * 1.1 + 0.6, y - 1, { w: RS_TENKA });
   return h;
 }
-function rsBod(x, y) { return '<circle cx="' + rsN(x) + '" cy="' + rsN(y) + '" r="0.45" fill="#000" stroke="none"/>'; }
+// Tečka vodivého spoje (2026-11-12). Při kreslení listu schématu (RS_BODY) se jen zapamatuje
+// místo — tečky se kreslí až nakonec nad všemi čarami (rsTecky), spolu s těmi, které se
+// najdou samy: každé místo, kde se potkají aspoň tři čáry a aspoň jedna tam končí
+// (odbočka T), má plnou černou tečku. Křížení bez spojení (dvě čáry přes sebe) tečku nemá,
+// stejně jako konec čáry na svorce přístroje.
+var RS_BODY = null;
+var RS_TECKA_R = 0.5;   // jediná velikost tečky spoje v celém schématu: průměr 1 mm (≈ 4× tenký vodič), nezávisle na tloušťce sběrnice
+function rsBodSym(x, y) {   // spoj, kde se čára větví před značkou přístroje (značka není mezi čarami) — tečka se vynutí
+  if (RS_BODY) { RS_BODY.push([x, y]); return ''; }
+  return rsBod(x, y);
+}
+function rsBod(x, y) {
+  if (RS_BODY) return '';   // na listu schématu rozhoduje rsTecky podle toho, kolik čar se v místě potkává
+  return '<circle cx="' + rsN(x) + '" cy="' + rsN(y) + '" r="' + RS_TECKA_R + '" fill="#000" stroke="none" data-spoj="1"/>';
+}
+function rsTecky(h, vynucene) {
+  var seg = [], zas = [], re = /<\/g>|<g\b[^>]*>|<line\b[^>]*\/>|<path\b[^>]*\/>/g, m, a;
+  var cis = function (t, k) { var r = new RegExp('\\b' + k + '="(-?[\\d.]+)"').exec(t); return r ? parseFloat(r[1]) : NaN; };
+  while ((m = re.exec(h))) {
+    var t = m[0];
+    if (t.indexOf('</g') === 0) { zas.pop(); continue; }
+    if (t.indexOf('<g') === 0) { zas.push(/transform=/.test(t)); continue; }
+    if (zas.some(Boolean) || t.indexOf('data-nb=') !== -1) continue;
+    var w = cis(t, 'stroke-width') || RS_CARA;
+    if (t.indexOf('<line') === 0) {
+      var q = [cis(t, 'x1'), cis(t, 'y1'), cis(t, 'x2'), cis(t, 'y2')];
+      if (q.some(isNaN) || (q[0] === q[2] && q[1] === q[3])) continue;
+      seg.push([q[0], q[1], q[2], q[3], w]);
+    } else {
+      var dd = (/\sd="([^"]*)"/.exec(t) || [])[1] || '';
+      if (/[^ML\d\s.\-]/.test(dd) || dd.indexOf('M') !== 0) continue;
+      var pt = [], rr = /[ML]\s*(-?[\d.]+)\s+(-?[\d.]+)/g;
+      while ((a = rr.exec(dd))) pt.push([parseFloat(a[1]), parseFloat(a[2])]);
+      for (var i = 1; i < pt.length; i++) if (pt[i][0] !== pt[i - 1][0] || pt[i][1] !== pt[i - 1][1]) seg.push([pt[i - 1][0], pt[i - 1][1], pt[i][0], pt[i][1], w]);
+    }
+  }
+  var TOL = 0.08, kand = {}, vyst = [];
+  var klic = function (x, y) { return Math.round(x * 10) + ':' + Math.round(y * 10); };
+  seg.forEach(function (s) { kand[klic(s[0], s[1])] = [s[0], s[1], 0]; kand[klic(s[2], s[3])] = [s[2], s[3], 0]; });
+  (vynucene || []).forEach(function (v) { kand[klic(v[0], v[1])] = [v[0], v[1], 1]; });
+  Object.keys(kand).forEach(function (k) {
+    var c = kand[k], x = c[0], y = c[1], ramena = 0, konce = 0, mw = 0;
+    seg.forEach(function (s) {
+      if (x < Math.min(s[0], s[2]) - TOL || x > Math.max(s[0], s[2]) + TOL || y < Math.min(s[1], s[3]) - TOL || y > Math.max(s[1], s[3]) + TOL) return;
+      var dx = s[2] - s[0], dy = s[3] - s[1], l2 = dx * dx + dy * dy, u = Math.max(0, Math.min(1, ((x - s[0]) * dx + (y - s[1]) * dy) / l2));
+      if (Math.hypot(s[0] + u * dx - x, s[1] + u * dy - y) > TOL) return;
+      mw = Math.max(mw, s[4]);
+      if (Math.hypot(x - s[0], y - s[1]) <= TOL || Math.hypot(x - s[2], y - s[3]) <= TOL) { ramena += 1; konce += 1; } else ramena += 2;
+    });
+    if (c[2] || (ramena >= 3 && konce >= 1)) vyst.push([x, y, RS_TECKA_R]);
+  });
+  return vyst.map(function (v) {
+    return '<circle cx="' + rsN(v[0]) + '" cy="' + rsN(v[1]) + '" r="' + rsN(v[2]) + '" fill="#000" stroke="none" data-spoj="1"/>';
+  }).join('');
+}
 function rsOdkaz(cislo, g, x) { return '/' + cislo + '.' + rsZona(g, x); }
 
 function rsPrivod(d, g, model, c) {
@@ -42453,7 +42507,7 @@ function rsHlavaHtml(x, g, xx, c, doY, rcd) {
   var p = x.p || {}, nz = c.psc ? pscSchZnacka(p) : RS_ZNACKA_KAT[p.kat] || 'jistic', z = RS_ZNACKY[nz] || RS_ZNACKY.jistic, h = '';
   if (g.prvni && !rsRcd(x) && rsPredHlNovy(x, c.d)) {   // odbočka z přívodu před hlavním vypínačem (např. pojistka → SPD T1)
     var yT0 = g.yP - 4;
-    h += rsBod(g.xQ, g.yP) + rsCara(g.xQ, g.yP, g.xQ, yT0) + rsCara(g.xQ, yT0, xx, yT0) + rsCara(xx, yT0, xx, g.yFI) + rsZnacka(nz, xx, g.yFI) + rsCara(xx, g.yFI + z.h, xx, doY);
+    h += rsBodSym(g.xQ, g.yP) + rsCara(g.xQ, g.yP, g.xQ, yT0) + rsCara(g.xQ, yT0, xx, yT0) + rsCara(xx, yT0, xx, g.yFI) + rsZnacka(nz, xx, g.yFI) + rsCara(xx, g.yFI + z.h, xx, doY);
   } else
   h += rsCara(xx, g.yL, xx, g.yFI) + rsBod(xx, g.yL) + rsZnacka(nz, xx, g.yFI) + rsCara(xx, g.yFI + z.h, xx, doY);
   h += rsText(xx + 0.9, g.yFI - 0.9, x.ozn || '', { fs: 2.2, tucne: true });
@@ -42490,7 +42544,7 @@ function rsSloupecHtml(x, g, sl, kus, c) {
   var nz = c.psc ? pscSchZnacka(p) : RS_ZNACKA_KAT[kat] || 'jistic', z = RS_ZNACKY[nz] || RS_ZNACKY.jistic;
   if (rsPredHl(x, c.d) && g.prvni && !ve && !kus.retez) {   // před hlavním vypínačem: odbočka z přívodu (jistič ovládání, SPD T1…)
     var yT = g.yP - 4;
-    h += rsBod(g.xQ, g.yP) + rsCara(g.xQ, g.yP, g.xQ, yT) + rsCara(g.xQ, yT, xx, yT) + rsCara(xx, yT, xx, g.yD) + rsZnacka(nz, xx, g.yD);
+    h += rsBodSym(g.xQ, g.yP) + rsCara(g.xQ, g.yP, g.xQ, yT) + rsCara(g.xQ, yT, xx, yT) + rsCara(xx, yT, xx, g.yD) + rsZnacka(nz, xx, g.yD);
   } else
   h += (zdroj == null ? '' : rsCara(xx, zdroj, xx, g.yD) + rsBod(xx, zdroj)) + rsZnacka(nz, xx, g.yD, kat === 'JINE' ? { text: p.nazev || '' } : undefined);
   // Svislá hodnota a typ běží od spodku značky nahoru. Dlouhé (výkonový jistič
@@ -42530,11 +42584,11 @@ function rsSloupecHtml(x, g, sl, kus, c) {
     // Jističochránič (RCBO) má vlastní průchozí pól N: pracovní N vývodu vede z jeho
     // výstupu (N-FI/FA1), ne ze společné sběrnice — jinak by zpětný proud šel mimo
     // součtový transformátor a přístroj by vybavil (připomínka uživatele 2026-11-09).
-    h += rsCara(xx + 1.6, g.yD + z.h, xx + 1.6, yJ, { carky: true, w: RS_TENKA }) + rsCara(xx + 1.6, yJ, xx, yJ + 1.8, { carky: true, w: RS_TENKA });
+    h += rsCara(xx + 1.6, g.yD + z.h, xx + 1.6, yJ, { carky: true, w: RS_TENKA }) + rsCara(xx + 1.6, yJ, xx, yJ + 1.8, { carky: true, w: RS_TENKA, nb: true });
     if (!(ve && rcdH) && !(podH && rsRcd(podH))) h += rsText(xx + 3, g.yN - 0.8, rsVejit('N-' + String(x.ozn || 'FI/FA').replace(/^-/, ''), g.yN - 0.8 - (g.yD + z.h) - 1, 1.6), { fs: 1.6, svisle: true });
   } else
-  h += rsBod(xx + 1.6, nZdroj) + rsCara(xx + 1.6, nZdroj, xx + 1.6, yJ, { carky: true, w: RS_TENKA }) + rsCara(xx + 1.6, yJ, xx, yJ + 1.8, { carky: true, w: RS_TENKA });
-  h += rsBod(xx + 3.2, g.yPE) + rsCara(xx + 3.2, g.yPE, xx + 3.2, yJ, { carky: true, w: RS_TENKA }) + rsCara(xx + 3.2, yJ, xx, yJ + 3.2, { carky: true, w: RS_TENKA });
+  h += rsBod(xx + 1.6, nZdroj) + rsCara(xx + 1.6, nZdroj, xx + 1.6, yJ, { carky: true, w: RS_TENKA }) + rsCara(xx + 1.6, yJ, xx, yJ + 1.8, { carky: true, w: RS_TENKA, nb: true });
+  h += rsBod(xx + 3.2, g.yPE) + rsCara(xx + 3.2, g.yPE, xx + 3.2, yJ, { carky: true, w: RS_TENKA }) + rsCara(xx + 3.2, yJ, xx, yJ + 3.2, { carky: true, w: RS_TENKA, nb: true });
   var tri = rsTrif(p);
   h += rsLomitka(xx, g.yB + 7.2, tri ? 5 : 3);
   var tDelka = ySp - 1 - (g.yB + 14);
@@ -42559,7 +42613,11 @@ function rsSloupecHtml(x, g, sl, kus, c) {
 }
 
 function rsListSchema(d, list, idx, listy, c, model) {
-  var g = list.g, cislo = idx + 2, h = rsRam(g), tri = rsSoustavaTrif(d);
+  RS_BODY = [];
+  try { return rsListSchema0(d, list, idx, listy, c, model); } finally { RS_BODY = null; }
+}
+function rsListSchema0(d, list, idx, listy, c, model) {
+  var g = list.g, cislo = idx + 2, h = rsRam(g), tri = rsSoustavaTrif(d), iPoc = h.length;
   var predL = idx > 0, dalsiL = idx < listy.length - 1;
   var xs = list.sloupce.map(function (x, i) { return rsSloupecX(g, i); });
   var posl = xs.length ? xs[xs.length - 1] : g.xQ + 6;
@@ -42644,6 +42702,7 @@ function rsListSchema(d, list, idx, listy, c, model) {
     var kus = list.kusy.filter(function (k) { return i >= k.od && i < k.od + k.n; })[0] || {};
     h += rsSloupecHtml(x, g, xs[i], kus, c);
   });
+  h += rsTecky(h.slice(iPoc), RS_BODY);   // vodivé spoje: tečky nad čarami
   if (model.psc) h += pscSchPole(g, list, xs, model, idx, listy);   // hranice polí a „Pole N" v záhlaví sloupců
   // tabulka pod schématem
   if (xs.length) {
@@ -42968,6 +43027,7 @@ function dxfZeSvg(svg, st) {
     }
     if (tag === 'circle') {
       var k = cisla(el, ['cx', 'cy', 'r']), f2 = el.getAttribute('fill'), rr = k[2] * meritko(m);
+      if (el.getAttribute('data-spoj') && !s.blok) { cil.push({ t: 'SPOJ', vrstva: vr, p: [P(m, k[0], k[1])], r: rr }); return; }
       if (dxfCerna(f2)) { var s0 = P(m, k[0], k[1]); cil.push({ t: 'LWPOLYLINE', vrstva: vr, uzavrena: true, sirka: rr, p: [[s0[0] - rr / 2, s0[1]], [s0[0] + rr / 2, s0[1]]], b: [1, 1] }); return; }
       e = cara(el, m, cil, vr); if (!e) { if (!dxfPlna(f2)) return; e = obrys(vr); }
       e.t = 'CIRCLE'; e.p = [P(m, k[0], k[1])]; e.r = rr; cil.push(e); return;
@@ -43095,6 +43155,9 @@ function rozvDxfVytvor(d, o, rozvUid) {
   var w = new DxfPisar();
   var hModel = w.h(), hPaper = w.h(), hTabBR = w.h(), hDict = w.h(), hDictGrp = w.h();
   var hBR = {}; ins.forEach(function (b) { hBR[b.nazev] = w.h(); });
+  // blok tečky vodivého spoje (jednotkový poloměr, INSERT s měřítkem = poloměr tečky)
+  var spojBlok = ent.some(function (e) { return e.t === 'SPOJ'; }) ? { nazev: 'SPOJ', ent: [{ t: 'LWPOLYLINE', vrstva: 'SILOVA', uzavrena: true, sirka: 1, p: [[-0.5, 0], [0.5, 0]], b: [1, 1] }], atr: [] } : null;
+  if (spojBlok) hBR.SPOJ = w.h();
   // HEADER
   w.g(0, 'SECTION', 2, 'HEADER',
       9, '$ACADVER', 1, 'AC1018', 9, '$DWGCODEPAGE', 3, 'ANSI_1250',
@@ -43135,7 +43198,7 @@ function rozvDxfVytvor(d, o, rozvUid) {
   tabulka('DIMSTYLE', [function (th) { w.g(0, 'DIMSTYLE', 105, w.h(), 330, th, 100, 'AcDbSymbolTableRecord', 100, 'AcDbDimStyleTableRecord', 2, 'STANDARD', 70, 0); }],
     [100, 'AcDbDimStyleTable', 71, 0]);
   // BLOCK_RECORD (tabulka má pevný handle — vlastníci bloků)
-  var br = [['*MODEL_SPACE', hModel], ['*PAPER_SPACE', hPaper]].concat(ins.map(function (b) { return [b.nazev, hBR[b.nazev]]; }));
+  var br = [['*MODEL_SPACE', hModel], ['*PAPER_SPACE', hPaper]].concat((spojBlok ? [spojBlok] : []).concat(ins).map(function (b) { return [b.nazev, hBR[b.nazev]]; }));
   w.g(0, 'TABLE', 2, 'BLOCK_RECORD', 5, hTabBR, 330, 0, 100, 'AcDbSymbolTable', 70, br.length);
   br.forEach(function (b) { w.g(0, 'BLOCK_RECORD', 5, b[1], 330, hTabBR, 100, 'AcDbSymbolTableRecord', 100, 'AcDbBlockTableRecord', 2, b[0], 70, 0, 280, 1, 281, 0); });
   w.g(0, 'ENDTAB', 0, 'ENDSEC');
@@ -43153,6 +43216,7 @@ function rozvDxfVytvor(d, o, rozvUid) {
     w.g(0, 'ENDBLK', 5, w.h(), 330, hb, 100, 'AcDbEntity', 8, '0', 100, 'AcDbBlockEnd');
   };
   blok('*Model_Space', hModel); blok('*Paper_Space', hPaper);
+  if (spojBlok) blok('SPOJ', hBR.SPOJ, spojBlok);
   ins.forEach(function (b) { blok(b.nazev, hBR[b.nazev], b); });
   w.g(0, 'ENDSEC');
   // ENTITIES
@@ -43214,6 +43278,7 @@ function dxfEntita(w, e, vlastnik) {
   if (e.ltN) spol.push(6, e.ltN);
   if (e.lw) spol.push(370, e.lw);
   if (e.t === 'LINE') { w.g.apply(w, [0, 'LINE'].concat(spol, [100, 'AcDbLine', 10, e.p[0][0], 20, e.p[0][1], 30, 0, 11, e.p[1][0], 21, e.p[1][1], 31, 0])); return; }
+  if (e.t === 'SPOJ') { w.g.apply(w, [0, 'INSERT'].concat(spol, [100, 'AcDbBlockReference', 2, 'SPOJ', 10, e.p[0][0], 20, e.p[0][1], 30, 0, 41, e.r, 42, e.r, 43, e.r])); return; }
   if (e.t === 'CIRCLE') { w.g.apply(w, [0, 'CIRCLE'].concat(spol, [100, 'AcDbCircle', 10, e.p[0][0], 20, e.p[0][1], 30, 0, 40, e.r])); return; }
   if (e.t === 'SOLID') {
     var q = e.p.length === 3 ? [e.p[0], e.p[1], e.p[2], e.p[2]] : [e.p[0], e.p[1], e.p[3], e.p[2]];

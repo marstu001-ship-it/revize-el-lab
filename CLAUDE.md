@@ -3477,6 +3477,37 @@ pojistky napájené zespodu, čísla vodičů; starý rozvaděč proti `STARA_PO
 `STARA=<předchozí vydání>`). **Upraveno ve stejném vydání:** testy, které porovnávají rozvaděč se starou verzí
 (`test-rozvadec-psc.js` aj.), nově přeskakují pruh „Co ještě chybí" a oddíly Svorky / Co ještě chybí v Dokumentech.
 
+### Schéma: tečky vodivých spojů (2026-11-12, oprava; `rsTecky`, blok „SCHÉMA ZAPOJENÍ")
+
+Hlášení uživatele: na schématu byly odbočky z přívodního vodiče (-FA1, -FA4) bez tečky a tečky na sběrnicích
+N a PE téměř neviditelné (r 0,45 mm při čáře 0,7). **Záměrná oprava — PDF i DXF schématu všech rozvaděčů
+se mění jen v tečkách** (`porovnani2.js` rozvaděče nekreslí; záznam je tu jako soupis změn).
+
+- **Pravidlo:** každé místo, kde se potkají aspoň **tři čáry a aspoň jedna tam končí** (odbočka T, uzel),
+  má plnou černou tečku bez obrysu; **křížení bez spojení** (dvě čáry přes sebe) a **roh / konec čáry na
+  svorce přístroje** tečku nemají. Platí pro sběrnice L / N / PE, podružné sběrnice chráničů (N-FI…),
+  odbočky propojek a přívodní svorky.
+- **Nekreslí se při psaní čar, ale na konci listu:** `rsListSchema` zapne sběrač `RS_BODY`, `rsBod()` jen
+  zapomene místo (rozhoduje autodetekce), `rsTecky(h, vynucene)` projde čáry a cesty `M/L` listu
+  (kromě čar v `<g transform>` = značky přístrojů, čar s `data-nb` a rámu / razítka / tabulky pod schématem)
+  a vykreslí tečky **nad** všemi čarami. `rsBodSym()` vynutí tečku tam, kde se čára větví před značkou
+  přístroje (odbočka z přívodu před hlavním vypínačem — značka tam není mezi čarami).
+- **Jedna velikost tečky pro celé schéma: průměr 1 mm** (`RS_TECKA_R` = 0,5; ≈ 4× tenký vodič), nezávisle na tloušťce
+  sběrnice (pokyn uživatele 2026-11-12 — první verze s velikostí podle sběrnice dávala na N / PE obří tečky).
+  Střed je v průsečíku os čar. Tečka má atribut `data-spoj="1"`.
+- **Jednoduché prvky:** jen `<circle>` s výplní, žádné třídy ani styly — stejné SVG jde do PDF i DXF.
+- **Zalomení N u RCBO** (šikmá čárkovaná odbočka k vodiči) má `data-nb="1"` a do spojů se nepočítá.
+- **DXF:** tečka = `INSERT` bloku **`SPOJ`** (jednotkový poloměr, měřítko 0,5 = jedna velikost) na vrstvě SILOVA;
+  na ovládacích listech zůstává tečka s pevným poloměrem 0,8 mm (`RS_TECKA_R`) a v DXF jako plný kroužek.
+- Čelní pohled žádné „uzly vodičů" nekreslí — nic se tam nemění.
+
+Test: `testy/test-schema-tecky.js` (vymyšlený vzorek: přívod L1 → FA1, L2 → FA4, L3 → FA5, FA1 → FA2 → FA3):
+tečka právě tam, kde se potkají ≥ 3 čáry, odbočky k FA1 a FA4 z přívodního vodiče mají tečku, poslední
+odbočka (roh) a vodiče -FA4 / -FA5 přes sběrnici L ne, jedna velikost 1 mm a střed v průsečíku (0,2 mm), DXF blok SPOJ (ezdxf audit bez chyb).
+**Upraveno:** `bez-n.js` a `bez-kresby.js` (tečky se z porovnání se starou verzí vypouštějí),
+`test-rozvadec-napajeni.js` (odbočka SPD se hledá mezi `circle[data-spoj]`), `test-rozvadec-ovladani.js`
+a `test-rozvadec-svorky.js` (porovnání přes `bez-n`).
+
 ### Výměna výkresů s CAD — export a import DXF (2026-11-02, bloky „ROZVADĚČ — VÝMĚNA S CAD")
 
 Zadání uživatele: technici kreslí ve Schématech CAD (Elmer), který ukládá

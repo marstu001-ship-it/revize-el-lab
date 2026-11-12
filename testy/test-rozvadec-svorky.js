@@ -374,7 +374,7 @@ async function otevri(b, url, vp) {
   const bezUid = s => { const m = {}; let n = 0; return s.replace(/\b[a-z][a-z0-9]{11,14}\b/g, q => m[q] || (m[q] = 'U' + (++n))); };
   if (process.env.LADIT_DIFF) { require('fs').writeFileSync(__dirname + '/_beh/d-nov.txt', bezUid(nov.pdf)); require('fs').writeFileSync(__dirname + '/_beh/d-star.txt', bezUid(star.pdf)); require('fs').writeFileSync(__dirname + '/_beh/dd-nov.txt', bezUid(nov.d)); require('fs').writeFileSync(__dirname + '/_beh/dd-star.txt', bezUid(star.d)); }
   check('starý rozvaděč (RS2) bez zásahu: data bajtově stejná jako ve starém programu', bezUid(nov.d) === bezUid(star.d), nov.d.length + ' / ' + star.d.length);
-  check('starý rozvaděč (RS2): PDF dokumentace beze změny', bezUid(nov.pdf) === bezUid(star.pdf), nov.pdf.length + ' / ' + star.pdf.length);
+  check('starý rozvaděč (RS2): PDF dokumentace beze změny', bezUid(require('./bez-n')(nov.pdf)) === bezUid(require('./bez-n')(star.pdf)), nov.pdf.length + ' / ' + star.pdf.length);
 
   check('bez chyb v konzoli', !err.length, err.join(' | '));
   await b.close();

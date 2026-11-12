@@ -23,5 +23,6 @@ module.exports = function bezKresby(s) {
     }
     s = out + s.slice(i);
   }
-  return s;
+  // 2026-11-12: tečky vodivých spojů ve schématu se zvětšily a přibyly (záměrně) — starý r="0.45" i nový data-spoj se vypouští
+  return s.replace(/<circle [^>]*(?:data-spoj=\\?"1\\?"|r=\\?"0\.45\\?")[^>]*?(?:\/>|><\/circle>)/g, '');
 };
