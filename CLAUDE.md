@@ -97,6 +97,14 @@ Pravidla, aby oddělení drželo:
   revize-el nepřenáší.
 - Před přenosem musí v labu projít celá regrese (`testy/regrese.sh`,
   `CELKEM ŠPATNĚ: 0`) včetně `test-typy-krizem.js` a `test-lab-oddeleni.js`.
+- **🛑 Testy v labu — platí NAD ostatními pravidly o testech níž (pokyn uživatele 2026-11-12, nahrazuje „po každé
+  změně celá regrese"):**
+  - **Pouštějí se jen cílené testy k tomu, co se měnilo:** u rozvaděče `test-rozvadec*.js`, u změn vzhledu i
+    `test-mobil.js`, když se může změnit PDF, i `porovnani2.js`. **Push do `main` labu po zelených cílených testech.**
+  - **Celou regresi (`regrese.sh`) v labu NEPOUŠTĚT.** Výjimka: změna **ukládání dat, záloh, Service Workeru nebo
+    společného kódu PDF** — tam celou regresi pustit.
+  - **Celá regrese proběhne vždy při přenosu do revize-el.**
+  - Starší věty níž („celá regrese před pushem", „opakování celé regrese po opravě") platí jen pro přenos do revize-el.
 - **Rychlé testy v labu (pokyn uživatele 2026-10-15):** během vývoje funkce
   se celá regrese NEPOUŠTÍ — jen `./regrese.sh` s vybranými testy: test té
   funkce + `test-mobil.js`, `test-zs-mez.js`, `test-lab-oddeleni.js`
