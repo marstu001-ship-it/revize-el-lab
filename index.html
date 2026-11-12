@@ -2213,6 +2213,18 @@ html.dark .rz-pi-odhad{background:#3a2c0e;color:#f3c76b;border-color:#7a5c1c}
 html.dark .rz-pi-rucne{color:#f0a35e}
 .rz-pi-nastaveni .rz-pi-nr{display:flex;align-items:center;gap:.4rem;font-size:.85rem;margin:.2rem 0;text-transform:none;letter-spacing:0;font-family:inherit}
 .rz-pi-nastaveni .rz-pi-nr input{width:4.2rem!important;flex:0 0 auto;margin-left:auto}
+.rzs-akce{display:flex;gap:.5rem;align-items:center;flex-wrap:wrap;margin:.5rem 0}
+.rzs-hlavni{min-height:2.2rem}
+.rzs-upoz{font-size:.85rem;color:#8a4b00;margin:.35rem 0}
+html.dark .rzs-upoz{color:#f0b46a}
+.rzs-ok{font-size:.85rem;color:var(--muted);margin:.35rem 0}
+.rzs-tab{width:100%;border-collapse:collapse;font-size:.82rem;margin:.4rem 0}
+.rzs-tab th,.rzs-tab td{border:1px solid var(--border);padding:.15rem .4rem;text-align:left}
+.rzs-tab th{background:var(--bg);font-weight:600}
+.rzs-tab td.c{text-align:center}
+.rzs-tab tr.rzs-bez td{background:#fff4e0}
+html.dark .rzs-tab tr.rzs-bez td{background:#3a2a10}
+.rzs-tab .rzs-vyber{font:inherit;font-size:.82rem;max-width:11rem}
 .rz-otepl-ukaz{font:inherit;font-size:.8rem;border:1px solid var(--border);border-radius:3px;padding:.1rem .45rem;cursor:pointer;background:var(--surface);color:var(--muted)}
 .rz-otepl-zelena{background:#e3f4ea;border-color:#7cc49a;color:#0f5f3f}
 .rz-otepl-oranzova{background:#fdf0d8;border-color:#e0a800;color:#7a4d00}
@@ -37004,7 +37016,7 @@ function rzpTahKonec(d) {
     rozvZmena('Přepojení', function () { __rz.vodice = (__rz.vodice || []).map(function (w) { return w.uid === d.w ? nw : w; }); });
   } else {
     nw.uid = rzpVodicUid();
-    rozvZmena('Zapojení', function () { __rz.vodice = (__rz.vodice || []).concat([nw]); });
+    rozvZmena('Zapojení', function () { __rz.vodice = (__rz.vodice || []).concat([nw]); rzsVodicNaSvorku(nw); });
   }
 }
 // Klepnutí v režimu Zapojení: na vodič = vybrat (jeho svorky pulzují), jinam = zrušit výběr.
@@ -39301,6 +39313,7 @@ function rozvDokHtml(d) {
       rzPole(d, odv, 'tech.hmotnost', 'Hmotnost (kg)', { nepov: true, attr: ' inputmode="decimal"' }) +
     '</div>' + '<div id="rz-dbo-upoz">' + rozvDboUpoz(d, e) + '</div>');
   // Oteplení (etapa 4)
+  h += rzOddil('svorky', '🔌 Svorky — svorkový plán', rzsOddilHtml(d));
   h += rzOddil('otepleni', '🌡 Oteplení — ověření výpočtem (čl. 10.10.4.2)', rozvOteplHtml(d));
   if (psc) h += rzOddil('overeni', '🧪 Ověření návrhu (systém výrobce)', pscOvereniHtml(d, odv));
   // Prohlášení
@@ -46220,6 +46233,248 @@ DOK_TYPY.rozv.pdf = function (d) {
   Array.prototype.splice.apply(B, [cp, 0].concat(rozvPdf3d(d)));
   return B;
 };
+// ═══ ROZVADĚČ — SVORKOVÝ PLÁN (čelní pohled „jako v dílně", fáze 3, 2026-11-12) ═══
+// Elektrikář potřebuje vědět, na kterou svorku jde který vývod a kabel. Svorkovnice
+// (blok `p.svorky` a řadová svorka X, ne přívodní a ne ovládací) je zásobník svorek;
+// vývod (jistič, AFDD, RCBO, pojistka, spouštěč, který nenapájí jiné přístroje) má
+// `x.svorky = [{ u: uid svorkovnice, i: číslo svorky od 1 }]`, jednu na každý fázový pól.
+// Ukládá se jen po zásahu technika („Přiřadit svorky", výběr v tabulce, vodič ze
+// jističe na svorku). N a PE se z vývodů odvozují za běhu (viz N a PE podle vývodů).
+// Všechno se počítá z `rady` (obrazovka i PDF), nic se neukládá navíc.
+var RZS_FAZE = ['L1', 'L2', 'L3'];
+function rzsZasobniky(rady) {
+  var out = [];
+  rozvPrvkyVse(rady).forEach(function (x) {
+    if (!x.p || x.p.kat !== 'X' || x.svorkaOvl || rozvZPrivodu(x)) return;
+    var n = x.p.svorky ? Math.max(1, Math.round(+(x.pocet || x.p.pocet) || 1)) : 1;
+    out.push({ x: x, f: rozvSvorkaFunkce(x), n: n, bar: !!x.p.prip, blok: !!x.p.svorky && !x.p.prip });
+  });
+  return out;
+}
+// Vývod do svorkového plánu: koncový vývod (nenapájí jiné přístroje než svorky), ne ovládání.
+function rzsJeVyvod(x, rady, vnejsi) {
+  if (!x || !x.p || !rfVyvod(x)) return false;
+  if (rozvDeti(x.uid, rady).some(function (y) { return y.p.kat !== 'X'; })) return false;
+  if (rozvJenOvladaci({ rady: rady, vnejsi: vnejsi || [] }, x)) return false;
+  return true;
+}
+function rzsPoctyFazi(x) { return Math.max(1, rozvPoly(x).filter(function (f) { return f !== 'N'; }).length); }
+function rzsPotencial(x, k) { return rzsPoctyFazi(x) > 1 ? RZS_FAZE[k] || 'L' : (/^L[123]$/.test(x.faze || '') ? x.faze : 'L'); }
+// Označení svorky v zásobníku: blok -X4 → -X4, -X5…, řadová svorka = její označení.
+function rzsSvorkaOzn(z, i) {
+  var o = String(z.x.ozn || '').trim(), m = /^(.*?)(\d+)$/.exec(o);
+  if (!z.x.p.svorky || z.n === 1 && !m) return z.n > 1 ? o + ':' + i : o;
+  return m ? m[1] + (+m[2] + i - 1) : o + ':' + i;
+}
+function rzsKabelText(x) { return [x.kabel, x.prurez].filter(Boolean).join(' '); }
+function rzsPrurezVodice(x) { var m = /[×x]\s*([\d.,]+)\s*(?:mm.*)?$/i.exec(String(x.prurez || '')); return m ? m[1] : (/^[\d.,]+$/.test(String(x.prurez || '').trim()) ? String(x.prurez).trim() : ''); }
+// Model plánu: vývody a svorky; `chybi` = kolik svorek vývodu ještě chybí.
+function rzsModel(rady, d) {
+  d = d || {};
+  var Z = rzsZasobniky(rady), idx = {}, slots = [], V = [], vnejsi = d.vnejsi || (typeof __rz !== 'undefined' && __rz && __rz.vnejsi) || [];
+  Z.forEach(function (z) {
+    if (z.f !== 'L') return;
+    for (var i = 1; i <= z.n; i++) { var s = { key: z.x.uid + '#' + i, z: z, i: i, label: rzsSvorkaOzn(z, i), vyvod: null, pol: 0 }; idx[s.key] = s; slots.push(s); }
+  });
+  rozvPrvkyVse(rady).forEach(function (x) {
+    if (!rzsJeVyvod(x, rady, vnejsi)) return;
+    var v = { x: x, faze: rzsPoctyFazi(x), slots: [], konflikt: false };
+    (x.svorky || []).forEach(function (r) {
+      var s = r && idx[r.u + '#' + r.i];
+      if (!s || v.slots.indexOf(s) !== -1 || v.slots.length >= v.faze) return;
+      if (s.vyvod) { v.konflikt = true; return; }
+      s.vyvod = v; s.pol = v.slots.length; v.slots.push(s);
+    });
+    v.chybi = v.faze - v.slots.length;
+    V.push(v);
+  });
+  return { Z: Z, L: slots, V: V, bezSvorek: !slots.length, rady: rady };
+}
+function rzsMaSvorky(rady) { return rzsZasobniky(rady).some(function (z) { return z.f === 'L'; }); }
+// Přiřadí svorky vývodům, které je nemají (volné svorky v pořadí svorkovnic); `znovu` nejdřív všechno smaže.
+function rzsPrirazitVse(rady, znovu) {
+  if (znovu) rozvPrvkyVse(rady).forEach(function (x) { delete x.svorky; });
+  var M = rzsModel(rady), volne = M.L.filter(function (s) { return !s.vyvod; }), k = 0, pr = 0, chybi = 0;
+  M.V.forEach(function (v) {
+    var ref = v.slots.map(function (s) { return { u: s.z.x.uid, i: s.i }; }), pot = v.faze - ref.length;
+    if (pot <= 0) return;
+    for (var j = 0; j < pot; j++) { var s = volne[k++]; if (s) { ref.push({ u: s.z.x.uid, i: s.i }); pr++; } else chybi++; }
+    if (ref.length) v.x.svorky = ref;
+  });
+  return { prirazeno: pr, chybi: chybi };
+}
+// Potřebný počet svorek navíc, aby se vešly všechny vývody.
+function rzsChybiSvorek(rady) { var M = rzsModel(rady); return M.V.reduce(function (a, v) { return a + v.chybi; }, 0); }
+// Řádky tabulky (pořadí: přiřazené svorky podle svorkovnic, pak vývody bez svorky).
+function rzsRadky(M) {
+  var rows = [];
+  M.L.forEach(function (s) { if (s.vyvod) rows.push({ slot: s, v: s.vyvod, pol: s.pol }); });
+  M.V.forEach(function (v) { for (var k = v.slots.length; k < v.faze; k++) rows.push({ slot: null, v: v, pol: k }); });
+  return rows;
+}
+function rzsVodicCislo(rady, vodice, slot) {   // číslo vodiče mezi vývodem a svorkou (jen když jsou čísla zapnutá)
+  if (!slot || !slot.vyvod) return '';
+  var u = slot.z.x.uid, vu = slot.vyvod.x.uid, c = '';
+  (vodice || []).forEach(function (w) {
+    if (!w || !w.cislo || c !== '') return;
+    var hit = (w.a.uid === u && w.b.uid === vu) || (w.b.uid === u && w.a.uid === vu);
+    if (hit) c = [].concat(w.cislo)[0] || '';
+  });
+  return c;
+}
+function rzsTabulkaHtml(M, o) {
+  o = o || {};
+  var rows = rzsRadky(M), nRows = o.nrows || [], cisla = !!o.cisla, h = '';
+  var bun = function (r) {
+    var x = r.v.x, ozn = esc(x.ozn || ''), pot = rzsPotencial(x, r.pol);
+    return '<td class="c">' + esc(pot) + '</td><td class="c">' + ozn + '</td><td>' + esc(x.vyvod || '') + '</td><td>' + esc(rzsKabelText(x)) + '</td><td class="c">' + esc(rzsPrurezVodice(x)) + '</td>';
+  };
+  rows.forEach(function (r) {
+    var first;
+    if (o.edit) {
+      var vol = M.L.filter(function (s) { return !s.vyvod || s === r.slot; });
+      first = '<select class="rzs-vyber" data-uid="' + esc(r.v.x.uid) + '" data-pol="' + r.pol + '" aria-label="Svorka vývodu ' + esc(r.v.x.ozn || '') + '">' +
+        '<option value="">— bez svorky —</option>' + vol.map(function (s) { return '<option value="' + esc(s.key) + '"' + (s === r.slot ? ' selected' : '') + '>' + esc(s.label) + '</option>'; }).join('') + '</select>';
+    } else first = r.slot ? esc(r.slot.label) : '—';
+    h += '<tr class="' + (r.slot ? '' : 'rzs-bez') + '"' + (r.v.x.uid ? ' data-uid="' + esc(r.v.x.uid) + '"' : '') + '><td class="c rzs-sv">' + first + '</td>' + bun(r) +
+      (cisla ? '<td class="c">' + esc(rzsVodicCislo(M.rady, o.vodice, r.slot)) + '</td>' : '') + '</tr>';
+  });
+  nRows.forEach(function (r) {
+    h += '<tr class="rzs-np"><td class="c rzs-sv">' + esc(r.svorka) + '</td><td class="c">' + esc(r.pot) + '</td><td class="c">' + esc(r.ozn) + '</td><td>' + esc(r.vyvod) + '</td><td>' + esc(r.kabel) + '</td><td class="c">' + esc(r.prurez) + '</td>' + (cisla ? '<td></td>' : '') + '</tr>';
+  });
+  var hl = '<tr><th>Svorka</th><th>Potenciál</th><th>Z přístroje</th><th>Vývod</th><th>Kabel</th><th>Průřez</th>' + (cisla ? '<th>Vodič č.</th>' : '') + '</tr>';
+  return '<table class="rzs-tab ' + (o.edit ? '' : 'rz-pdf-tab ') + '">' + (o.edit ? '' : '<colgroup><col style="width:24mm"><col style="width:18mm"><col style="width:22mm"><col><col style="width:44mm"><col style="width:16mm">' + (cisla ? '<col style="width:16mm">' : '') + '</colgroup>') + hl + h + '</table>';
+}
+// ── oddíl „Svorky" v Dokumentech ────────────────────────────────────────
+function rzsStavHtml(M, rady) {
+  var ch = M.V.reduce(function (a, v) { return a + v.chybi; }, 0), h = '';
+  if (!M.V.length) return '<div class="dk-pozn">V rozvaděči zatím nejsou žádné vývody (jističe, pojistky…), kterým by svorky patřily.</div>';
+  if (M.bezSvorek) return '<div class="rzs-upoz">V rozvaděči není vývodová svorkovnice — vývody nemají na co přiřadit. ' +
+    '<button type="button" class="dok-mini" data-action="tdRSvPridat">＋ Přidat svorkovnici (' + ch + ' svorek)</button></div>';
+  if (ch > 0) h = '<div class="rzs-upoz">⚠ Chybí ' + dokPocetTvar(ch, ['svorka', 'svorky', 'svorek']) + ' pro ' + dokPocetTvar(M.V.filter(function (v) { return v.chybi; }).length, ['vývod', 'vývody', 'vývodů']) +
+    '. <button type="button" class="dok-mini" data-action="tdRSvProdlouzit" data-n="' + ch + '">Prodloužit svorkovnici o ' + ch + ' svorek</button></div>';
+  else h = '<div class="rzs-ok">✓ Každý vývod má svorky.</div>';
+  var kon = M.V.filter(function (v) { return v.konflikt; }); if (kon.length) h += '<div class="rzs-upoz">⚠ Svorku mají dva vývody: ' + esc(kon.map(function (v) { return v.x.ozn; }).join(', ')) + '.</div>';
+  return h;
+}
+function rzsOddilHtml(d) {
+  var rady = (__rz && __rz.rady) || d.rady || [];
+  return '<div id="rzs-obsah">' + rzsObsahHtml(rady, d) + '</div>' +
+    '<label class="teren-radek rz-zatrh"><input type="checkbox" data-dk="svorkovyPlanPdf"' + (d.svorkovyPlanPdf === true ? ' checked' : '') + '> Svorkový plán do dokumentace (PDF) — samostatná strana na výšku za seznamem přístrojů</label>';
+}
+function rzsObsahHtml(rady, d) {
+  var M = rzsModel(rady, d), np = typeof rzsNPRadky === 'function' ? rzsNPRadky(rady, d) : [];
+  return '<div class="dk-pozn">Která svorka patří kterému vývodu a kabelu. Svorky se berou ze svorkovnic v rozvaděči (ne z přívodních); ručně jde svorku vybrat v tabulce, nebo v režimu 🔌 Zapojení natáhnout vodič z jističe na svorku.</div>' +
+    '<div class="rzs-akce"><button type="button" class="btn btn-gold rzs-hlavni" data-action="tdRSvPrirad">🔌 Přiřadit svorky</button>' +
+    '<button type="button" class="dok-mini" data-action="tdRSvZnovu" title="Smaže všechna přiřazení a rozdělí svorky znovu v pořadí čelního pohledu">Přiřadit znovu</button></div>' +
+    '<div id="rzs-stav">' + rzsStavHtml(M, rady) + '</div>' + (typeof rzsNPStavHtml === 'function' ? rzsNPStavHtml(rady, d) : '') +
+    (M.V.length ? rzsTabulkaHtml(M, { edit: true, nrows: np, cisla: rzsCislujeVodice(), vodice: (__rz && __rz.vodice) || d.vodice }) : '');
+}
+function rzsObnovitOddil() {
+  var box = document.getElementById('rzs-obsah'); if (!box || !__rz) return;
+  box.innerHTML = rzsObsahHtml(__rz.rady, __rz);
+}
+function rzsCislujeVodice() { return !!(__rz && __rz.cislVod); }
+TD_AKCE.tdRSvPrirad = function () {
+  if (!__rz) return;
+  var vysl = null;
+  rozvZmena('Přiřazení svorek', function () { vysl = rzsPrirazitVse(__rz.rady, false); });
+  rzsObnovitOddil();
+  if (vysl) showToast(vysl.prirazeno ? 'Přiřazeno ' + dokPocetTvar(vysl.prirazeno, ['svorka', 'svorky', 'svorek']) + (vysl.chybi ? ' — chybí ještě ' + vysl.chybi : '') : (vysl.chybi ? 'Chybí ' + vysl.chybi + ' svorek — prodlužte svorkovnici.' : 'Všechny vývody už svorky mají.'), { timeout: 4000 });
+};
+TD_AKCE.tdRSvZnovu = function () {
+  if (!__rz) return;
+  if (rozvPrvkyVse(__rz.rady).some(function (x) { return x.svorky && x.svorky.length; }) && !confirm('Přiřadit svorky znovu? Dosavadní přiřazení se smažou a svorky se rozdělí znovu v pořadí čelního pohledu (jde vzít zpět).')) return;
+  var vysl = null;
+  rozvZmena('Přiřazení svorek znovu', function () { vysl = rzsPrirazitVse(__rz.rady, true); });
+  rzsObnovitOddil();
+  if (vysl) showToast('Přiřazeno ' + dokPocetTvar(vysl.prirazeno, ['svorka', 'svorky', 'svorek']) + (vysl.chybi ? ' — chybí ještě ' + vysl.chybi : ''), { timeout: 4000 });
+};
+// Nová svorkovnice (nebo přípojnice) s daným počtem svorek — jedno ZPĚT.
+function rzsVlozitZasobnik(kid, n, uprav) {
+  var it = rozvKnihPolozka(kid); if (!it || !__rz) return null;
+  var x = rozvNovyPrvek(it); x.p.pocet = n; x.p.sirka = rozvSvorkySirka(n);
+  var r = rozvRadaProVlozeni(x.p.sirka);
+  if (uprav) uprav(x);
+  rozvVlozitNa(__rz.rady[r], __rz.rady[r].prvky.length, [x]);
+  __rz.aktRada = r;
+  return { x: x, r: r };
+}
+TD_AKCE.tdRSvPridat = function () {
+  if (!__rz) return;
+  var n = Math.max(2, rzsChybiSvorek(__rz.rady)), vysl = null;
+  rozvZmena('Svorkovnice', function () { rzsVlozitZasobnik('v-x-svork', n); vysl = rzsPrirazitVse(__rz.rady, false); });
+  rzsObnovitOddil();
+  showToast('Přidána svorkovnice na ' + n + ' svorek' + (vysl ? ', přiřazeno ' + vysl.prirazeno : '') + '.', { timeout: 4000 });
+};
+TD_AKCE.tdRSvProdlouzit = function (el) {
+  if (!__rz) return;
+  var n = Math.max(1, Math.round(+el.getAttribute('data-n') || rzsChybiSvorek(__rz.rady))), vysl = null;
+  var Z = rzsZasobniky(__rz.rady).filter(function (z) { return z.f === 'L' && z.blok; }), z = Z[Z.length - 1];
+  if (!z) { TD_AKCE.tdRSvPridat(); return; }
+  rozvZmena('Prodloužení svorkovnice', function () {
+    z.x.p.pocet = z.n + n; z.x.p.sirka = rozvSvorkySirka(z.n + n); delete z.x.pocet;
+    vysl = rzsPrirazitVse(__rz.rady, false);
+  });
+  rzsObnovitOddil();
+  showToast('Svorkovnice ' + (z.x.ozn || '') + ' prodloužena o ' + n + ' svorek' + (vysl ? ', přiřazeno ' + vysl.prirazeno : '') + '.', { timeout: 4000 });
+};
+// Ruční výběr svorky u vývodu (tabulka).
+document.addEventListener('change', function (e) {
+  var t = e.target; if (!t || !t.classList || !t.classList.contains('rzs-vyber') || !__rz) return;
+  var q = rozvNajit(t.getAttribute('data-uid')); if (!q) return;
+  var k = +t.getAttribute('data-pol') || 0, val = t.value;
+  rozvZmena('Svorka vývodu', function () {
+    var M = rzsModel(__rz.rady), v = M.V.filter(function (y) { return y.x.uid === q.x.uid; })[0]; if (!v) return;
+    var ref = v.slots.map(function (s) { return { u: s.z.x.uid, i: s.i }; });
+    if (val) { var s2 = M.L.filter(function (s) { return s.key === val; })[0]; if (s2) { ref[k] = { u: s2.z.x.uid, i: s2.i }; ref = ref.filter(Boolean); } }
+    else ref.splice(k, 1);
+    if (ref.length) q.x.svorky = ref; else delete q.x.svorky;
+  });
+  rzsObnovitOddil();
+});
+// Vodič ze jističe na svorku (režim Zapojení) zapíše totéž co výběr v tabulce.
+function rzsVodicNaSvorku(w) {
+  try {
+    var a = rzpX(w.a.uid), b = rzpX(w.b.uid); if (!a || !b) return;
+    var vnejsi = __rz.vnejsi || [], v = null, s = null;
+    if (a.p.kat !== 'X' && rzsJeVyvod(a, __rz.rady, vnejsi) && b.p.kat === 'X') { v = a; s = b; }
+    else if (b.p.kat !== 'X' && rzsJeVyvod(b, __rz.rady, vnejsi) && a.p.kat === 'X') { v = b; s = a; }
+    if (!v) return;
+    var M = rzsModel(__rz.rady), vm = M.V.filter(function (y) { return y.x.uid === v.uid; })[0]; if (!vm || vm.chybi <= 0) return;
+    var volne = M.L.filter(function (q) { return q.z.x.uid === s.uid && !q.vyvod; });
+    var ref = vm.slots.map(function (q) { return { u: q.z.x.uid, i: q.i }; });
+    for (var k = 0; k < vm.chybi && k < volne.length && k < Math.max(1, w.n); k++) ref.push({ u: volne[k].z.x.uid, i: volne[k].i });
+    if (ref.length) v.svorky = ref;
+  } catch (e) {}
+}
+// Svorkový plán do PDF — jen u rozvaděče, kde ho technik zapnul.
+var rzsPdfPuv = DOK_TYPY.rozv.pdf;
+DOK_TYPY.rozv.pdf = function (d) {
+  var B = rzsPdfPuv(d);
+  if (d.svorkovyPlanPdf !== true) return B;
+  var v = rozvVyber(d), e = rozvDokEff(d), cp = v.cp || (!v.tech && !v.prohl && !v.ko && !v.schema && !v.soudobost) ? rozvPdfNavrh(d).length : 0;
+  Array.prototype.splice.apply(B, [cp, 0].concat(rzsPdf(d, e)));
+  return B;
+};
+function rzsPdf(d, e) {
+  var rady = d.rady || [], M = rzsModel(rady, d), np = rzsNPRadky(rady, d), cisla = (d.vodice || []).some(function (w) { return w && w.cislo; });
+  var B = [{ strana: 'vyska', zahlavi: rozvPdfZahlavi(e), html: '<div class="dok-pdf-titul"><div class="t1">Svorkový plán</div><div class="t2">' + esc(d.oznaceni || '') + (d.oznaceni ? ' · ' : '') + 'svorky pro vnější vodiče a kabely vývodů</div></div>' }];
+  if (!M.V.length || (M.bezSvorek && !np.length)) B.push({ html: '<p class="dok-pdf-p">V návrhu zatím nejsou svorky, ke kterým by se vývody přiřadily.</p>' });
+  else B.push({ delit: true, html: rzsTabulkaHtml(M, { nrows: np, cisla: cisla, vodice: d.vodice }) });
+  var nez = M.V.filter(function (v) { return v.chybi > 0; });
+  if (nez.length && !M.bezSvorek) B.push({ html: '<p class="rz-pdf-pozn">Vývody bez svorky: ' + esc(nez.map(function (v) { return v.x.ozn || ''; }).join(', ')) + '.</p>' });
+  return B;
+}
+// Zatím bez N a PE (doplní další část): prázdné.
+function rzsNPRadky() { return []; }
+var rzsCistPuv = DOK_TYPY.rozv.cist;
+DOK_TYPY.rozv.cist = function (koren) {
+  var d = rzsCistPuv.call(this, koren);
+  if (d.svorkovyPlanPdf !== true) delete d.svorkovyPlanPdf;   // ukládá se jen zapnuté
+  return d;
+};
+
 // ═══ /TVORBA DOKUMENTACE ═══
 
 // Init wrapnutý — kdyby v něm něco selhalo (např. IDB v Safari iOS PWA),

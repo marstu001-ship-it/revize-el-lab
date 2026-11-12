@@ -3382,6 +3382,40 @@ datum karty se nezměnilo. V `test-mobil.js` stavy „rozvaděč – pole přík
 Test: `testy/test-rozvadec-ovladani.js` (65 kontrol — oddíly 3 až 5: průvodce, RS2, starý rozvaděč
 proti `STARA_PORT`; při přenosu pustit se `STARA=<předchozí vydání>`).
 
+### Čelní pohled „jako v dílně" — fáze 3: svorky, vodiče, kontrola zapojení (2026-11-12)
+
+Platí zásady „jako v dílně" výš. **Data se nemění** — starý rozvaděč se otevře a uloží bajtově stejně a má
+stejné PDF, schéma i DXF; nová pole vznikají jen po zásahu technika. Jen DBO i PSC (svorky sdílí).
+
+#### Svorkový plán (blok „ROZVADĚČ — SVORKY, …")
+
+Elektrikář potřebuje vědět, na kterou svorku jde který vývod a kabel. Všechno se počítá z `rady`
+(`rzsModel(rady, d)` — obrazovka i PDF), nic se neukládá navíc.
+
+- **Zásobník svorek** (`rzsZasobniky`) = každý prvek kategorie X, který není přívodní (`rozvZPrivodu`) ani
+  ovládací (`svorkaOvl`): svorkovnice (`p.svorky`, počet `p.pocet`) = n svorek, řadová svorka = 1; funkce
+  podle `rozvSvorkaFunkce` (L / N / PE; přípojnice podle `p.prip`). Pro vývody jsou to svorky **L**; označení
+  svorky svorkovnice -X4 je -X4, -X5… (`rzsSvorkaOzn`).
+- **Vývod** (`rzsJeVyvod`) = koncový jistič, AFDD, RCBO, pojistka, spouštěč (`rfVyvod`), který nenapájí jiné
+  přístroje než svorky a není jen ovládací. Potřebuje tolik svorek, kolik má fázových pólů (1P 1, 3P 3).
+- **Data:** `x.svorky = [{ u: uid svorkovnice, i: číslo svorky od 1 }]`, jedna na fázový pól, **jen po zásahu**
+  („Přiřadit svorky", výběr v tabulce, vodič ze jističe na svorku). Neplatný odkaz (smazaná svorkovnice,
+  svorka mimo počet) se při čtení ignoruje, nic se nepřepisuje.
+- **Sekce „🔌 Svorky — svorkový plán"** v Dokumentech (před Oteplením; `rzsOddilHtml`): hlavní akce
+  **„🔌 Přiřadit svorky"** (jen vývody bez svorky, volné svorky v pořadí svorkovnic a čelního pohledu, nic nepřepíše),
+  malé „Přiřadit znovu" (po potvrzení smaže a rozdělí znovu), stav „Chybí 8 svorek pro 8 vývodů" s tlačítkem
+  **„Prodloužit svorkovnici o n svorek"** (poslední vývodová svorkovnice; není-li žádná, „＋ Přidat svorkovnici"),
+  tabulka svorka | potenciál | z přístroje | vývod | kabel | průřez; svorku vývodu jde v tabulce vybrat
+  (volné svorky + vlastní). Všechno přes `rozvZmena` (ZPĚT, Ctrl+Z).
+- **Režim 🔌 Zapojení:** vodič ze jističe na svorku X (`rzpTahKonec` → `rzsVodicNaSvorku`) zapíše totéž co výběr
+  v tabulce (první volná svorka té svorkovnice). Vodič sám zůstává jen vodičem; záznam je `x.svorky`.
+- **PDF:** zaškrtávátko **„Svorkový plán do dokumentace"** (`d.svorkovyPlanPdf`, ukládá se jen zapnuté, `data-dk`
+  v oddílu Svorky) → samostatná strana na výšku za seznamem přístrojů (`rzsPdf`, obal `DOK_TYPY.rozv.pdf`).
+  Bez zaškrtnutí je PDF beze změny. Do DXF svorkový plán nejde (svorky mají označení jako dosud).
+
+Test: `testy/test-rozvadec-svorky.js` (RS2 se třemi přívodními svorkami -X1…X3 a svorkovnicí -X4; starý
+rozvaděč proti `STARA_PORT` — při přenosu pustit se `STARA=<předchozí vydání>`).
+
 ### Výměna výkresů s CAD — export a import DXF (2026-11-02, bloky „ROZVADĚČ — VÝMĚNA S CAD")
 
 Zadání uživatele: technici kreslí ve Schématech CAD (Elmer), který ukládá
