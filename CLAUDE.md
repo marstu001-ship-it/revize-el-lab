@@ -3544,9 +3544,17 @@ svorky nad sebou). Jen DBO (PSC má vlastní přípojnice XN / XPE); obecné i z
   a kontrola počtu svorek (fáze 3) berou počet svorek z `x.pocet || p.pocet`, takže fungují stejně; do PDF
   (seznam přístrojů, popisky) jde jen skutečná šířka.
 
+- **Otočení přímo myší (doplnění 2026-11-12):** v pravém dolním rohu přípojnice je úchyt **↻** (`.rz-rot`, jen na
+  obrazovce — do PDF, tisku ani ducha při tažení nejde). Po najetí myší se ukáže, kurzor nad ním je vlastní (otočení);
+  **klik** přepne podél ↔ kolmo (`rozvPripOrientace`, jedno ZPĚT / Ctrl+Z), totéž **klávesa R** u vybrané přípojnice
+  (i víc naráz). Úchyt se netáhne (`pointerdown` ho přeskočí), **tažení přípojnice** jinam jde jako u jiných přístrojů
+  a natočení se drží (je v datech přístroje). Na telefonu (blok MOBIL) je úchyt **stále vidět a větší** (poloměr
+  5,2 px) a otočení jde i z lišty akcí u výběru.
+
 Test: `testy/test-rozvadec-pripojnice.js` (kresba svisle, 6 šroubů, štítek nahoře, 2,5 → 1 M a přisunutí přístroje,
 ZPĚT, lišta akcí, kontext, vlastnosti, PE štítek, přesah 30 svorek, nastavení kolmo pro nově vložené, svorková lišta,
-starý rozvaděč beze změny). Novinky se nedělaly.
+starý rozvaděč beze změny; úchyt ↻: najetí, klik tam a zpět, klávesa R, Ctrl+Z, tažení do jiné řady zachová
+natočení, telefon 390 px). Novinky se nedělaly.
 
 ### Výměna výkresů s CAD — export a import DXF (2026-11-02, bloky „ROZVADĚČ — VÝMĚNA S CAD")
 

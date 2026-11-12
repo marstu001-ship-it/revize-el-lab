@@ -28,7 +28,7 @@ async function otevri(b, url) {
       w: ms => new Promise(r => setTimeout(r, ms)),
       cist: () => DOK_TYPY.rozv.cist(dokForm()),
       naj: o => { let r = null; __rz.rady.forEach(a => a.prvky.forEach(x => { if (x.ozn === o) r = x; })); return r; },
-      pocatek: async () => { await dokNovy('rozv'); rozvSkrinNastavit(rozvKnihPolozka('v-sk-3x12-plast') || rozvKnihPolozka('v-sk-4x24-ocel')); }
+      pocatek: async () => { await dokNovy('rozv'); rozvSkrinNastavit(rozvKnihPolozka('v-sk-3x12-n') || rozvKnihPolozka('v-sk-4x24-ocel')); }
     };
   });
   return { ctx, p };
@@ -139,6 +139,81 @@ async function otevri(b, url) {
   check('výchozí osazení je podél lišty a bez klíče orientace; nastavení je v konfigurátoru', E.vychozi.klic === false && E.maNastaveni === true, JSON.stringify(E.vychozi));
   check('nastavení „kolmo" platí pro nově vložené (1 M, uloženo x.orientace)', E.ulozeno === 'kolmo' && E.nova.orient === 'kolmo' && E.nova.w === 1, JSON.stringify(E.nova));
   check('po návratu nastavení na „podél" nové přípojnice klíč nemají', E.po.klic === false);
+
+  // ↻ úchyt: najetí myší, klik, klávesa R, Ctrl+Z, tažení zachová natočení (skutečnou myší)
+  await p.evaluate(async () => {
+    await __T.pocatek();
+    rozvVlozit('v-fa-1-B10', 0, 0); const n = rozvVlozit('v-x-prip-n', 0, 1); rozvZmena('n', () => rozvPripPocetNastavit(n, 6)); rozvPrecislovat();
+    __rz.vyber = null; __rz.vic = null; rozvPohledVykreslit(); window.__pn = n.uid;
+    document.querySelectorAll('[class*=toast]').forEach(e => e.remove());
+  });
+  await w(200);
+  const uidN = await p.evaluate(() => window.__pn);
+  const kl = (sel) => p.locator(sel).first();
+  const opac = () => p.evaluate(u => getComputedStyle(document.querySelector('.rz-rot[data-rot="' + u + '"]')).opacity, uidN);
+  const stav = () => p.evaluate(u => { const x = rozvNajit(u).x; return { kolmo: rozvPripKolmo(x), w: rozvW(x) }; }, uidN);
+  const stred = async sel => { const b = await kl(sel).boundingBox(); return { x: b.x + b.width / 2, y: b.y + b.height / 2 }; };
+  await p.mouse.move(5, 5); await w(250);
+  const o0 = await opac();
+  const gS = await stred('#rz-svg-ram [data-puid="' + uidN + '"] .cp-pripojnice');
+  await p.mouse.move(gS.x, gS.y); await w(300);
+  const o1 = await opac();
+  check('najetí myší na přípojnici ukáže úchyt ↻ (bez najetí je skrytý)', Number(o0) === 0 && Number(o1) === 1, o0 + ' → ' + o1);
+  const kurzor = await p.evaluate(u => getComputedStyle(document.querySelector('.rz-rot[data-rot="' + u + '"]')).cursor, uidN);
+  check('kurzor nad úchytem je vlastní (otočení)', /^url\(/.test(kurzor), kurzor.slice(0, 30));
+  let hS = await stred('.rz-rot[data-rot="' + uidN + '"] circle');
+  await p.mouse.move(hS.x, hS.y); await p.mouse.down(); await p.mouse.up(); await w(200);
+  const k1 = await stav();
+  check('klik na ↻ přepne přípojnici na kolmo (1 M)', k1.kolmo === true && k1.w === 1, JSON.stringify(k1));
+  const gS2 = await stred('#rz-svg-ram [data-puid="' + uidN + '"] .cp-pripojnice');
+  await p.mouse.move(gS2.x, gS2.y); await w(250);
+  hS = await stred('.rz-rot[data-rot="' + uidN + '"] circle');
+  await p.mouse.click(hS.x, hS.y); await w(200);
+  const k2 = await stav();
+  check('druhý klik na ↻ vrátí osazení podél lišty', k2.kolmo === false && k2.w === 2.5, JSON.stringify(k2));
+  const vyb = await p.evaluate(u => { rozvVybrat(u, false); return rozvVybrane().join() === u; }, uidN);
+  await p.keyboard.press('r'); await w(150);
+  const k3 = await stav();
+  await p.keyboard.press('r'); await w(150);
+  const k4 = await stav();
+  check('klávesa R u vybrané přípojnice přepíná podél ↔ kolmo', vyb && k3.kolmo === true && k4.kolmo === false, JSON.stringify([k3, k4]));
+  await p.keyboard.press('r'); await w(150);
+  await p.keyboard.press('Control+z'); await w(150);
+  const k5 = await stav();
+  check('Ctrl+Z vrátí otočení', k5.kolmo === false && k5.w === 2.5, JSON.stringify(k5));
+  // tažení přípojnice do jiné řady zachová natočení
+  await p.keyboard.press('r'); await w(150);
+  const pred = await stav();
+  const kam = await p.evaluate(() => { const svg = document.querySelector('#rz-svg-ram svg'), vb = svg.viewBox.baseVal, r = svg.getBoundingClientRect(), k = r.width / vb.width;
+    return { x: r.left + (vb.x + RZG.okraj + 12 * RZG.M) * k, y: r.top + (vb.y + rozvRadaY(1) + RZG.H / 2) * k }; });
+  const z0 = await stred('#rz-svg-ram [data-puid="' + uidN + '"] .cp-pripojnice');
+  await p.mouse.move(z0.x, z0.y); await p.mouse.down();
+  for (let i = 1; i <= 12; i++) { await p.mouse.move(z0.x + (kam.x - z0.x) * i / 12, z0.y + (kam.y - z0.y) * i / 12); await w(20); }
+  await p.mouse.up(); await w(250);
+  const po = await p.evaluate(u => { const q = rozvNajit(u); return { r: q.r, kolmo: rozvPripKolmo(q.x), w: rozvW(q.x) }; }, uidN);
+  check('tažení přípojnice do jiné řady zachová natočení (kolmo, 1 M)', pred.kolmo === true && po.r === 1 && po.kolmo === true && po.w === 1, JSON.stringify(po));
+
+  // telefon 390 px: úchyt ↻ je vidět i bez najetí a větší; otočení jde z lišty akcí
+  const ctxM = await b.newContext({ viewport: { width: 390, height: 800 }, hasTouch: true, isMobile: true });
+  await ctxM.route(/cdnjs\.cloudflare\.com\/.*\/(jspdf\.umd\.min\.js|html2canvas\.min\.js)$/, r => r.fulfill({
+    path: path.join(__dirname, 'knihovny', r.request().url().split('/').pop()), contentType: 'application/javascript', headers: { 'Access-Control-Allow-Origin': '*' } }));
+  await ctxM.addInitScript(() => { try { navigator.serviceWorker.register = () => new Promise(() => {}); } catch (e) {} });
+  const pm = await ctxM.newPage(); const errM = []; pm.on('pageerror', e => errM.push(e.message)); pm.on('dialog', d => d.accept());
+  await pm.goto(URL); await w(1000);
+  const M = await pm.evaluate(async () => {
+    const o = {};
+    await dokNovy('rozv'); await new Promise(r => setTimeout(r, 400)); rozvSkrinNastavit(rozvKnihPolozka('v-sk-3x12-n'));
+    const n = rozvVlozit('v-x-prip-n', 0, 0); rozvZmena('n', () => rozvPripPocetNastavit(n, 6)); rozvPrecislovat();
+    __rz.vyber = null; rozvPohledVykreslit(); await new Promise(r => setTimeout(r, 200));
+    const c = document.querySelector('.rz-rot[data-rot="' + n.uid + '"] circle'), cs = getComputedStyle(c);
+    o.opacity = getComputedStyle(c.parentNode).opacity; o.r = c.getBoundingClientRect().width;
+    rozvVybrat(n.uid, false); await new Promise(r => setTimeout(r, 250));
+    const tl = document.querySelector('#rz-akce [data-action="tdRaPrip"]'); o.tl = !!tl; tl && tl.click();
+    await new Promise(r => setTimeout(r, 150)); o.kolmo = rozvPripKolmo(rozvNajit(n.uid).x);
+    return o;
+  });
+  check('telefon: úchyt ↻ je vidět bez najetí a má aspoň 20 px; otočení jde i z lišty akcí', Number(M.opacity) === 1 && M.r >= 20 && M.tl && M.kolmo === true, JSON.stringify(M));
+  check('telefon: bez chyb v konzoli', errM.length === 0, errM.join(' | '));
 
   // starý rozvaděč bez orientace: data a čelní pohled jako ve předchozí verzi
   const sta = await otevri(b, STARA_URL);

@@ -1571,6 +1571,9 @@ html.dark .rzz-skrin-vlastni .rzz-skrin-stav{color:#f0c27a}
 .rz-vel-mod{padding:.45rem 0;font-size:.85rem;color:var(--muted)}
 .rz-vel .teren-radek{font-size:.84rem}
 .rz-velikost-btn{margin:0 0 .5rem}
+.rz-rot{opacity:0;transition:opacity .12s;cursor:url("data:image/svg+xml;utf8,<svg xmlns='http://www.w3.org/2000/svg' width='24' height='24'><circle cx='12' cy='12' r='11' fill='white' stroke='%232B579A' stroke-width='1.5'/><text x='12' y='17' font-size='15' text-anchor='middle' fill='%232B579A' font-family='sans-serif'>↻</text></svg>") 12 12,pointer}
+.rz-pr:hover .rz-rot,.rz-rot:hover{opacity:1}
+.rz-tazeny .rz-rot,body.rz-tahne .rz-rot{display:none}
 .rz-upoz-pole select{border-color:#e08a00!important;background:#fff4e0}
 html.dark .rz-upoz-pole select{background:#3a2c14}
 .rzz-pozn{font-size:.8rem;color:var(--muted);line-height:1.4}
@@ -2822,6 +2825,12 @@ html.dark .rz-imp-chyby{background:#3a1f1c;border-color:#6b2c25}
   .rz-akce-form .rza-fl{flex:0 1 auto;flex-direction:row;align-items:center;gap:.2rem}
   .rz-akce-form .rza-fl select{width:auto}
   .rz-akce-form .rza-b{flex:0 0 auto}
+}
+/* Přípojnice: úchyt otočení ↻ je na telefonu vidět stále a větší (nejde najet myší) */
+@media (max-width:600px), (pointer:coarse) and (max-height:500px){
+  .rz-rot{opacity:1}
+  .rz-rot circle{r:5.2px}
+  .rz-rot text{font-size:7px}
 }
 /* ═══ /MOBIL ═══ */
 </style>
@@ -33416,6 +33425,12 @@ function rozvPrvekDinSvg(d, x, y, o) {
   }
   if (o.kolize) h += '<rect class="rz-kolize" x="' + rozvZaokr(x + 0.3) + '" y="' + y + '" width="' + rozvZaokr(w - 0.6) + '" height="' + H + '" fill="none" stroke="#c0392b" stroke-width="1.6"/>';
   if (vyb) h += '<rect x="' + rozvZaokr(x - 0.4) + '" y="' + (y - 0.7) + '" width="' + rozvZaokr(w + 0.8) + '" height="' + (H + 1.4) + '" rx="1.6" fill="none" stroke="#2B579A" stroke-width="1.3"/>';
+  if (!o.tisk && !o.duch && rozvPripJe(d)) {   // úchyt otočení ↻ (podél ↔ kolmo na lištu) v pravém dolním rohu; ukáže se po najetí myší
+    var rx = rozvZaokr(x + w - 3.2), ry = rozvZaokr(y + H - 3.2);
+    h += '<g class="rz-rot" data-rot="' + esc(d.uid) + '"><title>Otočit přípojnici ' + (rozvPripKolmo(d) ? 'podél lišty' : 'kolmo na lištu') + ' (klávesa R)</title>' +
+      '<circle cx="' + rx + '" cy="' + ry + '" r="2.8" fill="#fff" stroke="#2B579A" stroke-width="0.5"/>' +
+      '<text x="' + rx + '" y="' + rozvZaokr(y + H - 2.2) + '" font-size="3.8" text-anchor="middle" fill="#2B579A" font-weight="700">↻</text></g>';
+  }
   if (!o.tisk && d.upoz && d.upoz.length) h += '<circle class="rz-upoz" cx="' + rozvZaokr(x + w - 2.6) + '" cy="' + (y + 2.6) + '" r="2.2" fill="#e08a00"/>' +
     '<text x="' + rozvZaokr(x + w - 2.6) + '" y="' + (y + 3.75) + '" font-size="3.2" font-weight="700" text-anchor="middle" fill="#fff">!</text>';
   return h + '</g>';
@@ -35823,6 +35838,7 @@ document.addEventListener('pointerdown', function (e) {
     return;
   }
   var mod = e.ctrlKey || e.metaKey || e.shiftKey;
+  if (t.closest('.rz-rot')) return;   // úchyt otočení přípojnice se netahá
   var pr = t.closest('#rz-pohled [data-puid]');
   if (pr) {
     if (!mod) __rzTah = { druh: 'prvek', puid: pr.getAttribute('data-puid'), x0: e.clientX, y0: e.clientY, akt: false };
@@ -37251,6 +37267,8 @@ document.addEventListener('click', function (e) {
   if (!rozvEditorAktivni()) return;
   if (__rzBezKliku) { __rzBezKliku = false; e.preventDefault(); e.stopPropagation(); return; }
   var t = e.target; if (!t.closest) return;
+  var rot = t.closest('.rz-rot');
+  if (rot) { e.preventDefault(); e.stopPropagation(); var rq = rozvNajit(rot.getAttribute('data-rot')); if (rq) rozvPripOrientace([rq.x.uid], !rozvPripKolmo(rq.x)); return; }   // ↻ u přípojnice
   if (__ktMenu && !t.closest('.kt-menu')) return;   // klepnutí po dlouhém stisku nechá menu být
   if (__rz.dlouhyStisk && Date.now() - __rz.dlouhyStisk < 900 && t.closest('#rz-pohled .rz-svg')) {
     __rz.dlouhyStisk = 0; e.preventDefault(); e.stopPropagation(); return;   // puštění prstu po dlouhém stisku
@@ -37495,6 +37513,9 @@ document.addEventListener('keydown', function (e) {
   var vic = sel.length > 1;
   if (ctrl && pism === 'c') { e.preventDefault(); if (vic) rozvKopirovatVic(sel); else rozvKopirovat(sel[0]); return; }
   if ((k === 'Delete' || k === 'Backspace') && !e.ctrlKey && !e.metaKey) { e.preventDefault(); if (vic) rozvSmazatVic(sel); else rozvSmazat(sel[0]); return; }
+  if (pism === 'r' && !ctrl && !e.altKey && sel.every(function (u) { var q = rozvNajit(u); return q && rozvPripJe(q.x); })) {   // R = otočit přípojnici podél ↔ kolmo
+    e.preventDefault(); var kk = sel.every(function (u) { return rozvPripKolmo(rozvNajit(u).x); }); rozvPripOrientace(sel, !kk); rozvVyberUkazat(); return;
+  }
   if (ctrl && pism === 'd') { e.preventDefault(); if (vic) rozvDuplikovatVic(sel); else rozvDuplikovat(sel[0]); rozvVyberUkazat(); return; }
   var smer = { ArrowLeft: 'l', ArrowRight: 'p', ArrowUp: 'n', ArrowDown: 'd' }[k];
   if (smer && !e.ctrlKey && !e.metaKey && !e.altKey) { e.preventDefault(); if (vic) rozvPosunVic(sel, smer); else rozvPosun(sel[0], smer); rozvVyberUkazat(); }
