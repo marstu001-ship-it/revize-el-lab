@@ -2237,6 +2237,7 @@ html.dark .rzs-souhrn-chyba{color:#f3b0a6}
 .rzs-upoz{font-size:.85rem;color:#8a4b00;margin:.35rem 0}
 html.dark .rzs-upoz{color:#f0b46a}
 .rzs-ok{font-size:.85rem;color:var(--muted);margin:.35rem 0}
+.rzs-wrap{overflow-x:auto;max-width:100%}
 .rzs-tab{width:100%;border-collapse:collapse;font-size:.82rem;margin:.4rem 0}
 .rzs-tab th,.rzs-tab td{border:1px solid var(--border);padding:.15rem .4rem;text-align:left}
 .rzs-tab th{background:var(--bg);font-weight:600}
@@ -46390,7 +46391,7 @@ function rzsTabulkaHtml(M, o) {
     h += '<tr class="rzs-np"><td class="c rzs-sv">' + esc(r.svorka) + '</td><td class="c">' + esc(r.pot) + '</td><td class="c">' + esc(r.ozn) + '</td><td>' + esc(r.vyvod) + '</td><td>' + esc(r.kabel) + '</td><td class="c">' + esc(r.prurez) + '</td>' + (cisla ? '<td></td>' : '') + '</tr>';
   });
   var hl = '<tr><th>Svorka</th><th>Potenciál</th><th>Z přístroje</th><th>Vývod</th><th>Kabel</th><th>Průřez</th>' + (cisla ? '<th>Vodič č.</th>' : '') + '</tr>';
-  return '<table class="rzs-tab ' + (o.edit ? '' : 'rz-pdf-tab ') + '">' + (o.edit ? '' : '<colgroup><col style="width:24mm"><col style="width:18mm"><col style="width:22mm"><col><col style="width:44mm"><col style="width:16mm">' + (cisla ? '<col style="width:16mm">' : '') + '</colgroup>') + hl + h + '</table>';
+  return (o.edit ? '<div class="rzs-wrap">' : '') + '<table class="rzs-tab ' + (o.edit ? '' : 'rz-pdf-tab ') + '">' + (o.edit ? '' : '<colgroup><col style="width:24mm"><col style="width:18mm"><col style="width:22mm"><col><col style="width:44mm"><col style="width:16mm">' + (cisla ? '<col style="width:16mm">' : '') + '</colgroup>') + hl + h + '</table>' + (o.edit ? '</div>' : '');
 }
 // ── oddíl „Svorky" v Dokumentech ────────────────────────────────────────
 function rzsStavHtml(M, rady) {
@@ -46694,7 +46695,7 @@ function rzsChybiVnitrek(L) {
 }
 function rzsChybiPruhHtml() {
   if (!__rz || !__rz.skrin) return '';
-  return '<details class="rz-chybi" id="rz-chybi"' + (__rz.__chybiHtml ? '' : ' hidden') + (__rz.chybiOtevr ? ' open' : '') + '>' + (__rz.__chybiHtml || '') + '</details>';
+  return '<details class="rz-chybi" id="rz-chybi"' + (__rz.chybiOtevr ? ' open' : '') + '>' + (__rz.__chybiHtml || '<summary class="rzs-souhrn">Co ještě chybí: kontroluji zapojení…</summary>') + '</details>';   // výška pruhu se nemění (nic neposkočí)
 }
 function rzsChybiVykreslit() {
   if (!__rz || !__rz.skrin) return;

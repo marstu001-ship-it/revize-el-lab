@@ -158,7 +158,7 @@ const w = ms => new Promise(r => setTimeout(r, ms));
   });
   await w(300);
   const o0 = await p.evaluate(() => {
-    const odd = document.querySelector('[data-oddil="otepleni"]'), ods = Array.from(document.querySelectorAll('#rz-pan-dok [data-oddil]')).map(x => x.getAttribute('data-oddil'));
+    const odd = document.querySelector('[data-oddil="otepleni"]'), ods = Array.from(document.querySelectorAll('#rz-pan-dok [data-oddil]')).map(x => x.getAttribute('data-oddil')).filter(k => k !== 'svorky' && k !== 'chybi');
     return { ods, radky: odd.querySelectorAll('.rot-tab tr[data-uid]').length, chybi: odd.querySelectorAll('.rot-tab tr.rot-chybi').length, vys: odd.querySelector('#rot-vysledek').innerText,
       ceka: odd.querySelectorAll('.dk-ceka, [class*="ceka"]').length, podm: odd.querySelector('.rot-podm').textContent, th: odd.querySelector('.rot-tab th[title]').getAttribute('title'), sum: odd.querySelector('summary').textContent };
   });
