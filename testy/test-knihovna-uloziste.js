@@ -26,8 +26,6 @@
 const T = __dirname + '/';
 const PORT = process.env.PORT || 8901, STARA = process.env.STARA_PORT || 8902;
 const { chromium } = require(T + 'pw');
-const fs = require('fs');
-const path = require('path');
 const res = []; const check = (n, ok, d) => res.push((ok ? '✅' : '❌') + ' ' + n + (d ? ' — ' + d : ''));
 const info = (s) => console.log('ℹ ' + s);
 const w = ms => new Promise(r => setTimeout(r, ms));
@@ -113,9 +111,14 @@ function nastavOznaceni(p, hodnota) {
       const ls = localStorage.getItem('revize_el_dok');
       return { hodilo, zprava, dokZapsatMs: +(t1 - t0).toFixed(1), lsKB: ls ? Math.round(ls.length / 1024) : 0 };
     });
-    info('PŘED OPRAVOU (v9.144, port ' + STARA + '): revize_el_dok po importu 15000 položek = ' + pred.lsKB + ' kB; ' +
+    info('Port ' + STARA + ' (STARA_PORT — „poslední commit"): revize_el_dok po importu 15000 položek = ' + pred.lsKB + ' kB; ' +
       'localStorage.setItem celého DOK ' + (pred.hodilo ? ('HODILO ' + pred.zprava) : 'prošlo') + '; čas pokusu o zápis ' + pred.dokZapsatMs + ' ms');
-    check('PŘED OPRAVOU: velký balík (dokumenty+knihovna) nejde celý do localStorage (QuotaExceededError)', pred.hodilo, pred.zprava);
+    // Nezávisí na tom, zda STARA_PORT je ještě v9.144 (bez téhle opravy) nebo
+    // už opravený kód — platí obecně: JSON celého DOK s 15000 položkami
+    // v knihovně (tolik má v paměti KAŽDÁ verze po importu) do 5MB
+    // localStorage nejde (QuotaExceededError). Přesně proto měl starý
+    // dokZapsat() tenhle zápis tiše selhávat.
+    check('velký balík (dokumenty + knihovna 15000 položek) nejde celý do localStorage (QuotaExceededError)', pred.hodilo, pred.zprava);
     await p.context().close();
   }
 
@@ -293,61 +296,62 @@ function nastavOznaceni(p, hodnota) {
   }
 
   // ═══════════════════════════════════════════════════════════════════
-  // 4) Přechod ze staré podoby (v9.144): knihovna v IDB i v revize_el_dok
-  //    (malá, 300 položek — na staré verzi se obojí vejde) → spuštění
-  //    OPRAVENÉHO kódu na TÉMŽ původu (stejný port, soubory na disku se
-  //    vymění) → knihovna celá, revize_el_dok ji po uložení dál nemá,
-  //    dokumenty i rozvaděče bajtově beze změny.
+  // 4) Přechod ze staré podoby (v9.144): knihovna v IDB i v revize_el_dok.
+  //    NEPOUŽÍVÁ STARA_PORT — ten je „poslední commit" a v regresi po
+  //    tomhle commitu už žádnou starou podobu neslouží. Stará podoba se
+  //    proto na OPRAVENÉM kódu (PORT) přímo zapíše do úložiště tak, jak by
+  //    ji zapsal starý dokZapsat() (celý DOK_IDB, tedy i rozvKnihovna,
+  //    najednou do localStorage i IDB) — totéž, co reálně zůstane
+  //    v prohlížeči uživatele, který aktualizuje z v9.144.
   // ═══════════════════════════════════════════════════════════════════
   {
-    const R = path.dirname(T.replace(/\/$/, ''));
-    const staraDir = T + '_beh/stara';
-    const zaloha = {};
-    ['index.html', 'sw.js', 'manifest.json'].forEach(f => { zaloha[f] = fs.readFileSync(path.join(staraDir, f)); });
-
-    const p = await stranka(b, STARA);   // stará verze (v9.144) na portu STARA
-    await importKnihovnu(p, genCsv(300));
-    await w(300);
+    const p = await stranka(b, PORT);
     const uidRozv = await otevritRozvadec(p);
     await nastavOznaceni(p, 'RH-PRECHOD');
-    await w(1200);
-    const predOtisk = await p.evaluate(async (uid) => {
+    await w(1200);   // dokument uložený normálně, opraveným kódem
+
+    const predOtisk = await p.evaluate(async (n) => {
       await dokNacist();
+      DOK.rozvKnihovna = Array.from({ length: n }, (_, i) => ({
+        id: 'u' + i, druh: 'pristroj', kat: 'FA', vyrobce: 'Výrobce A', rada: 'LTN' + (i % 9),
+        typ: 'TYP-' + i, poly: '1', In: 16, sirka: 1, zdroj: 'import'
+      }));
+      // simulace STARÉHO dokZapsat() (do v9.144): celý DOK_IDB (i knihovna) najednou
+      const t = new Date().toISOString();
+      localStorage.setItem('revize_el_dok', JSON.stringify(Object.assign({ _zapsano: t }, DOK)));
+      if (idb) {
+        const o = { dok_zapsano: t };
+        DOK_IDB.forEach(k => { o['dok_' + k] = DOK[k]; });
+        await idbSetMulti(o);
+      }
       return {
-        knihPocet: (DOK.rozvKnihovna || []).length,
+        knihPocet: DOK.rozvKnihovna.length,
         dokumenty: JSON.stringify(DOK.dokumenty.map(d => d.data)),
         maKnihovnuVls: !!JSON.parse(localStorage.getItem('revize_el_dok') || '{}').rozvKnihovna,
         maKnihovnuVIdb: Array.isArray(await idbGet('dok_rozvKnihovna'))
       };
-    }, uidRozv);
-    check('přechod: stará verze má knihovnu v IDB i v revize_el_dok (výchozí stav)',
+    }, 300);
+    check('přechod: stará podoba úložiště má knihovnu v IDB i v revize_el_dok (výchozí stav)',
       predOtisk.maKnihovnuVls && predOtisk.maKnihovnuVIdb, JSON.stringify(predOtisk));
 
-    // Vyměnit soubory na STEJNÉM originu (port STARA) za OPRAVENÝ kód
-    // a TUTÉŽ stránku (stejný BrowserContext, ne nový) znovu načíst —
-    // localStorage i IndexedDB jsou vázané na origin, ne na soubory na
-    // disku, takže reload teď poběží opravený kód nad starými daty.
-    try {
-      ['index.html', 'sw.js', 'manifest.json'].forEach(f => fs.copyFileSync(path.join(R, f), path.join(staraDir, f)));
-      await p.reload();
-      await w(1200);
+    await p.reload();   // opravený kód znovu nad touhle (starou podobou) storage
+    await w(1200);
 
-      const poOtisk = await p.evaluate(async (uid) => {
-        await dokNacist();
-        return {
-          knihPocet: (DOK.rozvKnihovna || []).length,
-          dokumenty: JSON.stringify(DOK.dokumenty.map(d => d.data)),
-          maKnihovnuVls: !!JSON.parse(localStorage.getItem('revize_el_dok') || '{}').rozvKnihovna
-        };
-      }, uidRozv);
-      check('přechod: po otevření opraveným kódem je knihovna celá (300 položek)', poOtisk.knihPocet === 300, poOtisk.knihPocet);
-      check('přechod: revize_el_dok knihovnu po načtení (přesunu) dál nenese', !poOtisk.maKnihovnuVls);
-      check('přechod: dokumenty a rozvaděče bajtově beze změny', poOtisk.dokumenty === predOtisk.dokumenty);
-      check('bez chyb v konzoli (scénář přechodu)', !p.__err.length, p.__err.join(' | '));
-      await p.context().close();
-    } finally {
-      ['index.html', 'sw.js', 'manifest.json'].forEach(f => fs.writeFileSync(path.join(staraDir, f), zaloha[f]));
-    }
+    const poOtisk = await p.evaluate(async (uid) => {
+      await dokNacist();
+      const x = DOK.dokumenty.find(d => d.uid === uid);
+      return {
+        knihPocet: (DOK.rozvKnihovna || []).length,
+        dokumenty: JSON.stringify(DOK.dokumenty.map(d => d.data)),
+        maKnihovnuVls: !!JSON.parse(localStorage.getItem('revize_el_dok') || '{}').rozvKnihovna,
+        oznaceni: x ? x.data.oznaceni : null
+      };
+    }, uidRozv);
+    check('přechod: po novém čtení je knihovna celá (300 položek)', poOtisk.knihPocet === 300, poOtisk.knihPocet);
+    check('přechod: revize_el_dok knihovnu po načtení dál nenese', !poOtisk.maKnihovnuVls);
+    check('přechod: dokumenty (rozvaděč RH-PRECHOD) bajtově beze změny', poOtisk.dokumenty === predOtisk.dokumenty && poOtisk.oznaceni === 'RH-PRECHOD');
+    check('bez chyb v konzoli (scénář přechodu)', !p.__err.length, p.__err.join(' | '));
+    await p.context().close();
   }
 
   // ═══════════════════════════════════════════════════════════════════
