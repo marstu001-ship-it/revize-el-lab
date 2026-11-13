@@ -9,6 +9,8 @@ T=$(cd "$(dirname "$0")" && pwd); R=$(dirname "$T"); B=$T/_beh
 PRED=96fe576   # v9.110
 # openpyxl potřebují testy sešitů .xlsx — v novém prostředí chybí
 python3 -c "import openpyxl" 2>/dev/null || python3 -m pip install -q openpyxl >/dev/null 2>&1 || echo "⚠ openpyxl se nepodařilo nainstalovat"
+# ezdxf potřebuje test-rozvadec.js pro kontrolu exportu/importu DXF
+python3 -c "import ezdxf" 2>/dev/null || python3 -m pip install -q ezdxf >/dev/null 2>&1 || echo "⚠ ezdxf se nepodařilo nainstalovat"
 mkdir -p "$B"/stara "$B"/predchozi "$B"/zipapp "$B"/cdn "$B"/out
 
 for p in 8901 8902 8903 8904 8920; do fuser -k -s $p/tcp 2>/dev/null; done

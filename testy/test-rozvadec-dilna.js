@@ -145,6 +145,7 @@ const w = ms => new Promise(r => setTimeout(r, ms));
 
   // ── 3. hřeben myší ───────────────────────────────────────────────────
   await p.evaluate(async () => {
+    document.querySelectorAll('.toast').forEach(t => t.remove());   // leftovers z RS2 by jinak zakryly SVG a chytily klik
     await dokNovy('rozv'); rozvSkrinNastavit(rozvKnihPolozka('v-sk-2x24-ocel') || rozvKnihPolozka('v-sk-4x24-ocel'));
     const v = kid => rozvVlozit(kid, 0, __rz.rady[0].prvky.length);
     v('v-qm-3-63'); for (let i = 0; i < 10; i++) v('v-fa-1-B10');
