@@ -9,7 +9,7 @@
 const { chromium } = require('./pw');
 const fs = require('fs'), cp = require('child_process'), path = require('path');
 const DIR = __dirname, R = path.join(DIR, '..'), B = path.join(DIR, '_beh', 'spolecny');
-const OSTRY = 'b03a750';   // v9.143 — ostrý program ze sloučení 2026-11-13 (při každém sloučení posunout)
+const OSTRY = '8c7464d';   // v9.144 — ostrý program ze sloučení 2026-11-13 (při každém sloučení posunout)
 const PORT = 8930, URL = 'http://127.0.0.1:' + PORT;
 const res = []; const check = (n, ok, d) => res.push((ok ? '✅' : '❌') + ' ' + n + (d ? ' — ' + d : ''));
 
