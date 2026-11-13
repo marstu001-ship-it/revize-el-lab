@@ -21284,7 +21284,9 @@ function ulozitJakoOdberatele() {
 }
 
 // ═══ ZÁLOHA / OBNOVENÍ CELÉ DATABÁZE ═══════════════════════════════════
-function buildZalohaBlob(navic) {
+// `automaticky` = volá se z autoZaloha() (zápis na pozadí po každé změně
+// dat) — vynechá dovezenou knihovnu rozvaděčů dat výrobců, viz dokZalohaData.
+function buildZalohaBlob(navic, automaticky) {
   var data = {
     _format: 'revize-el-backup',
     _version: 1,
@@ -21303,7 +21305,7 @@ function buildZalohaBlob(navic) {
     auto_cislovani: STORE.auto_cislovani !== false,
     tisk_migrace_kolonky: STORE.tisk_migrace_kolonky || 0,
     // Tvorba dokumentace — samostatná část, oddělená od zpráv
-    dokumentace: dokZalohaData()
+    dokumentace: dokZalohaData(automaticky)
   };
   if (navic) Object.assign(data, navic);   // např. fotky předloh rozvaděčů — jen na vyžádání
   return new Blob([JSON.stringify(data, null, 2)], { type: 'application/json' });
@@ -21902,7 +21904,7 @@ async function autoZaloha(force) {
     }
     var fh = await backupDirHandle.getFileHandle(jmeno, { create: true });
     var w = await fh.createWritable();
-    await w.write(buildZalohaBlob());
+    await w.write(buildZalohaBlob(null, true));
     await w.close();
     STORE.auto_zaloha_at = new Date().toISOString();
     STORE.auto_zaloha_ver = getAppVer();
@@ -29425,6 +29427,11 @@ document.getElementById('json-input').addEventListener('change', nacistJSON);
 // ═══════════════════════════════════════════════════════════════════════
 var DOK_LS = 'revize_el_dok';
 var DOK_IDB = ['dokumenty', 'vzory', 'vzorySkryte', 'osoby', 'rozvKnihovna', 'rozvOblibene', 'rozvObjekty'];   // v IDB jako 'dok_' + název
+// `rozvKnihovna` (import dat výrobců, ~tisíce položek) NEJDE do „balíku"
+// (`revize_el_dok`, `dokZapsat()`) — viz blok „KNIHOVNA ROZVADĚČŮ — VLASTNÍ
+// ÚLOŽIŠTĚ" o kus níž. DOK_IDB_BALIK je zbytek, co se zapisuje při KAŽDÉM
+// uložení dokumentu.
+var DOK_IDB_BALIK = DOK_IDB.filter(function (k) { return k !== 'rozvKnihovna'; });
 var DOK = dokPrazdny();
 var DOK_TYPY = {
   pouvv: {
@@ -29453,9 +29460,16 @@ function dokNormalizovat(d) {
   return o;
 }
 
+// Jen balík dokumentů (bez knihovny) — pro localStorage i IDB zápis.
+function dokBalikData(d) {
+  var o = {};
+  DOK_IDB_BALIK.forEach(function (k) { o[k] = d[k]; });
+  return o;
+}
+
 function dokIdbSnimek(d, zapsano) {
   var o = { dok_zapsano: zapsano || '' };
-  DOK_IDB.forEach(function (k) { o['dok_' + k] = d[k]; });
+  DOK_IDB_BALIK.forEach(function (k) { o['dok_' + k] = d[k]; });
   return o;
 }
 
@@ -29465,13 +29479,15 @@ function dokUid() { return 'dok' + Date.now().toString(36) + Math.random().toStr
 // localStorage je záloha a jediná cesta na iOS (tam se IDB nepoužívá).
 // Oba zápisy nesou čas (`_zapsano`): když se okno zavřelo dřív, než
 // IndexedDB dopsala, vyhraje novější zápis z localStorage.
+// Knihovna rozvaděčů (`rozvKnihovna`) jede VLASTNÍM úložištěm — viz
+// `dokKnihovnaNacist()` / `dokKnihovnaZapsat()` o kus níž.
 async function dokNacist() {
   var d = null, tIdb = '';
   if (idb) {
     var z = {}, nalez = false;
-    for (var i = 0; i < DOK_IDB.length; i++) {
-      var v = await idbGet('dok_' + DOK_IDB[i]);
-      if (v !== undefined && v !== null) { z[DOK_IDB[i]] = v; nalez = true; }
+    for (var i = 0; i < DOK_IDB_BALIK.length; i++) {
+      var v = await idbGet('dok_' + DOK_IDB_BALIK[i]);
+      if (v !== undefined && v !== null) { z[DOK_IDB_BALIK[i]] = v; nalez = true; }
     }
     if (nalez) { d = z; tIdb = String((await idbGet('dok_zapsano')) || ''); }
   }
@@ -29482,6 +29498,24 @@ async function dokNacist() {
     if (idb) await idbSetMulti(dokIdbSnimek(dokNormalizovat(d), ls._zapsano || ''));
   }
   DOK = dokNormalizovat(d);
+
+  // Knihovna — vlastní úložiště; viz blok „KNIHOVNA ROZVADĚČŮ" o kus níž.
+  // Zpětná kompatibilita se starou podobou (do v9.144), kde byla uvnitř
+  // téhož balíku: je-li v novém úložišti prázdno, zkusí se stará místa.
+  var knih = await dokKnihovnaNacist();
+  if (Array.isArray(knih)) {
+    DOK.rozvKnihovna = knih;
+  } else {
+    var stara = (ls && Array.isArray(ls.rozvKnihovna)) ? ls.rozvKnihovna : null;
+    if (idb && !stara) { var vv = await idbGet('dok_rozvKnihovna'); if (Array.isArray(vv)) stara = vv; }
+    if (stara) { DOK.rozvKnihovna = stara; await dokKnihovnaZapsat(stara); }
+  }
+  // Starý balík v `revize_el_dok` knihovnu dál nést nesmí (byla by to
+  // zbytečně druhá kopie megabajtů dat) — pryč hned, ne až při dalším
+  // uložení dokumentu.
+  if (ls && Array.isArray(ls.rozvKnihovna)) {
+    try { localStorage.setItem(DOK_LS, JSON.stringify(Object.assign({ _zapsano: ls._zapsano || '' }, dokBalikData(DOK)))); } catch (e) {}
+  }
   return DOK;
 }
 
@@ -29490,11 +29524,52 @@ try { if ('BroadcastChannel' in window) __dokKanal = new BroadcastChannel('reviz
 
 async function dokZapsat() {
   var t = new Date().toISOString();
-  try { localStorage.setItem(DOK_LS, JSON.stringify(Object.assign({ _zapsano: t }, DOK))); } catch (e) {}
+  try { localStorage.setItem(DOK_LS, JSON.stringify(Object.assign({ _zapsano: t }, dokBalikData(DOK)))); } catch (e) {}
   if (idb) await idbSetMulti(dokIdbSnimek(DOK, t));
   try { if (__dokKanal) __dokKanal.postMessage({ okno: __oknoId, t: Date.now() }); } catch (e) {}
   // Dokumenty jdou i do automatické zálohy (samostatná část souboru)
   if (!window.__autoZalohaVlastni && typeof autoZalohaNaplanovat === 'function') autoZalohaNaplanovat();
+}
+
+// ── Knihovna rozvaděčů — VLASTNÍ úložiště, mimo balík dokumentů ─────────
+// Do v9.144 byla knihovna (import dat výrobců, tisíce položek, několik MB
+// CSV) součástí balíku DOK a `dokZapsat()` ji při KAŽDÉM uložení dokumentu
+// (automaticky 800 ms po každé změně protokolu či rozvaděče) převáděla na
+// JSON a zapisovala do localStorage i IDB znovu celou — u velké knihovny to
+// zdržovalo každé uložení a u localStorage (limit ~5 MB) hrozilo tiché
+// přetečení (QuotaExceededError v try/catch), tedy ztrátu poslední úpravy
+// dokumentu při zavření okna (ta jde do localStorage synchronně na
+// `pagehide`, IDB to nemusí stihnout). Knihovna má teď vlastní klíč —
+// v IDB `dok_rozvKnihovna` (stejné jméno jako dřív, nic se nestěhuje),
+// bez IDB (iOS) vlastní klíč localStorage — a zapisuje se JEN při změně
+// knihovny (import, vlastní položka, úprava, smazání, ZPĚT), ne při
+// každém uložení dokumentu. Víc oken: tatáž zpráva na kanálu `revize-el-dok`
+// (`{ knihovna: true }`) řekne druhému oknu, že si knihovnu má načíst znovu.
+var DOK_KNIHOVNA_LS = 'revize_el_rz_knihovna';   // jen bez IDB (iOS)
+var __dokKnihovnaBezUloziste = false;   // bez IDB se nevešla ani do localStorage — zůstává jen v paměti pro tuto session
+
+async function dokKnihovnaNacist() {
+  if (idb) {
+    var v = await idbGet('dok_rozvKnihovna');
+    return Array.isArray(v) ? v : null;
+  }
+  try {
+    var s = localStorage.getItem(DOK_KNIHOVNA_LS);
+    if (s) { var p = JSON.parse(s); if (Array.isArray(p)) return p; }
+  } catch (e) {}
+  return null;
+}
+
+async function dokKnihovnaZapsat(seznam, zOkna) {
+  if (idb) { await idbSetMulti({ dok_rozvKnihovna: seznam }); }
+  else {
+    try { localStorage.setItem(DOK_KNIHOVNA_LS, JSON.stringify(seznam)); __dokKnihovnaBezUloziste = false; }
+    catch (e) {
+      __dokKnihovnaBezUloziste = true;
+      if (typeof showToast === 'function') showToast('Knihovna výrobců se do úložiště tohoto prohlížeče nevejde – po zavření okna ji bude potřeba načíst znovu.', { timeout: 10000 });
+    }
+  }
+  if (!zOkna) { try { if (__dokKanal) __dokKanal.postMessage({ okno: __oknoId, t: Date.now(), knihovna: true }); } catch (e) {} }
 }
 
 // Další volné číslo pro typ dokumentu: POUVV-0001, POUVV-0002… (max + 1).
@@ -30692,6 +30767,10 @@ function dokPoNacteniZJinehoOkna() {
   var s = document.getElementById('screen-dok-seznam');
   if (s && s.classList.contains('active')) dokSeznamVykreslit();
   if (typeof dokFormZJinehoOkna === 'function') dokFormZJinehoOkna();
+  // Knihovna je vlastní úložiště — `dokNacist()` výš ji načetla znovu,
+  // ale mezipaměť `rozvKnihovnaVse()` a otevřenou knihovnu v rozvaděči
+  // musí zneplatnit/zneplatní teprve tohle.
+  if (typeof rozvKnihovnaZmenena === 'function') rozvKnihovnaZmenena();
 }
 
 TD_AKCE.tdOtevrit = function () { attemptLeaveForm(function () { dokOtevritTypy(); }); };
@@ -31624,26 +31703,61 @@ TD_AKCE.tdPdfTisk = function () {
 // V souboru zálohy je tvorba dokumentace SAMOSTATNÁ část `dokumentace`
 // (vlastní _format), oddělená od zpráv. Obnova ji vrátí celou; záloha
 // z doby před touto částí ji nemá a dokumenty se pak nechají být.
-function dokZalohaData() {
-  return { _format: 'revize-el-dokumentace', _version: 1,
-           dokumenty: DOK.dokumenty, vzory: DOK.vzory, vzorySkryte: DOK.vzorySkryte, osoby: DOK.osoby,
-           rozvKnihovna: DOK.rozvKnihovna, rozvOblibene: DOK.rozvOblibene, rozvObjekty: DOK.rozvObjekty };
+// `automaticky` = pro automatickou zálohu do složky: knihovna dat výrobců
+// (tisíce položek, import z CSV) se vynechá — jde kdykoli znovu naimportovat
+// a jen by nadouvala soubor, který se píše na pozadí po každé změně dat.
+// Vlastní přístroje a skříně uživatele (zdroj !== 'import') jdou dál.
+// Ruční záloha („Stáhnout zálohu") nese knihovnu celou jako dřív.
+function dokZalohaData(automaticky) {
+  var knih = automaticky ? DOK.rozvKnihovna.filter(function (x) { return x.zdroj !== 'import'; }) : DOK.rozvKnihovna;
+  var o = { _format: 'revize-el-dokumentace', _version: 1,
+            dokumenty: DOK.dokumenty, vzory: DOK.vzory, vzorySkryte: DOK.vzorySkryte, osoby: DOK.osoby,
+            rozvKnihovna: knih, rozvOblibene: DOK.rozvOblibene, rozvObjekty: DOK.rozvObjekty };
+  if (automaticky) o.rozvKnihovnaBezImportu = true;
+  return o;
 }
 
 function dokZalohaRadek(data) {
   var z = data && data.dokumentace;
   if (!z) return '• Tvorba dokumentace: v této záloze není — vaše dokumenty zůstanou\n';
   var n = (z.dokumenty || []).length, ted = DOK.dokumenty.length;
+  var knihText = '';
+  if ((z.rozvKnihovna || []).length) {
+    knihText = ', vlastní přístroje a skříně: ' + z.rozvKnihovna.length + (z.rozvKnihovnaBezImportu ? ' (data výrobců zůstanou)' : '');
+  }
   return '• Dokumenty (tvorba dokumentace): ' + n + ((z.vzory || []).length ? ', vlastní vzory: ' + z.vzory.length : '') +
-    ((z.rozvKnihovna || []).length ? ', vlastní přístroje a skříně: ' + z.rozvKnihovna.length : '') +
+    knihText +
     ((z.rozvObjekty || []).length ? ', objekty rozvaděčů: ' + z.rozvObjekty.length : '') +
     (ted > n ? '   ⚠ teď jich máte ' + ted + ' — přijdete o rozdíl!' : '') + '\n';
 }
 
+// Záloha s `rozvKnihovnaBezImportu` nese jen vlastní položky uživatele —
+// importovaná data výrobců zůstanou, jak byla, a vlastní se sloučí podle id
+// (nic se nemaže, ani položka přidaná po pořízení té zálohy).
+function rozvKnihovnaSloucitVlastni(vlastniZeZalohy) {
+  var mapa = {};
+  DOK.rozvKnihovna.forEach(function (x, i) { mapa[x.id] = i; });
+  (vlastniZeZalohy || []).forEach(function (x) {
+    if (mapa.hasOwnProperty(x.id)) DOK.rozvKnihovna[mapa[x.id]] = x;
+    else DOK.rozvKnihovna.push(x);
+  });
+}
+
 function dokObnovitZeZalohy(z) {
+  // Celá dosavadní knihovna (import i vlastní) — u „bez importu" se nic
+  // z ní nemaže, jen se do ní vloží (upsert podle id) vlastní položky
+  // ze zálohy. Položka přidaná AŽ PO pořízení té zálohy tak přežije.
+  var predKnihovna = DOK.rozvKnihovna.slice();
+  var bezImportu = !!(z && z.rozvKnihovnaBezImportu);
   DOK = dokNormalizovat(z);
+  if (bezImportu) {
+    var vlastniZeZalohy = DOK.rozvKnihovna;   // z normalizace = jen vlastní (import v záloze nebyl)
+    DOK.rozvKnihovna = predKnihovna;
+    rozvKnihovnaSloucitVlastni(vlastniZeZalohy);
+  }
   window.__dokOtevreny = null;
   dokZapsat();
+  if (typeof rozvKnihovnaZmenena === 'function') rozvKnihovnaZmenena();   // zapíše i vykreslí knihovnu
   var d = document.getElementById('screen-dokumentace');
   if (d && d.classList.contains('active')) dokDlazdiceVykreslit();
   var s = document.getElementById('screen-dok-seznam');
@@ -39005,6 +39119,7 @@ TD_AKCE.tdRZZakreslit = async function () {
   var uidy = vys.docs.map(function (d) { delete d._rozvUid; delete d._prepln; delete d._vlastni; delete d._moduly; return d.uid; });
   DOK.dokumenty = vys.docs.concat(DOK.dokumenty);
   await dokZapsat();
+  if (ulozene.length) rozvKnihovnaZmenena();   // vlastní velikosti skříní uložené do knihovny — zneplatnit mezipaměť
   __rzZR = null; closeModal('modal-rz-zrevize');
   if (objId) __dokObjSbalene[objId] = false;
   var hl = document.getElementById('dok-hledat'); if (hl) hl.value = '';
@@ -44609,6 +44724,7 @@ TD_AKCE.tdRImportUlozit = async function () {
 };
 
 function rozvKnihovnaZmenena() {
+  dokKnihovnaZapsat(DOK.rozvKnihovna);   // vlastní úložiště knihovny — viz výš
   rozvSpravaVykreslit();
   if (document.getElementById('rz-seznam')) { rozvFiltryVykreslit(); rozvKnihovnaVykreslit(); }
 }
