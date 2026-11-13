@@ -2026,6 +2026,15 @@ html.dark .r3-bez-hl{color:#f0c27a}
 .rz-dok-tisk2{display:inline-flex;align-items:center;gap:.35rem;min-height:40px;padding:.45rem 1rem;font-family:var(--sans);font-size:.95rem;font-weight:600;
   color:#0f7b5f;background:transparent;border:2px solid #0f7b5f;border-radius:8px;cursor:pointer}
 .rz-dok-tisk2:hover{background:#e8f5ef}
+.rz-nv-sek{margin:.5rem 0;padding:.5rem .6rem;border:1px solid var(--border);border-radius:6px}
+.rz-nv-on b{font-weight:700}
+.rz-nv-txt{display:flex;flex-direction:column;gap:.3rem;margin-top:.3rem}
+.rz-nv-txt textarea,.rz-nv-vl textarea{width:100%;font-family:var(--sans);font-size:.9rem}
+.rz-nv-txt .rz-odv-btn{align-self:flex-start}
+.rz-nv-vl{margin:.4rem 0;padding:.5rem .6rem;border:1px dashed var(--border);border-radius:6px}
+.rz-nv-vl-h{display:flex;flex-wrap:wrap;gap:.3rem;align-items:center;margin-bottom:.3rem}
+.rz-nv-vl-n{flex:1 1 14rem;min-width:0}
+.rz-nv-rcd{color:#555}
 .rz-dok-tisk2:focus-visible{outline:3px solid #7fcfae;outline-offset:2px}
 html.dark .rz-dok-tisk2{color:#7fcfae;border-color:#7fcfae}
 html.dark .rz-dok-tisk2:hover{background:#1f3b30}
@@ -2061,6 +2070,9 @@ html.dark .rz-iso-chyba{background:#3a1e1b!important}
 .rz-ps-n{font-weight:700}
 .rz-ps-o{margin:1mm 0 0 5mm}
 .rz-ps-ul{list-style:none;margin:0;padding:0}
+.rz-nv-hl td{font-weight:700}
+.rz-pdf-tab.rz-nv-tab{font-size:8.5pt}
+.dok-pdf-p.rz-nv-li{margin-left:5mm}
 .rz-ps-podepsano{margin:7mm 0 2mm;font-weight:600}
 .rz-ps-podpis-tab{width:100%;border-collapse:collapse;font-size:9.5pt}
 .rz-ps-podpis-tab td{border:.5pt solid #666;padding:1.5mm 2mm;vertical-align:top;width:33%}
@@ -39257,7 +39269,7 @@ function rozvIpText(e) { return [e.ipz, e.ipo].filter(Boolean).join(' / '); }
 function rozvRokMes(ym, oddel) { var m = /^(\d{4})-(\d{2})/.exec(ym || ''); return m ? (oddel === '/' ? m[1] + '/' + m[2] : +m[2] + '/' + m[1]) : (ym || ''); }
 function rozvVyber(d) {
   var v = d.dokVyber || {};
-  return { cp: v.cp !== false, schema: v.schema !== false, overeni: v.overeni !== false && pscJe(d), tech: v.tech !== false, prohl: v.prohl !== false, ko: v.ko !== false, popisky: v.popisky === true, pohled3d: v.pohled3d === true, soudobost: v.soudobost !== false && rozvSoudMa(d),
+  return { cp: v.cp !== false, schema: v.schema !== false, overeni: v.overeni !== false && pscJe(d), tech: v.tech !== false, prohl: v.prohl !== false, ko: v.ko !== false, popisky: v.popisky === true, navod: v.navod === true, pohled3d: v.pohled3d === true, soudobost: v.soudobost !== false && rozvSoudMa(d),
            otepleni: v.otepleni === '' ? null : v.otepleni };
 }
 
@@ -39390,8 +39402,9 @@ function rozvDokHtml(d) {
     '<div class="rz-dok-vyber"><span class="rz-dok-vyber-t">Do PDF patří:</span>' +
       zatrh('cp', 'čelní pohled a seznam přístrojů') + zatrh('schema', 'schéma zapojení') + zatrh('pohled3d', 'pohled 3D (ilustrační)') + (rozvSoudMa(d) ? zatrh('soudobost', 'výpočet soudobého příkonu') : '') + zatrh('tech', 'technické údaje') + (psc ? zatrh('overeni', 'ověření návrhu') : '') +
       zatrh('prohl', 'prohlášení o shodě') +
-      zatrh('ko', 'protokol o kusovém ověření') + rozvOteplZatrh(d) + (psc ? '' : zatrh('popisky', 'popisky pod přístroje')) + '</div>' +
+      zatrh('ko', 'protokol o kusovém ověření') + rozvOteplZatrh(d) + zatrh('navod', 'návod k obsluze') + (psc ? '' : zatrh('popisky', 'popisky pod přístroje')) + '</div>' +
     '<div class="rz-dok-stitek-r"><button class="rz-dok-tisk2 rz-dok-stitek-btn" data-action="tdRStitek" title="Štítek se tiskne zvlášť, ve skutečné velikosti">🏷 Tisk štítku</button>' +
+      '<button class="rz-dok-tisk2 rz-dok-navod-btn" data-action="tdRNavod" title="Návod k obsluze a údržbě se předává odběrateli zvlášť (A4 na výšku)">📘 Tisk návodu</button>' +
       (psc ? '<span class="dk-nepov">štítek se tiskne zvlášť, ve skutečné velikosti</span></div>'
       : '<button class="rz-dok-tisk2 rz-dok-popisky-btn" data-action="tdRPopisky" title="Pásky s popisky okruhů, které se nalepí pod přístroje — ve skutečné velikosti">🏷 Tisk popisků přístrojů</button>' +
       '<span class="dk-nepov">štítek a popisky se tisknou zvlášť, ve skutečné velikosti</span></div>') +
@@ -39534,6 +39547,7 @@ function rozvDokHtml(d) {
       rzPole(d, odv, 'ko.zkousel.jmeno', 'Jméno') +
       dkPole('ko.zkousel.kval', 'Kvalifikace', ((ko.zkousel || {}).kval) || '', { ph: 'podle NV 194/2022 Sb.' }) +
       dkPole('ko.zkousel.datum', 'Datum zkoušky', ((ko.zkousel || {}).datum) || '', { typ: 'date' }) + '</div></div></div>');
+  h += rzOddil('navod', '📘 Návod k obsluze', rozvNavodOddilHtml(d));
   return h;
 }
 function rozvKoTab8Text(ui) {
@@ -39723,7 +39737,7 @@ document.addEventListener('input', function (e) {
 
 TD_AKCE.tdRDokPdf = async function () {
   var f = dokForm(), d = f ? DOK_TYPY.rozv.cist(f) : {}, v = rozvVyber(d);
-  if (!v.cp && !v.schema && !v.tech && !v.prohl && !v.ko && !v.overeni && !v.pohled3d && !v.soudobost) {
+  if (!v.cp && !v.schema && !v.tech && !v.prohl && !v.ko && !v.overeni && !v.pohled3d && !v.soudobost && !v.navod) {
     if (v.popisky) { await TD_AKCE.tdRPopisky(); return; }
     showToast('Zaškrtněte, co má v PDF být.'); return;
   }
@@ -40177,7 +40191,7 @@ TD_AKCE.tdRStitek = async function () {
 var rozvPdfNavrh = DOK_TYPY.rozv.pdf;
 DOK_TYPY.rozv.pdf = function (d) {
   var v = rozvVyber(d), e = rozvDokEff(d), B = [];
-  if (!v.cp && !v.tech && !v.prohl && !v.ko && !v.schema && !v.soudobost) v.cp = true;
+  if (!v.cp && !v.tech && !v.prohl && !v.ko && !v.schema && !v.soudobost && !v.navod) v.cp = true;
   if (v.cp) B = B.concat(rozvPdfNavrh(d));
   if (v.schema) rozvSchemaListy(d).forEach(function (l) {   // celé listy výkresu (vektorově do PDF)
     B.push({ cela: '<div class="a4 a4-landscape rz-sch-strana' + (l.g.fmt === 'A3' ? ' rz-sch-a3' : '') + '" data-vektor="1">' + l.svg + '</div>' });
@@ -46436,7 +46450,7 @@ var rozv3dPdfPuv = DOK_TYPY.rozv.pdf;
 DOK_TYPY.rozv.pdf = function (d) {
   var B = rozv3dPdfPuv(d), v = rozvVyber(d);
   if (!v.pohled3d) return B;
-  var cp = v.cp || (!v.tech && !v.prohl && !v.ko && !v.schema) ? rozvPdfNavrh(d).length : 0;   // hned za čelní pohled a seznam
+  var cp = v.cp || (!v.tech && !v.prohl && !v.ko && !v.schema && !v.navod) ? rozvPdfNavrh(d).length : 0;   // hned za čelní pohled a seznam
   Array.prototype.splice.apply(B, [cp, 0].concat(rozvPdf3d(d)));
   return B;
 };
@@ -46661,7 +46675,7 @@ var rzsPdfPuv = DOK_TYPY.rozv.pdf;
 DOK_TYPY.rozv.pdf = function (d) {
   var B = rzsPdfPuv(d);
   if (d.svorkovyPlanPdf !== true) return B;
-  var v = rozvVyber(d), e = rozvDokEff(d), cp = v.cp || (!v.tech && !v.prohl && !v.ko && !v.schema && !v.soudobost) ? rozvPdfNavrh(d).length : 0;
+  var v = rozvVyber(d), e = rozvDokEff(d), cp = v.cp || (!v.tech && !v.prohl && !v.ko && !v.schema && !v.soudobost && !v.navod) ? rozvPdfNavrh(d).length : 0;
   Array.prototype.splice.apply(B, [cp, 0].concat(rzsPdf(d, e)));
   return B;
 };
@@ -46941,6 +46955,300 @@ DOK_TYPY.rozv.cist = function (koren) {
   var d = rzsCistPuv.call(this, koren);
   if (d.svorkovyPlanPdf !== true) delete d.svorkovyPlanPdf;   // ukládá se jen zapnuté
   return d;
+};
+
+// ═══ ROZVADĚČ — NÁVOD K OBSLUZE A ÚDRŽBĚ (ČSN EN IEC 61439-1 ed. 3, čl. 6.2.2) ═══
+// Výrobce předává pokyny pro manipulaci, instalaci, obsluhu a údržbu. Návod se skládá z návrhu
+// rozvaděče (DBO i PSC), technik ho jen doplní. Texty jsou vlastními slovy, z norem jen čísla článků;
+// co program nezná (momenty, intervaly mimo tabulku výrobců), se nevymýšlí — „podle návodu výrobce“.
+// Data: d.navod = { vyp: {oddíl: true}, text: {oddíl: '…'}, vlastni: [{nadpis, text}], rcdInterval,
+// revizeLhuta, kontakt } — ukládá se jen vypnuté, přepsané a vyplněné; dokVyber.navod jen zapnuté.
+//
+// Interval zkoušky chrániče tlačítkem TEST podle výrobce (údaje z návodů výrobců dodal uživatel
+// 2026-11-13). Shoda jen podle tabulky (výrobce + začátek řady / typu), nic se neodvozuje z podobnosti.
+var NAVOD_RCD_INTERVAL = [
+  { v: ['oez'], t: ['ofi', 'lfn', 'oli', 'lfi', 'olfi', 'lfe'], m: 6, pozn: 'uvedeno v návodech' },
+  { v: ['eaton', 'moeller'], t: ['pf6', 'pf7', 'pfx'], m: 6, pozn: 'mechanické vyhodnocení' },
+  { v: ['eaton', 'moeller'], t: ['pfl', 'pfl6', 'pfl7'], m: 1, pozn: 'elektronické vyhodnocení' },
+  { v: ['felten'], t: ['f'], m: 1, pozn: 'Felten = Moeller = Eaton' },
+  { v: ['schneider'], t: ['acti9 iid', 'acti9 id', 'iid', 'id', 'multi9'], m: 6, pozn: 'starší Multi9 někdy 1 měsíc, dnes výrobce uvádí 6 měsíců' },
+  { v: ['merlin'], t: ['multi9'], m: 1, pozn: 'původní údaj, dnes nahrazen návodem Acti9 (6 měsíců)' },
+  { v: ['hager'], t: ['cd'], m: 6, pozn: 'uvedeno v instalačních listech' },
+  { v: ['schrack'], t: ['bcf0', 'bcf6'], m: 1, pozn: 'výslovně uvedeno v dokumentaci' }
+];
+function navodNorm(s) { return String(s == null ? '' : s).normalize('NFD').replace(/[̀-ͯ]/g, '').toLowerCase().trim(); }
+function navodShoda(s, tok) { return s.indexOf(tok) === 0 && (s.length === tok.length || !/[a-z]/.test(s.charAt(tok.length))); }
+function navodRcdInterval(p) {
+  p = p || {};
+  var vyr = navodNorm(p.vyrobce), ss = [navodNorm(p.rada), navodNorm(p.typ)].filter(Boolean);
+  if (!vyr || !ss.length) return null;
+  for (var i = 0; i < NAVOD_RCD_INTERVAL.length; i++) {
+    var r = NAVOD_RCD_INTERVAL[i];
+    if (!r.v.some(function (v) { return vyr.indexOf(v) !== -1; })) continue;
+    if (ss.some(function (s) { return r.t.some(function (t) { return navodShoda(s, t); }); })) return { mesice: r.m, poznamka: r.pozn };
+  }
+  return null;
+}
+function navodMesice(n) { return n + ' ' + (n === 1 ? 'měsíc' : n < 5 ? 'měsíce' : 'měsíců'); }
+function navodRcdPrvky(d) {
+  return rozvDokPrvky(d).filter(function (x) { return x.p.kat === 'FI' || x.p.kat === 'FIFA'; }).map(function (x) {
+    var p = x.p, vy = navodNorm(p.vyrobce) === 'obecny' ? '' : String(p.vyrobce || '').trim();
+    return { x: x, nm: x.ozn || (x.p.kat === 'FI' ? 'chránič' : 'RCBO'), popis: [vy, String(p.rada || p.typ || '').trim()].filter(Boolean).join(' '), iv: navodRcdInterval(p) };
+  });
+}
+function navodNav(d) { return (d && d.navod) || {}; }
+function navodRcdText(d) {
+  var nv = navodNav(d), r = navodRcdPrvky(d); if (!r.length) return '';
+  var ruc = String(nv.rcdInterval || '').trim();
+  if (ruc) return 'Chrániče zkoušejte tlačítkem TEST jednou za ' + ruc + '.';
+  var zn = r.filter(function (q) { return q.iv; }), mes = zn.map(function (q) { return q.iv.mesice; });
+  if (!zn.length) return 'Chrániče zkoušejte tlačítkem TEST v intervalu podle návodu výrobce chrániče.';
+  if (zn.length === r.length && mes.every(function (m) { return m === mes[0]; })) return 'Chrániče zkoušejte tlačítkem TEST jednou za ' + navodMesice(mes[0]) + '.';
+  var min = Math.min.apply(null, mes);
+  return 'Chrániče zkoušejte tlačítkem TEST v těchto intervalech:\n' + r.map(function (q) {
+    return '– ' + [q.nm, q.popis].filter(Boolean).join(' ') + ': ' + (q.iv ? navodMesice(q.iv.mesice) : 'podle návodu výrobce');
+  }).join('\n') + '\nNejjednodušší je zkoušet všechny chrániče jednou za ' + navodMesice(min) + ' (nejkratší ' + (zn.length < r.length ? 'ze známých ' : '') + 'interval).';
+}
+function navodRcdNapoveda(d) {   // šedá nápověda ve formuláři (poznámky z tabulky v bublinách)
+  var r = navodRcdPrvky(d); if (!r.length) return '';
+  return 'Interval podle výrobce: ' + r.map(function (q) {
+    var n = [q.nm, q.popis].filter(Boolean).join(' ');
+    return '<span title="' + esc(q.iv ? q.iv.poznamka : 'v tabulce výrobců není — platí návod výrobce chrániče') + '">' + esc(n) + ' ' + (q.iv ? navodMesice(q.iv.mesice) + ' (' + esc(q.iv.poznamka) + ')' : 'podle návodu výrobce') + '</span>';
+  }).join(', ') + '.';
+}
+// Kdo smí rozvaděč obsluhovat — DBO: laik v rozsahu dílu 3; PSC: jen osoba poučená nebo znalá.
+function navodVstupQf(d) { var v = pscJe(d) ? null : rozvDboVstup(d); return v && (v.p.kat === 'QF' || (v.p.kat === 'FU' && rsNh(v.p))) ? v : null; }
+function navodVychozi(d) {
+  var e = rozvDokEff(d), prv = rozvDokPrvky(d), psc = pscJe(d), has = function (k) { return prv.filter(function (x) { return x.p.kat === k; }); };
+  var nm = function (x) { return x.ozn || rozvNazev(x.p); }, T = {};
+  // kdo smí obsluhovat
+  if (psc) T.kdo = 'Výkonový rozvaděč smí obsluhovat jen osoba poučená nebo znalá (ČSN EN 50110-1 ed. 4). Obsluha osobou bez elektrotechnické kvalifikace (laikem) se nepřipouští.\nKryty a zakrytí smí sejmout jen osoba znalá.';
+  else {
+    T.kdo = 'Rozvodnici smí v běžném provozu obsluhovat i osoba bez elektrotechnické kvalifikace (laik): zapínat a vypínat přístroje, po vybavení znovu zapnout jistič nebo chránič a vyměnit pojistkovou vložku, pokud jsou přístupné bez použití nástroje (ČSN EN IEC 61439-3, kap. 1).\nKryty a zakrytí smí sejmout jen osoba znalá.';
+    var q = navodVstupQf(d);
+    if (q) T.kdo += '\nVstupní přístroj ' + nm(q) + ' smí ovládat jen osoba poučená nebo znalá (čl. 8.5.3).';
+  }
+  // přehled
+  T.prehled = 'Tabulka ukazuje, který přístroj ovládá který obvod. Před zásahem do obvodu vypněte příslušný jistič.';
+  // běžná obsluha — jen to, co v rozvaděči je
+  var o = [], vs = rozvDboVstup(d);
+  if (vs) o.push('Celý rozvaděč vypnete ' + (vs.p.kat === 'QM' ? 'hlavním vypínačem' : 'přívodním přístrojem') + ' ' + nm(vs) + '.');
+  if (has('FA').length || has('FIFA').length || has('AFDD').length || has('FI').length)
+    o.push('Když jistič nebo chránič vybaví, nejdřív odpojte nebo vypněte spotřebič, který vybavení pravděpodobně způsobil, a teprve potom přístroj znovu zapněte. Vybavuje-li opakovaně, nezapínejte ho a zavolejte elektrikáře.');
+  var rt = navodRcdText(d); if (rt) o.push(rt);
+  if (has('FIFA').length || has('AFDD').length) o.push('Jističe s chráničem (RCBO) a AFDD se obsluhují jako jistič a chránič.');
+  if (has('SPD').length) o.push('Svodič přepětí (' + has('SPD').map(nm).join(', ') + ') má indikaci stavu; kontrolujte ji podle návodu výrobce. Vadný modul vyměňuje elektrikář.');
+  var fu = has('FU');
+  if (fu.length) o.push('Pojistky: vyměňujte jen za vložku stejné velikosti, charakteristiky a jmenovitého proudu. ' + fu.map(function (x) {
+    var v = rozvVlozkaText(x) || (x.p.In !== '' && x.p.In != null ? rozvCisloText(x.p.In) + ' A' : '—'); return nm(x) + ': ' + v;
+  }).join('; ') + '.');
+  T.obsluha = o.join('\n');
+  // instalace a připojení
+  var sk = d.skrin, i = [], priv = [];
+  if (e.umisteni) i.push('Umístění: ' + e.umisteni + '.');
+  var kr = [e.ipz ? e.ipz + ' (dveře zavřené)' : '', e.ipo ? e.ipo + ' (dveře otevřené)' : ''].filter(Boolean).join(', ');
+  if (kr) i.push('Krytí: ' + kr + '.');
+  var ok = String((d.otepleni || {}).okoli == null ? '' : d.otepleni.okoli).trim();
+  i.push(ok ? 'Teplota okolního vzduchu podle výpočtu oteplení: ' + rozvCisloText(ok) + ' °C.' : 'Průměrná teplota okolního vzduchu za 24 hodin nejvýš 35 °C (čl. 7.1.1 ČSN EN IEC 61439-1).');
+  var sn = sk ? rozvNazev(sk) : '';
+  if (sn || e.montaz) i.push('Skříň: ' + [sn, e.montaz ? 'provedení ' + e.montaz : ''].filter(Boolean).join(', ') + '.');
+  if (d.privodKabel || d.privodPrurez) priv.push('kabel ' + [d.privodKabel, d.privodPrurez].filter(Boolean).join(' '));
+  if (String(d.privodIn || '').trim()) priv.push('jmenovitý proud přívodu ' + rozvJednotka(String(d.privodIn).trim(), 'A'));
+  if (e.icc) priv.push('zkratová odolnost Icc ' + rozvJednotka(e.icc, 'kA'));
+  if (String(d.privodJistic || '').trim()) priv.push('předřazený jistič ' + String(d.privodJistic).trim());
+  if (priv.length) i.push('Přívod: ' + priv.join(', ') + '.');
+  i.push('Utahovací momenty a průřezy svorek: podle návodu výrobce přístrojů a svorek.');
+  if (d.svorkovyPlanPdf === true) i.push('Přiřazení vývodů ke svorkám je ve svorkovém plánu dokumentace.');
+  T.instal = i.join('\n');
+  T.manip = (e.hmotnost ? 'Hmotnost rozvaděče: ' + rozvJednotka(e.hmotnost, 'kg') + '.\n' : '') + 'Skladujte v suchém prostředí. Poškozený rozvaděč neinstalujte a nepoužívejte.';
+  var lh = String(navodNav(d).revizeLhuta || '').trim();
+  T.udrzba = 'Vizuální kontrolu (čistota, nepoškozené kryty a značení, známky přehřátí) může provádět i laik bez snímání krytů.\nKontrolu utažení spojů a jakýkoli zásah pod kryty provádí jen osoba znalá.\n' +
+    (lh ? 'Pravidelné revize se provádějí v intervalu ' + lh + '.' : 'Lhůtu pravidelných revizí určí revizní technik podle ČSN 33 1500 a prostředí rozvaděče.') +
+    '\nPřed každou prací uvnitř rozvaděče ho vypněte a zajistěte proti nechtěnému zapnutí.';
+  T.likvid = 'Vysloužilý rozvaděč a jeho součásti odevzdejte k ekologické likvidaci jako elektroodpad podle platných předpisů.';
+  return T;
+}
+// Oddíly návodu: k, nadpis, text (editovatelný) / tabulka (z návrhu, bez textu)
+var NAVOD_ODDILY = [
+  { k: 'ident', n: 'Identifikace rozvaděče', bezTextu: true },
+  { k: 'kdo', n: 'Kdo smí rozvaděč obsluhovat' },
+  { k: 'prehled', n: 'Přehled přístrojů a obvodů' },
+  { k: 'obsluha', n: 'Běžná obsluha' },
+  { k: 'instal', n: 'Instalace a připojení (pro elektrikáře)' },
+  { k: 'manip', n: 'Manipulace a doprava' },
+  { k: 'udrzba', n: 'Údržba a revize' },
+  { k: 'likvid', n: 'Likvidace' }
+];
+function navodKontakt(d) { var t = rozvProfil(d), n = navodNav(d); return String(n.kontakt || '').trim() || [t.mobil, t.email].filter(Boolean).join(', '); }
+function navodText(d, k, vych) { var t = ((navodNav(d).text) || {})[k]; return t != null && String(t).trim() !== '' ? String(t) : (vych || navodVychozi(d))[k] || ''; }
+function navodOddilyAkt(d) {   // zapnuté oddíly v pořadí, s textem
+  var nv = navodNav(d), V = navodVychozi(d), out = [];
+  NAVOD_ODDILY.forEach(function (o) {
+    if ((nv.vyp || {})[o.k]) return;
+    var t = o.bezTextu ? '' : navodText(d, o.k, V);
+    if (!o.bezTextu && !t.trim() && o.k !== 'prehled') return;   // oddíl bez obsahu (např. bez obsluhy) se nekreslí
+    out.push({ k: o.k, n: o.n, text: t });
+  });
+  (nv.vlastni || []).forEach(function (v, i) { if (v && (String(v.nadpis || '').trim() || String(v.text || '').trim())) out.push({ k: 'v' + i, n: String(v.nadpis || '').trim() || 'Další informace', text: String(v.text || ''), vlastni: true }); });
+  return out;
+}
+function navodOdstavce(text) {
+  return String(text || '').split('\n').filter(function (r) { return r.trim() !== ''; }).map(function (r) {
+    var li = /^–\s/.test(r);
+    return { html: '<p class="dok-pdf-p' + (li ? ' rz-nv-li' : '') + '">' + esc(r) + '</p>' };
+  });
+}
+function navodPrehledTab(d) {
+  var rows = rozvDokPrvky(d).filter(function (x) { return ['X', 'XN', 'XPE', 'PRISL', 'VNEJSI', 'REZ'].indexOf(x.p.kat) === -1; });
+  if (!rows.length) return '<p class="dok-pdf-p">V rozvaděči zatím nejsou žádné přístroje.</p>';
+  var vs = rozvDboVstup(d);
+  return '<table class="rz-pdf-tab rz-nv-tab"><colgroup><col style="width:17mm"><col><col style="width:26mm"><col style="width:52mm"><col style="width:16mm"></colgroup>' +
+    '<tr><th>Označení</th><th>Přístroj</th><th>Hodnota</th><th>Vývod (obvod)</th><th>Fáze</th></tr>' + rows.map(function (x) {
+      var p = x.p, hl = x.p.kat === 'QM' || x.p.kat === 'FI' || x.p.kat === 'FIFA' || (vs && vs.uid === x.uid);
+      var hod = rozvPopiskaHodnota(p) || rozvCelo(p).filter(Boolean).join(' ');
+      var fz = rsTrif(p) ? 'L1 L2 L3' : (x.faze || '—');
+      return '<tr' + (hl ? ' class="rz-nv-hl"' : '') + '><td>' + esc(x.ozn || '—') + '</td><td>' + esc(rozvNazev(p)) + '</td><td>' + esc(hod || '—') + '</td><td>' + esc(String(x.vyvod || '').trim() || '—') + '</td><td>' + esc(fz) + '</td></tr>';
+    }).join('') + '</table>';
+}
+function navodIdentTab(d, e) {
+  var tr = function (l, v) { return v ? '<tr><td class="l">' + l + '</td><td>' + v + '</td></tr>' : ''; };
+  var kont = navodKontakt(d);
+  return '<table class="dok-pdf-tab rz-pdf-tech">' +
+    tr('Označení rozvaděče', esc(d.oznaceni || '')) + tr('Typové označení', esc(e.typ)) + tr('Výrobní číslo', esc(e.vc)) + tr('Datum výroby', esc(rozvRokMes(e.datum))) +
+    tr('Výrobce', dokPdfFirma(e.vyr)) + tr('Kontakt', esc(kont)) +
+    tr('Norma', e.psc ? 'ČSN EN IEC 61439-2 (výkonový rozvaděč)' : 'ČSN EN IEC 61439-3 (rozvodnice pro obsluhu laiky)') +
+    tr('Jmenovité napětí Un', esc(e.un)) + tr('Jmenovitý proud InA', esc(rozvJednotka(e.ina || String(d.privodIn || '').trim().replace(/\s*A$/i, ''), 'A'))) +
+    tr('Krytí', esc(rozvIpText(e))) + tr('Třída ochrany', esc(e.trida)) + '</table>';
+}
+function navodBloky(d) {
+  var e = rozvDokEff(d), zah = ['Návod k obsluze · ' + (d.oznaceni || 'rozvaděč'), 'Výrobní číslo: ' + (e.vc || '……')];
+  var B = [{ strana: 'vyska', zahlavi: zah, html: '<div class="dok-pdf-titul"><div class="t1">Návod k obsluze a údržbě</div>' +
+    '<div class="t2">' + esc(d.oznaceni || 'Rozvaděč') + (e.vc ? ' · výrobní číslo ' + esc(e.vc) : '') + ' · pokyny podle čl. 6.2.2 ČSN EN IEC 61439-1</div></div>' }];
+  navodOddilyAkt(d).forEach(function (o, i) {
+    B.push({ drz: true, html: '<div class="dok-pdf-h2">' + (i + 1) + '. ' + esc(o.n) + '</div>' });
+    if (o.k === 'ident') B.push({ html: navodIdentTab(d, e) });
+    else {
+      if (o.k === 'prehled') { navodOdstavce(o.text).forEach(function (b) { B.push(b); }); B.push({ delit: true, html: navodPrehledTab(d) }); }
+      else { var ps = navodOdstavce(o.text); if (!ps.length) ps = [{ html: '<p class="dok-pdf-p">—</p>' }]; ps.forEach(function (b) { B.push(b); }); }
+    }
+  });
+  return B;
+}
+// do PDF dokumentace za ostatní strany, nebo samostatně (Tisk návodu)
+var navodPdfPuv = DOK_TYPY.rozv.pdf;
+DOK_TYPY.rozv.pdf = function (d) {
+  if (window.__navodSam) return navodBloky(d);
+  var B = navodPdfPuv(d);
+  if (rozvVyber(d).navod) B = B.concat(navodBloky(d));
+  return B;
+};
+TD_AKCE.tdRNavod = async function () {
+  var o = window.__dokOtevreny; if (!o) return;
+  await dokUlozitOtevreny();
+  var e = rozvDokEff(o.data || {});
+  __dokPdf = { x: { uid: o.uid, typ: o.typ, data: o.data }, zpet: 'dok-form', nazev: ((e.vc || (o.data || {}).cislo || 'ROZ') + '_navod').replace(/[\\\/:*?"<>|\s]+/g, '_') + '.pdf' };
+  window.__navodSam = true;
+  try { dokPdfVykreslit(__dokPdf.x); } finally { window.__navodSam = false; }
+  var n = document.querySelectorAll('#dok-pdf-pages .a4').length, info = document.getElementById('dok-pdf-info');
+  if (info) info.textContent = 'Návod k obsluze a údržbě · ' + n + (n === 1 ? ' strana' : n < 5 ? ' strany' : ' stran') + ' na výšku';
+};
+
+// Formulář: oddíl „📘 Návod k obsluze“ v Dokumentech
+function navodVlastniRadek(v) {
+  v = v || {};
+  return '<div class="rz-nv-vl"><div class="rz-nv-vl-h"><input type="text" class="rz-nv-vl-n" value="' + esc(v.nadpis) + '" placeholder="Nadpis oddílu" autocomplete="off">' +
+    '<button type="button" class="dok-mini" data-action="tdRNvNahoru" title="Posunout oddíl nahoru">▲</button><button type="button" class="dok-mini" data-action="tdRNvDolu" title="Posunout oddíl dolů">▼</button>' +
+    '<button type="button" class="dok-mini dok-mini-del" data-action="tdRNvSmazat" title="Smazat tento oddíl">🗑 Smazat oddíl</button></div>' +
+    '<textarea class="rz-nv-vl-t" rows="3" spellcheck="true" lang="cs" placeholder="Text oddílu">' + esc(v.text) + '</textarea></div>';
+}
+function rozvNavodChybi(d) {
+  var e = rozvDokEff(d), ch = [], p = function (ok, t, sel) { if (!ok) ch.push([t, sel]); };
+  p(e.vyr.nazev, 'výrobce', '[data-zrc="vyrobce.nazev"]'); p(navodKontakt(d), 'kontakt', '[data-dk="navod.kontakt"]');
+  p(String(d.oznaceni || '').trim(), 'označení rozvaděče', '[data-dk="oznaceni"]'); p(e.vc, 'výrobní číslo', '[data-dk="vyroba.cislo"]');
+  return ch;
+}
+function rozvNavodChybiHtml(d) {
+  var ch = rozvNavodChybi(d);
+  return ch.length ? 'Chybí: ' + ch.map(function (c) { return '<button type="button" class="rz-odkaz" data-action="tdRDokNaPole" data-cil="' + esc(c[1]) + '">' + esc(c[0]) + '</button>'; }).join(', ') : '✓ Pro návod je vyplněno vše potřebné.';
+}
+function rozvNavodOddilHtml(d) {
+  var nv = navodNav(d), V = navodVychozi(d), t = rozvProfil(d), nap = navodRcdNapoveda(d);
+  var h = '<div class="dk-pozn">Návod předává výrobce rozvaděče odběrateli (ČSN EN IEC 61439-1 ed. 3, čl. 6.2.2). Texty se skládají z návrhu — upravte je, vraťte ↺ výchozí, nebo oddíl vypněte. ' +
+    'Co program nezná (momenty, intervaly), nevymýšlí si. Do PDF dokumentace jde po zaškrtnutí „návod k obsluze“, zvlášť se tiskne tlačítkem „📘 Tisk návodu“ nahoře.</div>' +
+    '<div class="g3">' + dkPole('navod.kontakt', 'Kontakt na výrobce', nv.kontakt || '', { ph: [t.mobil, t.email].filter(Boolean).join(', ') || 'telefon, e-mail' }) +
+    dkPole('navod.revizeLhuta', 'Lhůta pravidelných revizí', nv.revizeLhuta || '', { ph: 'prázdné = určí revizní technik' }) +
+    dkPole('navod.rcdInterval', 'Zkouška chráničů tlačítkem TEST', nv.rcdInterval || '', { ph: 'prázdné = podle výrobce chrániče, např. 1 měsíc' }) + '</div>' +
+    (nap ? '<div class="dk-pozn rz-nv-rcd">' + nap + '</div>' : '') +
+    '<div class="rz-dok-chybi" id="rz-nv-chybi"></div>';
+  NAVOD_ODDILY.forEach(function (o) {
+    var vyp = (nv.vyp || {})[o.k] === true, txt = o.bezTextu ? '' : String(((nv.text || {})[o.k]) || '') || V[o.k] || '';
+    h += '<div class="rz-nv-sek" data-nv="' + o.k + '"><label class="teren-radek rz-zatrh rz-nv-on"><input type="checkbox" data-nv-on="' + o.k + '"' + (vyp ? '' : ' checked') + '> <b>' + esc(o.n) + '</b></label>' +
+      (o.bezTextu ? '<div class="dk-nepov">Tabulka z návrhu a profilu (výrobce, typ, výrobní číslo, napětí, proud, krytí) — upravuje se v ostatních oddílech Dokumentů.</div>'
+        : '<div class="rz-nv-txt"><textarea data-dk="navod.text.' + o.k + '" data-odv="' + esc(V[o.k] || '') + '" rows="' + Math.min(9, Math.max(3, String(txt).split('\n').length + 1)) + '" spellcheck="true" lang="cs">' + esc(txt) + '</textarea>' +
+          '<button type="button" class="rz-odv-btn" data-action="tdRNvVychozi" data-k="' + o.k + '" title="Vrátit výchozí text z návrhu">↺ výchozí</button></div>' +
+          (o.k === 'prehled' ? '<div class="dk-nepov">Pod textem je tabulka všech přístrojů a obvodů z návrhu.</div>' : '')) + '</div>';
+  });
+  h += '<div class="dk-blok-t">Vlastní oddíly</div><div id="rz-nv-vlastni">' + (nv.vlastni || []).map(navodVlastniRadek).join('') + '</div>' +
+    '<button type="button" class="dok-mini" data-action="tdRNvPridat">＋ Přidat oddíl</button>';
+  return h;
+}
+function navodChybiObnov() {
+  var b = document.getElementById('rz-nv-chybi'), f = dokForm(); if (!b || !f) return;
+  var d = DOK_TYPY.rozv.cist(f), ch = rozvNavodChybi(d);
+  b.className = 'rz-dok-chybi' + (ch.length ? ' chybi' : ''); b.innerHTML = rozvNavodChybiHtml(d);
+}
+var navodChybiPuv = rozvDokChybiVykreslit;
+rozvDokChybiVykreslit = function () { navodChybiPuv(); navodChybiObnov(); };
+TD_AKCE.tdRNvVychozi = function (el) {
+  var f = dokForm(), k = el.getAttribute('data-k'), ta = f && f.querySelector('[data-dk="navod.text.' + k + '"]'); if (!ta) return;
+  var pred = ta.value; ta.value = ta.getAttribute('data-odv') || '';
+  ta.dispatchEvent(new Event('input', { bubbles: true })); dokZmena();
+  showToast('Vrácen výchozí text.', { timeout: 7000, actionLabel: '↩ ZPĚT', action: function () { ta.value = pred; dokZmena(); } });
+};
+TD_AKCE.tdRNvPridat = function () {
+  var box = document.getElementById('rz-nv-vlastni'); if (!box) return;
+  var tmp = document.createElement('div'); tmp.innerHTML = navodVlastniRadek({});
+  var r = tmp.firstElementChild; box.appendChild(r); dokZmena();
+  var n = r.querySelector('.rz-nv-vl-n'); if (n) n.focus();
+};
+TD_AKCE.tdRNvNahoru = function (el) { var r = el.closest('.rz-nv-vl'); if (r && r.previousElementSibling) { r.parentNode.insertBefore(r, r.previousElementSibling); dokZmena(); } };
+TD_AKCE.tdRNvDolu = function (el) { var r = el.closest('.rz-nv-vl'); if (r && r.nextElementSibling) { r.parentNode.insertBefore(r.nextElementSibling, r); dokZmena(); } };
+TD_AKCE.tdRNvSmazat = function (el) {
+  var r = el.closest('.rz-nv-vl'); if (!r) return;
+  var rod = r.parentNode, dalsi = r.nextElementSibling;
+  r.remove(); dokZmena();
+  showToast('Oddíl smazán.', { timeout: 8000, actionLabel: '↩ ZPĚT', action: function () { rod.insertBefore(r, dalsi && dalsi.parentNode === rod ? dalsi : null); dokZmena(); } });
+};
+// cist(): vypnuté oddíly, vlastní oddíly a úklid prázdných klíčů — návštěva záložky nic nezapíše
+var navodCistPuv = DOK_TYPY.rozv.cist;
+DOK_TYPY.rozv.cist = function (koren) {
+  var d = navodCistPuv.call(this, koren);
+  var nv = d.navod && typeof d.navod === 'object' ? d.navod : {}, ma = koren.querySelector('[data-nv-on]');
+  var puv = ((window.__dokOtevreny || {}).data || {}).navod || {};
+  if (ma) {
+    nv.vyp = {}; koren.querySelectorAll('[data-nv-on]').forEach(function (c) { if (!c.checked) nv.vyp[c.getAttribute('data-nv-on')] = true; });
+    nv.vlastni = Array.prototype.map.call(koren.querySelectorAll('.rz-nv-vl'), function (r) {
+      return { nadpis: r.querySelector('.rz-nv-vl-n').value.trim(), text: r.querySelector('.rz-nv-vl-t').value.replace(/\s+$/, '') };
+    }).filter(function (v) { return v.nadpis || v.text; });
+  } else { nv.vyp = puv.vyp ? JSON.parse(JSON.stringify(puv.vyp)) : {}; nv.vlastni = puv.vlastni ? JSON.parse(JSON.stringify(puv.vlastni)) : []; }   // záložka se nekreslila
+  if (nv.text) Object.keys(nv.text).forEach(function (k) { if (String(nv.text[k] == null ? '' : nv.text[k]).trim() === '') delete nv.text[k]; });
+  ['text'].forEach(function (k) { if (nv[k] && !Object.keys(nv[k]).length) delete nv[k]; });
+  if (nv.vyp && !Object.keys(nv.vyp).length) delete nv.vyp;
+  if (nv.vlastni && !nv.vlastni.length) delete nv.vlastni;
+  ['kontakt', 'revizeLhuta', 'rcdInterval'].forEach(function (k) { if (nv[k] == null || String(nv[k]).trim() === '') delete nv[k]; });
+  if (Object.keys(nv).length) d.navod = nv; else delete d.navod;
+  if (d.dokVyber && d.dokVyber.navod !== true) { delete d.dokVyber.navod; }
+  return d;
+};
+// Tip v „Co ještě chybí“: návod se nepřikládá
+var navodKontrolaPuv = rzsKontrola;
+rzsKontrola = function () {
+  var L = navodKontrolaPuv();
+  if (!__rz || !__rz.skrin || !rozvDokPrvky(__rz).length) return L;
+  var f = dokForm(), c = f && f.querySelector('[data-dk="dokVyber.navod"]'), o = window.__dokOtevreny || {};
+  var zap = c ? c.checked : !!(((o.data || {}).dokVyber || {}).navod === true);
+  if (!zap) L.push({ u: 'tip', text: 'Návod k obsluze se nepřikládá — zaškrtněte „návod k obsluze“ v záložce Dokumenty (nebo ho vytiskněte zvlášť).', __i: 999 });
+  return L;
 };
 
 // ═══ /TVORBA DOKUMENTACE ═══

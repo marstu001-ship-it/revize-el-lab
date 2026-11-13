@@ -76,10 +76,10 @@ async function priprava(p) {
   check('záložka Dokumenty: jedna hlavní akce „📄 Vygenerovat dokumentaci (PDF)" nahoře, plné tlačítko', z1.dok && !z1.navrh && z1.akce === '📄 Vygenerovat dokumentaci (PDF)' &&
     z1.nahore && z1.plne !== 'rgba(0, 0, 0, 0)', JSON.stringify(z1));
   check('výběr do PDF: čelní pohled a seznam · technické údaje · prohlášení · protokol (vše zaškrtnuté), štítek zvlášť',
-    z1.vyber === '☑čelní pohled a seznam přístrojů|☑schéma zapojení|☐pohled 3D (ilustrační)|☑technické údaje|☑prohlášení o shodě|☑protokol o kusovém ověření|☐ověření oteplení (příloha)|☐popisky pod přístroje' && z1.stitek === '🏷 Tisk štítku' &&
+    z1.vyber === '☑čelní pohled a seznam přístrojů|☑schéma zapojení|☐pohled 3D (ilustrační)|☑technické údaje|☑prohlášení o shodě|☑protokol o kusovém ověření|☐ověření oteplení (příloha)|☐návod k obsluze|☐popisky pod přístroje' && z1.stitek === '🏷 Tisk štítku' &&
     z1.popisky === '🏷 Tisk popisků přístrojů', z1.vyber);
   check('oddíly sbalitelné: Výroba a značení (otevřený) · Technické údaje · Oteplení · Prohlášení · Kusové ověření', z1.oddily ===
-    '✅ Co ještě chybí+|🏭 Výroba a značení+|📋 Technické údaje-|🔌 Svorky — svorkový plán-|🌡 Oteplení — ověření výpočtem (čl. 10.10.4.2)-|📜 Prohlášení o shodě-|🔧 Kusové ověření (čl. 11)-', z1.oddily);
+    '✅ Co ještě chybí+|🏭 Výroba a značení+|📋 Technické údaje-|🔌 Svorky — svorkový plán-|🌡 Oteplení — ověření výpočtem (čl. 10.10.4.2)-|📜 Prohlášení o shodě-|🔧 Kusové ověření (čl. 11)-|📘 Návod k obsluze-', z1.oddily);
   check('na záložce Dokumenty nefungují klávesy návrhu (Delete nesmaže skrytý přístroj)', z1.aktivni === false);
   // značka CE podle konstrukční mřížky přílohy II nařízení 765/2008 (jednotka = R/10, C ve středu 0, E ve středu 17)
   const ceG = await p.evaluate(() => {

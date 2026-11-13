@@ -772,6 +772,15 @@ function vsechnyStavy(zalozky) {
   add('rozvaděč – záložka 3D, šikmo s otevřenými dveřmi', 'Tvorba dokumentace', E(async () => { await __M.rozv(); rozvZalozkaNastavit('3d'); await __M.w(300); }));
   add('rozvaděč – náhled schématu (PDF)', 'Tvorba dokumentace', E(async () => { await __M.rozv(); await TD_AKCE.tdRSchPdf(); await __M.w(300); }));
   add('rozvaděč – výrobní štítek', 'Tvorba dokumentace', E(async () => { await __M.rozv(); await TD_AKCE.tdRStitek(); await __M.w(300); }));
+  // návod k obsluze (2026-11-13): oddíl v Dokumentech se smíšenými intervaly TEST a vlastním oddílem, náhled tisku návodu
+  add('rozvaděč – návod k obsluze (oddíl, smíšené intervaly TEST, vlastní oddíl)', 'Tvorba dokumentace', E(async () => {
+    await __M.rozv(); const r = []; __rz.rady.forEach(ra => ra.prvky.forEach(x => { if (x.p.kat === 'FI' || x.p.kat === 'FIFA') r.push(x); }));
+    r.forEach((x, i) => { x.p.vyrobce = i === 2 ? 'Eaton' : 'OEZ'; x.p.rada = i === 2 ? 'PFL7' : 'LFN'; });
+    rozvZalozkaNastavit('dok'); const o = document.querySelector('[data-oddil="navod"]'); o.open = true;
+    TD_AKCE.tdRNvPridat(); const v = document.querySelector('.rz-nv-vl'); v.querySelector('.rz-nv-vl-n').value = 'Kontakt na servis'; v.querySelector('.rz-nv-vl-t').value = 'Servisní linka: 800 000 000 (vymyšlené).';
+    o.scrollIntoView({ block: 'start' }); await __M.w(150);
+  }));
+  add('rozvaděč – náhled tisku návodu k obsluze (PDF)', 'Tvorba dokumentace', E(async () => { await __M.rozv(); await TD_AKCE.tdRNavod(); await __M.w(300); }));
   // výměna s CAD (2026-11-02): náhled PDF s „Stáhnout pro CAD (DXF)", seznam s „Načíst výkres z CAD", náhled importu
   add('rozvaděč – náhled PDF s tlačítkem Stáhnout pro CAD (DXF)', 'Tvorba dokumentace', E(async () => { await __M.rozv(); await dokNahled(); await __M.w(400); }));
   add('rozvaděč – seznam s Načíst výkres z CAD (DXF)', 'Tvorba dokumentace', E(async () => { dokOtevritSeznam('rozv'); await __M.w(150); }));
