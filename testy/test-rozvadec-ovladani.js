@@ -150,7 +150,7 @@ async function prikaz(p, txt, o) {
     await __T.novy('v-sk-4x24-ocel');
     DOK.rozvKnihovna = [mk('FA', 'LSN 10B/1', { rada: 'LSN', poly: '1', In: 10, char: 'B', pv: 1.4 }), mk('FA', 'LSN 16B/1', { rada: 'LSN', poly: '1', In: 16, char: 'B', pv: 2.1 }),
       mk('FI', 'LFN 40-4-030A', { rada: 'LFN', poly: '4', In: 40, idn: 30, rcdTyp: 'A', sirka: 4, pv: 3.2 })].map(x => rozvPolozkaNorm(x, 'pristroj'));
-    await dokZapsat(); await __T.w(100);
+    rozvKnihovnaZmenena(); await dokZapsat(); await __T.w(100);
     rozvVlastnostiVykreslit();
     const sel = [...document.querySelectorAll('.rzc-rada')].map(s => s.getAttribute('data-kat') + ':' + [...s.options].map(o => o.textContent).join('/'));
     const s = document.querySelector('.rzc-rada[data-kat="FA"]'); s.value = 'Test|LSN'; s.dispatchEvent(new Event('change', { bubbles: true }));
@@ -163,7 +163,7 @@ async function prikaz(p, txt, o) {
   st = await p.evaluate(() => ({ a: __rz.rady[0].prvky.map(x => x.knih + ':' + x.p.pv + ':' + (x.p.vyrobce || '')).join(' '), d: JSON.stringify(__T.cist().rady[0].prvky[0].p) }));
   check('výchozí řada: „3x B10" vloží přístroj z řady (Test LSN 10B/1 s Pv 1,4), náhled řadu jmenuje; co v řadě není (C16), je obecné',
     st.a === 'u-LSN 10B/1:1.4:Test u-LSN 10B/1:1.4:Test u-LSN 10B/1:1.4:Test v-fa-1-C16::obecný' && /3× Jistič 1P B10 · Test LSN 10B\/1 →/.test(n) && !/Test/.test(n2), st.a + ' | ' + n);
-  await p.evaluate(async () => { DOK.rozvKnihovna = []; await dokZapsat(); localStorage.removeItem('revize_el_rz_rada'); });
+  await p.evaluate(async () => { DOK.rozvKnihovna = []; rozvKnihovnaZmenena(); await dokZapsat(); localStorage.removeItem('revize_el_rz_rada'); });
 
   // ── 2. lišta akcí u výběru ────────────────────────────────────────────
   const klikA = async (akce) => { await p.click('#rz-akce [data-action="' + akce + '"]'); await w(80); };
@@ -265,7 +265,7 @@ async function prikaz(p, txt, o) {
     await __T.novy('v-sk-4x24-ocel');
     DOK.rozvKnihovna = [{ id: 'u-lsn10', druh: 'pristroj', kat: 'FA', nazev: 'Jistič LSN 10B/1', vyrobce: 'Test', rada: 'LSN', typ: 'LSN 10B/1', poly: '1', In: 10, char: 'B', sirka: 1, pv: 1.4, zdroj: 'import', overeno: true },
       { id: 'u-lsn16', druh: 'pristroj', kat: 'FA', nazev: 'Jistič LSN 16B/1', vyrobce: 'Test', rada: 'LSN', typ: 'LSN 16B/1', poly: '1', In: 16, char: 'B', sirka: 1, pv: 2.1, zdroj: 'import', overeno: true }].map(x => rozvPolozkaNorm(x, 'pristroj'));
-    await dokZapsat(); await __T.w(100);
+    rozvKnihovnaZmenena(); await dokZapsat(); await __T.w(100);
     return rozvKnihovnaVse().filter(x => x.vyrobce === 'Test').length;
   });
   await prikaz(p, '5x B10'); await p.evaluate(() => { document.activeElement.blur(); const r = __rz.rady[0].prvky; r.forEach((x, i) => { x.vyvod = 'Světla ' + (i + 1); x.kabel = 'CYKY-J'; x.prurez = '3×1,5'; x.faze = ['L1', 'L2', 'L3'][i % 3]; }); r[2].mezera = 1; rozvPohledVykreslit(); });
@@ -301,7 +301,7 @@ async function prikaz(p, txt, o) {
   const vZap = await p.evaluate(() => !!document.getElementById('rz-akce'));
   await p.evaluate(() => { TD_AKCE.tdRNapRezim(); __rz.kRucni = null; rozvPohledVykreslit(); });
   check('lišta: při tažení přístroje se schová a v režimu Zapojení se neukazuje', priTahu && !vZap, JSON.stringify({ priTahu, vZap }));
-  await p.evaluate(async () => { DOK.rozvKnihovna = []; await dokZapsat(); });
+  await p.evaluate(async () => { DOK.rozvKnihovna = []; rozvKnihovnaZmenena(); await dokZapsat(); });
 
   // telefon 360 px: lišta je dole na obrazovce
   {

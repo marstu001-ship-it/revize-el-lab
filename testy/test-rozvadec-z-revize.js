@@ -55,6 +55,7 @@ function priprava() {
   DOK.rozvKnihovna = [P('a1', 'R1', 'FA', '3', 16, 'B'), P('a2', 'R2', 'FA', '3', 16, 'B'), P('a3', 'R1', 'FA', '1', 20, 'B'), P('a4', 'R2', 'FA', '1', 20, 'B'),
     P('a5', 'R1', 'FA', '1', 16, 'B'), P('a6', 'R1', 'FA', '1', 10, 'B'), P('a7', 'R2', 'FA', '1', 10, 'B'),
     P('a8', 'R1', 'FI', '4', 40, '', { idn: 30, rcdTyp: 'A' })];
+  rozvKnihovnaZmenena();
   return dokZapsat();
 }
 
