@@ -201,10 +201,9 @@ async function otevri(b, url, vp) {
     rozvZmena('priv', () => { ['L1', 'L2', 'L3'].forEach((f, i) => { [x1, x2, x3][i].faze = f; }); qm.nadrSvorky = [x1.uid, x2.uid, x3.uid]; qm.nadr = x1.uid; qm.nadrRucne = true; });
     TD_AKCE.tdRSvPrirad(); await w(50);
     rozvZalozkaNastavit('dok'); await w(50);
-    dokForm().querySelector('[data-dk="dokVyber.navod"]').checked = true;   // návod k obsluze se přikládá — jinak by v „Co ještě chybí“ svítil jeho tip
     for (let i = 0; i < 3; i++) { const b = document.querySelector('#rzs-obsah [data-action="tdRSvPridatPrip"]'); if (b) { TD_AKCE.tdRSvPridatPrip(b); await w(50); } }
     rozvZalozkaNastavit('navrh'); await w(400);
-    r.hotovy = rzsKontrola().map(n => n.u + ': ' + n.text);
+    r.hotovy = rzsKontrola().filter(n => n.u !== 'tip').map(n => n.u + ': ' + n.text);
     r.pruh = document.getElementById('rz-chybi').innerText.trim();
     r.pruhOtevreno = document.getElementById('rz-chybi').open;
     r.zel = document.querySelector('#rz-chybi summary').classList.contains('rzs-souhrn-ok');

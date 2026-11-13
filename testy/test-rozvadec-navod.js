@@ -214,6 +214,9 @@ const w = ms => new Promise(r => setTimeout(r, ms));
   await p.evaluate(() => { showScreen('dok-form'); __T.zatrh('[data-dk="dokVyber.navod"]', false); });
   const tip2 = await p.evaluate(() => { const t = rzsKontrola().filter(x => /Návod k obsluze se nepřikládá/.test(x.text)); return { n: t.length, u: t[0] && t[0].u }; });
   check('nezaškrtnutý návod: v „Co ještě chybí“ šedý tip', tip2.n === 1 && tip2.u === 'tip', JSON.stringify(tip2));
+  const tp = await p.evaluate(() => { const L = [{ u: 'tip', text: 'Návod k obsluze se nepřikládá — x', __i: 0 }]; return { s: rzsChybiSouhrnText(L), h: rzsChybiSeznamHtml(L), t: rzsChybiVnitrek(L).indexOf('rzs-souhrn-ok') !== -1, m: rzsChybiSouhrnText(L.concat([{ u: 'upoz', text: 'x' }])) }; });
+  check('samé tipy nebrání zelenému „✓ Všechno zapojené“, tipy jsou pod ním jako „Tipy:“; s upozorněním ✓ není',
+    tp.s === '✓ Všechno zapojené a doplněné' && /Všechno zapojené a doplněné\.<\/div><div class="rzs-tipy-t">Tipy:<\/div><ul class="rzs-seznam rzs-tipy">/.test(tp.h) && tp.t && /^⚠ Co ještě chybí/.test(tp.m), JSON.stringify(tp));
   const ulozeno = await p.evaluate(async () => { await dokUlozitOtevreny(); const o = window.__dokOtevreny.data; return { nav: 'navod' in o, vyb: !!(o.dokVyber && 'navod' in o.dokVyber) }; });
   check('vypnuté zaškrtávátko se neukládá', !ulozeno.nav && !ulozeno.vyb, JSON.stringify(ulozeno));
 

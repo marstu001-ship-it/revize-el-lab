@@ -2071,6 +2071,8 @@ html.dark .rz-iso-chyba{background:#3a1e1b!important}
 .rz-ps-o{margin:1mm 0 0 5mm}
 .rz-ps-ul{list-style:none;margin:0;padding:0}
 .rz-nv-hl td{font-weight:700}
+.rzs-tipy-t{font-size:.78rem;color:#666;margin:.3rem 0 0}
+.rzs-seznam.rzs-tipy{opacity:.85;font-size:.85rem}
 .rz-pdf-tab.rz-nv-tab{font-size:8.5pt}
 .dok-pdf-p.rz-nv-li{margin-left:5mm}
 .rz-ps-podepsano{margin:7mm 0 2mm;font-weight:600}
@@ -46851,21 +46853,23 @@ function rzsKontrola() {
   return out.map(function (n, i) { n.__i = i; return n; }).sort(function (a, b) { return poradi[a.u] - poradi[b.u] || a.__i - b.__i; });
 }
 var RZS_UROVEN = { chyba: ['chyba', 'chyby', 'chyb', '⛔'], upoz: ['upozornění', 'upozornění', 'upozornění', '⚠'], tip: ['tip', 'tipy', 'tipů', '💡'] };
+function rzsJenTipy(L) { return !L.some(function (x) { return x.u !== 'tip'; }); }   // tipy (šedé) zelenému ✓ nebrání
 function rzsChybiSouhrnText(L) {
-  if (!L.length) return '✓ Všechno zapojené a doplněné';
+  if (rzsJenTipy(L)) return '✓ Všechno zapojené a doplněné';
   var p = ['chyba', 'upoz', 'tip'].map(function (k) { var n = L.filter(function (x) { return x.u === k; }).length; return n ? n + ' ' + (k === 'upoz' ? 'upozornění' : dokPocetTvar(n, RZS_UROVEN[k].slice(0, 3)).replace(/^\d+\s*/, '')) : ''; }).filter(Boolean);
   return (L.some(function (x) { return x.u === 'chyba'; }) ? '⛔' : '⚠') + ' Co ještě chybí: ' + p.join(' · ');
 }
 function rzsChybiSeznamHtml(L) {
   if (!L.length) return '<div class="rzs-ok">✓ Všechno zapojené a doplněné.</div>';
-  return '<ul class="rzs-seznam">' + L.map(function (n, i) {
+  var jen = rzsJenTipy(L);
+  return (jen ? '<div class="rzs-ok">✓ Všechno zapojené a doplněné.</div><div class="rzs-tipy-t">Tipy:</div>' : '') + '<ul class="rzs-seznam' + (jen ? ' rzs-tipy' : '') + '">' + L.map(function (n, i) {
     var a = n.akce;
     return '<li class="rzs-n rzs-n-' + n.u + '"><span class="rzs-n-znak" aria-hidden="true">' + RZS_UROVEN[n.u][3] + '</span><button type="button" class="rz-odkaz rzs-n-text" data-action="tdRChybiKlik" data-i="' + i + '" title="Ukázat v čelním pohledu">' + esc(n.text) + '</button>' +
       (a ? ' <button type="button" class="dok-mini rzs-n-akce" data-action="' + esc(a.a) + '"' + (a.f != null ? ' data-f="' + esc(a.f) + '" data-fi="' + esc(a.fi || '') + '" data-n="' + esc(a.n) + '"' : '') + '>' + esc(a.t) + '</button>' : '') + '</li>';
   }).join('') + '</ul>';
 }
 function rzsChybiVnitrek(L) {
-  return '<summary class="rzs-souhrn rzs-souhrn-' + (!L.length ? 'ok' : L.some(function (x) { return x.u === 'chyba'; }) ? 'chyba' : 'upoz') + '">' + esc(rzsChybiSouhrnText(L)) + '</summary>' + rzsChybiSeznamHtml(L);
+  return '<summary class="rzs-souhrn rzs-souhrn-' + (rzsJenTipy(L) ? 'ok' : L.some(function (x) { return x.u === 'chyba'; }) ? 'chyba' : 'upoz') + '">' + esc(rzsChybiSouhrnText(L)) + '</summary>' + rzsChybiSeznamHtml(L);
 }
 function rzsChybiPruhHtml() {
   if (!__rz || !__rz.skrin) return '';
