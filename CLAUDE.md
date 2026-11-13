@@ -217,7 +217,7 @@ Revize EL je single-page PWA (HTML + JS + service worker). Obsah se cachuje
 v prohlížeči přes `sw.js`, takže uživatel nevidí změny, dokud se neinvalidně
 cache.
 
-**Aktuální verze: v9.143 · 2026-11-12**
+**Aktuální verze: v9.144 · 2026-11-13**
 
 ## Povinné při každé změně kódu před commitem
 
@@ -3555,6 +3555,58 @@ Test: `testy/test-rozvadec-pripojnice.js` (kresba svisle, 6 šroubů, štítek n
 ZPĚT, lišta akcí, kontext, vlastnosti, PE štítek, přesah 30 svorek, nastavení kolmo pro nově vložené, svorková lišta,
 starý rozvaděč beze změny; úchyt ↻: najetí, klik tam a zpět, klávesa R, Ctrl+Z, tažení do jiné řady zachová
 natočení, telefon 390 px). Novinky se nedělaly.
+
+### Rozvaděč — návod k obsluze a údržbě (ČSN EN IEC 61439-1 ed. 3, čl. 6.2.2) (2026-11-13, blok „ROZVADĚČ — NÁVOD K OBSLUZE A ÚDRŽBĚ")
+
+Výrobce rozvaděče předává odběrateli pokyny pro manipulaci, instalaci, obsluhu
+a údržbu (čl. 6.2.2). Návod se skládá z návrhu rozvaděče (DBO i PSC), technik
+ho jen doplní nebo upraví. **Texty jsou vlastními slovy, z norem jen čísla
+článků; co program nezná (utahovací momenty, intervaly mimo tabulku
+výrobců), se nevymýšlí** — zůstává „podle návodu výrobce".
+
+- **Oddíly** (`NAVOD_ODDILY`): Identifikace rozvaděče (tabulka z profilu
+  a návrhu, bez textu), Kdo smí rozvaděč obsluhovat (laik u DBO v rozsahu
+  dílu 3 — přístroje přístupné bez nástroje; jen poučená/znalá osoba u PSC),
+  Přehled přístrojů a obvodů (text + tabulka ze `rozvDokPrvky`), Běžná
+  obsluha (vybavení jističe/chrániče, pojistky — jen vložka stejné velikosti,
+  SPD indikace, RCBO/AFDD), Instalace a připojení (pro elektrikáře — umístění,
+  krytí, teplota okolí, skříň, přívod), Manipulace a doprava, Údržba a revize,
+  Likvidace. Každý oddíl jde **vypnout** nebo **přepsat** (↺ výchozí vrátí
+  text z návrhu), oddíl bez obsahu (např. žádná obsluha) se nekreslí.
+  **Vlastní oddíly navíc** (nadpis + text, ▲ ▼ 🗑, se ZPĚT).
+- **Interval zkoušky chrániče tlačítkem TEST podle výrobce**
+  (`NAVOD_RCD_INTERVAL` — tabulka uživatele 2026-11-13, shoda jen podle
+  výrobce + začátku řady/typu, **nic se neodvozuje z podobnosti ani
+  nedoplňuje z hlavy**): stejný interval u všech chráničů → jedna věta;
+  různé → seznam po přístrojích + „nejjednodušší je zkoušet všechny jednou
+  za nejkratší interval"; chránič mimo tabulku → „podle návodu výrobce
+  chrániče". **Ruční pole „Zkouška chráničů tlačítkem TEST" (`navod.rcdInterval`)
+  přepíše vše** (jedna věta s tím, co technik napsal).
+- **Data (vše volitelné, starý rozvaděč beze změny):** `d.navod = { vyp:
+  {oddíl: true}, text: {oddíl: '…'}, vlastni: [{nadpis, text}], rcdInterval,
+  revizeLhuta, kontakt }` — ukládá se jen vypnuté oddíly, přepsaný text
+  a vyplněná pole; `dokVyber.navod` jen při zaškrtnutí. Prázdné klíče se
+  při čtení formuláře uklidí (`DOK_TYPY.rozv.cist`), návštěva záložky bez
+  zásahu nic nezapíše.
+- **V Dokumentech:** zaškrtávátko „návod k obsluze" vedle ostatních (do
+  souhrnného PDF, výchozí vypnuté), sbalený oddíl **„📘 Návod k obsluze"**
+  s textovými poli a vlastními oddíly, a samostatné tlačítko **„📘 Tisk
+  návodu"** (A4 na výšku, vlastní číslování stran, nezávislé na ostatním
+  PDF dokumentace).
+- **„Co ještě chybí":** nezaškrtnutý návod dostane šedý **tip** (ne
+  upozornění) — nebrání zelenému „✓ Všechno zapojené a doplněné"; samé tipy
+  se ukazují **pod** zeleným ✓ jako oddíl „Tipy:" (`rzsJenTipy`, oprava
+  z 2026-11-13 — dřív by jediný tip (třeba zrovna tenhle) zbarvil celý pruh
+  oranžově a skryl zelenou hlášku).
+- **Beze změny:** PDF rozvaděče bez zaškrtnutého návodu je znak po znaku
+  stejné jako dřív (`v.navod` je jen další podmínka v existujících
+  výhybkách `rozvVyber`, 3D a svorkový plán ho respektují).
+
+Test: `testy/test-rozvadec-navod.js`. **Upraveno:** `test-rozvadec-dokumenty.js`,
+`test-rozvadec-psc.js`, `test-rozvadec-svorky.js`, `test-rozvadec-schema.js`
+(seznam zaškrtávátek v Dokumentech má navíc „návod k obsluze"), `test-mobil.js`
+(stavy „rozvaděč – návod k obsluze…" a „…náhled tisku návodu k obsluze (PDF)").
+Karta v Novinkách se nedělala.
 
 ### Výměna výkresů s CAD — export a import DXF (2026-11-02, bloky „ROZVADĚČ — VÝMĚNA S CAD")
 
