@@ -1254,10 +1254,32 @@ a prohlášení (hlavička + `skrin` + `p`). `data.model = 1`.
   šířky jsou běžné modulové a neověřené.** Žádná data výrobců (repozitář je
   veřejný).
 - **Položky uživatele** v `DOK.rozvKnihovna`, oblíbené (hvězdička) v
-  `DOK.rozvOblibene` — obojí v úložišti tvorby dokumentace (`DOK_IDB`)
-  a v záloze (`dokZalohaData`). Oblíbené jdou v seznamu nahoru a do
-  rychlého přidání; **rychlé přidání** = `ROZV_NEJCASTEJSI` (B10 1P, B16 1P,
+  `DOK.rozvOblibene`. Oblíbené jdou v seznamu nahoru a do rychlého
+  přidání; **rychlé přidání** = `ROZV_NEJCASTEJSI` (B10 1P, B16 1P,
   C16 1P, B25 3P, chránič 40 A/30 mA 4P, hlavní vypínač 3P, rezerva 1 M).
+- **Knihovna má VLASTNÍ úložiště, mimo balík dokumentů** (OPRAVA,
+  2026-11-13 — do té doby součást `DOK_IDB`/`revize_el_dok`; s importem
+  v řádu tisíců položek to při KAŽDÉM uložení dokumentu, automaticky
+  800 ms po změně, převádělo na JSON a zapisovalo znovu celé — u
+  localStorage, limit v Chromiu 5 MB, hrozilo tiché přetečení
+  `QuotaExceededError` a tím ztráta poslední úpravy při zavření okna,
+  protože ta jde do localStorage SYNCHRONNĚ na `pagehide` a IndexedDB to
+  nemusí stihnout). `dok_rozvKnihovna` v IndexedDB (stejný klíč, nic se
+  nestěhuje), bez IndexedDB (iOS) `revize_el_rz_knihovna` v localStorage.
+  Zapisuje **jen** `dokKnihovnaZapsat()`, volaná z `rozvKnihovnaZmenena()`
+  — tedy jen při SKUTEČNÉ změně knihovny (import, vlastní položka,
+  úprava, smazání, ZPĚT), nikdy z `dokZapsat()`. **Každé místo, které
+  `DOK.rozvKnihovna` mění, musí po změně zavolat `rozvKnihovnaZmenena()`**
+  — jinak se změna nezapíše (a mezipaměť `rozvKnihovnaVse()` níž zůstane
+  stará). `rozvKnihovnaVse()` má mezipaměť (zneplatní ji právě
+  `rozvKnihovnaZmenena()`) a předpočítává vyhledávací text bez háčků
+  (`_h`), ať se filtr nepočítá znovu při každém znaku. Přechod ze staré
+  podoby je v `dokNacist()`, jednorázově. Ruční záloha nese knihovnu
+  celou, automatická (do složky) jen vlastní položky (`dokZalohaData`,
+  `rozvKnihovnaBezImportu: true`) — import lze zopakovat kdykoli; obnova
+  takové zálohy importovanou knihovnu nikdy nesmaže, vlastní položky
+  sloučí podle id (`rozvKnihovnaSloucitVlastni`). Test:
+  `testy/test-knihovna-uloziste.js` (syntetická knihovna 15 000 položek).
 - **Informační pruh nahoře v knihovně** (pokyn uživatele 2026-10-19,
   `ROZV_INFO_KNIHOVNA`, `rozvInfoKnihovnaHtml`) — v editoru nad kartami
   Přístroje/Skříně i ve správě knihovny na seznamu, text doslova:
