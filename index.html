@@ -32187,8 +32187,26 @@ var ROZV_NEJCASTEJSI = [
   ['v-fi-4-40-30-A', 'Chránič 40 A/30 mA 4P'], ['v-qm-3-63', 'Hl. vypínač 3P'], ['v-rez-1', 'Rezerva 1 M']
 ];
 
+// Mezipaměť — s importovanou knihovnou (tisíce položek) by se jinak
+// `.map(rozvPolozkaNorm)` přes celou knihovnu opakovalo při každém
+// překreslení i každém stisku klávesy ve filtru. Platí, dokud se nezmění
+// `DOK.rozvKnihovna` (jiná REFERENCE pole — proto každá mutace v místě musí
+// projít přes `rozvKnihovnaZmenena()`, která mezipaměť zneplatní) nebo se
+// nepřepne DBO/PSC. Zároveň se tu jednou pro každou položku předpočítá
+// vyhledávací text (`_h`) bez háčků — jinak by ho `rozvFiltrovat()` počítal
+// znovu při každém znaku napsaném do hledání.
+var __rozvKnihovnaVseCache = null;
 function rozvKnihovnaVse() {
-  return rozvVestavene().concat(rozvKnihPsc() ? pscVestavene() : [], (DOK.rozvKnihovna || []).map(function (x) { return rozvPolozkaNorm(x); }));
+  var psc = rozvKnihPsc();
+  if (__rozvKnihovnaVseCache && __rozvKnihovnaVseCache.psc === psc && __rozvKnihovnaVseCache.zdroj === DOK.rozvKnihovna) {
+    return __rozvKnihovnaVseCache.vse;
+  }
+  var vse = rozvVestavene().concat(psc ? pscVestavene() : [], (DOK.rozvKnihovna || []).map(function (x) { return rozvPolozkaNorm(x); }));
+  vse.forEach(function (it) {
+    it._h = rozvNorm([rozvNazev(it), it.vyrobce, it.rada, it.typ, it.pozn, (rozvKat(it.kat) || {}).nazev, it.kat].join(' '));
+  });
+  __rozvKnihovnaVseCache = { psc: psc, zdroj: DOK.rozvKnihovna, vse: vse };
+  return vse;
 }
 function rozvKnihPolozka(id) {
   var v = rozvKnihovnaVse();
@@ -32261,7 +32279,7 @@ function rozvFiltrovat(vse, f) {
       if (f.material && it.material !== f.material) return false;
     }
     if (!slova.length) return true;
-    var h = rozvNorm([rozvNazev(it), it.vyrobce, it.rada, it.typ, it.pozn, (rozvKat(it.kat) || {}).nazev, it.kat].join(' '));
+    var h = it._h !== undefined ? it._h : rozvNorm([rozvNazev(it), it.vyrobce, it.rada, it.typ, it.pozn, (rozvKat(it.kat) || {}).nazev, it.kat].join(' '));
     return slova.every(function (w) { return h.indexOf(w) !== -1; });
   }).sort(function (a, b) {
     // oblíbené nahoru, jinak pořadí knihovny
@@ -37774,9 +37792,8 @@ function rzcShoda(it, q) {
 function rzcRadyNast() { var o = null; try { o = JSON.parse(localStorage.getItem(RZC_RADA_KLIC) || 'null'); } catch (e) {} return o && typeof o === 'object' ? o : {}; }
 function rzcRady(kat) {   // řady výrobců, které knihovna pro kategorii má
   var m = {};
-  (DOK.rozvKnihovna || []).forEach(function (x) {
-    var it = rozvPolozkaNorm(x);
-    if (it.druh !== 'pristroj' || it.kat !== kat || !it.vyrobce || rozvNorm(it.vyrobce) === 'obecny') return;
+  rozvKnihovnaVse().forEach(function (it) {
+    if (it.zdroj === 'vestaveny' || it.druh !== 'pristroj' || it.kat !== kat || !it.vyrobce || rozvNorm(it.vyrobce) === 'obecny') return;
     var k = it.vyrobce + '|' + (it.rada || ''); m[k] = [it.vyrobce, it.rada].filter(Boolean).join(' ');
   });
   return Object.keys(m).sort(function (a, b) { return m[a].localeCompare(m[b], 'cs'); }).map(function (k) { return [k, m[k]]; });
@@ -37797,8 +37814,8 @@ function rzcPolozka(q) {
   else ob = V.filter(function (it) { return it.id !== 'v-spd-2-31' && rzcShoda(it, q); })[0] || null;
   var it = null, rada = rzcRadyNast()[q.kat];
   if (rada && q.kat !== 'REZ' && q.kat !== 'X') {
-    var sh = (DOK.rozvKnihovna || []).map(function (x) { return rozvPolozkaNorm(x); }).filter(function (c) {
-      return c.vyrobce + '|' + (c.rada || '') === rada && rzcShoda(c, q) && +c.sirka > 0;
+    var sh = rozvKnihovnaVse().filter(function (c) {
+      return c.zdroj !== 'vestaveny' && c.vyrobce + '|' + (c.rada || '') === rada && rzcShoda(c, q) && +c.sirka > 0;
     });
     sh.sort(function (a, b) { return (b.overeno === true) - (a.overeno === true); });
     it = sh[0] || null;
@@ -44285,7 +44302,7 @@ function vektorStrana(pdf, p, v) {
 // ── Knihovna na seznamu rozvaděčů (sbalená) ─────────────────────────────
 function rozvSpravaVykreslit() {
   var box = document.getElementById('rz-sprava'); if (!box) return;
-  var vest = rozvVestavene(), moje = (DOK.rozvKnihovna || []).map(function (x) { return rozvPolozkaNorm(x); });
+  var vest = rozvVestavene(), moje = rozvKnihovnaVse().filter(function (x) { return x.zdroj !== 'vestaveny'; });
   var vidim = rozvSpravaFiltrovat(moje), zobr = Math.min(__rzSF.limit || ROZV_STRANKA, vidim.length);
   var n = function (s, d) { return s.filter(function (x) { return x.druh === d; }).length; };
   box.innerHTML = rozvInfoKnihovnaHtml() + '<div class="dk-pozn">Vestavěno: ' + n(vest, 'pristroj') + ' obecných přístrojů a ' + n(vest, 'skrin') + ' skříní ' +
@@ -44724,6 +44741,7 @@ TD_AKCE.tdRImportUlozit = async function () {
 };
 
 function rozvKnihovnaZmenena() {
+  __rozvKnihovnaVseCache = null;
   dokKnihovnaZapsat(DOK.rozvKnihovna);   // vlastní úložiště knihovny — viz výš
   rozvSpravaVykreslit();
   if (document.getElementById('rz-seznam')) { rozvFiltryVykreslit(); rozvKnihovnaVykreslit(); }
