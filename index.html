@@ -2030,7 +2030,7 @@ html.dark .r3-bez-hl{color:#f0c27a}
 .rz-nv-on b{font-weight:700}
 .rz-nv-txt{display:flex;flex-direction:column;gap:.3rem;margin-top:.3rem}
 .rz-nv-txt textarea,.rz-nv-vl textarea{width:100%;font-family:var(--sans);font-size:.9rem}
-.rz-nv-txt .rz-odv-btn{align-self:flex-start}
+.rz-nv-txt .dok-mini{align-self:flex-start}
 .rz-nv-vl{margin:.4rem 0;padding:.5rem .6rem;border:1px dashed var(--border);border-radius:6px}
 .rz-nv-vl-h{display:flex;flex-wrap:wrap;gap:.3rem;align-items:center;margin-bottom:.3rem}
 .rz-nv-vl-n{flex:1 1 14rem;min-width:0}
@@ -47185,7 +47185,7 @@ function rozvNavodOddilHtml(d) {
     h += '<div class="rz-nv-sek" data-nv="' + o.k + '"><label class="teren-radek rz-zatrh rz-nv-on"><input type="checkbox" data-nv-on="' + o.k + '"' + (vyp ? '' : ' checked') + '> <b>' + esc(o.n) + '</b></label>' +
       (o.bezTextu ? '<div class="dk-nepov">Tabulka z návrhu a profilu (výrobce, typ, výrobní číslo, napětí, proud, krytí) — upravuje se v ostatních oddílech Dokumentů.</div>'
         : '<div class="rz-nv-txt"><textarea data-dk="navod.text.' + o.k + '" data-odv="' + esc(V[o.k] || '') + '" rows="' + Math.min(9, Math.max(3, String(txt).split('\n').length + 1)) + '" spellcheck="true" lang="cs">' + esc(txt) + '</textarea>' +
-          '<button type="button" class="rz-odv-btn" data-action="tdRNvVychozi" data-k="' + o.k + '" title="Vrátit výchozí text z návrhu">↺ výchozí</button></div>' +
+          '<button type="button" class="dok-mini" data-action="tdRNvVychozi" data-k="' + o.k + '" title="Vrátit výchozí text z návrhu">↺ výchozí</button></div>' +
           (o.k === 'prehled' ? '<div class="dk-nepov">Pod textem je tabulka všech přístrojů a obvodů z návrhu.</div>' : '')) + '</div>';
   });
   h += '<div class="dk-blok-t">Vlastní oddíly</div><div id="rz-nv-vlastni">' + (nv.vlastni || []).map(navodVlastniRadek).join('') + '</div>' +
