@@ -217,7 +217,7 @@ Revize EL je single-page PWA (HTML + JS + service worker). Obsah se cachuje
 v prohlížeči přes `sw.js`, takže uživatel nevidí změny, dokud se neinvalidně
 cache.
 
-**Aktuální verze: v9.143 · 2026-11-12**
+**Aktuální verze: v9.144 · 2026-11-13**
 
 ## Povinné při každé změně kódu před commitem
 
@@ -3555,6 +3555,126 @@ Test: `testy/test-rozvadec-pripojnice.js` (kresba svisle, 6 šroubů, štítek n
 ZPĚT, lišta akcí, kontext, vlastnosti, PE štítek, přesah 30 svorek, nastavení kolmo pro nově vložené, svorková lišta,
 starý rozvaděč beze změny; úchyt ↻: najetí, klik tam a zpět, klávesa R, Ctrl+Z, tažení do jiné řady zachová
 natočení, telefon 390 px). Novinky se nedělaly.
+
+### Rozvaděč — návod k obsluze a údržbě (ČSN EN IEC 61439-1 ed. 3, čl. 6.2.2) (2026-11-13, blok „ROZVADĚČ — NÁVOD K OBSLUZE A ÚDRŽBĚ")
+
+Výrobce rozvaděče předává odběrateli pokyny pro manipulaci, instalaci, obsluhu
+a údržbu (čl. 6.2.2). Návod se skládá z návrhu rozvaděče (DBO i PSC), technik
+ho jen doplní nebo upraví. **Texty jsou vlastními slovy, z norem jen čísla
+článků; co program nezná (utahovací momenty, intervaly mimo tabulku
+výrobců), se nevymýšlí** — zůstává „podle návodu výrobce".
+
+- **Oddíly** (`NAVOD_ODDILY`): Identifikace rozvaděče (tabulka z profilu
+  a návrhu, bez textu), Kdo smí rozvaděč obsluhovat (laik u DBO v rozsahu
+  dílu 3 — přístroje přístupné bez nástroje; jen poučená/znalá osoba u PSC),
+  Přehled přístrojů a obvodů (text + tabulka ze `rozvDokPrvky`), Běžná
+  obsluha (vybavení jističe/chrániče, pojistky — jen vložka stejné velikosti,
+  SPD indikace, RCBO/AFDD), Instalace a připojení (pro elektrikáře — umístění,
+  krytí, teplota okolí, skříň, přívod), Manipulace a doprava, Údržba a revize,
+  Likvidace. Každý oddíl jde **vypnout** nebo **přepsat** (↺ výchozí vrátí
+  text z návrhu), oddíl bez obsahu (např. žádná obsluha) se nekreslí.
+  **Vlastní oddíly navíc** (nadpis + text, ▲ ▼ 🗑, se ZPĚT).
+- **Interval zkoušky chrániče tlačítkem TEST podle výrobce**
+  (`NAVOD_RCD_INTERVAL` — tabulka uživatele 2026-11-13, shoda jen podle
+  výrobce + začátku řady/typu, **nic se neodvozuje z podobnosti ani
+  nedoplňuje z hlavy**): stejný interval u všech chráničů → jedna věta;
+  různé → seznam po přístrojích + „nejjednodušší je zkoušet všechny jednou
+  za nejkratší interval"; chránič mimo tabulku → „podle návodu výrobce
+  chrániče". **Ruční pole „Zkouška chráničů tlačítkem TEST" (`navod.rcdInterval`)
+  přepíše vše** (jedna věta s tím, co technik napsal).
+- **Data (vše volitelné, starý rozvaděč beze změny):** `d.navod = { vyp:
+  {oddíl: true}, text: {oddíl: '…'}, vlastni: [{nadpis, text}], rcdInterval,
+  revizeLhuta, kontakt }` — ukládá se jen vypnuté oddíly, přepsaný text
+  a vyplněná pole; `dokVyber.navod` jen při zaškrtnutí. Prázdné klíče se
+  při čtení formuláře uklidí (`DOK_TYPY.rozv.cist`), návštěva záložky bez
+  zásahu nic nezapíše.
+- **V Dokumentech:** zaškrtávátko „návod k obsluze" vedle ostatních (do
+  souhrnného PDF, výchozí vypnuté), sbalený oddíl **„📘 Návod k obsluze"**
+  s textovými poli a vlastními oddíly, a samostatné tlačítko **„📘 Tisk
+  návodu"** (A4 na výšku, vlastní číslování stran, nezávislé na ostatním
+  PDF dokumentace).
+- **„Co ještě chybí":** nezaškrtnutý návod dostane šedý **tip** (ne
+  upozornění) — nebrání zelenému „✓ Všechno zapojené a doplněné"; samé tipy
+  se ukazují **pod** zeleným ✓ jako oddíl „Tipy:" (`rzsJenTipy`, oprava
+  z 2026-11-13 — dřív by jediný tip (třeba zrovna tenhle) zbarvil celý pruh
+  oranžově a skryl zelenou hlášku).
+- **Beze změny:** PDF rozvaděče bez zaškrtnutého návodu je znak po znaku
+  stejné jako dřív (`v.navod` je jen další podmínka v existujících
+  výhybkách `rozvVyber`, 3D a svorkový plán ho respektují).
+
+Test: `testy/test-rozvadec-navod.js`. **Upraveno:** `test-rozvadec-dokumenty.js`,
+`test-rozvadec-psc.js`, `test-rozvadec-svorky.js`, `test-rozvadec-schema.js`
+(seznam zaškrtávátek v Dokumentech má navíc „návod k obsluze"), `test-mobil.js`
+(stavy „rozvaděč – návod k obsluze…" a „…náhled tisku návodu k obsluze (PDF)").
+Karta v Novinkách se nedělala.
+
+### Rozvaděč — víc přívodů (2026-11-13, blok „ROZVADĚČ — VÍC PŘÍVODŮ")
+
+Zadání uživatele: rozvaděč se dvěma (i víc) přívody — dva elektroměry (normální
+sazba + HDO), záložní zdroj, nebo napájení ze dvou nadřazených rozvaděčů. Dosud
+šel zadat jen jeden přívod (pole v hlavičce, uzel `'@privod'`). Jen DBO i PSC.
+
+- **Přívod 1 zůstává beze změny** (pole v hlavičce, uzel `'@privod'`). Id dalšího
+  přívodu je **`'@privod~' + uid`** (vlnovka, ne dvojtečka — dvojtečka by se
+  rozpadla na `uid:strana:pol` v režimu Zapojení, odchylka od znění zadání
+  zdůvodněná technicky). Jeden predikát na obou místech: **`rozvJePrivod(uid)`**
+  (`uid === '@privod'` nebo začíná `'@privod~'`) — desítky míst v kódu (BFS
+  zapojení `rzpSpocti`/`rzpSync`/`rzpAuto`, `rozvDeti`/`rozvZdrojEff`/
+  `rozvNadrazeneAuto`, čelní pohled `rozvNapSvg`/`rzpTrasovac`, hřebeny, soudobost,
+  kontroly) se nezeptala natvrdo na `'@privod'`, ale na tenhle predikát — tím je
+  přívod 1 i další přívody jedna a tatáž logika.
+- **Data (jen po přidání dalšího přívodu):** `d.privody = [{ uid, ozn, kabel,
+  prurez, in, smer: 'shora'|'zespodu', zdrojText, nSpolecne }]`. Klíč zmizí,
+  když se odeberou všechny extra přívody (`DOK_TYPY.rozv.cist`). Starý
+  jednopřívodový rozvaděč se otevře a uloží bajtově stejně — žádný nový klíč,
+  dokud technik nepřidá další přívod.
+- **Hlavička:** pod polem přívodu 1 **„＋ Další přívod"** (`rozvPrivodyHtml`,
+  `rozvPrivodKartaHtml`); karta má stejná pole jako přívod 1 (kabel, průřez, In,
+  shora/zespodu) + **„Napájen z"** jako volný popisný text (ne výběr rozváděče —
+  zjednodušení proti zadání: druhý elektroměr nebo záložní zdroj nejsou
+  rozváděč, který by šlo vybrat ze stromu), **„N sdílené s ostatními přívody"**
+  (výchozí zapnuto) a ▲ ▼ / 🗑 **Odebrat přívod**. Odebrání s napojenými
+  přístroji nebo vodiči se ptá, odpojí vodiče a vrátí napojené přístroje na
+  automatické napájení (přívod 1) — se ZPĚT i Ctrl+Z (`rozvZmena`).
+- **„Napájen z" u přístroje nabízí každý přívod** (`rozvNapajenZHtml`), BFS
+  zapojení (`rzpSpocti`) sije napětí z L1–L3 **každého** přívodu
+  (`rozvPrivodySeznam`), takže přístroj dostane `nadr` na konkrétní přívod podle
+  toho, odkud k němu vede natažený vodič nebo hřeben (`rzpSync`).
+- **Souhrn v liště „Přívod 1: N přístrojů · Přívod 2: M přístrojů"**
+  (`#rz-privod-ukaz`, `rozvPrivodUkazatel`) jen s víc přívody; klik na přívod
+  vybere všechny jím napájené přístroje v pohledu. **Dosah přívodu
+  (`rozvPrivodDosahy` → `rzsPrivodDosah`) je JEDNA funkce pro lištu i pro
+  kontrolu propojení níž** — vlastní BFS z uzlu toho přívodu po natažených
+  i automatických vodičích (`rzpStav().manual.concat(.auto)`), ne strom podle
+  `nadr` (ten by přístroj bez výslovného `nadr`, tedy na automatice, nezapočetl
+  vůbec).
+- **Kontroly (`rzsKontrola`):** **chyba**, když je přístroj dosažitelný ze dvou
+  přívodů najednou (přívody propojené — program ještě neumí přepínače 1-0-2/ATS,
+  nic kolem toho neobcházet), **upozornění** pro přívod, který nenapájí nic, a
+  **tip** (bez čísla článku normy) „označte rozvaděč výstražným štítkem … a před
+  prací vypínejte všechny" u každého vícepřívodového rozvaděče.
+- **Odchylky od zadání (zjednodušení, aby se funkce dala v rozumném rozsahu
+  domyslet a ověřit — vrátit se k nim, až si o to uživatel řekne):**
+  - **Schéma a DXF se nezměnily** — druhý přívod nemá vlastní úsek na výkresu
+    (čárkovaný oddíl, vlastní sběrnici L, pokračování „pokračuje na /…"). Listy
+    schématu dál kreslí jen přívod 1; druhý přívod ve schématu chybí.
+  - **N1/N2 — opravdu oddělené sběrnice N podle `nSpolecne` nejsou.** Pole je
+    uloženo a ukazuje se v kartě, ale živý model zapojení (BFS, kresba, čelní
+    pohled) ho zatím nerozlišuje — N se chová jako dosud (společné).
+  - Svorkový plán, štítek a technické údaje (řádek „Přívody: 2"), fáze (panel
+    ⚖ a Přefázovat), oteplení (vynechání automatického InA s hintem), návod
+    k obsluze (věta o vypnutí všech přívodů) a strom napájení seznamu rozvaděčů
+    (dok Obj Strom, „napájen také z RS2") se **nezměnily** — druhý přívod se
+    tam neprojeví.
+  - 3D pohled druhý přívod nijak neodlišuje.
+
+Test: `testy/test-rozvadec-privody.js` (15 kontrol — byt 3+1 bez druhého
+přívodu beze změny dat a ukazatele, karta a uložení pole, pořadí ▲ ▼, souhrn
+v liště podle skutečného dosahu (ne podle `nadr`), klik vybere napájené
+přístroje, propojení dvou přívodů = chyba a zmizí po odpojení vodiče, odebrání
+s dotazem a ZPĚT/Ctrl+Z, zmizení klíče `privody` po odebrání posledního extra
+přívodu, data revizí bajtově stejná). Karta v Novinkách se nedělala (uživatel
+si o ni řekne sám).
 
 ### Výměna výkresů s CAD — export a import DXF (2026-11-02, bloky „ROZVADĚČ — VÝMĚNA S CAD")
 
