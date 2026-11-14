@@ -98,7 +98,7 @@ const w = ms => new Promise(r => setTimeout(r, ms));
     P({ id: 'u-t-ltn16', kat: 'FA', rada: 'LTN', typ: 'LTN 16B/1', poly: '1', In: 16, char: 'B' });   // bez Pv → řada se nenabízí
     P({ id: 'u-t-lfn40', kat: 'FI', rada: 'LFN', typ: 'LFN 40/4/030/A', poly: '4', In: 40, idn: 30, rcdTyp: 'A', pv: 1.5, sirka: 4 });
     P({ id: 'u-t-asn40', kat: 'QM', rada: 'ASN', typ: 'ASN 40/3', poly: '3', In: 40, pv: 1.1, sirka: 3 });
-    await dokZapsat();
+    rozvKnihovnaZmenena(); await dokZapsat();
     // chránič FI1 je už z řady Test LFN (bez Pv) → předvolba u chráničů
     Object.assign(__T.naj('-FI1').p, { vyrobce: 'Test', rada: 'LFN', typ: 'LFN 40/4/030/A' });
     dokZmena(); rozvZalozkaNastavit('dok'); document.querySelector('[data-oddil="otepleni"]').open = true;
@@ -168,7 +168,7 @@ const w = ms => new Promise(r => setTimeout(r, ms));
     S({ id: 'u-t-sk-212', vyrobce: 'Test', typ: 'RZP-2x12', nazev: 'Rozvodnice 2×12', rady: 2, modulu: 12, material: 'plast', provedeni: 'nástěnná', penc: 30 });
     S({ id: 'u-b-sk-212', vyrobce: 'Výrobce B', typ: 'B-212', nazev: 'Skříň 2×12', rady: 2, modulu: 12, material: 'plast', provedeni: 'zapuštěná', penc: 25 });
     S({ id: 'u-t-sk-bez', vyrobce: 'Test', typ: 'BEZ-PENC', rady: 2, modulu: 12, material: 'plast', provedeni: 'nástěnná' });
-    await dokZapsat();
+    rozvKnihovnaZmenena(); await dokZapsat();
     rozvZalozkaNastavit('dok'); document.querySelector('[data-oddil="otepleni"]').open = true;
     return { skrin: JSON.stringify(__rz.skrin), rady: JSON.stringify(__rz.rady), rad: __rz.skrin.rady, mod: __rz.skrin.modulu, penc: __rz.skrin.penc,
       lista: !document.querySelector('.rot-pvk-lista').hidden };

@@ -1650,9 +1650,10 @@ function pomocnik() {
     rozvSmazat(__rz.rady[0].prvky[0].uid); r.poSmazani = await st();
     // knihovna skříní: značka ≈ % u skříně s Penc
     DOK.rozvKnihovna.push(rozvPolozkaNorm({ nazev: 'Testovací skříň s Penc', rady: 3, modulu: 12, penc: 20 }, 'skrin'));
+    rozvKnihovnaZmenena();
     document.querySelector('.rz-tab[data-tab="skrine"]').click(); await __T.w(200);
     r.knih = Array.from(document.querySelectorAll('.rz-otepl-knih')).map(e => e.textContent).join();
-    DOK.rozvKnihovna.pop(); document.querySelector('.rz-tab[data-tab="pristroje"]').click();
+    DOK.rozvKnihovna.pop(); rozvKnihovnaZmenena(); document.querySelector('.rz-tab[data-tab="pristroje"]').click();
     window.__dokOtevreny.data.dokVyber = { cp: true, schema: false, tech: false, prohl: false, ko: false };
     await dokNahled(); await __T.w(500);
     r.pdf = /Oteplení ≈|rz-otepl/.test(document.getElementById('dok-pdf-pages').innerHTML);
@@ -2287,6 +2288,7 @@ function pomocnik() {
       await dokNacist();
       DOK.rozvKnihovna = (DOK.rozvKnihovna || []).filter(x => x.id !== 'u-test-ltn16');
       DOK.rozvKnihovna.push(rozvPolozkaNorm({ id: 'u-test-ltn16', druh: 'pristroj', kat: 'FA', nazev: 'Jistič LTN 16B/1 (test)', vyrobce: 'Výrobce A', rada: 'LTN', typ: 'LTN-16B-1', poly: '1', In: 16, char: 'B', sirka: 1, zdroj: 'import' }, 'pristroj'));
+      rozvKnihovnaZmenena();
       await dokZapsat(); dokOtevritSeznam('rozv'); await __T.w(200);
     });
     const tl = await p.evaluate(() => { const b = [...document.querySelectorAll('#dok-typy button')]; const c = b.filter(x => /Načíst výkres z CAD \(DXF\)/.test(x.textContent))[0];
