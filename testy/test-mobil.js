@@ -633,6 +633,29 @@ function vsechnyStavy(zalozky) {
     (document.querySelector('#rz-vlastnosti .rz-vodic-pole') || document.getElementById('rz-vlastnosti')).scrollIntoView({ block: 'start' }); await __M.w(100);
     setTimeout(() => { if (__rz) { __rz.napRezim = false; __rz.napVodic = null; __rz.vodice = (__rz.vodice || []).filter(q => q.uid !== 'wm2'); } }, 3000);
   }));
+  // víc přívodů (oprava 2026-11-16): tři kabely v liště i v Zapojení, popisky bez překryvu
+  add('rozvaděč – Zapojení, tři přívody', 'Tvorba dokumentace', E(async () => {
+    await __M.rozv(); document.getElementById('toast-wrap').innerHTML = '';
+    TD_AKCE.tdRPrivodPridat(); await __M.w(30);
+    TD_AKCE.tdRPrivodPridat(); await __M.w(30);
+    const karty = document.querySelectorAll('[data-priv-i]');
+    karty.forEach((k, i) => {
+      const oz = k.querySelector('[data-priv=ozn]'); oz.value = i === 0 ? 'Přívod 2 – HDO' : 'Přívod 3 – záložní zdroj'; oz.dispatchEvent(new Event('input', { bubbles: true }));
+      const kab = k.querySelector('[data-priv=kabel]'); kab.value = 'CYKY-J'; kab.dispatchEvent(new Event('input', { bubbles: true }));
+      const pr = k.querySelector('[data-priv=prurez]'); pr.value = '5×' + (6 + i); pr.dispatchEvent(new Event('input', { bubbles: true }));
+    });
+    rozvSvgPrekreslit();
+    document.getElementById('toast-wrap').innerHTML = '';
+    document.getElementById('rz-pohled').scrollIntoView({ block: 'start' }); await __M.w(100);
+    setTimeout(() => { if (__rz) { __rz.privody = []; rozvPrivodyVykreslit(); rozvPohledVykreslit(); } }, 3000);
+  }));
+  // oprava 2026-11-16: pruh „Vybráno: …" nad čelním pohledem se silnějším obrysem vybraného přístroje
+  add('rozvaděč – pruh „Vybráno" nad čelním pohledem', 'Tvorba dokumentace', E(async () => {
+    await __M.rozv(); document.getElementById('toast-wrap').innerHTML = '';
+    const x = __rz.rady[0].prvky[0]; rozvVyberNastavit([x.uid], x.uid); rozvPohledVykreslit(); rozvVlastnostiVykreslit();
+    document.querySelector('.rz-vybrano').scrollIntoView({ block: 'start' }); await __M.w(100);
+    setTimeout(() => { if (__rz) { rozvVyberNastavit([]); rozvPohledVykreslit(); } }, 3000);
+  }));
   add('rozvaděč – vlastnosti: Napájen z a → napájí', 'Tvorba dokumentace', E(async () => {
     await __M.rozv(); const x = __rz.rady[1].prvky[0]; __rz.vyber = x.uid; rozvPohledVykreslit(); rozvVlastnostiVykreslit();
     document.querySelector('#rz-vlastnosti .rp-napaji-deti').scrollIntoView({ block: 'start' }); await __M.w(100);
