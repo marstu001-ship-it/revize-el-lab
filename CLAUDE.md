@@ -934,6 +934,32 @@ záloha a obnova, dvě okna, rozbor seznamu prostorů a **oddělení**: protokol
 není v archivu, naposledy otevřených, plánu ani hledání a data revizí jsou
 po práci s protokoly **bajtově stejná**). Karta v Novinkách se nedělala.
 
+### Smazáním posledního dokumentu objekt nezmizí (oprava 2026-11-16, po vyzkoušení uživatelem)
+
+Uživatel smazal výpočet rizika LPS, který s žádným objektem neměl nic
+společného, a zmizel mu i úplně jiný — prázdný, dřív založený objekt.
+**V `DOK.rozvObjekty` zůstal celou dobu netknutý** — zmizel jen z OBRAZOVKY.
+Příčina byla v `dokSeznamPolozky()`: typ se `t0.objekty` ukazuje po objektech
+jen uvnitř bloku `if (!vse.length) { … „Zatím tu nic není" … }` — a ten se
+vrátí hned, **jakmile v seznamu nezbyl ani jeden dokument TOHOTO TYPU**,
+bez ohledu na to, kolik objektů (i prázdných) v `DOK.rozvObjekty` je.
+Smazání posledního rozvaděče nebo posledního výpočtu rizika tak smazalo
+viditelnost všech objektů daného typu, nikdy ne data.
+
+- **Oprava:** `t0.objekty && dokObjekty().length` se zkontroluje PŘED
+  „Zatím tu nic není" — má-li typ objekty, jde seznam po objektech vykreslit
+  vždycky (`dokObjSeznamHtml` zvládne i prázdný `seznam`, jen se u každého
+  objektu ukáže „Prázdný objekt…").
+- **Platí pro všechny typy s `objekty: true`** (rozvaděč DBO, PSC, výpočet
+  rizika LPS) — jedna oprava na jednom místě, žádný typ ji nemusí řešit
+  zvlášť.
+- ZPĚT po smazání dokumentu (`dokSmazat`) se objektů nedotýká — vracelo
+  a vrací jen ten jeden dokument.
+
+Test: `testy/test-rozvadec-objekty.js` a `testy/test-riziko-lps.js` (po
+smazání VŠECH dokumentů daného typu objekt v datech zůstane a je dál vidět
+v seznamu, ne „Zatím tu nic není"). Na kódu před opravou spadne.
+
 ## Tvorba dokumentace: „📤 Soubor pro kolegu" (v9.134)
 
 Pokyn uživatele 2026-10-25: „ve tvorbě dokumentace vedle tlačítek uložit

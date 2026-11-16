@@ -30012,6 +30012,7 @@ function dokSeznamPolozky() {
   if (!box) return;
   var q = ((document.getElementById('dok-hledat') || {}).value || '').toLowerCase()
     .normalize('NFD').replace(/[̀-ͯ]/g, '').trim();
+  var t0 = DOK_TYPY[__dokTyp] || {};
   var vse = DOK.dokumenty.filter(function (x) { return x.typ === __dokTyp; })
     .sort(function (a, b) { return cisloPorovnat(b.cislo, a.cislo); });
   var seznam = q ? vse.filter(function (x) {
@@ -30022,9 +30023,13 @@ function dokSeznamPolozky() {
   if (pocet) pocet.textContent = vse.length ? (q ? seznam.length + ' z ' + vse.length : String(vse.length)) : '';
   var hl = document.getElementById('dok-hledat');
   if (hl) hl.style.display = vse.length ? '' : 'none';   // hledat v prázdném seznamu nemá smysl
+  // Objekty (i prázdné) jsou vidět, dokud je uživatel sám nesmaže — smazáním
+  // posledního dokumentu tohoto typu objekt zmizet nesmí (oprava 2026-11-16,
+  // po vyzkoušení uživatelem: „Zatím tu nic není" dřív zobrazení objektů
+  // přeskočilo úplně, i když `DOK.rozvObjekty` zůstalo beze změny).
+  if (t0.objekty && dokObjekty().length) { box.innerHTML = dokObjSeznamHtml(seznam, q); dokObjZamknout(box); return; }
   if (!vse.length) { box.innerHTML = '<div class="dok-prazdno">Zatím tu nic není. Začněte tlačítkem ' +
-    esc(dokVytvoritText(DOK_TYPY[__dokTyp])) + '.</div>'; return; }
-  var t0 = DOK_TYPY[__dokTyp] || {};
+    esc(dokVytvoritText(t0)) + '.</div>'; return; }
   if (t0.objekty) { box.innerHTML = dokObjSeznamHtml(seznam, q); dokObjZamknout(box); return; }
   if (!seznam.length) { box.innerHTML = '<div class="dok-prazdno">Hledání nic nenašlo.</div>'; return; }
   box.innerHTML = seznam.map(function (x) { return dokPolozkaHtml(x); }).join('');

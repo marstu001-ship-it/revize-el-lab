@@ -200,6 +200,23 @@ const BEH = require('path').join(__dirname, '_beh');
   check('data revizí po práci s objekty bajtově stejná', (await otisk()) === otiskPred);
   check('bez chyb v konzoli', !err.length, err.join(' | '));
 
+  // ── prázdný objekt přežije smazání posledního rozvaděče (oprava 2026-11-16) ──
+  // Dřív „Zatím tu nic není" zobrazení objektů přeskočilo úplně, jakmile
+  // v seznamu nezbyl žádný dokument tohoto typu — objekt v `DOK.rozvObjekty`
+  // se přitom nikdy nesmazal, jen zmizel z pohledu.
+  const objTest = await p.evaluate(async () => {
+    await dokNacist();
+    const obj = await dokObjZalozit('Prázdný objekt bez rozvaděče');
+    DOK.dokumenty.filter(x => x.typ === 'rozv').forEach(x => dokSmazat(x.uid));   // smaže VŠECHNY rozvaděče
+    await dokNacist();
+    const mel = DOK.dokumenty.filter(x => x.typ === 'rozv').length;
+    dokOtevritSeznam('rozv');
+    return { obj: !!dokObjNajit(obj.id), mel, seznamHtml: document.getElementById('dok-seznam').innerHTML };
+  });
+  check('smazáním posledního rozvaděče objekt v `DOK.rozvObjekty` zůstane', objTest.mel === 0 && objTest.obj, JSON.stringify({ mel: objTest.mel, obj: objTest.obj }));
+  check('prázdný objekt je po smazání posledního rozvaděče dál vidět v seznamu (ne „Zatím tu nic není")',
+    /Prázdný objekt bez rozvaděče/.test(objTest.seznamHtml) && !/Zatím tu nic není/.test(objTest.seznamHtml), objTest.seznamHtml.slice(0, 200));
+
   // ── telefon ───────────────────────────────────────────────────────────
   const m = await b.newContext({ viewport: { width: 390, height: 844 }, hasTouch: true, isMobile: true });
   await m.addInitScript(() => { try { navigator.serviceWorker.register = () => new Promise(() => {}); } catch (e) {} });
