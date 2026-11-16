@@ -3698,6 +3698,39 @@ s dotazem a ZPĚT/Ctrl+Z, zmizení klíče `privody` po odebrání posledního e
 přívodu, data revizí bajtově stejná). Karta v Novinkách se nedělala (uživatel
 si o ni řekne sám).
 
+**Opravy po vyzkoušení uživatelem (2026-11-16):**
+
+- **„＋ Další přívod" i přímo v liště nad čelním pohledem** (`rozvPrivodyHtml`
+  v hlavičce zůstává) — jediné tlačítko bylo schované uvnitř sbalené „🗄
+  Hlavička rozvaděče" (`<details>`), technik ho musel nejdřív jít hledat.
+  Klik ho rovnou přepne do režimu 🔌 Zapojení (jen při PRVNÍM přívodu, další
+  nechávají technika tam, kde je), kabel se tím hned vykreslí — nic dalšího
+  se už klikat nemusí. Nový kabel 2 s dvoupulzuje (`.rz-vyvodka-pulse`,
+  třída na `<g data-priv-cable>`) a stavový řádek řekne „Přívod N přidán –
+  natáhni z něj vodiče…".
+- **Pravý klik na kabel přívodu** (`<g data-priv-cable>` i jeho svorky L1–L3,
+  `rozvPrivodKontext`): u přívodu 1 „＋ Přidat další přívod", u dalších navíc
+  „Přejmenovat přívod" a „Odebrat přívod" — sdílí stejné funkce
+  (`rozvPrivodOdebratUid`, `rozvPrivodPrejmenovatUid`) jako karta v hlavičce.
+- **Popisky kabelů se už nesmí překrývat.** Odhad šířky textu v `rozvNapSvg`
+  dostal větší rezervu a navíc po vykreslení doladí **skutečnou** šířku
+  (`rozvNapLabelySrovnat`, `getBBox`) — font se v prohlížeči může vykreslit
+  jinak, než odhad počítá. **Druhá, horší příčina** (nahlásil uživatel na
+  živém náhledu): `rozvVyvodkaGeomMapa` kladla pilíře dalších přívodů **pevně
+  po 10 mm** bez ohledu na délku štítku toho předchozího — u „Přívod" (6 znaků)
+  to ještě vyšlo, ale delší štítek (kabel + vlastní jméno) přejel přes pilíř
+  dalšího kabelu (přímo přes jeho svislou čáru a svorky L1–L3), ne jen přes
+  jeho text. Teď počítá **běžící kurzor** `dalsi[strana]` stejným odhadem
+  šířky jako `rozvNapSvg` — pilíř dalšího přívodu začne až za štítkem toho
+  před ním. Pro `'@privod'` samotný (bez dalších přívodů) vrací úplně stejnou
+  geometrii jako dřív (`rozvVyvodkaGeom(rz)` beze změny) — starý rozvaděč
+  s jedním přívodem se nemění.
+- **Řádek „Přívod 1: N · Přívod 2: M…" je čitelný přepínač** — klik zvýrazní
+  (`.rz-priv-uk-btn.akt`) a vybere přístroje napájené tím přívodem i jeho
+  kabel, druhý klik na totéž tlačítko zvýraznění zruší (`__rz.privodUkazAkt`).
+- **Strom „Kdo koho napájí" má jednotné názvy** — „Přívod 1 · CYKY-J 5×10"
+  místo „Kabel …", u dalších přívodů jejich název z karty.
+
 ### Výměna výkresů s CAD — export a import DXF (2026-11-02, bloky „ROZVADĚČ — VÝMĚNA S CAD")
 
 Zadání uživatele: technici kreslí ve Schématech CAD (Elmer), který ukládá
