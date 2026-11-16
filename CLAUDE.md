@@ -1144,6 +1144,42 @@ kraj → okres, ruční přepsání, PDF se zdrojem Td i NG, starý dokument).
 V `test-mobil.js` stavy „riziko LPS – mapa okresů…" a „…Td podle okresu,
 návrh z adresy".
 
+### Zpracovatel nemusí být technik z profilu (oprava 2026-11-16, po vyzkoušení uživatelem)
+
+Technik program používá i pro zakázky jiných firem. Pole **Zpracovatel**
+(string, předvyplněné při založení z `t.jmeno` — `novy()` se neměnil) se dřív
+v PDF (hlavička, „Vypracoval", podpisová tabulka — `rlPdfBloky`) při
+prázdné hodnotě vracelo k profilu (`d.zpracovatel || tech.jmeno`) — prázdné
+pole tak v PDF vždycky vytisklo technika z profilu, i když měl zpracovatel
+zůstat prázdný nebo být jiný.
+
+- **Co je v poli, to platí** — prázdné zůstane v PDF jako „……", jiné jméno
+  se nikdy nenahradí profilem. Žádný jiný dokument tvorby dokumentace tuhle
+  chybu neměl: protokol o vnějších vlivech (`d.vypracoval`) i rozvaděč
+  (prohlášení, kusové ověření, schéma, soudobost přes `rozvProfil(d)`) berou
+  profil jen jako výchozí hodnotu při založení, pole samotné je pak
+  rozhodující — ten vzor platí teď i tady.
+- **Firma zpracovatele** (volitelné, `d.zpracovatelFirma = {ico, nazev,
+  adresa}`) — ARES přes `tdRlZprAres` (totéž volání jako `tdAres`, ale zapisuje
+  přímo do `__rl.d`, ne přes `data-dk`, protože `DOK_TYPY.rlps.cist` jen
+  kopíruje `__rl.d`, nečte formulář jako rozvaděč). V PDF řádek „Firma
+  zpracovatele", jen když je vyplněná.
+- **Razítko a podpis z profilu jen tehdy, když je zpracovatel totožný
+  s technikem** (`rlZpracovatelJeProfil` — shoda jména, bez rozlišení
+  velikosti písmen). Jinak se nevloží; ve formuláři pod polem Zpracovatel
+  nenápadný řádek „zpracovatel není technik z profilu – razítko a podpis se
+  nevloží" (stejná informace, jakou revize dávají u cizí zprávy).
+- **Místa, kde jiné dokumenty tvorby dokumentace doplňují technika z profilu**
+  (zkontrolováno, beze změny — zůstávají na dalším rozhodnutí): protokol
+  o vnějších vlivech `pd.vypracoval || t.jmeno` jen při založení, pak pole;
+  rozvaděč schéma/soudobost/prohlášení/kusové ověření/štítek přes
+  `rozvProfil(d)`, která už sama vrací `{}` při `d.bezProfilu === true`.
+  Žádné z nich nemá živý fallback na profil jako měl výpočet rizika.
+
+Test: `test-riziko-lps.js` (+: prázdné pole → tečky v PDF, přepsané jméno →
+to jméno a žádné razítko ani podpis z profilu, zpracovatel = profil →
+razítko a podpis jako dřív, starý výpočet beze změny dat i PDF).
+
 ## Rozvaděč DBO — návrh a dokumentace (v9.127; konfigurátor, `DOK_TYPY.rozv`, blok `ROZVADĚČ DBO`)
 
 Zadání uživatele 2026-10-18: technik poskládá rozvaděč

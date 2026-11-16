@@ -48716,6 +48716,35 @@ function rlNabidkaPrevzetiText() {
   return n ? '<span class="dk-pozn">Nalezena revize LPS ' + esc(n.cislo) + ' (' + esc(n.misto) + ').</span>' : '';
 }
 
+// Firma zpracovatele (volitelné) — ARES jako u investora, ale přes data-rlh
+// (rlps drží data živě v __rl.d, ne přes obecné data-dk čtení celého formuláře).
+function rlZprFirmaHtml(f) {
+  f = f || {};
+  return '<div class="dk-blok-t">Firma zpracovatele <span class="dk-nepov">(nepovinné)</span></div>' +
+    '<div class="g3">' +
+      '<div class="f"><label>IČO</label><div class="dk-ares">' +
+        '<input type="text" data-rlh="zpracovatelFirma.ico" value="' + esc(f.ico) + '" inputmode="numeric" placeholder="12345678" autocomplete="off">' +
+        '<button class="magic-btn" data-action="tdRlZprAres" title="Doplní název a adresu z registru ARES">🔍 ARES</button></div></div>' +
+      '<div class="f span2"><label>Název firmy</label><input type="text" data-rlh="zpracovatelFirma.nazev" value="' + esc(f.nazev) + '" autocomplete="off"></div>' +
+      '<div class="f span3"><label>Adresa</label><input type="text" data-rlh="zpracovatelFirma.adresa" value="' + esc(f.adresa) + '" autocomplete="off"></div>' +
+    '</div>';
+}
+TD_AKCE.tdRlZprAres = function (el) {
+  var d = __rl.d; if (!d) return;
+  var inp = el.parentNode.querySelector('input'), ico = inp ? inp.value : '';
+  lookupIcoFromAres(ico, '__odberatel_inline', el, { targetCallback: function (data, cleaned) {
+    var s = data.sidlo || {};
+    var adr = s.textovaAdresa || [[s.nazevUlice || s.nazevObce, s.cisloDomovni ? s.cisloDomovni + (s.cisloOrientacni ? '/' + s.cisloOrientacni : '') : '']
+      .filter(Boolean).join(' '), [s.psc ? String(s.psc).replace(/(\d{3})(\d{2})/, '$1 $2') : '', s.nazevObce].filter(Boolean).join(' ')]
+      .filter(Boolean).join(', ');
+    d.zpracovatelFirma = d.zpracovatelFirma || {};
+    d.zpracovatelFirma.ico = cleaned;
+    if (data.obchodniJmeno) d.zpracovatelFirma.nazev = data.obchodniJmeno;
+    if (adr) d.zpracovatelFirma.adresa = adr;
+    rlKreslit(); dokZmena();
+    showToast('Načteno z ARES: ' + (data.obchodniJmeno || cleaned));
+  } });
+};
 DOK_TYPY.rlps.form = function (d) {
   __rl.d = d;
   if (!Array.isArray(d.vedeni)) d.vedeni = [];
@@ -48738,10 +48767,11 @@ function rlFormHtml(d) {
       '<div class="f"><label>Objekt (složka)</label><select class="rz-objekt" data-rlh="objekt" data-pred="' + esc(d.objekt || '') + '">' + rozvObjektVolby(d.objekt) + '</select></div>' +
       '<div class="f"><label>Datum</label><input type="date" data-rlh="datum" value="' + esc(d.datum) + '"></div>' +
       '<div class="f span2"><label>Název objektu</label><input type="text" data-rlh="nazev" value="' + esc(d.nazev) + '" placeholder="Rodinný dům Novákovi" autocomplete="off"></div>' +
-      '<div class="f"><label>Zpracovatel</label><input type="text" data-rlh="zpracovatel" value="' + esc(d.zpracovatel) + '" autocomplete="off"></div>' +
+      '<div class="f"><label>Zpracovatel</label><input type="text" data-rlh="zpracovatel" value="' + esc(d.zpracovatel) + '" autocomplete="off">' +
+        (d.zpracovatel && !rlZpracovatelJeProfil(d) ? '<div class="dk-pozn">zpracovatel není technik z profilu – razítko a podpis se nevloží</div>' : '') + '</div>' +
       '<div class="f span2"><label>Místo (adresa)</label><input type="text" data-rlh="misto" value="' + esc(d.misto) + '" placeholder="Polní 12, Kyjov" autocomplete="off"></div>' +
       '<div class="f"><label>Investor / vlastník</label><input type="text" data-rlh="investor.nazev" value="' + esc((d.investor || {}).nazev) + '" autocomplete="off"></div>' +
-    '</div>' +
+    '</div>' + rlZprFirmaHtml(d.zpracovatelFirma) +
     '<div class="rl-prevzit-radek"><button class="dok-mini" data-action="tdRlPrevzit" title="Načte třídu LPS, SPD, přípojku a vnější vlivy z dokumentů téhož objektu — jen čte, nic v nich nemění">📋 Převzít z revize nebo protokolu…</button>' +
       rlPrevzatoText(d) +
       (nepotvrz.length ? ' <button class="dok-mini rl-potvrdit-vse" data-action="tdRlPotvrditVse">✓ Potvrdit všechny převzaté (' + nepotvrz.length + ')</button>' : '') + '</div>' +
@@ -49163,8 +49193,17 @@ function rlPdfGrafSvg(Z) {
   h += '<line x1="' + xr + '" y1="0" x2="' + xr + '" y2="' + H + '" stroke="#000" stroke-width="0.35" stroke-dasharray="1 0.8"/>';
   return '<svg class="rl-pdf-graf" viewBox="0 0 ' + W + ' ' + H + '" width="' + W + 'mm" height="' + H + 'mm" font-family="DM Sans, Arial, sans-serif">' + h + '</svg>';
 }
+// Zpracovatel je pole dokumentu, co je v poli, to platí — prázdné zůstane prázdné,
+// jiné jméno se nevrací k profilu (2026-11-16, oprava po vyzkoušení uživatelem).
+// Razítko a podpis z profilu se vloží jen když je zpracovatel totožný s technikem.
+function rlZpracovatelJeProfil(d) {
+  var t = (typeof STORE !== 'undefined' && STORE.technik) || {};
+  var a = String((d && d.zpracovatel) || '').trim().toLowerCase();
+  var b = String(t.jmeno || '').trim().toLowerCase();
+  return !!a && a === b;
+}
 function rlPdfBloky(d) {
-  var r = rlVypocet(d), t = rlTyp(d.typ) || {}, tech = (typeof STORE !== 'undefined' && STORE.technik) || {}, B = [];
+  var r = rlVypocet(d), t = rlTyp(d.typ) || {}, tech = (typeof STORE !== 'undefined' && STORE.technik) || {}, B = [], vlastni = rlZpracovatelJeProfil(d);
   var hod = function (k) { return rlHod(d, k).v; }, zd = function (k) { return rlZdrojText(d, k); }, ref = function (k) { return (RL_PAR[rlKlic(k).p] || {}).ref || ''; };
   var volba = function (k) { var p = RL_PAR[rlKlic(k).p], o = p && p.o ? rlOpt(p.o, hod(k)) : null; return o ? o[1] : hod(k); };
   var tr = function (l, v) { return '<tr><td class="l">' + l + '</td><td>' + (v || '—') + '</td></tr>'; };
@@ -49174,7 +49213,9 @@ function rlPdfBloky(d) {
     '<div class="t2">podle ČSN EN IEC 62305-2 ed. 3 (IEC 62305-2:2024)</div>' + (d.cislo ? '<div class="t3">č. ' + esc(d.cislo) + '</div>' : '') + '</div>' });
   B.push({ html: '<table class="dok-pdf-tab">' + tr('Název objektu', esc(d.nazev)) + tr('Místo', esc(d.misto)) +
     tr('Investor / vlastník', esc((d.investor || {}).nazev)) + tr('Typ objektu', esc(t.n)) +
-    tr('Zpracovatel', esc(d.zpracovatel || tech.jmeno)) + tr('Datum', esc(dokDatumCz(d.datum))) + '</table>' });
+    tr('Zpracovatel', esc(d.zpracovatel)) +
+    ((d.zpracovatelFirma && (d.zpracovatelFirma.nazev || d.zpracovatelFirma.ico)) ? tr('Firma zpracovatele', dokPdfFirma(d.zpracovatelFirma)) : '') +
+    tr('Datum', esc(dokDatumCz(d.datum))) + '</table>' });
   if (r.chyby.length) {
     H('Výsledek');
     P('Výpočet není úplný: ' + r.chyby.map(function (c) { return c.t; }).join(' '), 'rl-pdf-tucne');
@@ -49315,11 +49356,14 @@ function rlPdfBloky(d) {
     });
   }
   P('Výpočet podle ČSN EN IEC 62305-2 ed. 3; hodnoty ztrát a koeficientů zvolil zpracovatel.', 'rl-pdf-tucne');
-  // podpis na konci (jako protokol o vnějších vlivech)
-  B.push({ html: '<p class="dok-pdf-p" style="margin-top:5mm">Vypracoval: ' + esc(d.zpracovatel || tech.jmeno || '—') +
-    ' &nbsp;·&nbsp; V ' + esc(tech.mesto || '……………') + ' dne ' + esc(dokDatumCz(d.datum) || '……………') + '</p>', drz: true });
+  // podpis na konci (jako protokol o vnějších vlivech) — razítko a podpis z profilu
+  // jen když je zpracovatel totožný s technikem v profilu (`vlastni`), jinak se nevkládá
+  var razPodpis = vlastni ? (tech.razitko ? '<img src="' + tech.razitko + '" style="display:block;height:18mm;max-width:40mm;margin-top:2mm">' : '') +
+    (tech.podpis ? '<img src="' + tech.podpis + '" style="display:block;height:14mm;max-width:40mm;margin-top:1mm">' : '') : '';
+  B.push({ html: '<p class="dok-pdf-p" style="margin-top:5mm">Vypracoval: ' + esc(d.zpracovatel || '—') +
+    ' &nbsp;·&nbsp; V ' + esc((vlastni && tech.mesto) || '……………') + ' dne ' + esc(dokDatumCz(d.datum) || '……………') + '</p>' + razPodpis, drz: true });
   B.push({ html: '<table class="dok-pdf-podpisy"><tr><th>Funkce</th><th>Jméno a příjmení</th><th>Podpis</th></tr>' +
-    '<tr><td>Zpracovatel</td><td>' + esc(d.zpracovatel || tech.jmeno || '') + '</td><td class="podpis"></td></tr></table>' });
+    '<tr><td>Zpracovatel</td><td>' + esc(d.zpracovatel || '') + '</td><td class="podpis"></td></tr></table>' });
   return B;
 }
 function rlTdText(d) {

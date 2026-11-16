@@ -370,6 +370,24 @@ async function otiskRevizi(p) {
   check('telefon: výsledek pod formulářem a nelepí se, hlavní akce přes celou šířku', !mob.vysNahore && mob.pos === 'static' && mob.btn > 300, JSON.stringify(mob));
   await t.screenshot({ path: __dirname + '/_beh/rlps/telefon.png' });
 
+  // ── zpracovatel není vždy technik z profilu (oprava 2026-11-16) ───────
+  const zprTest = await p.evaluate(() => {
+    const dBase = { cislo: 'RLPS-ZPR', nazev: 'Test', misto: 'Test', typ: 'rd', v: { L: '10', W: '10', H: '5', td: '20' }, vedeni: [], zony: [{ uid: 'z1', druh: 'vnitrni' }] };
+    const stara = JSON.stringify(STORE.technik);
+    const img = 'data:image/png;base64,iVBORw0KGgoAAAANSUhEUgAAAAEAAAABCAQAAAC1HAwCAAAAC0lEQVR42mNk+A8AAQUBAScY42YAAAAASUVORK5CYII=';
+    STORE.technik = { jmeno: 'Jan Vymyšlený', mesto: 'Kyjov', razitko: img, podpis: img };
+    const vykresli = (zprac) => rlPdfBloky(Object.assign({}, dBase, { zpracovatel: zprac })).map(b => b.html).join('');
+    const prazdne = vykresli(''), jine = vykresli('Petr Jiný'), profil = vykresli('Jan Vymyšlený');
+    STORE.technik = JSON.parse(stara);
+    return { prazdne, jine, profil };
+  });
+  check('prázdné pole zpracovatele: v PDF tečky, ne profil', /Vypracoval: —/.test(zprTest.prazdne) && !/Jan Vymyšlený/.test(zprTest.prazdne),
+    (zprTest.prazdne.match(/Vypracoval:[^<]*/) || [''])[0]);
+  check('jiný zpracovatel: v PDF jeho jméno, žádné razítko ani podpis z profilu', /Vypracoval: Petr Jiný/.test(zprTest.jine) && !/data:image/.test(zprTest.jine),
+    (zprTest.jine.match(/Vypracoval:[^<]*/) || [''])[0]);
+  check('zpracovatel = technik z profilu: razítko i podpis se vloží jako dřív', /Vypracoval: Jan Vymyšlený/.test(zprTest.profil) && (zprTest.profil.match(/data:image/g) || []).length === 2,
+    (zprTest.profil.match(/data:image/g) || []).length);
+
   check('bez chyb na stránce', !err.length, err.join(' | '));
   await b.close();
   console.log(res.join('\n'));
