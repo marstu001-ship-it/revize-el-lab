@@ -150,6 +150,22 @@ const zpravaOtevritUlozit = async (p) => p.evaluate(async () => {
   check('starý rozvaděč: nezapsal se typ obvodu, skupina ani β soudobosti',
     !/"typObv|"soud|"beta"|"obvTyp/.test(novyRozv.ulozeno), (novyRozv.ulozeno.match(/"(typObv|soud\w*|beta|obvTyp)"/g) || []).join(','));
   check('starý rozvaděč: Pi se nedopočítalo (jen ručně zadané 1,5)', (novyRozv.ulozeno.match(/"pi":/g) || []).length === (staryRozv.ulozeno.match(/"pi":/g) || []).length);
+
+  // ── zpracovatel dokumentace (2026-11-16) — starý rozvaděč bez pole: PDF beze změny ──
+  const pdfTexty = (p, uid) => p.evaluate(async uid => {
+    await dokOtevrit(uid); rozvZalozkaNastavit('dok'); await new Promise(r => setTimeout(r, 300));
+    ['cp', 'schema', 'tech', 'prohl', 'ko'].forEach(k => { const c = dokForm().querySelector('[data-dk="dokVyber.' + k + '"]'); if (c) { c.checked = true; c.dispatchEvent(new Event('change', { bubbles: true })); } });
+    await TD_AKCE.tdRDokPdf(); await new Promise(r => setTimeout(r, 400));
+    const dok = document.getElementById('dok-pdf-pages').innerText;
+    await TD_AKCE.tdPdfZpet(); await dokOtevrit(uid); rozvZalozkaNastavit('dok'); await new Promise(r => setTimeout(r, 200));
+    const d = DOK_TYPY.rozv.cist(dokForm()), e = rozvDokEff(d);
+    return { dok, ot: rozvPdfOtepleni(d, e).map(b => b.html).join(''), sch: rozvSchemaListy(d).map(l => l.svg).join(''), soud: rozvSoudListSvg(d).svg };
+  }, uid);
+  const pdfS = await pdfTexty(S.p, st.uid), pdfN = await pdfTexty(N.p, st.uid);
+  check('starý rozvaděč bez pole „zpracovatel": dokumentace (prohlášení i protokol), oteplení, schéma i soudobost bajtově stejné jako ve staré verzi',
+    pdfS.dok === pdfN.dok && pdfS.ot === pdfN.ot && pdfS.sch === pdfN.sch && pdfS.soud === pdfN.soud,
+    'dok:' + (pdfS.dok === pdfN.dok) + ' ot:' + (pdfS.ot === pdfN.ot) + ' sch:' + (pdfS.sch === pdfN.sch) + ' soud:' + (pdfS.soud === pdfN.soud));
+
   if (novyRozv.ulozeno !== staryRozv.ulozeno) {
     const a = staryRozv.ulozeno, c = novyRozv.ulozeno; let i = 0; while (a[i] === c[i]) i++;
     const A = JSON.parse(a), C = JSON.parse(c), cesty = [];

@@ -25,7 +25,8 @@ async function priprava(p) {
     window.__T = {
       w: ms => new Promise(r => setTimeout(r, ms)),
       dk: (s, v) => { const e = dokForm().querySelector(s); e.value = v; e.dispatchEvent(new Event('input', { bubbles: true })); e.dispatchEvent(new Event('change', { bubbles: true })); },
-      txt: s => Array.from(document.querySelectorAll(s)).map(e => e.innerText).join('\n')
+      txt: s => Array.from(document.querySelectorAll(s)).map(e => e.innerText).join('\n'),
+      cist: () => DOK_TYPY.rozv.cist(dokForm())
     };
     await dokNovy('rozv');
     __T.dk('[data-dk="oznaceni"]', 'RH1'); __T.dk('[data-dk="stavba"]', 'Byt 3+1, Vymyšlená 12');
@@ -431,6 +432,58 @@ async function priprava(p) {
     ko.ceka.indexOf('Rozměry v × š × h (mm)') !== -1 && !['Umístění', 'Stupeň znečištění', 'Součinitel soudobosti RDF'].some(t => ko.ceka.indexOf(t) !== -1) &&
     !ko.ceka.some(t => /RoHS|třídy II|Krytí|Odolnost IK|Ochrana před úrazem|Zkušební napětí|Kvalifikace/.test(t)) && !/čeká na ověření/.test(kp.text), ko.ceka.join(' | '));
   await p.screenshot({ path: BEH + '/rz-dok-protokol.png' });
+
+  // ── 6b. zpracovatel dokumentace platí pro všechny listy (2026-11-16) ──
+  await p.evaluate(async uid => { await dokOtevrit(uid); rozvZalozkaNastavit('dok'); }, prvniUid); await w(150);
+  const zpVych = await p.evaluate(() => { const i = document.querySelector('[data-dk="zpracovatel.jmeno"]'); return { v: i.value, odv: i.getAttribute('data-odv') }; });
+  check('pole „Zpracovatel dokumentace" předvyplněné z profilu jako odvozená hodnota (editovatelné, nejde o placeholder)',
+    zpVych.v === 'Petr Vymyšlený' && zpVych.odv === 'Petr Vymyšlený', JSON.stringify(zpVych));
+  await p.evaluate(async () => { await dokUlozitOtevreny(); });
+  check('beze změny se zpracovatel neukládá (jako ostatní data-odv)', await p.evaluate(() => !__rz.o.data.zpracovatel));
+
+  await p.evaluate(() => __T.dk('[data-dk="zpracovatel.jmeno"]', 'Jana Jiná'));
+  await p.evaluate(async () => { await dokUlozitOtevreny(); });
+  check('jiné jméno se uloží do d.zpracovatel.jmeno', await p.evaluate(() => (__rz.o.data.zpracovatel || {}).jmeno) === 'Jana Jiná');
+
+  const psZp = await pdfJen(['prohl']);
+  const stampHtml = await p.evaluate(() => document.getElementById('dok-pdf-pages').innerHTML);
+  check('prohlášení: podpis má jméno zpracovatele, moje jméno se nevrací, razítko a podpis z profilu se nevloží (žádný <img>)',
+    /Jana Jiná/.test(psZp.text) && !/Petr Vymyšlený/.test(psZp.text) && !/<img\b/.test(stampHtml), psZp.text.match(/Jméno, funkce[\s\S]{0,40}/));
+  const kpZp = await pdfJen(['ko']);
+  check('protokol: „Zkoušku provedl" má jméno zpracovatele, „Zapojení provedl" beze změny (ruční, prázdné)',
+    /Zkoušku provedl \(zkušební technik\)\s+Jana Jiná/.test(kpZp.text) && /Zapojení provedl\s*\n/.test(kpZp.text), kpZp.text.match(/Zkoušku provedl[\s\S]{0,40}/));
+  const poznZp = await p.evaluate(() => document.querySelector('[data-oddil="prohl"]').textContent);
+  check('v Prohlášení řádek „zpracovatel není technik z profilu – razítko a podpis se nevloží"', /zpracovatel není technik z profilu – razítko a podpis se nevloží/.test(poznZp));
+
+  const svgTxt = svg => (svg.match(/<text[^>]*>([^<]*)<\/text>/g) || []).map(t => t.replace(/<[^>]+>/g, ''));
+  const prime1 = await p.evaluate(() => {
+    const d = __T.cist(), e = rozvDokEff(d);
+    return { ot: rozvPdfOtepleni(d, e).map(b => b.html).join(''), sch: rozvSchemaListy(d).map(l => l.svg).join(''), soud: rozvSoudListSvg(d).svg };
+  });
+  check('oteplení: „Vypracoval" = zpracovatel, ne moje jméno', /Vypracoval[\s\S]{0,20}Jana Jiná/.test(prime1.ot) && !/Petr Vymyšlený/.test(prime1.ot), prime1.ot.match(/Vypracoval[\s\S]{0,40}/));
+  const schT = svgTxt(prime1.sch);
+  check('schéma: razítko „Vypracoval" = zpracovatel, ne moje jméno', schT.includes('Jana Jiná') && !schT.includes('Petr Vymyšlený'), schT.filter(t => /Jana|Petr/.test(t)).join(','));
+  const soudT = svgTxt(prime1.soud);
+  check('soudobost: razítko „Vypracoval" = zpracovatel, ne moje jméno', soudT.includes('Jana Jiná') && !soudT.includes('Petr Vymyšlený'), soudT.filter(t => /Jana|Petr/.test(t)).join(','));
+
+  // prázdné jméno (bezProfilu, zpracovatel beze zásahu) → tečky, i na razítku schématu a soudobosti
+  await p.evaluate(async uid => { await dokOtevrit(uid); rozvZalozkaNastavit('dok'); }, prvniUid); await w(150);
+  await p.evaluate(() => __T.dk('[data-dk="zpracovatel.jmeno"]', ''));
+  await p.evaluate(() => { const c = dokForm().querySelector('[data-dk="bezProfilu"]'); c.checked = true; c.dispatchEvent(new Event('change', { bubbles: true })); });
+  await p.evaluate(async () => { await dokUlozitOtevreny(); }); await w(100);
+  const prazdne = await pdfJen(['prohl', 'ko']);
+  const prime2 = await p.evaluate(() => {
+    const d = __T.cist(), e = rozvDokEff(d);
+    return { ot: rozvPdfOtepleni(d, e).map(b => b.html).join(''), sch: rozvSchemaListy(d).map(l => l.svg).join(''), soud: rozvSoudListSvg(d).svg };
+  });
+  check('bezProfilu + prázdný zpracovatel: prohlášení i protokol jen „……" / prázdné jméno, nikde moje jméno',
+    /Jméno, funkce\s*……………/.test(prazdne.text) && /Zkoušku provedl \(zkušební technik\)\t\t/.test(prazdne.text) && !/Petr Vymyšlený/.test(prazdne.text), '');
+  check('bezProfilu platí i pro razítko schématu a soudobosti (dřív to ignorovaly) — „Vypracoval" prázdné',
+    !/Petr Vymyšlený/.test(prime2.ot) && !/Petr Vymyšlený/.test(prime2.sch) && !/Petr Vymyšlený/.test(prime2.soud), '');
+  // vrátit do výchozího stavu pro další kontroly
+  await p.evaluate(async uid => { await dokOtevrit(uid); rozvZalozkaNastavit('dok'); }, prvniUid); await w(150);
+  await p.evaluate(() => { const c = dokForm().querySelector('[data-dk="bezProfilu"]'); c.checked = false; c.dispatchEvent(new Event('change', { bubbles: true })); });
+  await p.evaluate(async () => { await dokUlozitOtevreny(); }); await w(100);
 
   // ── 7. technické údaje a celé PDF ─────────────────────────────────────
   const tu = await pdfJen(['tech']);

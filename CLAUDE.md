@@ -3807,6 +3807,61 @@ si o ni řekne sám).
 - **Strom „Kdo koho napájí" má jednotné názvy** — „Přívod 1 · CYKY-J 5×10"
   místo „Kabel …", u dalších přívodů jejich název z karty.
 
+### Zpracovatel dokumentace nemusí být technik z profilu (2026-11-16)
+
+Dosud se jméno technika z profilu dosazovalo živě při KAŽDÉM tisku na šesti
+nezávislých místech: `rozvPdfProtokol` („Zkoušku provedl"), `rozvPdfProhlaseni`
+(podpis), `rozvPdfOtepleni` a `pscPdfOvereni` (obě natvrdo
+`e.pJmeno || (d.bezProfilu===true?'':t.jmeno)`), razítko `rozvSchemaListy`
+a `rozvSoudListSvg` (`t.jmeno` přes `rozvProfil(d)` — ty dvě `bezProfilu` už
+respektovaly, jen neměly žádné pole k přepsání). Kdo dokumentoval rozvaděč pro
+jinou firmu, musel přepisovat jméno na šesti místech zvlášť a u schématu
+a soudobosti to vůbec nešlo.
+
+- **Jedno pole „Zpracovatel dokumentace"** v hlavičce Dokumentů (hned pod
+  „Dokumentace pro jiného výrobce"), `d.zpracovatel = { jmeno, firma, ico }`
+  (firma/IČO nepovinné, IČO s tlačítkem 🔍 ARES). **Jméno je odvozená hodnota
+  jako ostatní** (`rozvDokOdvozene` → `odv['zpracovatel.jmeno'] = t.jmeno`,
+  v `ROZV_Z_PROFILU` — `bezProfilu` ho nepředvyplní mým jménem) — nový
+  rozvaděč ho ukáže předvyplněné z profilu, ale **ukládá se jen když ho
+  technik změní** (`rzPole`, `data-odv`), přesně jako `prohl.jmeno`.
+- **`rozvZpracovatelJmeno(d)`** čte uloženou hodnotu přímo (`d.zpracovatel.jmeno`,
+  nezávisle na `bezProfilu` — ten řídí jen VÝCHOZÍ hodnotu pole, ne co technik
+  skutečně napsal). Když je vyplněné, `rozvDokOdvozene` jím přepíše odvozené
+  `prohl.jmeno` i `ko.zkousel.jmeno` (**po** wipu kvůli `bezProfilu`, takže
+  explicitní zpracovatel platí i u dokumentace „pro jiného výrobce" — a **před**
+  wipem kvůli „nechat prázdné", to zůstává nejsilnější) — tím se to samo
+  propsalo do prohlášení (`e.pJmeno`) a protokolu (`e.zkJmeno`), beze změny
+  těch dvou PDF funkcí. **Stávající samostatná pole** (`prohl.jmeno` ve
+  formuláři, `ko.zkousel.jmeno`), když je technik vyplní ručně, **mají
+  přednost** jako dřív (`rozvDokHodnota` čte uloženou hodnotu dřív než odvozenou).
+- **Schéma a soudobost** (`rozvSchemaListy`, `rozvSoudListSvg`): razítko
+  `vypracoval: rozvZpracovatelJmeno(d) || t.jmeno || ''` — poprvé mají
+  přepsatelnou hodnotu; bez zpracovatele beze změny (`t.jmeno` přes
+  `rozvProfil(d)`, který `bezProfilu` respektoval už dřív).
+- **`rozvPdfOtepleni` a `pscPdfOvereni`**: zbytečný ternární fallback
+  `(d.bezProfilu===true?'':t.jmeno)` odstraněn — byl mrtvý kód (`e.pJmeno`
+  už sám dává týž výsledek, protože `bezProfilu` i zpracovatel řeší
+  `rozvDokOdvozene`), zůstalo `e.pJmeno || '……………'` jako u prohlášení.
+- **Razítko a podpis z profilu jen když je zpracovatel totožný s technikem**
+  (`rozvZpracovatelJeProfil(d)`, shoda jména bez rozlišení velikosti písmen —
+  nevyplněné pole = platí jako dřív). Jinak se v prohlášení nevloží a místo
+  zaškrtávátka „vložit razítko a podpis z profilu" je řádek „zpracovatel není
+  technik z profilu – razítko a podpis se nevloží" (stejná informace, jakou
+  u cizí zprávy dávají revize a u riziko LPS `rlZpracovatelJeProfil`).
+- **„Zapojení provedl" beze změny** — je to ruční pole, žádný fallback na
+  profil nemělo ani dřív.
+- **Starý rozvaděč bez `d.zpracovatel`: chování přesně jako dřív** — ověřeno
+  `testy/test-rozvadec-stara-data.js` proti STARA_PORT (data i PDF prohlášení,
+  protokolu, oteplení, schématu a soudobosti bajtově stejné).
+
+Test: `testy/test-rozvadec-dokumenty.js` (+11 — předvyplnění a data-odv,
+jiné jméno ve všech šesti listech, žádné razítko/podpis, upozornění,
+`bezProfilu` s prázdným zpracovatelem → „……" i na razítku schématu
+a soudobosti, starý rozvaděč beze změny proti STARA_PORT). **Upraveno:**
+`testy/test-rozvadec-psc.js` (porovnání DBO proti předchozí verzi vynechává
+novou kartu „Zpracovatel dokumentace" v Dokumentech).
+
 ### Výměna výkresů s CAD — export a import DXF (2026-11-02, bloky „ROZVADĚČ — VÝMĚNA S CAD")
 
 Zadání uživatele: technici kreslí ve Schématech CAD (Elmer), který ukládá

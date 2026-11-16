@@ -627,7 +627,9 @@ const presahy = (p, svg) => p.evaluate(svg => {
       .replace(/ <span class="rz-ceka"[^>]*>[^<]*<\/span>/g, '').replace(/ <span class="dk-nepov">ČSN EN IEC 61439-3 ed\. 2, čl\. 5\.4, tab\. 101<\/span>/g, '')
       .replace(/(data-dk="tech\.(?:ik|znec)") placeholder="[^"]*"/g, '$1')
       // „nechat prázdné" a dokumentace pro jiného výrobce (2026-11-05)
-      .replace(/<label class="teren-radek rz-zatrh rz-bez-profilu">.*?<\/label>/g, '').replace(/<button type="button" class="rz-odv-btn"[^>]*>[^<]*<\/button>/g, '').replace(/ rz-odv-f"/g, '"');
+      .replace(/<label class="teren-radek rz-zatrh rz-bez-profilu">.*?<\/label>/g, '').replace(/<button type="button" class="rz-odv-btn"[^>]*>[^<]*<\/button>/g, '').replace(/ rz-odv-f"/g, '"')
+      // zpracovatel dokumentace (2026-11-16): karta ve hlavičce Dokumentů, platí pro DBO i PSC stejně
+      .replace(/<div class="g3 rz-zprac">[\s\S]*?(?=<div class="rz-dok-chybi")/g, '');
     A.dbo5b.dok = bezD4(A.dbo5b.dok); B.dbo5b.dok = bezD4(B.dbo5b.dok);
     // 2026-11-09: výchozí Inc 0,8 In (oprava čl. 10.10.4.1 e) a tlačítko „Doplnit Pv z knihovny" — záměrně; hlídá test-otepleni-pv.js
     const bezInc = t => t.replace(/<div class="rot-pvk-lista"[^>]*>.*?<\/div>/g, '').replace(/(class="rot-inc"[^>]*?) placeholder="[^"]*"/g, '$1')

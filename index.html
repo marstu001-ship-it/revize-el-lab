@@ -32949,6 +32949,10 @@ DOK_TYPY.rozv.cist = function (koren) {
   if (__rz) { if (__rz.hrebeny && __rz.hrebeny.length) d.hrebeny = dokKopie(__rz.hrebeny); else delete d.hrebeny; }   // propojovací hřebeny (2026-11-08)
   if (__rz) { if (__rz.privody && __rz.privody.length) d.privody = dokKopie(__rz.privody); else delete d.privody; }   // víc přívodů (2026-11-13)
   if (d.bezProfilu !== true) delete d.bezProfilu;   // dokumentace pro jiného výrobce — ukládá se jen zaškrtnutá
+  if (d.zpracovatel) {   // zpracovatel dokumentace (2026-11-16) — ukládá se jen vyplněné
+    Object.keys(d.zpracovatel).forEach(function (k) { if (!String(d.zpracovatel[k] || '').trim()) delete d.zpracovatel[k]; });
+    if (!Object.keys(d.zpracovatel).length) delete d.zpracovatel;
+  }
   if (d.bezOdv) {   // „nechat prázdné" platí, dokud do pole technik nic nenapíše
     Object.keys(d.bezOdv).forEach(function (k) { var v = dkCesta(d, k); if (!d.bezOdv[k] || (v != null && String(v).trim() !== '')) delete d.bezOdv[k]; });
     if (!Object.keys(d.bezOdv).length) delete d.bezOdv;
@@ -34600,7 +34604,7 @@ function rozvSoudSoubor(d) { return ((d.cislo || 'ROZ') + '_soudobost_' + (d.ozn
 function rozvSoudListSvg(d) {
   var r = rozvSoudVypocet(d), t = rozvProfil(d), kw = rzsKw;
   var g = rsGeom('A4', false, false), h = rsRam(g);
-  var c = { vypracoval: t.jmeno || '', datum: dokDatumCz(d.datum) || '', akce: d.stavba || '', investor: (d.investor || {}).nazev || '',
+  var c = { vypracoval: rozvZpracovatelJmeno(d) || t.jmeno || '', datum: dokDatumCz(d.datum) || '', akce: d.stavba || '', investor: (d.investor || {}).nazev || '',
             nazev: 'Výpočet soudobého příkonu', projekt: d.stavba || '', zakazka: d.cislo || '', soubor: rozvSoudSoubor(d), listu: 1 };
   h += rsRazitko(g, c, 1);
   var x0 = 16, y = 19, W = g.W - 32;
@@ -39708,6 +39712,7 @@ function rozvDokOdvozene(d) {
     'tech.rdf': (function () { var r = rotRdf(d); return r.rezim !== 'bez' && r.k != null ? rozvCisloText(r.k) : ''; })(),
     'prohl.cislo': vc ? 'PS-' + vc : '', 'ko.cislo': vc ? 'KO-' + vc : '',
     'prohl.misto': t.mesto || '', 'prohl.datum': d.datum || '', 'prohl.jmeno': t.jmeno || '',
+    'zpracovatel.jmeno': t.jmeno || '',
     'ko.zkousel.jmeno': t.jmeno || '', 'ko.a.t': '1',
     'ko.p.k11_2': 'deklarované krytí ' + (d.krytiZavreno || 'IP…') + ' / ' + (d.krytiOtevreno || 'IP…') + ' (zavřeno/otevřeno)',
     'ko.p.k11_4': 'prohlídkou; šroubové spoje – namátková kontrola utažení',
@@ -39722,13 +39727,28 @@ function rozvDokOdvozene(d) {
   if (pscJe(d)) pscDokOdvozene(d, odv);   // výkonový rozvaděč (etapa 5b)
   // „Nechat prázdné" a dokumentace pro jiného výrobce (2026-11-05): odvozená hodnota se nepoužije
   if (d.bezProfilu === true) ROZV_Z_PROFILU.forEach(function (k) { odv[k] = ''; });
+  // Zpracovatel dokumentace (2026-11-16): co technik zadá, platí pro prohlášení i protokol —
+  // i se zaškrtnutým bezProfilu (to řídí jen VÝCHOZÍ hodnotu, ne vyplněné pole).
+  var zprac = rozvZpracovatelJmeno(d);
+  if (zprac) { odv['prohl.jmeno'] = zprac; odv['ko.zkousel.jmeno'] = zprac; }
   if (d.bezOdv) Object.keys(d.bezOdv).forEach(function (k) { if (d.bezOdv[k]) odv[k] = ''; });
   return odv;
 }
 // Odvozené hodnoty, které se berou z profilu technika (bezProfilu je nepoužije).
-var ROZV_Z_PROFILU = ['prohl.misto', 'prohl.jmeno', 'ko.zkousel.jmeno'];
+var ROZV_Z_PROFILU = ['prohl.misto', 'prohl.jmeno', 'ko.zkousel.jmeno', 'zpracovatel.jmeno'];
 // Profil technika pro dokumenty rozvaděče — prázdný u dokumentace pro jiného výrobce.
 function rozvProfil(d) { return (d && d.bezProfilu === true) || typeof STORE === 'undefined' ? {} : (STORE.technik || {}); }
+// Zpracovatel dokumentace (2026-11-16) — jedno pole platí pro všechny listy
+// (prohlášení, protokol, oteplení, PSC ověření návrhu, razítko schématu a
+// soudobosti). Co je v poli, to platí — i při zaškrtnutém bezProfilu; ten řídí
+// jen to, že se pole nepředvyplní mým jménem.
+function rozvZpracovatelJmeno(d) { return String(((d && d.zpracovatel) || {}).jmeno || '').trim(); }
+function rozvZpracovatelJeProfil(d) {
+  var z = rozvZpracovatelJmeno(d);
+  if (!z) return true;
+  var t = (typeof STORE !== 'undefined' && STORE.technik) || {};
+  return z.toLowerCase() === String(t.jmeno || '').trim().toLowerCase();
+}
 function rozvDokHodnota(d, odv, cesta) {
   var v = dkCesta(d, cesta);
   return (v != null && String(v).trim() !== '') ? String(v).trim() : (odv[cesta] || '');
@@ -39747,7 +39767,7 @@ function rozvDokEff(d) {
     pMisto: g('prohl.misto'), pDatum: g('prohl.datum'), pJmeno: g('prohl.jmeno'), pFunkce: g('prohl.funkce'),
     overeni: g('prohl.overeni'), otepleni: g('prohl.otepleni'),
     zkJmeno: g('ko.zkousel.jmeno'), zkDatum: g('ko.zkousel.datum'),
-    razitko: ((d.prohl || {}).razitko !== false) && d.bezProfilu !== true && !!(t.razitko || t.podpis),
+    razitko: ((d.prohl || {}).razitko !== false) && d.bezProfilu !== true && rozvZpracovatelJeProfil(d) && !!(t.razitko || t.podpis),
     psc: pscJe(d), icw: String(d.icw || '').trim(), icwT: String(d.icwT || '').trim(), ipk: String(d.ipk || '').trim(), forma: String(d.forma || '').trim(),
     montaz: String(d.provedeni || '').trim(), vnejsi: g('tech.vnejsi'), pripojeni: g('tech.pripojeni'), emc: g('tech.emc'), kp: g('tech.kp'),
     iccTyp: g('tech.iccTyp'), iccIn: g('tech.iccIn'), system: g('ov.system')
@@ -39881,6 +39901,29 @@ function rozvDboUpoz(d, e) {
   return h.join('');
 }
 var ROZV_STITEK_NEPOV = 'na štítku nepovinné (ČSN EN IEC 61439-1 ed. 3, čl. 6.1), uveďte v technických údajích';
+// Zpracovatel dokumentace (2026-11-16) — jméno platí pro prohlášení, protokol,
+// oteplení, PSC ověření návrhu i razítko schématu a soudobosti; firma/IČO jen
+// pro prohlášení (bod 2 — adresa výrobce zůstává z vyrobce, tohle je kdo prohlášení
+// vypracoval). Jméno jde ↺ přepsat jako kterékoli odvozené pole (data-odv).
+function rozvZpracovatelHtml(d, odv) {
+  var zp = d.zpracovatel || {};
+  return '<div class="g3 rz-zprac">' +
+    rzPole(d, odv, 'zpracovatel.jmeno', 'Zpracovatel dokumentace') +
+    '<div class="f"><label>Firma <span class="dk-nepov">(nepovinné)</span></label><input type="text" data-dk="zpracovatel.firma" value="' + esc(zp.firma) + '" autocomplete="off"></div>' +
+    '<div class="f"><label>IČO</label><div class="dk-ares"><input type="text" data-dk="zpracovatel.ico" value="' + esc(zp.ico) + '" inputmode="numeric" placeholder="12345678" autocomplete="off">' +
+      '<button class="magic-btn" data-action="tdRZprAres" title="Doplní firmu z registru ARES">🔍 ARES</button></div></div>' +
+    '</div>';
+}
+TD_AKCE.tdRZprAres = function (el) {
+  var f = dokForm(), pole = function (k) { return f.querySelector('[data-dk="zpracovatel.' + k + '"]'); };
+  var icoPole = pole('ico'); if (!icoPole) return;
+  lookupIcoFromAres(icoPole.value, '__odberatel_inline', el, { targetCallback: function (data, ico) {
+    if (data.obchodniJmeno && pole('firma')) pole('firma').value = data.obchodniJmeno;
+    icoPole.value = ico;
+    dokZmena();
+    showToast('Načteno z ARES: ' + (data.obchodniJmeno || ico));
+  } });
+};
 function rozvDokHtml(d) {
   var o = window.__dokOtevreny || {}, t = (typeof STORE !== 'undefined' && STORE.technik) || {};
   d = dokKopie(d || {});
@@ -39903,6 +39946,7 @@ function rozvDokHtml(d) {
       '<span class="dk-nepov">štítek a popisky se tisknou zvlášť, ve skutečné velikosti</span></div>') +
     '<label class="teren-radek rz-zatrh rz-bez-profilu"><input type="checkbox" data-dk="bezProfilu"' + (d.bezProfilu === true ? ' checked' : '') +
       '> Dokumentace pro jiného výrobce – nepřebírat údaje z mého profilu</label>' +
+    rozvZpracovatelHtml(d, odv) +
     '<div class="rz-dok-chybi" id="rz-dok-chybi"></div>' +
     '<div class="dk-pozn">Naměřené hodnoty a výsledky zkoušek vyplňujete vy — program je nikdy nedoplní. Štítek „' + ROZV_DOK_CEKA +
       '" = údaj z rešerše norem, ne z jejich textu.</div></div>';
@@ -39975,9 +40019,10 @@ function rozvDokHtml(d) {
     '</div>' +
     rzPole(d, odv, 'prohl.overeni', 'Ověření návrhu (bod 7)', { radky: 2, ph: 'dokumentace ověření návrhu výrobce skříňového systému (výrobce, číslo dokumentu)' }) +
     rzPole(d, odv, 'prohl.otepleni', 'Oteplení (bod 7)', { radky: 2, ph: 'jak bylo oteplení ověřeno — výpočet přijde v etapě 4' }) +
-    ((t.razitko || t.podpis) && d.bezProfilu !== true ? rzZatrh('prohl.razitko', 'vložit razítko a podpis z profilu', (d.prohl || {}).razitko !== false)
-      : '<div class="dk-pozn">Razítko a podpis se vloží, až je nahrajete v Nastavení (profil technika).</div>') +
-    (d.bezProfilu === true ? '<div class="dk-pozn">Dokumentace pro jiného výrobce — razítko, podpis ani údaje z vašeho profilu se nevloží.</div>' : ''));
+    (d.bezProfilu === true ? '<div class="dk-pozn">Dokumentace pro jiného výrobce — razítko, podpis ani údaje z vašeho profilu se nevloží.</div>'
+      : !rozvZpracovatelJeProfil(d) ? '<div class="dk-pozn">zpracovatel není technik z profilu – razítko a podpis se nevloží</div>'
+      : (t.razitko || t.podpis) ? rzZatrh('prohl.razitko', 'vložit razítko a podpis z profilu', (d.prohl || {}).razitko !== false)
+      : '<div class="dk-pozn">Razítko a podpis se vloží, až je nahrajete v Nastavení (profil technika).</div>'));
   // Kusové ověření
   var radky = ROZV_KO_POLOZKY.map(function (p) {
     var k = rozvKoKlic(p.cl);
@@ -41382,7 +41427,7 @@ function rozvOteplPriloha(d, v) {
 // Odkaz na přílohu (prohlášení bod 7, protokol) jen když vyhovuje A stránka opravdu jde do PDF.
 function rozvOteplOdkaz(d) { var v = rozvOteplVypocet(d); return v.stav === 'vyhovuje' && rozvOteplPriloha(d, v); }
 function rozvPdfOtepleni(d, e) {
-  var v = rozvOteplVypocet(d), t = (typeof STORE !== 'undefined' && STORE.technik) || {};
+  var v = rozvOteplVypocet(d);
   var B = [{ strana: 'vyska', zahlavi: rozvPdfZahlavi(e), html: '<div class="rz-ps-titul">OVĚŘENÍ OTEPLENÍ VÝPOČTEM</div>' +
     '<div class="rz-ko-pdf-pod">dle čl. 10.10.4.2 ČSN EN IEC 61439-1 — rozvaděč ' + esc(d.oznaceni || '') + (e.vc ? ', výrobní číslo ' + esc(e.vc) : '') + '</div>' }];
   B.push({ html: '<table class="dok-pdf-tab rz-pdf-hl"><tr><td class="l">Typ</td><td>' + esc(e.typ) + '</td><td class="l">InA</td><td>' + esc(rotA(v.ina.In)) + '</td></tr>' +
@@ -41413,7 +41458,7 @@ function rozvPdfOtepleni(d, e) {
   if (v.nad08 && v.nad08.length) pred.push('Zatížení nad 0,8 × In: ' + v.nad08.map(function (q) { return q.x.ozn || q.x.p.kat; }).join(', ') + '.');
   B.push({ html: '<div class="dok-pdf-h2">Předpoklady výpočtu</div><ul class="rz-ps-ul">' + pred.map(function (x) { return '<li>– ' + esc(x) + '</li>'; }).join('') + '</ul>' });
   B.push({ html: '<table class="rz-ps-podpis-tab"><tr><td><small>Datum</small><br>' + esc(dokDatumCz(e.pDatum) || dokDatumCz(d.datum) || '……………') + '</td>' +
-    '<td><small>Vypracoval</small><br>' + esc(e.pJmeno || (d.bezProfilu === true ? '' : t.jmeno) || '……………') + '</td><td class="rz-ps-p"><small>Podpis</small></td></tr></table>' });
+    '<td><small>Vypracoval</small><br>' + esc(e.pJmeno || '……………') + '</td><td class="rz-ps-p"><small>Podpis</small></td></tr></table>' });
   return B;
 }
 
@@ -43377,7 +43422,7 @@ function rozvSchemaListy(d, o) {
   var met = s.metKreslit === true;
   var c = {
     fmt: fmt, e: rozvDokEff(d),
-    vypracoval: t.jmeno || '', datum: dokDatumCz(d.datum) || '', akce: d.stavba || '', investor: (d.investor || {}).nazev || '',
+    vypracoval: rozvZpracovatelJmeno(d) || t.jmeno || '', datum: dokDatumCz(d.datum) || '', akce: d.stavba || '', investor: (d.investor || {}).nazev || '',
     nazev: hod('schema.nazev'), projekt: hod('schema.projekt'), zakazka: hod('schema.zakazka'), soubor: rozvSchSoubor(d),
     tech: { ochrana: hod('tech.ochrana'), vlivy: (d.tech || {}).vlivy || '', pi: (d.tech || {}).pi || '', pm: (d.tech || {}).pm || '' },
     met: Array.isArray(s.met) ? s.met : String(s.met || '').split('\n').map(function (x) { return x.trim(); }).filter(Boolean)
@@ -46361,7 +46406,7 @@ function pscPdfTech(d, e) {
     { html: '<table class="dok-pdf-tab rz-pdf-tech">' + radky + '</table>' }];
 }
 function pscPdfOvereni(d, e) {
-  var ov = d.ov || {}, z = ov.z || {}, p = ov.p || {}, t = (typeof STORE !== 'undefined' && STORE.technik) || {};
+  var ov = d.ov || {}, z = ov.z || {}, p = ov.p || {};
   var dok = [ov.dokNazev, ov.dokCislo ? 'č. ' + ov.dokCislo : '', ov.dokDatum ? 'ze dne ' + dokDatumCz(ov.dokDatum) : ''].filter(Boolean).join(', ');
   var B = [{ strana: 'vyska', zahlavi: rozvPdfZahlavi(e), html: '<div class="rz-ps-titul">OVĚŘENÍ NÁVRHU</div>' +
     '<div class="rz-ko-pdf-pod">výkonový rozvaděč ' + esc(d.oznaceni || '') + (e.vc ? ', výrobní číslo ' + esc(e.vc) : '') + ' — ČSN EN IEC 61439-1 ed. 3 a ČSN EN IEC 61439-2 ed. 3</div>' }];
@@ -46378,7 +46423,7 @@ function pscPdfOvereni(d, e) {
     '</table>', delit: true });
   B.push({ html: '<div class="rz-pdf-pozn">' + PSC_OV_ZDROJ + ' — Z = zkouška, S = srovnání s referenčním návrhem, H = hodnocení.</div>' });
   B.push({ html: '<table class="rz-ps-podpis-tab"><tr><td><small>Datum</small><br>' + esc(dokDatumCz(e.pDatum) || dokDatumCz(d.datum) || '……………') + '</td>' +
-    '<td><small>Vypracoval</small><br>' + esc(e.pJmeno || (d.bezProfilu === true ? '' : t.jmeno) || '……………') + '</td><td class="rz-ps-p"><small>Podpis</small></td></tr></table>' });
+    '<td><small>Vypracoval</small><br>' + esc(e.pJmeno || '……………') + '</td><td class="rz-ps-p"><small>Podpis</small></td></tr></table>' });
   return B;
 }
 // Štítek PSC — tatáž tabulka s popsanými políčky jako u DBO (v1.22).
