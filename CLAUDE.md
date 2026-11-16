@@ -2426,6 +2426,20 @@ záložky a zaškrtávátka), `test-rozvadec-dokumenty.js` a
 - Vymyšlený **byt 3+1** pro testy: `testy/rozvadec-byt.js` (skříň 3×12:
   QM, SPD, sporák B25 3P; dva chrániče 4P 40/30 s jističi; RCBO balkon).
 
+**Oprava — výběr musí být vidět a jít zrušit klikem mimo přístroj (2026-11-16,
+po vyzkoušení uživatelem):** rámeček vybraného přístroje dostal silnější obrys
+a slabé modré podbarvení (dřív jen tenký obrys 1,3 px, na šedé liště přehlédnutelný).
+Navíc **pruh „Vybráno: …" nad čelním pohledem** (`rozvVybranoPruhHtml`,
+`.rz-vybrano`) s tlačítkem „✕ Zrušit výběr" — jmenuje vybraný přístroj, nebo
+u víc vybraných jejich počet. **Klik kamkoli mimo přístroj výběr zruší** —
+dřív to platilo jen na místě, které šlo vyhodnotit jako cíl vložení (`cil`
+z `rozvCilZBodu`); teď i v prázdné části skříně bez cíle, mimo skříň v rámečku
+pohledu i mimo samotné `<svg>` (šedý okraj `#rz-svg-ram`, volná plocha editoru
+mezi knihovnou a vlastnostmi — druhý posluchač `click` mimo `.rz-svg`).
+Výjimky: knihovna, panel vlastností, lišta (`.rz-lista`), lišta akcí u výběru
+(`#rz-akce`) a tlačítka/pole uvnitř — tam klik na výběr nesahá. Výběr
+obdélníkem, dlouhý stisk (výběr víc na dotyku) a Esc fungují beze změny.
+
 ### Mezery mezi přístroji (v9.130)
 
 Pokyn uživatele 2026-10-22: „přidaný přístroj se automaticky řadí doleva,

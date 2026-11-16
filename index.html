@@ -1725,6 +1725,11 @@ html.dark .dok-stitek-skryty{background:#333;color:#aaa}
 html.dark .rz-priv-uk-btn.akt{background:#5b8fd6;border-color:#5b8fd6;color:#0b1220}
 @keyframes rzPrivodPulz{0%,100%{opacity:1}50%{opacity:.2}}
 .rz-vyvodka-pulse rect,.rz-vyvodka-pulse line{animation:rzPrivodPulz .5s ease-in-out 3}
+/* pruh „Vybráno: …" nad čelním pohledem (2026-11-16) */
+.rz-vybrano{display:flex;align-items:center;gap:.5rem;flex-wrap:wrap;background:var(--surface);border:1px solid var(--accent2);
+  border-radius:3px;padding:.3rem .6rem;margin:.3rem 0;font-size:.82rem}
+.rz-vybrano b{color:var(--accent2)}
+.rz-vybrano button{margin-left:auto}
 /* výběr kódů vnějších vlivů (protokol i vlastní vzor) */
 .dk-kody-hlava{display:flex;flex-wrap:wrap;align-items:center;gap:.3rem .7rem;font-family:var(--mono);font-size:.62rem;
   letter-spacing:.1em;text-transform:uppercase;color:var(--accent2);margin:.2rem 0 .4rem}
@@ -33071,6 +33076,20 @@ function rozvVyberNastavit(uidy, hlavni) {
   __rz.vyber = a.length ? (hlavni && m[hlavni] ? hlavni : a[a.length - 1]) : null;
 }
 function rozvKusy(n) { return n + ' ' + (n === 1 ? 'přístroj' : (n > 1 && n < 5 ? 'přístroje' : 'přístrojů')); }
+// Pruh „Vybráno: …" nad čelním pohledem (oprava 2026-11-16 — výběr musí být
+// vidět bez ohledu na zoom a rolování, ne jen tenký obrys kolem přístroje).
+function rozvVybranoPruhHtml() {
+  if (!__rz || __rz.knihVyber || __rz.presun || __rz.rezimVyberu) return '';
+  var vic = rozvVic();
+  if (vic && vic.length) return '<div class="rz-vybrano">☑ Vybráno: <b>' + rozvKusy(vic.length) + '</b>' +
+    '<button class="dok-mini" data-action="tdRVyberZrusit" title="Zrušit výběr (Esc, nebo klik mimo přístroj)">✕ Zrušit výběr</button></div>';
+  if (__rz.vyber) {
+    var z = rozvNajit(__rz.vyber); if (!z) return '';
+    return '<div class="rz-vybrano">☑ Vybráno: <b>' + esc((z.x.ozn ? z.x.ozn + ' ' : '') + rozvNazev(z.x.p)) + '</b>' +
+      '<button class="dok-mini" data-action="tdRVyberZrusit" title="Zrušit výběr (Esc, nebo klik mimo přístroj)">✕ Zrušit výběr</button></div>';
+  }
+  return '';
+}
 // Poloha přístrojů v mm (pro obdélník výběru a ducha).
 function rozvGeom() {
   if (__rz.rezim === 'PSC') return pscPrvkyGeom(__rz);
@@ -33759,7 +33778,7 @@ function rozvPrvekDinSvg(d, x, y, o) {
     ff.forEach(function (k, i) { h += '<rect class="rz-faze-pruh" x="' + rozvZaokr(x + 0.3 + i * sw) + '" y="' + rozvZaokr(y + H - 2.2) + '" width="' + rozvZaokr(sw) + '" height="2.2" fill="' + RF_BARVY[k] + '"/>'; });
   }
   if (o.kolize) h += '<rect class="rz-kolize" x="' + rozvZaokr(x + 0.3) + '" y="' + y + '" width="' + rozvZaokr(w - 0.6) + '" height="' + H + '" fill="none" stroke="#c0392b" stroke-width="1.6"/>';
-  if (vyb) h += '<rect x="' + rozvZaokr(x - 0.4) + '" y="' + (y - 0.7) + '" width="' + rozvZaokr(w + 0.8) + '" height="' + (H + 1.4) + '" rx="1.6" fill="none" stroke="#2B579A" stroke-width="1.3"/>';
+  if (vyb) h += '<rect x="' + rozvZaokr(x - 0.4) + '" y="' + (y - 0.7) + '" width="' + rozvZaokr(w + 0.8) + '" height="' + (H + 1.4) + '" rx="1.6" fill="#2B579A" fill-opacity=".14" stroke="#2B579A" stroke-width="2.1"/>';
   if (!o.tisk && !o.duch && rozvPripJe(d)) {   // úchyt otočení ↻ (podél ↔ kolmo na lištu) v pravém dolním rohu; ukáže se po najetí myší
     var rx = rozvZaokr(x + w - 3.2), ry = rozvZaokr(y + H - 3.2);
     h += '<g class="rz-rot" data-rot="' + esc(d.uid) + '"><title>Otočit přípojnici ' + (rozvPripKolmo(d) ? 'podél lišty' : 'kolmo na lištu') + ' (klávesa R)</title>' +
@@ -33835,7 +33854,7 @@ function rozvPrvekSvg(d, x, y, o) {
     ff.forEach(function (k, i) { h += '<rect class="rz-faze-pruh" x="' + rozvZaokr(x + 0.3 + i * sw) + '" y="' + rozvZaokr(y + H - 2.2) + '" width="' + rozvZaokr(sw) + '" height="2.2" fill="' + RF_BARVY[k] + '"/>'; });
   }
   if (o.kolize) h += '<rect class="rz-kolize" x="' + rozvZaokr(x + 0.3) + '" y="' + y + '" width="' + rozvZaokr(w - 0.6) + '" height="' + H + '" fill="none" stroke="#c0392b" stroke-width="1.6"/>';
-  if (vyb) h += '<rect x="' + rozvZaokr(x - 0.4) + '" y="' + (y - 0.7) + '" width="' + rozvZaokr(w + 0.8) + '" height="' + (H + 1.4) + '" rx="1.6" fill="none" stroke="#2B579A" stroke-width="1.3"/>';
+  if (vyb) h += '<rect x="' + rozvZaokr(x - 0.4) + '" y="' + (y - 0.7) + '" width="' + rozvZaokr(w + 0.8) + '" height="' + (H + 1.4) + '" rx="1.6" fill="#2B579A" fill-opacity=".14" stroke="#2B579A" stroke-width="2.1"/>';
   if (!o.tisk && d.upoz && d.upoz.length) h += '<circle class="rz-upoz" cx="' + rozvZaokr(x + w - 2.6) + '" cy="' + (y + 2.6) + '" r="2.2" fill="#e08a00"/>' +
     '<text x="' + rozvZaokr(x + w - 2.6) + '" y="' + (y + 3.75) + '" font-size="3.2" font-weight="700" text-anchor="middle" fill="#fff">!</text>';
   h += '</g>';
@@ -34992,6 +35011,7 @@ function rozvPohledVykreslit() {
       '<button class="dok-mini" data-action="tdRVyberAkce"' + (nv ? '' : ' disabled') + '>⋯ Další akce</button>' +
       '<button class="dok-mini" data-action="tdRRezimKonec">✓ Hotovo</button></span></div>';
   }
+  h += rozvVybranoPruhHtml();
   if (pres.length) {
     h += '<div class="rz-chyba">⚠ ' + pres.map(function (x) { return x.text || 'Řada ' + (x.i + 1) + ' je přeplněná o ' + rozvModuly(x.o); }).join(', ') +
       (__rz.rezim === 'PSC' ? ' — přesuňte nebo smažte přístroj, zmenšete díly nebo přidejte pole.' : ' — přesuňte nebo smažte přístroj, nebo zvolte větší skříň.') + '</div>';
@@ -37776,9 +37796,11 @@ document.addEventListener('click', function (e) {
       __rz.kotva = uid;
     } else { rozvVyberNastavit([uid]); __rz.kotva = uid; }
     var z = rozvNajit(uid); if (z) __rz.aktRada = z.r;
-  } else if (cil) {
-    if (!ctrl && !e.shiftKey && !__rz.rezimVyberu) rozvVyberNastavit([]);
-    __rz.aktRada = cil.r;
+  } else {
+    // Klik kamkoli mimo přístroj (i mimo skutečnou řadu, ne jen na cíl vložení)
+    // zruší výběr — oprava 2026-11-16: dřív to platilo jen uvnitř `cil`.
+    if (!ctrl && !e.shiftKey && !__rz.rezimVyberu) { rozvVyberNastavit([]); __rz.privodUkazAkt = null; }
+    if (cil) __rz.aktRada = cil.r;
   }
   if (__rz.rezim === 'PSC') {   // klepnutí do pole (i mimo řadu) vybere pole a díl — vpravo jeho vlastnosti
     var pp = t.closest('[data-pole]');
@@ -37793,6 +37815,23 @@ document.addEventListener('click', function (e) {
   if (pr && window.innerWidth < 900 && !__rz.rezimVyberu && !ctrl && !e.shiftKey) {
     var v = document.getElementById('rz-vlastnosti'); if (v) v.scrollIntoView({ block: 'nearest', behavior: 'smooth' });
   }
+}, true);
+
+// Klik mimo přístroj zruší výběr i mimo samotné SVG (oprava 2026-11-16):
+// okraj kolem rámečku (šedý `#rz-svg-ram`), volná plocha editoru mezi
+// knihovnou a vlastnostmi. Uvnitř `.rz-svg` to řeší posluchač výš — tenhle
+// se tam proto vůbec nepouští. Výjimky: knihovna, panel vlastností, lišta
+// a dialogy — tam klik na výběr nesahá.
+document.addEventListener('click', function (e) {
+  if (!rozvEditorAktivni() || __rzBezKliku) return;
+  if (!__rz || (!__rz.vyber && !(__rz.vic && __rz.vic.length))) return;
+  if (__rz.knihVyber || __rz.presun || e.ctrlKey || e.shiftKey || e.metaKey || __rz.rezimVyberu) return;
+  var t = e.target; if (!t.closest) return;
+  if (t.closest('#rz-pohled .rz-svg')) return;   // tam rozhoduje posluchač výš
+  if (t.closest('.rz-knihovna') || t.closest('#rz-vlastnosti') || t.closest('.rz-lista') || t.closest('#rz-akce')) return;
+  if (t.closest('button, select, input, a, .kt-menu, [data-action]')) return;
+  if (!t.closest('#rz-pohled') && t !== document.querySelector('.rz-mrizka')) return;
+  TD_AKCE.tdRVyberZrusit();
 }, true);
 
 // Dotyk: dlouhý stisk přístroje zapne výběr více přístrojů (klepnutím pak
