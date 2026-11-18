@@ -29577,8 +29577,13 @@ async function dokKnihovnaNacist() {
 }
 
 async function dokKnihovnaZapsat(seznam, zOkna) {
-  if (idb) { await idbSetMulti({ dok_rozvKnihovna: seznam }); }
-  else {
+  if (idb) {
+    try { await idbSetMulti({ dok_rozvKnihovna: seznam }); __dokKnihovnaBezUloziste = false; }
+    catch (e) {
+      __dokKnihovnaBezUloziste = true;
+      if (typeof showToast === 'function') showToast('Knihovna výrobců se do úložiště tohoto prohlížeče nevejde – po zavření okna ji bude potřeba načíst znovu.', { timeout: 10000 });
+    }
+  } else {
     try { localStorage.setItem(DOK_KNIHOVNA_LS, JSON.stringify(seznam)); __dokKnihovnaBezUloziste = false; }
     catch (e) {
       __dokKnihovnaBezUloziste = true;
@@ -32838,6 +32843,8 @@ function rozvPrivodDosahy() {
 // totéž tlačítko zvýraznění zruší.
 function rozvPrivodUkazatel() {
   var el = document.getElementById('rz-privod-ukaz'); if (!el || !__rz) return;
+  if (!rozvPrivody(__rz).length) { el.hidden = true; el.innerHTML = ''; return; }   // bez dalšího přívodu se BFS vůbec nespouští
+  if (__rzTah) return;   // při tažení se ukazatel nepřepočítává
   var D = rozvPrivodDosahy();
   if (D.length < 2) { el.hidden = true; el.innerHTML = ''; return; }
   el.hidden = false;
@@ -35536,6 +35543,23 @@ function rozvPrivodySeznam(rz) {
   return out;
 }
 function rozvPrivodPopisUid(rz, uid) { var p = rozvPrivodZaznam(rz, uid); return p ? p.ozn : (uid ? String(uid) : '?'); }
+// (A1, provizorně) Schéma zatím umí zakreslit jen přívod 1 — přístroje napájené
+// z DALŠÍHO přívodu se v `rsModel` kreslí jako by patřily přívodu 1 (jejich
+// `nadr` ukazuje na uzel, který `rsModel` ve svém `vSch` nezná). Dokud se
+// kresba neopraví, aspoň se to řekne: vrátí za každý další přívod, co pod ním
+// (přímo i skrze potomky) visí a ve schématu je tedy chybně zakresleno.
+function rozvPrivod2VeSchematu(d) {
+  var rady = d.rady || [], priv = rozvPrivody(d);
+  if (!priv.length) return [];
+  var vse = rozvPrvkyVse(rady), out = [];
+  priv.forEach(function (p) {
+    var uid = '@privod~' + p.uid, dd = rozvDeti(uid, rady), zahrn = {};
+    dd.forEach(function (x) { zahrn[x.uid] = 1; (rozvPotomci(x.uid, rady) || []).forEach(function (y) { zahrn[y.uid] = 1; }); });
+    var uidy = vse.filter(function (x) { return zahrn[x.uid] && x.p.kat !== 'REZ'; }).map(function (x) { return x.uid; });
+    if (uidy.length) out.push({ p: rozvPrivodZaznam(d, uid), uidy: uidy });
+  });
+  return out;
+}
 // Smí mít extra přívod prázdný záznam (jen uid), nebo musí mít aspoň jedno vyplněné pole?
 // — žádné omezení, přívod jde přidat a vyplnit postupně.
 // Leží přístroj před hlavním vypínačem? (z přívodu, přes přívodní svorku, jistič ovládání na přívodu)
@@ -36898,7 +36922,10 @@ function rzhZatez(h, S, d) {
   S = S || rzpStav(__rz);
   var src = rzhZdroj(h, S), In = null, srcText = '';
   if (src && !rozvJePrivod(src)) { var xs = rzpX(src); In = rozvInEff(xs); In = In === '' ? null : +In; srcText = (xs.ozn || rozvNazev(xs.p)); }
-  else if (rozvJePrivod(src)) { d = d || rozvOteplData(); var sk = d ? rzsSkutecny(d) : null; In = sk ? +sk.In : null; srcText = src === '@privod' ? 'přívod' : 'přívod (' + rozvPrivodPopisUid(__rz, src) + ')'; }
+  else if (rozvJePrivod(src)) {
+    if (src === '@privod') { d = d || rozvOteplData(); var sk = d ? rzsSkutecny(d) : null; In = sk ? +sk.In : null; srcText = 'přívod'; }
+    else { var zp = rozvPrivodZaznam(__rz, src); In = zp && zp.in !== '' && zp.in != null ? +rfNum(zp.in) : null; srcText = 'přívod (' + rozvPrivodPopisUid(__rz, src) + ')'; }   // další přívod: jen jeho vlastní In
+  }
   var ib = null;
   try {
     d = d || rozvOteplData();
@@ -37266,7 +37293,11 @@ var RZV_FAZE_BARVA = { L1: 'hneda', L2: 'cerna', L3: 'seda', N: 'modra', PE: 'zz
 var RZV_NAVRH = [[25, '2,5'], [32, '4'], [40, '6'], [63, '10'], [80, '16']];
 function rzvNavrhPrurez(In) { In = +In; if (!(In > 0)) return ''; for (var i = 0; i < RZV_NAVRH.length; i++) if (In <= RZV_NAVRH[i][0] + 1e-9) return RZV_NAVRH[i][1]; return '25'; }
 function rzvZdrojIn(w) {
-  if (rozvJePrivod(w.a.uid)) { var d = rozvOteplData(), sk = d ? rzsSkutecny(d) : null; return sk ? sk.In : ''; }
+  if (rozvJePrivod(w.a.uid)) {
+    if (w.a.uid === '@privod') { var d = rozvOteplData(), sk = d ? rzsSkutecny(d) : null; return sk ? sk.In : ''; }
+    var z = __rz ? rozvPrivodZaznam(__rz, w.a.uid) : null;   // další přívod: jen jeho vlastní In, nic se nedomýšlí
+    return z && z.in !== '' && z.in != null ? rfNum(z.in) : '';
+  }
   var x = rzpX(w.a.uid); return x ? rozvInEff(x) : '';
 }
 function rzvFazePolu(w, k, rz) {   // fáze pólu svazku podle zdroje (bez výpočtu napětí — pro materiál)
@@ -37422,9 +37453,9 @@ function rozvNapSvg(rz) {
     var vy = VY[pv.uid]; if (!vy) return;
     var naz = pv.uid === '@privod' ? 'Přívod' : pv.ozn;   // text přívodu 1 se nesmí lišit od dřívějšího
     var yk = vy.shora ? vy.ven : vy.y + vy.h, yk2 = vy.shora ? vy.y : vy.ven;
-    var txt = esc(vy.pop || naz), strana = vy.shora ? 'shora' : 'zespodu';
+    var raw = vy.pop || naz, txt = esc(raw), strana = vy.shora ? 'shora' : 'zespodu';
     var tx = Math.max(vy.x + vy.w + 1.4, napisKonec[strana] == null ? -Infinity : napisKonec[strana]);
-    napisKonec[strana] = tx + txt.length * 2.2 + 3;   // odhad šířky písma — další štítek na téže straně začne až za ním
+    napisKonec[strana] = tx + raw.length * 2.2 + 3;   // odhad šířky písma (z NEescapovaného textu, jako rozvVyvodkaGeomMapa) — další štítek na téže straně začne až za ním
     // `data-priv-cable`/`data-priv-strana`: pravý klik (rozvPrivodKontext), pulz po
     // přidání (rozvPrivodZvyraznit) a doladění popisků podle SKUTEČNÉ šířky textu
     // (rozvNapLabelySrovnat — odhad výš je jen první přiblížení).
@@ -42963,8 +42994,10 @@ function rsListOsazeni(d, c) {
   var nad = [psc ? pscSkrinNazev(sk).replace(/^Rozvaděč PSC/, 'Výkonový rozvaděč PSC') : sk.rady && sk.modulu ? 'Rozvodnice ' + sk.rady + '×' + sk.modulu + ' modulů' : 'Rozvodnice',
     rozvIpText(e), psc && e.forma ? 'forma ' + e.forma : '', e.trida ? 'třída ' + e.trida : '',
     e.rozmery ? 'rozměry ' + e.rozmery + (/mm/.test(e.rozmery) ? '' : ' mm') : ''].filter(Boolean).join(', ');
-  var bx = 16, by = 25, bw = tx - 8 - bx, bh = g.H - 16 - by;
+  var viceP = (d.privody || []).length > 0;
+  var bx = 16, by = 25 + (viceP ? 3.2 : 0), bw = tx - 8 - bx, bh = g.H - 16 - by;
   h += rsText(bx, 18, 'Osazení rozvaděče ' + (d.oznaceni || ''), { fs: 3.4, tucne: true }) + rsText(bx, 22.4, rsVejit(nad, bw, 2.5), { fs: 2.5 });
+  if (viceP) h += rsText(bx, 25.7, 'Rozvaděč má víc přívodů – schéma zatím zakresluje jen přívod 1.', { fs: 1.9, barva: '#a85400' });
   if (d.skrin) {
     var rz = { skrin: d.skrin, rady: d.rady || [] }, rr = rozvSvgRozmery(rz);
     var k = Math.min(bw / rr.Wsvg, bh / rr.Hsvg, 1);
@@ -43488,6 +43521,12 @@ function rozvSchChybiHtml(d) {
   };
   if (ch.faze.length) cast.push(ch.faze.length + '× fáze (' + odkazy(ch.faze) + ')');
   if (ch.kabel.length) cast.push(ch.kabel.length + '× kabel (' + odkazy(ch.kabel) + ')');
+  rozvPrivod2VeSchematu(d).forEach(function (pp) {   // A1, provizorně: schéma zatím umí jen přívod 1
+    var lbl = String(pp.p.ozn).charAt(0).toLowerCase() + String(pp.p.ozn).slice(1), n = pp.uidy.length;
+    var frase = n === 1 ? '1 přístroj je' : (n >= 2 && n <= 4 ? n + ' přístroje jsou' : n + ' přístrojů je');
+    var ukon = n === 1 ? 'zakreslen' : (n >= 2 && n <= 4 ? 'zakresleny' : 'zakresleno');
+    cast.push(lbl + ': ' + frase + ' ve schématu ' + ukon + ' jako z přívodu 1 (<button type="button" class="rz-odkaz" data-action="tdRSchVybratVic" data-uidy="' + esc(pp.uidy.join(',')) + '">ukázat</button>)');
+  });
   var ov = rozvOvlKontrola(d), ovHtml = ov.length ? '<div class="rz-ovl-kontrola">⚠ Ovládání: ' + ov.map(function (q) {
       return q.uid ? '<button type="button" class="rz-odkaz" data-action="tdRSchVybrat" data-uid="' + esc(q.uid) + '">' + esc(q.text) + '</button>' : esc(q.text); }).join(' · ') + '</div>' : '';
   if (!d.soustava) ovHtml = '<div class="rz-ovl-kontrola">⚠ Není vybraná rozvodná soustava — na sběrnici schématu chybí její popis (doplňte v hlavičce rozvaděče).</div>' + ovHtml;
@@ -43516,6 +43555,14 @@ TD_AKCE.tdRSchZoom = function (el) {
   __rzSch.zoom = Math.round(n * 100) / 100; rozvSchKreslit();
 };
 TD_AKCE.tdRSchVybrat = function (el) { rozvSchVybrat(el.getAttribute('data-uid')); };
+TD_AKCE.tdRSchVybratVic = function (el) {   // A1: odkaz vybere víc přístrojů naráz (přívod 2 zakreslený jako přívod 1)
+  var uidy = String(el.getAttribute('data-uidy') || '').split(',').filter(Boolean);
+  if (!uidy.length || !__rz) return;
+  rozvZalozkaNastavit('navrh');
+  if (uidy.length === 1) rozvVybrat(uidy[0], true); else { rozvVyberNastavit(uidy); __rz.kotva = uidy[0]; rozvPohledVykreslit(); rozvVlastnostiVykreslit(); }
+  rozvVyberUkazat();
+  var p = document.getElementById('rz-pohled'); if (p && window.innerWidth < 900) p.scrollIntoView({ block: 'start', behavior: 'smooth' });
+};
 function rozvSchVybrat(uid) {
   if (uid && __rz && rozvVnNajit(uid)) {   // prvek mimo rozvaděč
     rozvZalozkaNastavit('navrh'); __rz.vyber = null; __rz.vic = null; __rz.vyberVn = uid; rozvPohledVykreslit(); rozvVlastnostiVykreslit(); return;
@@ -47347,8 +47394,8 @@ function rzsPrivodDosah(rz, ws, pvUid) {
     var x = vse[p[0]];
     if (x && x.p.kat !== 'SPD') { var m2 = p[0] + ':' + (p[1] === 't' ? 'b' : 't') + ':' + p[2]; if (!E[m2]) { E[m2] = 1; q.push(m2); } }
   }
-  var out = {}, uzly = Object.keys(E);
-  Object.keys(vse).forEach(function (u) { if (uzly.some(function (k) { return k.indexOf(u + ':') === 0; })) out[u] = 1; });
+  var out = {};   // mapa uid → true, naplněná přímo z uzlů BFS (ne O(přístroje × uzly))
+  Object.keys(E).forEach(function (k) { var i = k.indexOf(':'); if (i > 0 && vse[k.slice(0, i)]) out[k.slice(0, i)] = 1; });
   return out;
 }
 function rzsKontrola() {
@@ -47401,7 +47448,7 @@ function rzsKontrola() {
     rozvNapajeniUpoz(x, rady).forEach(function (t) { add('upoz', t.indexOf(nm(x)) === 0 ? t : nm(x) + ': ' + t, { uid: x.uid }); });
   });
   // 4b. víc přívodů (2026-11-13): propojení, nevyužitý přívod, tip na výstražný štítek
-  var Dpv = rozvPrivodDosahy();
+  var Dpv = rozvPrivody(__rz).length ? rozvPrivodDosahy() : [];   // bez dalšího přívodu se BFS vůbec nespouští
   if (Dpv.length > 1) {
     var spojene = vse.filter(function (x) { return Dpv.filter(function (dd) { return dd.dosah[x.uid]; }).length > 1; });
     if (spojene.length) add('chyba', nm(spojene[0]) + ' je napájen z víc přívodů najednou (' +
@@ -47410,6 +47457,12 @@ function rzsKontrola() {
     Dpv.forEach(function (dd) { if (!Object.keys(dd.dosah).length) add('upoz', dd.p.ozn + ' nenapájí žádný přístroj.', {}); });
     add('tip', 'Rozvaděč má víc přívodů – označte ho výstražným štítkem, že má víc přívodů, a před prací vypínejte všechny.', {});
   }
+  rozvPrivod2VeSchematu({ rady: rady, privody: __rz.privody }).forEach(function (pp) {   // A1, provizorně: schéma zatím umí jen přívod 1
+    var lbl = String(pp.p.ozn).charAt(0).toLowerCase() + String(pp.p.ozn).slice(1), n = pp.uidy.length;
+    var frase = n === 1 ? '1 přístroj je' : (n >= 2 && n <= 4 ? n + ' přístroje jsou' : n + ' přístrojů je');
+    var ukon = n === 1 ? 'zakreslen' : (n >= 2 && n <= 4 ? 'zakresleny' : 'zakresleno');
+    add('upoz', lbl + ': ' + frase + ' ve schématu ' + ukon + ' jako z přívodu 1.', { uidy: pp.uidy });
+  });
   // 5. obecné přístroje bez Pv, je-li zapnuté oteplení výpočtem
   try {
     var d = rozvOteplData();
