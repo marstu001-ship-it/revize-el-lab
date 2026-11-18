@@ -210,7 +210,7 @@ const zpravaOtevritUlozit = async (p) => p.evaluate(async () => {
     const nove = ROZV_CSV.map(c => c[0]);
     // sloupce přidané PO v9.134 — nový sloupec (hřeben, vložka, PZ…) se sem přidá, ať
     // „43 sloupců" dál znamená skutečnou šablonu do v9.134, ne „aktuální minus osm"
-    const OVL = ['uc', 'kontakty', 'ie_ac1', 'pe_ac3_kw', 'rozsah_nastaveni', 'prislusenstvi_k', 'montaz', 'typ_prislusenstvi', 'ovladani'];
+    const OVL = ['uc', 'kontakty', 'ie_ac1', 'pe_ac3_kw', 'rozsah_nastaveni', 'prislusenstvi_k', 'montaz', 'typ_prislusenstvi', 'ovladani', 'prurez', 'polu', 'roztec_mm', 'krytky'];
     const stare = nove.filter(k => OVL.indexOf(k) < 0);   // šablona do v9.134
     const radek = h => h.map(k => ({ druh: 'pristroj', kategorie: 'FA', nazev: 'Jistič test', vyrobce: 'Výrobce A', typ: 'VA-B16-' + h.length,
       poly: '1', in: '16', charakteristika: 'B', icn: '6', sirka_moduly: '1', overeno: 'ne', kontakty: '', montaz: '', typ_prislusenstvi: '' }[k] || '')).join(';');

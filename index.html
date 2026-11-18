@@ -32012,15 +32012,18 @@ var ROZV_PRISTROJ_NAVIC_TEXT = ['uVstup', 'uVystup', 'ozn', 'uc', 'kontakty', 'r
 var ROZV_POLE_KLICE = ['nazev', 'vyrobce', 'rada', 'typ', 'provedeni', 'material', 'sirkaMm', 'vyskaMm', 'hloubkaMm', 'uzitnaSirkaMm', 'uzitnaVyskaMm',
   'ip', 'ik', 'ina', 'penc', 'icw', 'rozmery', 'trida', 'pozn', 'zdroj', 'overeno'];
 var ROZV_POLE_CISELNE = ['sirkaMm', 'vyskaMm', 'hloubkaMm', 'uzitnaSirkaMm', 'uzitnaVyskaMm', 'ina', 'penc', 'icw'];
+// Propojovací hřeben jako položka knihovny (2026-11-18) — nikdy se nevkládá do řady, jen zdroj pro hřeben v d.hrebeny[].
+var ROZV_HREBEN_KLICE = ['nazev', 'vyrobce', 'rada', 'typ', 'poly', 'prurez', 'In', 'polu', 'roztecMm', 'prislK', 'krytky', 'pozn', 'zdroj', 'overeno'];
+var ROZV_HREBEN_CISELNE = ['prurez', 'In', 'polu', 'roztecMm'];
 
 // Položka knihovny ve tvaru, se kterým program počítá (chybějící = '').
 function rozvPolozkaNorm(o, druh) {
   o = o || {};
   var d = druh || o.druh || 'pristroj', r = { id: o.id || '', druh: d };
-  (d === 'skrin' ? ROZV_SKRIN_KLICE : d === 'pole' ? ROZV_POLE_KLICE : ROZV_PRISTROJ_KLICE).forEach(function (k) {
+  (d === 'skrin' ? ROZV_SKRIN_KLICE : d === 'pole' ? ROZV_POLE_KLICE : d === 'hreben' ? ROZV_HREBEN_KLICE : ROZV_PRISTROJ_KLICE).forEach(function (k) {
     var v = o[k];
     if (k === 'overeno') r[k] = v === true;
-    else if (ROZV_CISELNE.indexOf(k) !== -1 || (d === 'pole' && ROZV_POLE_CISELNE.indexOf(k) !== -1)) r[k] = rozvCislo(v);
+    else if (ROZV_CISELNE.indexOf(k) !== -1 || (d === 'pole' && ROZV_POLE_CISELNE.indexOf(k) !== -1) || (d === 'hreben' && ROZV_HREBEN_CISELNE.indexOf(k) !== -1)) r[k] = rozvCislo(v);
     else r[k] = v == null ? '' : String(v).trim();
   });
   if (d === 'pristroj') {
@@ -32053,6 +32056,7 @@ function rozvNazev(it) {
     return ['Skříň', it.rady && it.modulu ? it.rady + '×' + it.modulu + ' modulů' : '', it.material, it.provedeni, it.typ]
       .filter(Boolean).join(', ');
   }
+  if (it.druh === 'hreben') return ['Hřeben', it.vyrobce, it.typ || it.rada].filter(Boolean).join(' ');
   var k = rozvKat(it.kat) || { nazev: it.kat || 'Přístroj' };
   if (it.kat === 'TR' || it.kat === 'ZD') return [it.kat === 'TR' ? 'Transformátor' : 'Napájecí zdroj', rozvTrZdText(it), it.typ].filter(Boolean).join(' ');
   var p = it.poly ? (/N/.test(it.poly) ? it.poly : it.poly + 'P') : '';
@@ -37041,6 +37045,7 @@ function rzhZatezText(z) {
 function rzhKontroly(h, S) {
   S = S || rzpStav(__rz);
   var u = [], zub = rzhZuby(h), cov = rzhKryte(h).map(rzpX).filter(Boolean), zt = rzhZatez(h, S), kap = rzhKapacita(h);
+  var dk = rzhKnihKontrola(h); if (dk) u.push(dk);
   if (zt.zatez > 0 && kap && kap < zt.zatez - 1e-9) {
     var nv = rzhNavrhPrurez(zt.zatez);
     u.push({ t: 'Hřeben ' + h.prurez + ' mm² nestačí pro zátěž ' + rozvCisloText(Math.round(zt.zatez)) + ' A – ' + (nv.stacii ? 'navrhuji ' + nv.prurez + ' mm²' : 'nestačí ani 25 mm², napájejte jinak'), prurez: nv.stacii && nv.prurez !== +h.prurez ? nv.prurez : null });
@@ -37316,20 +37321,72 @@ TD_AKCE.tdRHrVybrane = function () {
   rzhPridat(rzhNovy(r, od, dd, rzhPolyNavrh(r, od, dd)), 'Hřeben přes vybrané');
 };
 
+// ── hřeben z knihovny (položka druh:'hreben', 2026-11-18) ───────────────
+// Nic se nekreslí ani nepočítá dvakrát: `h.prurez`/`h.In` zůstávají stejná
+// pole jako u obecného hřebenu (čte je rzhKapacita/rzhZatez beze změny),
+// `h.knih`+`h.p` (kopie položky) jsou jen navíc, pro zobrazení výrobce/typu
+// a pro kontrolu délky. Bez `knih` se hřeben chová přesně jako dřív.
+function rzhKnihVolby(h) {
+  var rady = {}, vyrobci = {};
+  rzhZuby(h, __rz).forEach(function (z) {
+    if (!z.x || !z.x.p) return;
+    var r = rozvNorm(z.x.p.rada).trim(), v = rozvNorm(z.x.p.vyrobce).trim();
+    if (r) rady[r] = (rady[r] || 0) + 1;
+    if (v) vyrobci[v] = (vyrobci[v] || 0) + 1;
+  });
+  var lib = rozvKnihovnaVse().filter(function (it) { return it.druh === 'hreben' && it.poly === h.poly; });
+  var skore = function (it) {
+    var tok = String(it.prislK || '').split(/[,;\/]+/).map(function (s) { return rozvNorm(s).trim(); }).filter(Boolean);
+    if (tok.some(function (s) { return rady[s]; })) return 2;
+    if (vyrobci[rozvNorm(it.vyrobce).trim()]) return 1;
+    return 0;
+  };
+  return lib.map(function (it) { return { it: it, sk: skore(it) }; }).sort(function (a, b) { return b.sk - a.sk; }).map(function (q) { return q.it; });
+}
+function rzhKnihNajit(kid) { return rozvKnihovnaVse().filter(function (it) { return it.id === kid; })[0] || null; }
+function rzhKnihNastavit(uid, kid) {
+  rzhZmenit(uid, 'Hřeben z knihovny', function (h) {
+    if (!kid) { delete h.knih; delete h.p; return; }
+    var it = rzhKnihNajit(kid); if (!it) return;
+    h.knih = kid; h.p = dokKopie(it);
+    if (it.prurez) { h.prurez = it.prurez; delete h.prurezRucne; }
+    if (it.In) h.In = it.In; else delete h.In;
+  });
+}
+// Délka hřebenu z knihovny (`polu` × rozteč) proti potřebné délce — zkrácení
+// vadí, prodloužení (víc kusů za sebou) ne.
+function rzhKnihDelka(h) {
+  if (!h.p || !(+h.p.polu > 0)) return null;
+  var roztec = +h.p.roztecMm > 0 ? +h.p.roztecMm : 17.5;
+  return { maxPolu: +h.p.polu, maxMm: +h.p.polu * roztec };
+}
+function rzhKnihKontrola(h) {
+  var d = rzhKnihDelka(h); if (!d) return null;
+  var n = rzhPolu(h), potrebaMm = n * ROZV_MODUL_MM;
+  if (potrebaMm <= d.maxMm + 1e-6) return null;
+  var ks = Math.ceil(potrebaMm / d.maxMm), nazev = [h.p.vyrobce, h.p.typ || h.p.rada].filter(Boolean).join(' ') || rozvNazev(h.p);
+  return { t: 'Hřeben ' + nazev + ' z knihovny má ' + d.maxPolu + ' pólů (' + Math.round(d.maxMm) + ' mm) – na délku ' + n + ' pólů (' + Math.round(potrebaMm) + ' mm) potřeba ' + ks + ' kusy za sebou.' };
+}
+
 // ── panel a kontextová nabídka ──────────────────────────────────────────
 function rzhPanelHtml(h) {
   var S = rzpStav(__rz), zt = rzhZatez(h, S), kap = rzhKapacita(h), u = rzhKontroly(h, S), n = rzhPolu(h), kr = rzhZuby(h).filter(function (z) { return z.krytka || !z.x; }).length;
   var sel = function (k, vol, cur) { return '<select class="rz-hr-pole" data-hr-pole="' + k + '">' + vol.map(function (v) { return '<option value="' + v[0] + '"' + (String(cur) === String(v[0]) ? ' selected' : '') + '>' + v[1] + '</option>'; }).join('') + '</select>'; };
   var src = rzhZdroj(h, S);
+  var knihVolby = rzhKnihVolby(h);
+  var knihSel = '<select class="rz-hr-pole" data-hr-pole="knih"><option value="">— obecný (zadat ručně) —</option>' +
+    knihVolby.map(function (it) { return '<option value="' + esc(it.id) + '"' + (h.knih === it.id ? ' selected' : '') + '>' +
+      esc([it.vyrobce, it.rada, it.typ].filter(Boolean).join(' ') || rozvNazev(it)) + ' (' + (+it.polu || '?') + ' pólů)</option>'; }).join('') + '</select>';
   return '<div class="rp-t">Propojovací hřeben</div>' +
     '<div class="rp-souhrn">🪮 <b>' + RZH_POLY[h.poly].t + ' ' + h.prurez + ' mm², ' + n + (n < 5 && n > 1 ? ' póly' : ' pólů') + '</b>' + (n < RZH_POLU ? ' (zkrátit z ' + RZH_POLU + ')' : '') +
-      ' · ' + (h.strana === 'dole' ? 'zespodu' : 'shora') + (kr ? ' · krytky ' + kr + ' ks' : '') + '<br>' +
+      ' · ' + (h.strana === 'dole' ? 'zespodu' : 'shora') + (kr ? ' · krytky ' + kr + ' ks' : '') + (h.p ? ' · <b>' + esc([h.p.vyrobce, h.p.typ || h.p.rada].filter(Boolean).join(' ')) + '</b>' : '') + '<br>' +
       'napájí: <b>' + esc(rzhOzn(h) || '—') + '</b> · ' + (src ? 'z ' + esc(rozvJePrivod(src) ? (src === '@privod' ? 'přívodu' : 'přívodu (' + rozvPrivodPopisUid(__rz, src) + ')') : rzpOzn(src)) : '<span class="rz-hr-bez">zatím bez napájení – natáhněte vodič na hřeben (🔌 Zapojení)</span>') + '<br>' +
       esc(rzhZatezText(zt)) + (kap ? ' · hřeben ' + kap + ' A' : '') + '</div>' +
     (u.length ? '<div class="rp-upoz rz-hr-upoz">' + u.map(function (q) { return '⚠ ' + esc(q.t) + (q.prurez ? ' <button class="dok-mini" data-action="tdRHrPrurez" data-p="' + q.prurez + '">Použít</button>' : ''); }).join('<br>') + '</div>' : '') +
     '<div class="g2"><div class="f"><label>Póly</label>' + sel('poly', [['1', '1P'], ['3', '3P'], ['1+N', '1P+N'], ['3+N', '3P+N']], h.poly) + '</div>' +
     '<div class="f"><label>Strana</label>' + sel('strana', [['nahore', 'shora'], ['dole', 'zespodu']], h.strana) + '</div></div>' +
     '<div class="f"><label>Průřez (zatížitelnost – ověřte podle výrobce hřebenu)</label>' + sel('prurez', RZH_RADA.map(function (r) { return [r.prurez, r.prurez + ' mm² – ' + r.In + ' A']; }), h.prurez) + '</div>' +
+    '<div class="f"><label>Hřeben z knihovny' + (knihVolby.length ? '' : ' (žádný s póly ' + RZH_POLY[h.poly].t + ' v knihovně není)') + '</label>' + knihSel + '</div>' +
     '<div class="rp-akce"><button class="dok-mini" data-action="tdRHrPrepnout" title="Hřeben shora ↔ zespodu (klávesa S)">⇅ Shora / zespodu</button>' +
     '<button class="dok-mini dok-mini-del" data-action="tdRHrSmazat" title="Smazat hřeben (Delete)">🗑 Smazat hřeben</button>' +
     '<button class="dok-mini" data-action="tdRHrHotovo">Hotovo</button></div>' +
@@ -37338,7 +37395,8 @@ function rzhPanelHtml(h) {
 document.addEventListener('change', function (e) {
   var t = e.target; if (!t || !t.classList || !t.classList.contains('rz-hr-pole') || !__rz || !__rz.hrVyber) return;
   var k = t.getAttribute('data-hr-pole'), v = t.value;
-  rzhZmenit(__rz.hrVyber, 'Hřeben', function (h) { if (k === 'prurez') { h.prurez = +v; delete h.In; } else h[k] = v; });
+  if (k === 'knih') { rzhKnihNastavit(__rz.hrVyber, v); return; }
+  rzhZmenit(__rz.hrVyber, 'Hřeben', function (h) { if (k === 'prurez') { h.prurez = +v; delete h.In; delete h.knih; delete h.p; } else h[k] = v; });
 });
 TD_AKCE.tdRHrPrurez = function (el) { var p = +el.getAttribute('data-p'); if (__rz && __rz.hrVyber) rzhZmenit(__rz.hrVyber, 'Průřez hřebenu', function (h) { h.prurez = p; delete h.In; }); };
 TD_AKCE.tdRHrPrepnout = function () { if (__rz && __rz.hrVyber) rzhZmenit(__rz.hrVyber, 'Strana hřebenu', function (h) { h.strana = h.strana === 'dole' ? 'nahore' : 'dole'; }); };
@@ -37450,7 +37508,9 @@ function rzhMaterial(d) {
   if (pscJe(rz)) return out;
   rzhVse(rz).forEach(function (h) {
     var n = rzhPolu(h), kr = rzhZuby(h, rz).filter(function (z) { return z.krytka || !z.x; }).length;
-    out.push('Propojovací hřeben ' + RZH_POLY[h.poly].t + ' ' + h.prurez + ' mm², ' + n + ' ' + (n < 5 && n > 1 ? 'póly' : 'pólů') + (n < RZH_POLU ? ' (zkrátit z ' + RZH_POLU + ')' : '') + ', 1 ks' + (kr ? ' + krytky ' + kr + ' ks' : ''));
+    var dk = rzhKnihKontrola(h), ks = dk ? Math.ceil(n * ROZV_MODUL_MM / rzhKnihDelka(h).maxMm) : 1;
+    out.push('Propojovací hřeben ' + RZH_POLY[h.poly].t + ' ' + h.prurez + ' mm²' + (h.p ? ' (' + [h.p.vyrobce, h.p.typ || h.p.rada].filter(Boolean).join(' ') + ')' : '') + ', ' +
+      n + ' ' + (n < 5 && n > 1 ? 'póly' : 'pólů') + (n < RZH_POLU && !h.p ? ' (zkrátit z ' + RZH_POLU + ')' : '') + ', ' + ks + ' ks' + (kr ? ' + krytky ' + kr + ' ks' : ''));
   });
   return out;
 }
@@ -44889,7 +44949,7 @@ function rozvSpravaFiltrovat(moje) {
   var sk = __rzSF.skup && __rzSF.skup !== 'skrin' && __rzSF.skup !== 'pole' ? rozvSkupina(__rzSF.skup) : null;
   return moje.filter(function (it) {
     if (__rzSF.vyrobce && it.vyrobce !== __rzSF.vyrobce) return false;
-    if (__rzSF.skup === 'skrin' || __rzSF.skup === 'pole') return it.druh === __rzSF.skup;
+    if (__rzSF.skup === 'skrin' || __rzSF.skup === 'pole' || __rzSF.skup === 'hreben') return it.druh === __rzSF.skup;
     if (__rzSF.skup && (it.druh !== 'pristroj' || (sk && sk.kat && sk.kat.indexOf(it.kat) === -1))) return false;
     return true;
   });
@@ -44898,7 +44958,7 @@ function rozvSpravaFiltryHtml(moje) {
   if (!moje.length) return '';
   var vidim = rozvSpravaFiltrovat(moje), zobr = Math.min(__rzSF.limit || ROZV_STRANKA, vidim.length);
   var vyr = rozvVolbyZDat(moje, 'vyrobce', __rzSF.vyrobce);
-  var skup = rozvSkupinyKat().filter(function (g) { return g.k; }).map(function (g) { return [g.k, g.nazev]; }).concat([['skrin', 'Skříně']])
+  var skup = rozvSkupinyKat().filter(function (g) { return g.k; }).map(function (g) { return [g.k, g.nazev]; }).concat([['skrin', 'Skříně'], ['hreben', 'Propojovací hřebeny']])
     .concat(rozvKnihPsc() ? [['pole', 'Pole a skříně PSC']] : []);
   var aktivni = __rzSF.vyrobce || __rzSF.skup;
   return '<div class="rz-sf-radek">' +
@@ -44925,7 +44985,7 @@ TD_AKCE.tdRPolSmazatNalezene = async function () {
   var ids = rozvSpravaFiltrovat(moje).map(function (it) { return it.id; });
   if (!ids.length) return;
   var popis = [__rzSF.vyrobce ? 'výrobce „' + __rzSF.vyrobce + '"' : '',
-    __rzSF.skup ? 'kategorie ' + (__rzSF.skup === 'skrin' ? 'Skříně' : rozvSkupina(__rzSF.skup).nazev) : ''].filter(Boolean).join(', ');
+    __rzSF.skup ? 'kategorie ' + (__rzSF.skup === 'skrin' ? 'Skříně' : __rzSF.skup === 'hreben' ? 'Propojovací hřebeny' : __rzSF.skup === 'pole' ? 'Pole a skříně PSC' : rozvSkupina(__rzSF.skup).nazev) : ''].filter(Boolean).join(', ');
   if (!confirm('Smazat z knihovny ' + ids.length + ' ' + (ids.length === 1 ? 'položku' : ids.length < 5 ? 'položky' : 'položek') +
       (popis ? ' (' + popis + ')' : '') + '?\n\nNavržené rozvaděče se nezmění — mají vlastní kopii. Smazání jde vzít zpět.')) return;
   var predKnih = DOK.rozvKnihovna.slice(), predObl = DOK.rozvOblibene.slice();
@@ -44997,7 +45057,8 @@ function rozvValidovat(raw) {
   else if (/^pristroj/.test(druh)) druh = 'pristroj';
   else if (/^skrin|^rozvodnice/.test(druh)) druh = 'skrin';
   else if (/^pole/.test(druh)) druh = 'pole';
-  else { chyby.push('neznámý druh „' + o.druh + '" (pristroj / skrin / pole)'); druh = 'pristroj'; }
+  else if (/^hreben/.test(druh)) druh = 'hreben';
+  else { chyby.push('neznámý druh „' + o.druh + '" (pristroj / skrin / pole / hreben)'); druh = 'pristroj'; }
   var cislo = function (k, nazev, povinne) {
     var t = String(o[k] == null ? '' : o[k]).trim();
     if (!t) { if (povinne) chyby.push('chybí ' + nazev); return ''; }
@@ -45065,6 +45126,16 @@ function rozvValidovat(raw) {
     r.trida = trP === '1' ? 'I' : trP === '2' ? 'II' : trP;
     if (r.trida && ['I', 'II'].indexOf(r.trida) === -1) { chyby.push('třída ochrany „' + o.trida + '" (I nebo II)'); r.trida = ''; }
     ['ip', 'ik', 'rozmery'].forEach(function (k) { r[k] = t0(k); });
+  } else if (druh === 'hreben') {   // propojovací hřeben (2026-11-18) — nikdy se nekreslí jako přístroj
+    var polyH = rozvPolyZTextu(o.poly);
+    if (polyH === null || ['1', '3', '1+N', '3+N'].indexOf(polyH) === -1) { chyby.push('póly hřebenu „' + o.poly + '" (1, 1+N, 3 nebo 3+N)'); polyH = ''; }
+    r.poly = polyH;
+    r.prurez = cislo('prurez', 'průřez', true);
+    r.In = cislo('In', 'In', false);
+    r.polu = cislo('polu', 'počet pólů/zubů', true);
+    if (r.polu !== '' && (r.polu < 2 || Math.round(r.polu) !== r.polu)) { chyby.push('počet pólů hřebenu musí být celé číslo aspoň 2'); r.polu = ''; }
+    r.roztecMm = cislo('roztecMm', 'rozteč v mm', false);
+    r.prislK = t0('prislK'); r.krytky = t0('krytky');
   } else {
     r.rady = cislo('rady', 'počet řad', true);
     if (r.rady !== '' && (r.rady < 1 || r.rady > 20 || Math.round(r.rady) !== r.rady)) { chyby.push('počet řad musí být celé číslo 1–20'); r.rady = ''; }
@@ -45145,6 +45216,10 @@ var ROZV_CSV = [
   ['trida_ochrany', 'trida', ['tridaochrany']],
   ['overeno', 'overeno', ['overeno']],
   ['ovladani', 'ovladani', ['ovladani', 'rezimovladani']],   // přepínač zdrojů PZ (víc přívodů, 2026-11-18)
+  ['prurez', 'prurez', ['prurez', 'prurezmm']],   // propojovací hřeben z knihovny (2026-11-18)
+  ['polu', 'polu', ['polu', 'pocetzubu']],
+  ['roztec_mm', 'roztecMm', ['roztecmm', 'roztec']],
+  ['krytky', 'krytky', ['krytky']],
   ['poznamka', 'pozn', ['poznamka', 'pozn']]
 ];
 function rozvCsvKlic(h) { return rozvNorm(h).replace(/δ/g, 'd').replace(/[^a-z0-9]/g, ''); }

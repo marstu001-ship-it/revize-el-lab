@@ -322,11 +322,11 @@ const presahy = (p, svg) => p.evaluate(svg => {
     // víc přívodů 2026-11-18…) — na KONEC, před poznámkou, ať se tenhle test nemusí
     // přepisovat při každém dalším přidaném sloupci
     const hl51 = hl.replace(';ue;', ';ue;vykon;u_vstup;u_vystup;i_vystup;').replace(';nastaveni;', ';nastaveni;uc;kontakty;ie_ac1;pe_ac3_kw;rozsah_nastaveni;prislusenstvi_k;montaz;typ_prislusenstvi;');
-    const hlAkt = hl51.replace(';poznamka', ';ovladani;poznamka');
+    const hlAkt = hl51.replace(';poznamka', ';ovladani;prurez;polu;roztec_mm;krytky;poznamka');
     return { sablona: sablona === hlAkt, pol: v.polozky.map(x => x.polozka), chyby: v.chyby.map(c => c.radek + ': ' + c.text), stare: stare.polozky.map(x => JSON.stringify(x.polozka)), stareCh: stare.chyby.length };
   });
   const qf = csv.pol.find(x => x.kat === 'QF') || {}, pl = csv.pol.find(x => x.druh === 'pole') || {};
-  check('šablona CSV = přesně zadaná hlavička (52 sloupců, i výkon a napětí transformátoru / zdroje, ovládací obvody a přepínač zdrojů); soubor ve starém tvaru (39) se načte', csv.sablona, '');
+  check('šablona CSV = přesně zadaná hlavička (56 sloupců, i výkon a napětí transformátoru / zdroje, ovládací obvody, přepínač zdrojů a hřeben z knihovny); soubor ve starém tvaru (39) se načte', csv.sablona, '');
   check('CSV: MCCB s rozměry v mm, Icu/Ics/Icw, nastavením spouští a Pv celkem', qf.sirkaMm === 105 && qf.vyskaMm === 161 && qf.hloubkaMm === 86 && qf.icu === 36 && qf.icw === 5 &&
     qf.pv === 48 && qf.pvCelkem === true && /Ir 0,4/.test(qf.nastaveni || '') && qf.overeno === false, JSON.stringify(qf));
   check('CSV: MCCB bez rozměrů v mm = chyba řádku (rozměry povinné)', csv.chyby.length === 1 && /^3: /.test(csv.chyby[0]) && /mm/.test(csv.chyby[0]), csv.chyby.join(' | '));

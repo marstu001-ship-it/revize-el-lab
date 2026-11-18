@@ -3957,6 +3957,75 @@ a `testy/test-rozvadec-psc.js` (šablona CSV má teď 52 sloupců — čísla se
 tam počítají z `ROZV_CSV.length`, ne napevno, ať příští sloupec test znovu
 nerozbije). Karta v Novinkách se nedělala.
 
+### Propojovací hřeben jako položka knihovny (2026-11-18)
+
+Zadání uživatele: hřeben (dosud jen obecný, `d.hrebeny[]`, viz fáze 1b „jako
+v dílně") má v praxi svého výrobce, typ, počet pólů a rozteč — stejně jako
+jističe nebo skříně. **Nový `druh: 'hreben'`** v knihovně, vedle `pristroj`,
+`skrin` a `pole`. **Hřeben jako takový se do řady NIKDY nevkládá** (nemá
+šířku v modulech) — je to jen zdroj údajů pro existující `d.hrebeny[]`.
+
+- **Pole** (`ROZV_HREBEN_KLICE`): `vyrobce, rada, typ, nazev`; `poly` (1, 1+N,
+  3, 3+N — jiné hodnoty odmítne `rozvValidovat`); `prurez` (mm², povinný),
+  `In` (A, dovolený proud hřebenu, nepovinný — bez něj se kapacita dál
+  odvozuje z `prurez` přes `RZH_RADA` jako u obecného hřebenu); `polu`
+  (počet zubů/modulů, povinný, celé číslo ≥ 2), `roztecMm` (17,5 / 18;
+  prázdné = 17,5 — `rzhKnihDelka`); `prislK` (existující sloupec jako
+  u příslušenství — řady, ke kterým se hodí, stejná syntaxe i stejná
+  funkce párování); `krytky` (text), `pozn`, `zdroj`, `overeno`.
+- **CSV** — nové sloupce `prurez;polu;roztec_mm;krytky` **na konci šablony**
+  (po `ovladani`, před `poznamka`) — **šablona má teď 56 sloupců**. Staré
+  CSV (39 / 43 / 50 / 51 / 52 sloupců) se načte beze změny.
+- **Instance hřebenu** (`h` v `d.hrebeny[]`) dostane **volitelné** `h.knih`
+  (id knihovny) + `h.p` (kopie položky, `dokKopie`) — stejný vzor jako
+  `knih`/`p` u přístroje v řadě. **`h.prurez` a `h.In` zůstávají stejná pole
+  jako dřív** — `rzhKapacita`/`rzhZatez` je čtou beze změny, takže se
+  nemusely upravovat. Bez `knih` je hřeben úplně obecný jako dřív
+  (`test-rozvadec-hreben-knihovna.js`: obecný hřeben beze změny textu
+  materiálu „…, 1 ks").
+- **Panel hřebenu** (`rzhPanelHtml`) má navíc **„Hřeben z knihovny"**
+  (`rzhKnihVolby(h)`): nabízí jen položky se stejnými póly jako hřeben,
+  **předvolená řada** podle výrobce/řady přístrojů POD hřebenem (`prislK`
+  shoda > shoda výrobce > ostatní, `rzhKnihVolby` řadí sestupně). Výběr
+  (`rzhKnihNastavit`) zapíše `knih`+`p` a přepíše `prurez`/`In` z katalogu;
+  **„— obecný (zadat ručně) —"** je smaže a `prurez`/`In` zůstanou, jak byly
+  (technik je může dál upravit ručně). **Ruční přepsání Průřezu** (existující
+  rozbalovátko) hřeben vždy vrátí na obecný (smaže `knih`/`p`) — jinak by
+  popisek ukazoval výrobce k jinému průřezu, než je skutečně nastavený.
+- **Délka z knihovny jen zkracuje, nikdy neprodlužuje:** `rzhKnihDelka`
+  (`polu × roztecMm`) proti skutečné délce hřebenu (`rzhPolu(h) ×
+  ROZV_MODUL_MM`). Je-li hřeben delší, než kolik knihovní položka pokrývá,
+  `rzhKnihKontrola` vrátí upozornění **„potřeba N kusy za sebou"**
+  (zobrazuje ho `rzhKontroly` v panelu i `rzhMaterial` v seznamu
+  propojovacího materiálu — číslo kusů je stejné na obou místech, počítá se
+  jen jednou). Kratší hřeben (zkrácení z delšího kusu) nic nehlásí.
+- **`rzhMaterial`** (seznam do PDF dokumentace) ukáže u hřebenu z knihovny
+  navíc `(výrobce typ)` a správný počet kusů; bez knihovny je řádek přesně
+  jako dřív (`, 1 ks`, „zkrátit z 57").
+- **Správa knihovny** (⚙ na seznamu rozvaděčů): filtr kategorie dostal
+  položku **„Propojovací hřebeny"** (`__rzSF.skup === 'hreben'`), takže
+  importované hřebeny jde najít a hromadně smazat stejně jako u přístrojů
+  a skříní.
+
+**Odchylky od zadání (zjednodušení):**
+- **Hřeben z knihovny se nedá vybrat táhnutím z karty „Přístroje" ani
+  „Skříně"** — knihovna má dva taby (přístroje / skříně) a `druh: 'hreben'`
+  do žádného z nich nepatří (`rozvKnihVidet` ho proto správně v obou tabech
+  skryje). Výběr je jen přes rozbalovátko v panelu konkrétního hřebenu —
+  hřeben se napřed vytvoří obvyklou cestou (nástroj 🪮, „Navrhnout hřebeny…",
+  obecná knihovní položka PRISL/hreben), pak se mu v panelu přiřadí
+  konkrétní výrobce.
+- **„Navrhnout hřebeny…" (`rzhNavrhy`) dál vytváří jen obecný hřeben** —
+  nehledá automaticky odpovídající knihovní položku. Výběr výrobce se dodělá
+  v panelu po vytvoření.
+- **„＋ Vlastní…" dialog nemá volbu „hřeben"** — nová knihovní položka
+  tohoto druhu jde jen z CSV importu (jako u ostatních výrobců).
+
+Test: `testy/test-rozvadec-hreben-knihovna.js` (13 kontrol — rozvValidovat
+s chybami i bez, CSV sloupce a import, panel s nabídkou a předvolbou podle
+výrobce, zápis knih/p/prurez/In, délková kontrola i v materiálu, návrat na
+obecný, obecný hřeben beze změny). Karta v Novinkách se nedělala.
+
 ### Výměna výkresů s CAD — export a import DXF (2026-11-02, bloky „ROZVADĚČ — VÝMĚNA S CAD")
 
 Zadání uživatele: technici kreslí ve Schématech CAD (Elmer), který ukládá
