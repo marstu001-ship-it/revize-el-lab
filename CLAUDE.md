@@ -3862,6 +3862,101 @@ a soudobosti, starý rozvaděč beze změny proti STARA_PORT). **Upraveno:**
 `testy/test-rozvadec-psc.js` (porovnání DBO proti předchozí verzi vynechává
 novou kartu „Zpracovatel dokumentace" v Dokumentech).
 
+### Víc přívodů — hlavní vypínač KAŽDÉHO přívodu, přepínač zdrojů PZ (2026-11-18)
+
+Uživatel při zkoušení přišel na chybu: rozvaděč se dvěma přívody (QH1 40 A
+z přívodu 2 → FA1, FA2; Q1 63 A z přívodu 1 → FI1 a jističe pod ním) ukazoval
+oba hlavní vypínače, jako by patřily přívodu 1 — a program neuměl přepínač
+zdrojů 1-0-2 / ATS, takže propojení dvou přívodů přes něj vždy hlásil jako
+chybu.
+
+**Příčina:** `rozvKoren(rady)` = `rozvHlavniVypinace(rady)[0]` vrací JEN JEDEN
+kořen pro celý rozvaděč (výslovně zaškrtnuté „Hlavní vypínač" má přednost před
+pořadím). U dvou přívodů to je kořen jen toho jednoho — druhý hlavní vypínač
+(ten druhý byl v tomhle případě i `rozvHlavniVypinace`'s jediný **kandidát**,
+protože zaškrtnutí jednoho QM vyřadí všechny nezaškrtnuté) se chová jako
+BĚŽNÝ přístroj a jeho `rozvZdrojEff`/`rozvDeti` (kořenová větev, `x.uid ===
+kor`) vracely natvrdo `'@privod'`, i když měl `nadr` výslovně na jiný přívod.
+
+- **`rozvKorenPrivodu(rady, privodUid)`** (nová funkce) hledá mezi VŠEMI
+  spínacími přístroji (`ROZV_SPINACI` = QM/QS/QF) toho, kdo je na DANÝ přívod
+  výslovně napojený (`nadr` přímo na přívod, nebo přes svorky z něj) — ne jen
+  mezi kandidáty `rozvHlavniVypinace`. U přívodu 1 bez jakéhokoli výslovného
+  napojení platí dosavadní pravidlo (`rozvKoren`). **`rozvKoren` se neměnil**
+  — `rozvKorenPrivodu(rady, '@privod')` bez dalšího přívodu vrací přesně to,
+  co by vrátil on.
+- **Opraveny kořenové větve `rozvZdrojEff` a `rozvParHodnota`** — když má kořen
+  `nadr` výslovně na (jakýkoli) přívod, vrátí ho; jinak beze změny (fallback
+  na svorky / `'@privod'`).
+- **`rozvDeti('@privod', rady)`** — kořenová větev teď nejdřív zkontroluje
+  `rozvJePrivod(y.nadr)`: patří-li kořen jinému přívodu, nepřičte se přívodu 1.
+- **`rsModel`**: `model.qm` (hlavní vypínač kreslený zvlášť pod kabelem
+  přívodu 1 — do té doby prostě „první QM v pořadí") se s víc přívody (`d.privody.length`)
+  počítá přes `rozvKorenPrivodu(d.rady, '@privod')`, ne podle pořadí v řadách —
+  jinak by se mu mohl plést s hlavním vypínačem jiného přívodu. Bez dalšího
+  přívodu beze změny.
+- **Provizorní upozornění z v9.145** (`rozvPrivod2VeSchematu` — „přívod N:
+  … je ve schématu zakresleno jako z přívodu 1") touhle opravou ZŮSTÁVÁ
+  (nekreslí se samostatná sběrnice druhého přívodu, jen se opravilo, KTERÝ
+  přístroj je čí kořen) — a teď je konečně i přesné, protože `rozvDeti` pro
+  druhý přívod už vrací správný seznam.
+
+**Přepínač zdrojů — nová kategorie PZ** (`ROZV_KAT`, pole `ovladani` [ruční
+1-0-2 / automatický ATS], `In`, `ue`, `uc`, `pv`; předpona **-Q** jako ostatní
+vypínače). PZ má DVA vstupy:
+
+- **Vstup I = `x.nadr`** (běžný mechanismus „Napájen z", funguje beze změny).
+  **Vstup II = nový `x.nadr2`**, nastavuje se druhým výběrem „Napájen z
+  (vstup II)" v panelu vlastností (`rozvNapajenZ2Html`, zapisuje
+  `rozvNapajeni2Nastavit` → `data-rp2="nadr2"`). **Žádné tažení myší v režimu
+  Zapojení** — druhý vstup nemá vlastní svorku k uchopení, je to vědomé
+  zjednodušení (dolů viz).
+- **`rzpAuto`**: vstup I jde přes běžnou smyčku (nic se neměnilo), vstup II
+  dostane vlastní automatický vodič na stranu **„i2"** — nová, dosud
+  nepoužitá hodnota `strana` v modelu zapojení.
+- **Průchod přístrojem v `rzpSpocti` i `rzsPrivodDosah`**: PZ nepropouští
+  `t↔i2` (oba vstupy mezi sebou) ani `b→t`/`b→i2` (zpátky z výstupu) — jen
+  `t→b` a `i2→b`, jako u obyčejného přístroje, jen navíc.
+- **`rzsKontrola`**: propojení DVOU přívodů PŘES PZ není chyba (k tomu PZ
+  je) — `rzsPrivodDosah(…, bezPZ=true)` (PZ se v ní chová jako zeď) najde
+  jen propojení JINUDY, a to zůstává chyba s radou „propojte je přes
+  přepínač zdrojů" (nahrazuje dřívější „Programu ještě chybí přepínače…").
+  PZ samo o sobě je dosažitelné z obou přívodů VŽDY (to je jeho smysl) —
+  nepočítá se. Místo toho upozornění „-Q2: oba vstupy jsou napájené (…)".
+- **Ukazatel v liště** dostal navíc štítek „přes -Q1: N" (počet přístrojů
+  dosažitelných přes PZ z obou vstupů najednou).
+- **CSV**: nový sloupec `ovladani` na KONCI šablony (52. sloupec, před
+  `poznamka`) — pořadí ani přítomnost nejsou povinné (hlavička se párová
+  podle jména), takže starší CSV (43 / 50 / 51 sloupců) se načte beze změny.
+  Nový klíč `ovladani` je i v `ROZV_PRISTROJ_NAVIC`/`_TEXT` (jinak by ho
+  `rozvPolozkaNorm` zahodila jako neznámý).
+
+**Odchylky od zadání (vědomé zjednodušení, aby to šlo v rozumném rozsahu
+ověřit — vrátit se k nim, až si o to uživatel řekne):**
+- **Schéma se nekreslí jako dvě samostatné sběrnice vedle sebe.** Hlavní
+  vypínač druhého (a dalšího) přívodu se dál kreslí jako obyčejný vývod na
+  sběrnici přívodu 1 — opravilo se jen, KTERÝ přístroj je čí kořen (viz výš),
+  ne vizuál. PZ se kreslí jako obyčejný vypínač (`RS_ZNACKA_KAT.PZ =
+  'vypinac'`), ne dvouvstupová značka podle IEC 60617.
+- **Vstup II nejde natáhnout myší v režimu 🔌 Zapojení** — nastavuje se jen
+  v panelu „Napájen z (vstup II)". Nemá vlastní svorku v čelním pohledu.
+- **`rozvKorenPrivodu` se nevolá z `rzpAuto`/`rzpSync`/`rozvNadrazeneAuto`**
+  (ty řeší automatiku NEkořenových přístrojů a víc přívodů se jich nedotýká) —
+  jen z `rsModel` (`model.qm`) a z kontrol. `rzhZdroj`/`rzvMaterial` (zátěž
+  hřebenu a seznam propojovacího materiálu) dál berou jediný `rozvKoren` —
+  u hlavního vypínače DRUHÉHO přívodu by ukázaly zdroj „přívod" bez rozlišení
+  kterého; drobná nepřesnost v popisku, ne v datech ani ve výpočtu.
+- **Technické údaje / štítek „Přívody: N", návod k obsluze a oteplení**
+  (3d) se nedělaly — čekají, až na ně přijde řada.
+
+Test: `testy/test-rozvadec-privody.js` (+9 — přesně případ uživatele: Q1 a
+QH1 jsou každý kořen svého přívodu, žádný pod tím druhým ve `rsModel.jedn`;
+kategorie PZ se validuje; panel se dvěma vstupy; PZ nehlásí chybu, propojení
+jinudy ano; CSV sloupec `ovladani`). **Upraveno:** `testy/test-rozvadec-stara-data.js`
+a `testy/test-rozvadec-psc.js` (šablona CSV má teď 52 sloupců — čísla se
+tam počítají z `ROZV_CSV.length`, ne napevno, ať příští sloupec test znovu
+nerozbije). Karta v Novinkách se nedělala.
+
 ### Výměna výkresů s CAD — export a import DXF (2026-11-02, bloky „ROZVADĚČ — VÝMĚNA S CAD")
 
 Zadání uživatele: technici kreslí ve Schématech CAD (Elmer), který ukládá

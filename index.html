@@ -31868,6 +31868,8 @@ var ROZV_KAT = [
   { k: 'TR',   nazev: 'Transformátor (zvonkový, bezpečnostní, ovládací)', ozn: '-T', barva: '#efe4d2', etim: '', pole: ['vykon', 'uVstup', 'uVystup'] },
   { k: 'ZD',   nazev: 'Napájecí zdroj (spínaný – LED, elektronika)', ozn: '-G', barva: '#e2ecef', etim: '', pole: ['vykon', 'uVstup', 'uVystup', 'iVystup'], vykonW: true },
   { k: 'XS',   nazev: 'Zásuvka na DIN lištu',            ozn: '-XS',    barva: '#f3f3f3', etim: '',         pole: ['In'] },
+  // přepínač zdrojů 1-0-2 / ATS (víc přívodů, 2026-11-18) — předpona -Q jako ostatní vypínače
+  { k: 'PZ',   nazev: 'Přepínač zdrojů (1-0-2 / ATS)',   ozn: '-Q',     barva: '#f6d6d1', etim: '',         pole: ['ovladani', 'In', 'ue', 'uc', 'pv'] },
   { k: 'JINE', nazev: 'Ostatní přístroj',                ozn: '-A',     barva: '#f6f2ea', etim: '',         pole: ['ozn', 'In'], predpona: true },
   { k: 'REZ',  nazev: 'Rezerva / záslepka',              ozn: '',       barva: '',         etim: '',         pole: [] },
   // výkonové rozvaděče PSC (etapa 5a) — přístroje hlavně na montážní desku; v DBO se nenabízejí (`psc`)
@@ -31911,7 +31913,9 @@ var ROZV_POLE = {
   rozsah:   { nazev: 'Rozsah nastavení', text: true, ph: '6,3–10 A / 0,5–10 min' },
   prislK:   { nazev: 'Hodí se k řadám', text: true, ph: 'LTN, LTE (prázdné = ke všem)' },
   montaz:   { nazev: 'Montáž', volby: ['', 'lista', 'bok vlevo', 'bok vpravo', 'dvere', 'mimo'], popisky: ['výrobce neuvádí', 'na lištu', 'bok vlevo', 'bok vpravo', 'na dveře', 'mimo rozvaděč'] },
-  prislTyp: { nazev: 'Druh', volby: [] }   // volby podle kategorie — ROZV_PRISL_TYPY / ROZV_VNEJSI_TYPY
+  prislTyp: { nazev: 'Druh', volby: [] },   // volby podle kategorie — ROZV_PRISL_TYPY / ROZV_VNEJSI_TYPY
+  // přepínač zdrojů (víc přívodů, 2026-11-18) — vše volitelné
+  ovladani: { nazev: 'Ovládání', volby: [['rucni', 'ruční 1-0-2'], ['ats', 'automatický (ATS)']] }
 };
 // Druh příslušenství a prvku mimo rozvaděč (2026-10-29). Ze sloupce
 // typ_prislusenstvi, jinak z názvu (rozvPrislTypZTextu).
@@ -32003,8 +32007,8 @@ var ROZV_CISELNE = ['In', 'icn', 'icu', 'ics', 'idn', 'up', 'sirka', 'pv', 'ue',
 // PSC (etapa 5a): u přístroje jen když jsou vyplněné — položky DBO zůstávají bajt po bajtu stejné.
 var ROZV_PRISTROJ_PSC = ['icw', 'nastaveni', 'sirkaMm', 'vyskaMm', 'hloubkaMm'];
 // Transformátor, zdroj, ostatní (2026-10-22): taky jen vyplněné — starší položky zůstávají beze změny.
-var ROZV_PRISTROJ_NAVIC = ['vykon', 'uVstup', 'uVystup', 'iVystup', 'ozn', 'uc', 'kontakty', 'ieAc1', 'peAc3', 'rozsah', 'prislK', 'montaz', 'prislTyp'];
-var ROZV_PRISTROJ_NAVIC_TEXT = ['uVstup', 'uVystup', 'ozn', 'uc', 'kontakty', 'rozsah', 'prislK', 'montaz', 'prislTyp'];
+var ROZV_PRISTROJ_NAVIC = ['vykon', 'uVstup', 'uVystup', 'iVystup', 'ozn', 'uc', 'kontakty', 'ieAc1', 'peAc3', 'rozsah', 'prislK', 'montaz', 'prislTyp', 'ovladani'];
+var ROZV_PRISTROJ_NAVIC_TEXT = ['uVstup', 'uVystup', 'ozn', 'uc', 'kontakty', 'rozsah', 'prislK', 'montaz', 'prislTyp', 'ovladani'];
 var ROZV_POLE_KLICE = ['nazev', 'vyrobce', 'rada', 'typ', 'provedeni', 'material', 'sirkaMm', 'vyskaMm', 'hloubkaMm', 'uzitnaSirkaMm', 'uzitnaVyskaMm',
   'ip', 'ik', 'ina', 'penc', 'icw', 'rozmery', 'trida', 'pozn', 'zdroj', 'overeno'];
 var ROZV_POLE_CISELNE = ['sirkaMm', 'vyskaMm', 'hloubkaMm', 'uzitnaSirkaMm', 'uzitnaVyskaMm', 'ina', 'penc', 'icw'];
@@ -32260,7 +32264,7 @@ var ROZV_STRANKA = 50;
 var ROZV_KAT_SKUPINY = [
   { k: '', nazev: 'Vše' }, { k: 'FA', nazev: 'Jističe', kat: ['FA'] }, { k: 'FI', nazev: 'Chrániče', kat: ['FI'] },
   { k: 'FIFA', nazev: 'RCBO', kat: ['FIFA'] }, { k: 'AFDD', nazev: 'AFDD', kat: ['AFDD'] }, { k: 'SPD', nazev: 'SPD', kat: ['SPD'] },
-  { k: 'QM', nazev: 'Vypínače', kat: ['QM'] }, { k: 'FU', nazev: 'Pojistky', kat: ['FU'] },
+  { k: 'QM', nazev: 'Vypínače', kat: ['QM', 'PZ'] }, { k: 'FU', nazev: 'Pojistky', kat: ['FU'] },
   { k: 'TRZD', nazev: 'Trafa a zdroje', kat: ['TR', 'ZD'] },
   { k: 'ovl', nazev: 'Ovládání', kat: ['KM', 'KA', 'KT', 'SF', 'HL', 'MS', 'PRISL', 'VNEJSI'] },
   { k: 'jine', nazev: 'Ostatní', kat: ['PJ', 'X', 'XS', 'JINE', 'REZ'] },
@@ -32831,11 +32835,11 @@ function rozvPrivodKontext(uid) {
 // ať se lišta a kontrola nemůžou rozejít. `rozvPotomci` (strom podle `nadr`)
 // by tu nestačil: přístroj bez výslovného `nadr` (= automatika) by se do
 // žádného přívodu nezapočetl.
-function rozvPrivodDosahy() {
+function rozvPrivodDosahy(bezPZ) {
   if (!__rz) return [];
   var S = null; try { S = rzpStav(__rz); } catch (e) { S = null; }
   var ws = S ? S.manual.concat(S.auto) : rzpVodice(__rz);
-  return rozvPrivodySeznam(__rz).map(function (p) { return { p: p, dosah: rzsPrivodDosah(__rz, ws, p.uid) }; });
+  return rozvPrivodySeznam(__rz).map(function (p) { return { p: p, dosah: rzsPrivodDosah(__rz, ws, p.uid, bezPZ) }; });
 }
 // Souhrn v liště nad čelním pohledem ("Přívod 1: N přístrojů · Přívod 2: M…") — jen s víc přívody.
 // Čitelné přepínače se zvýrazněným stavem (oprava 2026-11-16): klik vybere
@@ -32849,12 +32853,19 @@ function rozvPrivodUkazatel() {
   if (D.length < 2) { el.hidden = true; el.innerHTML = ''; return; }
   el.hidden = false;
   var vse = rozvPrvkyVse(__rz.rady).filter(function (x) { return x.p.kat !== 'REZ'; }), akt = __rz.privodUkazAkt;
-  el.innerHTML = D.map(function (dd) {
+  var html = D.map(function (dd) {
     var n = vse.filter(function (x) { return dd.dosah[x.uid]; }).length, je = akt === dd.p.uid;
     return '<button type="button" class="dok-mini rz-priv-uk-btn' + (je ? ' akt' : '') + '" aria-pressed="' + (je ? 'true' : 'false') +
       '" data-action="tdRPrivodUkazatelKlik" data-uid="' + esc(dd.p.uid) + '">' +
       esc(dd.p.ozn) + ': ' + n + ' ' + (n === 1 ? 'přístroj' : (n >= 2 && n <= 4 ? 'přístroje' : 'přístrojů')) + '</button>';
-  }).join(' ');
+  });
+  // „přes -Q1: K" — kolik přístrojů je dosažitelných přes KAŽDÝ přepínač zdrojů ze dvou vstupů
+  // najednou (víc přívodů, 2026-11-18); samotný ukazatel se netáhne, jen informuje
+  vse.filter(function (x) { return x.p.kat === 'PZ'; }).forEach(function (pz) {
+    var k = vse.filter(function (x) { return D.filter(function (dd) { return dd.dosah[x.uid]; }).length > 1; }).length;
+    if (k) html.push('<span class="dok-mini rz-priv-uk-pz">přes ' + esc(pz.ozn || 'přepínač') + ': ' + k + '</span>');
+  });
+  el.innerHTML = html.join(' ');
 }
 TD_AKCE.tdRPrivodUkazatelKlik = function (el) {
   if (!__rz) return;
@@ -33402,6 +33413,7 @@ function rozvCelo(p) {
     case 'FIFA': return [(p.char || '') + In, idn];
     case 'FI': return [In ? In + 'A' : '', [idn, p.rcdTyp].filter(Boolean).join(' ')];
     case 'QM': return [In ? In + ' A' : 'QM'];
+    case 'PZ': return [In ? In + ' A' : 'PZ', p.ovladani === 'ats' ? 'ATS' : p.ovladani === 'rucni' ? '1-0-2' : ''];
     case 'SPD': return [p.spdTrida || 'SPD'];
     case 'FU': return [In ? In + ' A' : 'FU'];
     case 'KM': return ['KM', In ? In + ' A' : ''];
@@ -33830,9 +33842,9 @@ function rozvPrvekSvg(d, x, y, o) {
     h += '<rect x="' + rozvZaokr(x + 0.4) + '" y="' + (y + 6) + '" width="' + rozvZaokr(w - 0.8) + '" height="' + (H - 12) + '" rx="1" fill="#fafafa" stroke="#9a9a9a" stroke-width="0.4" stroke-dasharray="1.5 1"/>';
   } else {
     h += '<rect x="' + rozvZaokr(x + 0.3) + '" y="' + y + '" width="' + rozvZaokr(w - 0.6) + '" height="' + H + '" rx="1.2" fill="' + (kat.barva || '#fff') + '" stroke="#555" stroke-width="0.35"/>';
-    if (['QM', 'FA', 'FI', 'FIFA', 'AFDD', 'SF', 'FU', 'QF', 'QS'].indexOf(p.kat) !== -1 && w >= 8) {
+    if (['QM', 'FA', 'FI', 'FIFA', 'AFDD', 'SF', 'FU', 'QF', 'QS', 'PZ'].indexOf(p.kat) !== -1 && w >= 8) {
       var lw = Math.min(5 * sk, w * 0.35);
-      h += '<rect x="' + rozvZaokr(x + w / 2 - lw / 2) + '" y="' + rozvZaokr(y + ((rozvCelo(p).filter(Boolean).length > 1 ? 15.5 : 13) + dz * 2.6) * sk) + '" width="' + rozvZaokr(lw) + '" height="' + rozvZaokr(9 * sk) + '" rx="0.8" fill="' + (p.kat === 'QM' || p.kat === 'QS' ? '#b5291c' : '#444') + '"/>';
+      h += '<rect x="' + rozvZaokr(x + w / 2 - lw / 2) + '" y="' + rozvZaokr(y + ((rozvCelo(p).filter(Boolean).length > 1 ? 15.5 : 13) + dz * 2.6) * sk) + '" width="' + rozvZaokr(lw) + '" height="' + rozvZaokr(9 * sk) + '" rx="0.8" fill="' + (['QM', 'QS', 'PZ'].indexOf(p.kat) !== -1 ? '#b5291c' : '#444') + '"/>';
     }
   }
   if (zna) {   // pruh se značkou a řadou výrobce, nebo (přepínač „Barvy: ampéráž") barva podle In
@@ -35486,7 +35498,7 @@ function rozvPrecislovat() {
 // beze změny (nadr ∈ chránič ∪ '').
 var ROZV_NADR_AUTO = ['FA', 'AFDD', 'TR', 'ZD', 'XS', 'JINE'];
 var ROZV_NADR_BEZ = ['QM', 'SPD', 'FI', 'FIFA', 'REZ', 'X', 'PRISL', 'VNEJSI'];   // bez automatiky
-var ROZV_NAPAJECI = ['QM', 'QS', 'QF', 'FA', 'FU', 'FI', 'FIFA', 'RCBO', 'AFDD', 'MS', 'X'];   // smí napájet jiné přístroje (X = svorky, průchozí prvek)
+var ROZV_NAPAJECI = ['QM', 'QS', 'QF', 'PZ', 'FA', 'FU', 'FI', 'FIFA', 'RCBO', 'AFDD', 'MS', 'X'];   // smí napájet jiné přístroje (X = svorky, průchozí prvek)
 var ROZV_NAPAJEN_NE = ['REZ', 'PRISL', 'VNEJSI'];   // volbu „Napájen z" nemají
 function rozvPrvkyVse(rady) { var a = []; (rady || []).forEach(function (r) { (r.prvky || []).forEach(function (x) { if (x && x.p) a.push(x); }); }); return a; }
 // Napájení z přívodu, přes svorky a před hlavním vypínačem (2026-11-06).
@@ -35576,10 +35588,33 @@ function rozvPredHlavnim(x, rady) {
 // Smí přístroj napájet hlavní vypínač? Jen svorka, nebo přístroj před hlavním vypínačem.
 function rozvPredKorenem(y, rady) { return !!y && (rozvSvorkaNap(y) || rozvPredHlavnim(y, rady)); }
 // Hlavní vypínač = kořen stromu (první QM, nebo výslovně hlavní) — nadr nemá.
+// Je to vždycky kořen PRVNÍHO přívodu — u jediného přívodu to je jediný kořen vůbec.
 function rozvKoren(rady) {
   var u = rozvHlavniVypinace(rady || []);
   return u.length ? u[0] : '';
 }
+// Hlavní vypínač KONKRÉTNÍHO přívodu (víc přívodů, 2026-11-18). `rozvKoren()`/
+// `rozvHlavniVypinace()` vybírají jen podle zaškrtnutí „Hlavní vypínač" — to je
+// pojmenování (-QH1/-QH2…) pro celý rozvaděč a NEŘÍKÁ, který přívod koho napájí
+// (technik u druhého přívodu zaškrtnutí klidně vynechá, jméno „-Q1" mu nevadí).
+// Tahle funkce proto hledá mezi VŠEMI spínacími přístroji (QM/QS/QF) toho, kdo je na
+// DANÝ přívod výslovně napojený (`nadr` přímo na přívod, nebo přes svorky z něj);
+// u přívodu 1 bez jakéhokoli výslovného napojení žádného spínacího přístroje platí
+// dosavadní pravidlo (`rozvKoren` — zaškrtnuté „Hlavní vypínač", jinak první QM).
+function rozvKorenPrivodu(rady, privodUid) {
+  var vse = {}; rozvPrvkyVse(rady).forEach(function (q) { vse[q.uid] = q; });
+  var spinaci = []; (rady || []).forEach(function (r) { (r.prvky || []).forEach(function (x) { if (x.p && ROZV_SPINACI.indexOf(x.p.kat) !== -1) spinaci.push(x); }); });
+  var zTohoPrivodu = function (x) {
+    if (rozvJePrivod(x.nadr)) return x.nadr === privodUid;
+    return rozvNadrSeznam(x).some(function (u) {
+      var q = vse[u]; return q && rozvSvorkaNap(q) && rozvZPrivodu(q) && (rozvJePrivod(q.nadr) ? q.nadr : '@privod') === privodUid;
+    });
+  };
+  var nalez = spinaci.filter(zTohoPrivodu)[0];
+  if (nalez) return nalez.uid;
+  return privodUid === '@privod' ? rozvKoren(rady) : '';
+}
+var ROZV_SPINACI = ['QM', 'QS', 'QF'];
 function rozvMaNapajeni(x, rady) {   // smí mít volbu „Napájen z"? (i hlavní vypínač, svorky a SPD)
   if (!x || !x.p) return false;
   if (x.p.kat === 'X') return rozvSvorkaNap(x);
@@ -35593,7 +35628,10 @@ function rozvDeti(uid, rady) {
   if (rozvJePrivod(uid)) {   // před hlavním vypínačem (+ hlavní vypínač, když není napájen ze svorek — jen přívod 1)
     var kor = rozvKoren(rady);
     return vse.filter(function (y) {
-      if (y.uid === kor) return uid === '@privod' && !rozvNadrSeznam(y).length;
+      // kořen výslovně napájený z (jakéhokoli) přívodu patří JEN tomu přívodu (víc přívodů,
+      // 2026-11-18) — bez tohoto by `rozvNadrSeznam` privodní řetězec vždy vyřadil a kořen
+      // druhého přívodu by se vždy přičetl přívodu 1
+      if (y.uid === kor) return rozvJePrivod(y.nadr) ? y.nadr === uid : uid === '@privod' && !rozvNadrSeznam(y).length;
       return rozvZPrivoduUid(y, uid) || (uid === '@privod' && y.predHlavnim === true && !y.nadr);
     });
   }
@@ -35736,7 +35774,12 @@ function rozvZdrojEff(x, rady) {
   if (rozvJePrivod(x.uid)) return null;
   var vse = {}; rozvPrvkyVse(rady).forEach(function (q) { vse[q.uid] = q; });
   var kor = rozvKoren(rady);
-  if (x.uid === kor) { var sv = rozvNadrSeznam(x).filter(function (q) { return vse[q] && q !== x.uid; }); return sv.length ? sv[0] : '@privod'; }
+  if (x.uid === kor) {
+    // kořen výslovně napájený z DALŠÍHO přívodu (víc přívodů, 2026-11-18) — `rozvNadrSeznam`
+    // privodní řetězce vždy vyřazuje, takže bez tohoto by kořen vyšel vždy jako „@privod"
+    if (rozvJePrivod(x.nadr)) return x.nadr;
+    var sv = rozvNadrSeznam(x).filter(function (q) { return vse[q] && q !== x.uid; }); return sv.length ? sv[0] : '@privod';
+  }
   if (!rozvMaNapajeni(x, rady)) return null;
   if (rozvZPrivodu(x) || (x.predHlavnim === true && !x.nadr)) return rozvJePrivod(x.nadr) ? x.nadr : '@privod';
   if (x.nadr && vse[x.nadr] && x.nadr !== x.uid) return x.nadr;
@@ -35749,6 +35792,7 @@ function rozvParHodnota(A, rady) {
   rady = rady || (__rz && __rz.rady);
   var kor = rozvKoren(rady);
   if (A.uid === kor) {
+    if (rozvJePrivod(A.nadr)) return A.nadr;   // kořen výslovně napájený z DALŠÍHO přívodu (víc přívodů, 2026-11-18)
     var sv = rozvNadrSeznam(A); if (!sv.length) return '@privod';
     var vse = {}; rozvPrvkyVse(rady).forEach(function (q) { vse[q.uid] = q; });
     var priv = sv.map(function (u) { return vse[u] && rozvZPrivodu(vse[u]) ? (rozvJePrivod(vse[u].nadr) ? vse[u].nadr : '@privod') : null; });
@@ -35966,11 +36010,40 @@ function rozvNapajenZHtml(x) {
     if (parV.length) sel += '<optgroup label="paralelně na vstupních svorkách">' + parV.map(function (y) {
       return '<option value="@par:' + esc(y.uid) + '"' + (par === y.uid ? ' selected' : '') + '>paralelně na vstup ' + esc(y.ozn || rozvNazev(y.p)) + (y.uid === rozvKoren(__rz.rady) ? ' (před vypínačem)' : '') + '</option>'; }).join('') + '</optgroup>';
   }
-  return '<div class="f rp-napajen"><label title="Ze kterého přístroje vede napájení (kreslí se do schématu). Totéž jde nastavit myší v režimu 🔌 Zapojení.">Napájen z</label>' +
+  var pz = x.p && x.p.kat === 'PZ';
+  return '<div class="f rp-napajen"><label title="Ze kterého přístroje vede napájení (kreslí se do schématu). Totéž jde nastavit myší v režimu 🔌 Zapojení.">' + (pz ? 'Napájen z (vstup I)' : 'Napájen z') + '</label>' +
     '<select class="rp-pole" data-rp2="nadr">' + sel + '</select></div>' +
+    (pz ? rozvNapajenZ2Html(x) : '') +
     (kor && rozvNadrSeznam(x).length > 1 ? '<div class="dk-pozn">Sadu svorek nastavíte v režimu 🔌 Zapojení: vyberte svorky rámečkem a táhněte z výstupní svorky jedné z nich na hlavní vypínač.</div>' : '') +
     (upoz.length ? '<div class="rp-upoz rp-napajeni-upoz">⚠ ' + upoz.map(esc).join(' · ') + '</div>' : '') +
     (info.length ? '<div class="dk-pozn rp-napajeni-info">ℹ ' + info.map(esc).join(' · ') + '</div>' : '') + napaji;
+}
+// Druhý vstup přepínače zdrojů (PZ, víc přívodů 2026-11-18) — vstup I jde přes běžné
+// „Napájen z" (`x.nadr`, stávající mechanismus); vstup II je `x.nadr2`, jen u kategorie PZ.
+function rozvNapajenZ2Html(x) {
+  var zakaz = {}; zakaz[x.uid] = 1; rozvPotomci(x.uid).forEach(function (y) { zakaz[y.uid] = 1; });
+  var volby = rozvNapajeciVolby().filter(function (y) { return !zakaz[y.uid]; });
+  var privVolby = rozvPrivody(__rz).length
+    ? rozvPrivodySeznam(__rz).map(function (p) { return '<option value="' + esc(p.uid) + '"' + (x.nadr2 === p.uid ? ' selected' : '') + '>z ' + esc(p.ozn.toLowerCase()) + '</option>'; }).join('')
+    : '<option value="@privod"' + (x.nadr2 === '@privod' ? ' selected' : '') + '>z přívodu</option>';
+  var sel = '<option value=""' + (!x.nadr2 ? ' selected' : '') + '>nezadáno</option>' + privVolby +
+    volby.map(function (y) { return '<option value="' + esc(y.uid) + '"' + (x.nadr2 === y.uid ? ' selected' : '') + '>' + esc(rozvNapajeciPopis(y)) + '</option>'; }).join('');
+  return '<div class="f rp-napajen rp-napajen2"><label title="Druhý vstup přepínače zdrojů — oba vstupy a výstup se nikdy nepropojí přímo mezi sebou.">Napájen z (vstup II)</label>' +
+    '<select class="rp-pole" data-rp2="nadr2">' + sel + '</select></div>';
+}
+// Zapíše vstup II (bez rozvZmena, volá ji rozvVlastnostZmena / rozvNapajeni2Nastavit).
+function rozvNapajeni2Zapsat(uid, v) {
+  var q = rozvNajit(uid); if (!q || q.x.p.kat !== 'PZ') return 0;
+  var x = q.x;
+  if (!v) { if (x.nadr2 != null) { delete x.nadr2; return 1; } return 0; }
+  var rodic = rozvNapajeniNajit(v); if (!rodic) return 0;
+  if (!rozvJePrivod(v) && !rozvLzeNapajet(rodic.x, x)) return 0;
+  x.nadr2 = v; return 1;
+}
+function rozvNapajeni2Nastavit(uid, v) {
+  var pocet = 0;
+  rozvZmena('Vstup II', function () { pocet = rozvNapajeni2Zapsat(uid, v); });
+  return pocet;
 }
 // Zapíše napájení přístrojům (bez rozvZmena). v = '@auto' | '' | '@privod' | uid.
 // Hlavní vypínač: '' / '@privod' = z přívodu, uid svorky = ze svorky; o.pridat
@@ -36151,7 +36224,8 @@ function rozvVlastnostZmena(el) {
   if (k === 'nadr') {   // „Napájen z" — přes rozvZmena (ZPĚT, Ctrl+Z, překreslení)
     if (v !== '@sada') rozvNapajeniNastavit([z.x.uid], v);
     return;
-  } else if (k === 'fazeZamek') { if (el.checked) z.x.fazeZamek = true; else delete z.x.fazeZamek; }
+  } else if (k === 'nadr2') { rozvNapajeni2Nastavit(z.x.uid, v); return; }   // vstup II přepínače zdrojů (PZ)
+  else if (k === 'fazeZamek') { if (el.checked) z.x.fazeZamek = true; else delete z.x.fazeZamek; }
   else if (k === 'predHlavnim') { if (el.checked) z.x.predHlavnim = true; else delete z.x.predHlavnim; }
   else if (k === 'spina') { rozvZmena('Spínání vývodu', function () { if (v) z.x.spina = v; else delete z.x.spina; }); return; }
   else if (k === 'hlavni') {   // hlavní vypínač -QH / ostatní -Q; automatické označení se přejmenuje podle nové role
@@ -36643,6 +36717,22 @@ function rzpAuto(rz, manual, krom, V) {
     if (fs > 1) { var kf = RZP_FAZE.indexOf(x.faze); ia = kf >= 0 && kf < fs ? kf : (poz1[x.uid] || 0) % fs; }
     out.push({ auto: 1, a: { uid: src, strana: ss, pol: ia }, b: dst, n: 1 });
   });
+  // přepínač zdrojů (PZ, víc přívodů 2026-11-18): vstup I (nadr) prošel obecnou smyčkou výš
+  // (strana „t"), vstup II (nadr2) dostane vlastní automatický vodič na stranu „i2" — nikdy
+  // se nekreslí myší (žádný úchyt), takže je VŽDY automatický, bez ohledu na `napajen`.
+  rozvPrvkyVse(rz.rady).forEach(function (x) {
+    if (x.p.kat !== 'PZ' || !x.nadr2) return;
+    var fx = rzpFaziX(x); if (!fx) return;
+    var z2 = rozvJePrivod(x.nadr2) ? x.nadr2 : (rzpX(x.nadr2) ? x.nadr2 : null); if (z2 == null) return;
+    var dst2 = { uid: x.uid, strana: 'i2', pol: 0 };
+    if (rozvJePrivod(z2)) {
+      var kp2 = RZP_FAZE.indexOf(x.faze);
+      out.push(fx > 1 ? { auto: 1, a: { uid: z2, strana: 'o', pol: 0 }, b: dst2, n: Math.min(3, fx) } : { auto: 1, a: { uid: z2, strana: 'o', pol: kp2 < 0 ? 0 : kp2 }, b: dst2, n: 1 });
+      return;
+    }
+    var S2 = rzpX(z2), fs2 = rzpFaziX(S2); if (!fs2) return;
+    out.push({ auto: 1, a: { uid: z2, strana: vyst(z2), pol: 0 }, b: dst2, n: (fs2 > 1 && fx > 1) ? Math.min(fs2, fx) : 1 });
+  });
   return out.concat(rzhAuto(rz, manual, krom, vyst));   // hřeben bez vodiče: ze společného zdroje přístrojů pod ním
 }
 // Napětí po pólech: prohledání do šířky od kabelu (vzor: spocti).
@@ -36659,7 +36749,9 @@ function rzpSpocti(rz, ws) {
     (adj[n] || []).forEach(function (m) { if (!E[m]) { E[m] = { from: n, via: 'wire', f: f, n: seq++ }; q.push(m); } });
     var p = n.split(':'); if (rozvJePrivod(p[0])) continue;
     var x = vse[p[0]];
-    if (x && x.p.kat !== 'SPD') { var m2 = p[0] + ':' + (p[1] === 't' ? 'b' : 't') + ':' + p[2]; if (!E[m2]) { E[m2] = { from: n, via: 'dev', f: f, n: seq++ }; q.push(m2); } }
+    if (x && x.p.kat === 'PZ') {   // přepínač zdrojů: oba vstupy (t, i2) na výstup (b), nikdy obráceně ani mezi sebou
+      if (p[1] !== 'b') { var m2p = p[0] + ':b:' + p[2]; if (!E[m2p]) { E[m2p] = { from: n, via: 'dev', f: f, n: seq++ }; q.push(m2p); } }
+    } else if (x && x.p.kat !== 'SPD') { var m2 = p[0] + ':' + (p[1] === 't' ? 'b' : 't') + ':' + p[2]; if (!E[m2]) { E[m2] = { from: n, via: 'dev', f: f, n: seq++ }; q.push(m2); } }
   }
   var vys = {};
   Object.keys(vse).forEach(function (u) {
@@ -42747,7 +42839,7 @@ var RS_ZNACKY = {
 };
 var RS_ZNACKA_KAT = { MS: 'spoustec', FA: 'jistic', AFDD: 'afdd', FIFA: 'rcbo', FU: 'pojistka', SPD: 'spd', QM: 'vypinac', FI: 'chranic',
                       KM: 'stykac', KA: 'rele', KT: 'hodiny', PJ: 'elektromer', HL: 'signalka', SF: 'rele', X: 'svorka',
-                      TR: 'trafo', ZD: 'zdroj', XS: 'zasuvka', JINE: 'ostatni', QF: 'mccb', QS: 'odpinac' };
+                      TR: 'trafo', ZD: 'zdroj', XS: 'zasuvka', JINE: 'ostatni', QF: 'mccb', QS: 'odpinac', PZ: 'vypinac' };
 function rsZnacka(nazev, x, y, o) {
   var z = RS_ZNACKY[nazev] || RS_ZNACKY.jine;
   return rsSkupina(x, y, z.svg(o), Object.assign({ znacka: RS_ZNACKY[nazev] ? nazev : 'jine' }, o));
@@ -42786,6 +42878,7 @@ function rsHodnoty(x, psc) {
     case 'FU': a = [In ? In + ' A' : '', String(x.vlozka || '').trim() ? 'vložka ' + String(x.vlozka).trim() : /^vložka/.test(x.pozn || '') ? x.pozn : '']; break;
     case 'SPD': a = [p.spdTrida || '', p.up !== '' && p.up != null ? 'Up ' + rozvCisloText(p.up) + ' kV' : '']; break;
     case 'QM': a = [In ? In + ' A' : '']; break;
+    case 'PZ': a = [In ? In + ' A' : '', p.ovladani === 'ats' ? 'ATS' : p.ovladani === 'rucni' ? '1-0-2' : '']; break;
     case 'MS': a = [p.rozsah ? p.rozsah : In ? In + ' A' : '']; break;
     case 'TR': case 'ZD': a = [rozvTrZdText(p, true), p.iVystup ? rozvCisloText(p.iVystup) + ' A' : '']; break;   // krátce — svislý text je u chrániče jen 12 mm
     default: a = [In ? In + ' A' : ''];
@@ -42819,7 +42912,13 @@ function rsModel(d, o) {
   var prv = [];
   if (o) prv = o.prv;
   else (d.rady || []).forEach(function (r) { (r.prvky || []).forEach(function (x) { if (x.p && x.p.kat !== 'REZ') prv.push(x); }); });
-  var qm = o ? o.qm : prv.filter(function (x) { return x.p.kat === 'QM'; })[0] || null;
+  // S víc přívody (jen DBO) ber jako „model.qm" (hlavní vypínač kreslený zvlášť pod
+  // kabelem přívodu 1) KOŘEN podle `rozvKoren` (výslovně zaškrtnutý „Hlavní vypínač" má
+  // přednost před pořadím), ne první QM v pořadí — jinak by se mohl vzájemně prohodit
+  // s hlavním vypínačem jiného přívodu. Bez `d.privody` beze změny (první QM v pořadí).
+  var qm = o ? o.qm : (!o && d && (d.privody || []).length ?
+    prv.filter(function (x) { return x.uid === rozvKorenPrivodu(d.rady || [], '@privod'); })[0] || prv.filter(function (x) { return x.p.kat === 'QM'; })[0] || null :
+    prv.filter(function (x) { return x.p.kat === 'QM'; })[0] || null);
   // Strom napájení (2026-11-05): kořen = hlavní vypínač, děti podle x.nadr.
   // Chránič se svými jističi vypadá přesně jako dřív (skupina se sběrnicí).
   // Nově: skupina pod jakýmkoli napájecím přístrojem, řetěz (přístroj s jediným
@@ -44862,7 +44961,9 @@ var ROZV_KAT_ALIAS = { 'fi/fa': 'FIFA', 'rcbo': 'FIFA', 'p': 'PJ', 'sa': 'SF', '
   'sb': 'SF', 'ovladac / prepinac': 'SF', 'kontrolka': 'HL', 'impulzni rele': 'KA', 'pomocne rele': 'KA', 'monitorovaci rele': 'KA',
   'schodistovy automat': 'KT', 'ms': 'MS', 'qm motorovy': 'MS', 'motorovy spoustec': 'MS', 'spoustec': 'MS',
   'prislusenstvi': 'PRISL', 'napetova spoust': 'PRISL', 'podpetova spoust': 'PRISL', 'pomocny kontakt': 'PRISL', 'signalizacni kontakt': 'PRISL',
-  'motorovy pohon': 'PRISL', 'vnejsi': 'VNEJSI', 'vnejsi prvek': 'VNEJSI', 'prvek mimo rozvadec': 'VNEJSI', 'mimo rozvadec': 'VNEJSI' };
+  'motorovy pohon': 'PRISL', 'vnejsi': 'VNEJSI', 'vnejsi prvek': 'VNEJSI', 'prvek mimo rozvadec': 'VNEJSI', 'mimo rozvadec': 'VNEJSI',
+  // přepínač zdrojů 1-0-2 / ATS (víc přívodů, 2026-11-18)
+  'prepinac zdroju': 'PZ', 'prepinac siti': 'PZ', 'ats': 'PZ' };
 
 function rozvKatZTextu(v) {
   var s = String(v || '').trim(); if (!s) return '';
@@ -44927,6 +45028,9 @@ function rozvValidovat(raw) {
     r.nastaveni = t0('nastaveni');
     // ovládací obvody (2026-10-29) — vše nepovinné; neznámá montáž = „výrobce neuvádí"
     r.uc = t0('uc'); r.rozsah = t0('rozsah'); r.prislK = t0('prislK'); r.montaz = mont;
+    // přepínač zdrojů (víc přívodů, 2026-11-18) — nepovinné
+    var ov = rozvNorm(o.ovladani || '').trim();
+    r.ovladani = /^ats|automat/.test(ov) ? 'ats' : /^ruc|^1-?0-?2/.test(ov) ? 'rucni' : '';
     r.kontakty = t0('kontakty').toUpperCase().replace(/\s+/g, '');
     r.ieAc1 = cislo('ieAc1', 'Ie AC-1', false); r.peAc3 = cislo('peAc3', 'Pe AC-3', false);
     r.prislTyp = kat === 'PRISL' || kat === 'VNEJSI' ? rozvPrislTypZTextu(o.prislTyp, kat) : '';
@@ -45040,6 +45144,7 @@ var ROZV_CSV = [
   ['rozmery', 'rozmery', ['rozmery', 'rozmerymm']],
   ['trida_ochrany', 'trida', ['tridaochrany']],
   ['overeno', 'overeno', ['overeno']],
+  ['ovladani', 'ovladani', ['ovladani', 'rezimovladani']],   // přepínač zdrojů PZ (víc přívodů, 2026-11-18)
   ['poznamka', 'pozn', ['poznamka', 'pozn']]
 ];
 function rozvCsvKlic(h) { return rozvNorm(h).replace(/δ/g, 'd').replace(/[^a-z0-9]/g, ''); }
@@ -47381,7 +47486,9 @@ function rzsSkup(rady, seznam) { return seznam.length > 3 ? rozvOznRada(seznam.s
 // (ta seje VŠECHNY přívody najednou a každý uzel si pamatuje jen první zdroj,
 // takže druhé propojení by bylo tiše nevidět) — tady se BFS pustí z KAŽDÉHO
 // přívodu zvlášť a porovná se, kam až dosáhne.
-function rzsPrivodDosah(rz, ws, pvUid) {
+// `bezPZ` (víc přívodů, 2026-11-18): true = přepínač zdrojů NEpropouští (jako zeď) —
+// použito na kontrolu „propojené přívody JINUDY" (ne přes PZ, který je k tomu právě určen).
+function rzsPrivodDosah(rz, ws, pvUid, bezPZ) {
   var adj = {}, E = {}, q = [], vse = {};
   rozvPrvkyVse(rz.rady).forEach(function (x) { vse[x.uid] = x; });
   ws.forEach(function (w) { rzpUzly(w).forEach(function (p) { (adj[p[0]] = adj[p[0]] || []).push(p[1]); (adj[p[1]] = adj[p[1]] || []).push(p[0]); }); });
@@ -47392,7 +47499,9 @@ function rzsPrivodDosah(rz, ws, pvUid) {
     (adj[n] || []).forEach(function (m) { if (!E[m]) { E[m] = 1; q.push(m); } });
     var p = n.split(':'); if (rozvJePrivod(p[0])) continue;
     var x = vse[p[0]];
-    if (x && x.p.kat !== 'SPD') { var m2 = p[0] + ':' + (p[1] === 't' ? 'b' : 't') + ':' + p[2]; if (!E[m2]) { E[m2] = 1; q.push(m2); } }
+    if (x && x.p.kat === 'PZ') {   // oba vstupy (t, i2) na výstup (b), nikdy obráceně ani mezi sebou
+      if (!bezPZ && p[1] !== 'b') { var m2p = p[0] + ':b:' + p[2]; if (!E[m2p]) { E[m2p] = 1; q.push(m2p); } }
+    } else if (x && x.p.kat !== 'SPD') { var m2 = p[0] + ':' + (p[1] === 't' ? 'b' : 't') + ':' + p[2]; if (!E[m2]) { E[m2] = 1; q.push(m2); } }
   }
   var out = {};   // mapa uid → true, naplněná přímo z uzlů BFS (ne O(přístroje × uzly))
   Object.keys(E).forEach(function (k) { var i = k.indexOf(':'); if (i > 0 && vse[k.slice(0, i)]) out[k.slice(0, i)] = 1; });
@@ -47450,10 +47559,24 @@ function rzsKontrola() {
   // 4b. víc přívodů (2026-11-13): propojení, nevyužitý přívod, tip na výstražný štítek
   var Dpv = rozvPrivody(__rz).length ? rozvPrivodDosahy() : [];   // bez dalšího přívodu se BFS vůbec nespouští
   if (Dpv.length > 1) {
-    var spojene = vse.filter(function (x) { return Dpv.filter(function (dd) { return dd.dosah[x.uid]; }).length > 1; });
-    if (spojene.length) add('chyba', nm(spojene[0]) + ' je napájen z víc přívodů najednou (' +
-      Dpv.filter(function (dd) { return dd.dosah[spojene[0].uid]; }).map(function (dd) { return dd.p.ozn; }).join(' i ') +
-      ') – přívody jsou propojené. Programu ještě chybí přepínače 1-0-2 (ATS) – nic kolem toho neobcházejte.', { uidy: spojene.map(function (x) { return x.uid; }) });
+    // propojené PŘES PZ (přepínač zdrojů, 2026-11-18) nejsou chyba — k tomu PZ je; chyba je
+    // jen propojení JINUDY (dosah i bez PZ, které propouští jako zeď)
+    var DpvBezPZ = rozvPrivodDosahy(true);
+    // PZ sám o sobě je reachable z obou vstupů VŽDY (to je jeho smysl) — nepočítá se jako chyba
+    var spojeneJinudy = vse.filter(function (x) { return x.p.kat !== 'PZ' && DpvBezPZ.filter(function (dd) { return dd.dosah[x.uid]; }).length > 1; });
+    if (spojeneJinudy.length) add('chyba', nm(spojeneJinudy[0]) + ' je napájen z víc přívodů najednou (' +
+      DpvBezPZ.filter(function (dd) { return dd.dosah[spojeneJinudy[0].uid]; }).map(function (dd) { return dd.p.ozn; }).join(' i ') +
+      ') – přívody jsou propojené jinudy než přes přepínač zdrojů. Propojte je přes přepínač zdrojů (1-0-2 / ATS).', { uidy: spojeneJinudy.map(function (x) { return x.uid; }) });
+    // přes PZ propojené (a nehlášené jako chyba výš): informace, který PZ to je a odkud
+    var pz = {}; (rady || []).forEach(function (r) { (r.prvky || []).forEach(function (y) { if (y.p && y.p.kat === 'PZ') pz[y.uid] = y; }); });
+    Object.keys(pz).forEach(function (u) {
+      var zdePZ = Dpv.filter(function (dd) { return dd.dosah[u]; });
+      if (zdePZ.length > 1) {
+        var zaPz = vse.filter(function (x) { return x.uid !== u && Dpv.filter(function (dd) { return dd.dosah[x.uid]; }).length > 1 && DpvBezPZ.filter(function (dd) { return dd.dosah[x.uid]; }).length <= 1; });
+        add('upoz', (pz[u].ozn || 'Přepínač zdrojů') + ': oba vstupy jsou napájené (' + zdePZ.map(function (dd) { return dd.p.ozn; }).join(', ') + ')' +
+          (zaPz.length ? '; za ním přes tentýž přepínač: ' + rzsSkup(rady, zaPz) : '') + '.', { uid: u });
+      }
+    });
     Dpv.forEach(function (dd) { if (!Object.keys(dd.dosah).length) add('upoz', dd.p.ozn + ' nenapájí žádný přístroj.', {}); });
     add('tip', 'Rozvaděč má víc přívodů – označte ho výstražným štítkem, že má víc přívodů, a před prací vypínejte všechny.', {});
   }

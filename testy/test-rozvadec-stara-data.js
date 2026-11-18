@@ -208,17 +208,23 @@ const zpravaOtevritUlozit = async (p) => p.evaluate(async () => {
   // ── import CSV 43 / 50 / 51 sloupců ──────────────────────────────────
   const im = await N.p.evaluate(() => {
     const nove = ROZV_CSV.map(c => c[0]);
-    const OVL = ['uc', 'kontakty', 'ie_ac1', 'pe_ac3_kw', 'rozsah_nastaveni', 'prislusenstvi_k', 'montaz', 'typ_prislusenstvi'];
+    // sloupce přidané PO v9.134 — nový sloupec (hřeben, vložka, PZ…) se sem přidá, ať
+    // „43 sloupců" dál znamená skutečnou šablonu do v9.134, ne „aktuální minus osm"
+    const OVL = ['uc', 'kontakty', 'ie_ac1', 'pe_ac3_kw', 'rozsah_nastaveni', 'prislusenstvi_k', 'montaz', 'typ_prislusenstvi', 'ovladani'];
     const stare = nove.filter(k => OVL.indexOf(k) < 0);   // šablona do v9.134
     const radek = h => h.map(k => ({ druh: 'pristroj', kategorie: 'FA', nazev: 'Jistič test', vyrobce: 'Výrobce A', typ: 'VA-B16-' + h.length,
       poly: '1', in: '16', charakteristika: 'B', icn: '6', sirka_moduly: '1', overeno: 'ne', kontakty: '', montaz: '', typ_prislusenstvi: '' }[k] || '')).join(';');
     const s50 = nove.filter(k => k !== 'typ_prislusenstvi');
     const vys = {};
+    // „50"/„51" jsou historické popisky (šablona před/po přidání typ_prislusenstvi) — počty
+    // sloupců se počítají dynamicky z CELÉ aktuální ROZV_CSV, ať přidání dalšího sloupce
+    // (hřeben, vložka, PZ…) tenhle test samo nerozbije.
     for (const [n, h] of [['43', stare], ['50', s50], ['51', nove]]) {
       const v = rozvImportRozebrat(h.join(';') + '\r\n' + radek(h) + '\r\n', 'k' + n + '.csv');
       vys[n] = { sl: h.length, pol: v.polozky.length, chyby: v.chyby.length, nezn: (v.neznameSloupce || []).length, typ: v.polozky[0] && v.polozky[0].polozka.typ };
     }
-    // nový řádek s příslušenstvím (51 sloupců)
+    vys.ocekS50 = s50.length; vys.ocekNove = nove.length;
+    // nový řádek s příslušenstvím (aktuální počet sloupců)
     const pr = nove.map(k => ({ druh: 'pristroj', kategorie: 'PRISL', nazev: 'Napěťová spoušť', vyrobce: 'Výrobce B', typ: 'VB-NS', sirka_moduly: '0,5',
       montaz: 'bok vpravo', typ_prislusenstvi: 'nap', uc: '230 V AC' }[k] || '')).join(';');
     const v = rozvImportRozebrat(nove.join(';') + '\r\n' + pr + '\r\n', 'p.csv');
@@ -226,9 +232,9 @@ const zpravaOtevritUlozit = async (p) => p.evaluate(async () => {
     return vys;
   });
   check('import CSV se 43 sloupci (šablona do v9.134)', im['43'].pol === 1 && !im['43'].chyby && !im['43'].nezn, JSON.stringify(im['43']));
-  check('import CSV s 50 sloupci (bez typ_prislusenstvi)', im['50'].sl === 50 && im['50'].pol === 1 && !im['50'].chyby && !im['50'].nezn, JSON.stringify(im['50']));
-  check('import CSV s 51 sloupci', im['51'].sl === 51 && im['51'].pol === 1 && !im['51'].chyby && !im['51'].nezn, JSON.stringify(im['51']));
-  check('import 51: příslušenství s montáží a typem', im.prisl.montaz === 'bok vpravo' && im.prisl.typ === 'nap' && !im.prisl.chyby, JSON.stringify(im.prisl));
+  check('import CSV bez typ_prislusenstvi (' + im.ocekS50 + ' sloupců)', im['50'].sl === im.ocekS50 && im['50'].pol === 1 && !im['50'].chyby && !im['50'].nezn, JSON.stringify(im['50']));
+  check('import CSV s aktuální šablonou (' + im.ocekNove + ' sloupců)', im['51'].sl === im.ocekNove && im['51'].pol === 1 && !im['51'].chyby && !im['51'].nezn, JSON.stringify(im['51']));
+  check('import s aktuální šablonou: příslušenství s montáží a typem', im.prisl.montaz === 'bok vpravo' && im.prisl.typ === 'nap' && !im.prisl.chyby, JSON.stringify(im.prisl));
 
   check('bez chyb stránky', !S.err.length && !N.err.length, S.err.concat(N.err).join(' | '));
   console.log(res.join('\n'));

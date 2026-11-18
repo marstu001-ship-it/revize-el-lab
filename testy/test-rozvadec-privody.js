@@ -131,6 +131,91 @@ const w = ms => new Promise(r => setTimeout(r, ms));
   check('po odebrání posledního extra přívodu `privody` v datech není, karta zmizela, lišta schovaná',
     !d7.priv && d7.karty === 0 && d7.ukaz === true, JSON.stringify(d7));
 
+  // ── 9. přepínač zdrojů (PZ) — kategorie, dva vstupy, kontrola (2026-11-18) ──
+  // Nový rozvaděč, přesně případ uživatele: Q1 63 A z přívodu 1 (→ FI1 a jističe,
+  // FI/FA1, FI/FA2), QH1 40 A z přívodu 2 (→ FA1, FA2 paralelně).
+  await p.evaluate(async () => {
+    await dokNovy('rozv');
+    __T.dk('[data-dk="oznaceni"]', 'RS2'); __T.dk('[data-dk="soustava"]', '3NPE ~400/230 V TN-S');
+    rozvSkrinNastavit(rozvKnihPolozka('v-sk-3x12-n'));
+    const pr = (kat, o) => Object.assign({ uid: rozvUid(), knih: null, p: Object.assign({ kat, vyrobce: 'obecný', poly: '3', In: '40', sirka: 4 }, o || {}), ozn: '', vyvod: '', faze: '' }, {});
+    const Q1 = pr('QM', { In: '63' }); Q1.ozn = '-Q1'; Q1.nadr = '@privod';
+    const FI1 = pr('FI', { In: '40', idn: '0.03', poly: '4' }); FI1.ozn = '-FI1';
+    const FA1b = pr('FA', { In: '16', poly: '1', char: 'B' }); FA1b.ozn = '-FA1b'; FA1b.nadr = FI1.uid;
+    const QH1 = pr('QM', { In: '40' }); QH1.ozn = '-QH1'; QH1.hlavni = true; QH1.nadr = '@privod~pv1';
+    const FA1 = pr('FA', { In: '16', poly: '1', char: 'B' }); FA1.ozn = '-FA1'; FA1.nadr = QH1.uid;
+    const FA2 = pr('FA', { In: '16', poly: '1', char: 'B' }); FA2.ozn = '-FA2'; FA2.nadr = QH1.uid;
+    __rz.rady = [{ prvky: [Q1, FI1, FA1b] }, { prvky: [QH1, FA1, FA2] }];
+    __rz.privody = [{ uid: 'pv1', ozn: 'Přívod 2', kabel: 'CYKY-J', prurez: '4Bx10', in: '40' }];
+    await dokUlozitOtevreny();
+  });
+  const koreny2 = await p.evaluate(() => {
+    const d = window.__dokOtevreny.data;
+    return { k1: rozvKorenPrivodu(d.rady, '@privod'), k2: rozvKorenPrivodu(d.rady, '@privod~pv1'), qm: rsModel(d).qm && rsModel(d).qm.ozn,
+             jedn: rsModel(d).jedn.map(u => u.sloupce.map(x => x.ozn).join('>')) };
+  });
+  check('Q1 a QH1 jsou každý kořen svého přívodu (žádný se nekreslí jako dítě toho druhého)',
+    koreny2.k1 && koreny2.k2 && koreny2.k1 !== koreny2.k2 && koreny2.qm === '-Q1' && !koreny2.jedn.some(j => /^-Q1>|>-Q1(>|$)/.test(j)),
+    JSON.stringify(koreny2));
+  check('žádný přístroj přívodu 2 (-QH1, -FA1, -FA2) neleží ve stromu pod -Q1',
+    !koreny2.jedn.some(j => j.startsWith('-Q1>')), JSON.stringify(koreny2.jedn));
+
+  // ── 9b. PZ jako přístroj — validace, panel se dvěma vstupy ────────────
+  const pzVal = await p.evaluate(() => rozvValidovat({ druh: 'pristroj', kat: 'PZ', poly: '3', In: '63', sirka: '4', ovladani: 'rucni' }));
+  check('kategorie PZ se validuje (ovládání, In, póly)', pzVal.chyby.length === 0 && pzVal.polozka.kat === 'PZ' && pzVal.polozka.ovladani === 'rucni', JSON.stringify(pzVal));
+
+  await p.evaluate(async () => {
+    await dokNovy('rozv');
+    __T.dk('[data-dk="oznaceni"]', 'RS3'); __T.dk('[data-dk="soustava"]', '3NPE ~400/230 V TN-S');
+    rozvSkrinNastavit(rozvKnihPolozka('v-sk-3x12-n'));
+    const pr = (kat, o) => Object.assign({ uid: rozvUid(), knih: null, p: Object.assign({ kat, vyrobce: 'obecný', poly: '3', In: '40', sirka: 4 }, o || {}), ozn: '', vyvod: '', faze: '' }, {});
+    const Q1 = pr('QM', { In: '63' }); Q1.ozn = '-Q1'; Q1.nadr = '@privod';
+    const PZ = pr('PZ', { In: '63', ovladani: 'rucni' }); PZ.ozn = '-Q2'; PZ.nadr = '@privod'; PZ.nadr2 = '@privod~pv1';
+    const FA1 = pr('FA', { In: '16', poly: '1', char: 'B' }); FA1.ozn = '-FA1'; FA1.nadr = PZ.uid;
+    const FA2 = pr('FA', { In: '16', poly: '1', char: 'B' }); FA2.ozn = '-FA2'; FA2.nadr = PZ.uid;
+    __rz.rady = [{ prvky: [Q1, PZ, FA1, FA2] }];
+    __rz.privody = [{ uid: 'pv1', ozn: 'Přívod 2', kabel: 'CYKY-J', prurez: '4Bx10', in: '40' }];
+    __rz.vyber = PZ.uid; __rz.vic = null;
+    window.__T0_PZ2 = { PZ: PZ.uid, FA1: FA1.uid, FA2: FA2.uid };
+    window.__T0_PZ2_FA1 = FA1.uid;
+    await dokUlozitOtevreny();
+    rozvVlastnostiVykreslit();
+  });
+  const panel = await p.evaluate(() => ({
+    labely: Array.from(document.querySelectorAll('.rp-napajen label')).map(l => l.textContent),
+    nadr2val: (document.querySelector('[data-rp2="nadr2"]') || {}).value
+  }));
+  check('panel PZ: „Napájen z (vstup I)" a „(vstup II)" se dvěma vybranými hodnotami',
+    panel.labely.some(t => /vstup I\)/.test(t)) && panel.labely.some(t => /vstup II\)/.test(t)) && panel.nadr2val === '@privod~pv1', JSON.stringify(panel));
+
+  const kont9 = await p.evaluate(() => rzsKontrola());
+  check('PZ s oběma vstupy: žádná chyba „propojené přívody" (to je účel PZ)',
+    !kont9.some(k => k.u === 'chyba' && /propojen/.test(k.text)), JSON.stringify(kont9.filter(k => k.u === 'chyba')));
+  check('kontrola hlásí upozornění (ne chybu) „oba vstupy jsou napájené" u -Q2',
+    kont9.some(k => k.u === 'upoz' && /-Q2.*oba vstupy jsou napájené/.test(k.text)), JSON.stringify(kont9.filter(k => k.u === 'upoz')));
+
+  // jinudy propojené (bez PZ) — FA1 dostane DVA manuální vodiče přímo z obou přívodů,
+  // mimo PZ úplně (manuální vodič do přístroje potlačí jeho automatický — proto nejde
+  // použít nadr/PZ zároveň, ale přesně TOHLE je ten „propojeno jinudy" případ)
+  await p.evaluate(() => {
+    const w1 = rzpVodic({ uid: '@privod', strana: 'o', pol: 0 }, { uid: window.__T0_PZ2_FA1, strana: 't', pol: 0 });
+    w1.uid = rzpVodicUid(); __rz.vodice.push(w1);
+    const w2 = rzpVodic({ uid: '@privod~pv1', strana: 'o', pol: 0 }, { uid: window.__T0_PZ2_FA1, strana: 't', pol: 0 });
+    w2.uid = rzpVodicUid(); __rz.vodice.push(w2);
+  });
+  const kont10 = await p.evaluate(() => rzsKontrola());
+  check('propojení JINUDY (ne přes PZ) zůstává chyba', kont10.some(k => k.u === 'chyba' && /propojen/.test(k.text)), JSON.stringify(kont10.filter(k => k.u === 'chyba')));
+
+  // CSV: sloupec ovladani se importuje
+  const csvPz = await p.evaluate(() => {
+    const h = ROZV_CSV.map(c => c[0]);
+    const radek = h.map(k => ({ druh: 'pristroj', kategorie: 'PZ', nazev: 'Přepínač zdrojů test', vyrobce: 'Výrobce A', typ: 'PZ-TEST',
+      poly: '3', in: '63', sirka_moduly: '4', ovladani: 'ats', overeno: 'ne' }[k] || '')).join(';');
+    const v = rozvImportRozebrat(h.join(';') + '\r\n' + radek + '\r\n', 'pz.csv');
+    return { pol: v.polozky.length, chyby: v.chyby, ovladani: v.polozky[0] && v.polozky[0].polozka.ovladani };
+  });
+  check('CSV import: sloupec `ovladani` se čte (ats)', csvPz.pol === 1 && csvPz.chyby.length === 0 && csvPz.ovladani === 'ats', JSON.stringify(csvPz));
+
   // ── 8. data revizí beze změny po celé práci s přívody ─────────────────
   const otiskPo = await otisk();
   check('data revizí (STORE, archiv) po práci s přívody bajtově stejná', otiskPred === otiskPo);
