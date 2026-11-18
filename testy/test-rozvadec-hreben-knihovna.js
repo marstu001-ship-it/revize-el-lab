@@ -40,7 +40,7 @@ const w = ms => new Promise(r => setTimeout(r, ms));
 
   // ── 2. CSV: nové sloupce na konci šablony ─────────────────────────────
   const csvHl = await p.evaluate(() => ROZV_CSV.map(c => c[0]).join(';'));
-  check('šablona CSV končí …ovladani;prurez;polu;roztec_mm;krytky;poznamka', /;ovladani;prurez;polu;roztec_mm;krytky;poznamka$/.test(csvHl), csvHl.slice(-70));
+  check('šablona CSV obsahuje hřeben na konci (…ovladani;prurez;polu;roztec_mm;krytky…)', /;ovladani;prurez;polu;roztec_mm;krytky;/.test(csvHl), csvHl.slice(-90));
 
   // ── 3. otevřít rozvaděč, přidat vymyšlené „Výrobce A" do knihovny ─────
   await p.evaluate(async () => {

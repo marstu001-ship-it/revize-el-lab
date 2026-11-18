@@ -4026,6 +4026,72 @@ s chybami i bez, CSV sloupce a import, panel s nabídkou a předvolbou podle
 výrobce, zápis knih/p/prurez/In, délková kontrola i v materiálu, návrat na
 obecný, obecný hřeben beze změny). Karta v Novinkách se nedělala.
 
+### Pojistková vložka jako položka knihovny (2026-11-18)
+
+Zadání uživatele: stejně jako hřeben výš, pojistková vložka má svého
+výrobce, velikost (10×38, 14×51…) a charakteristiku, přestože se do řady
+nikdy nevkládá (jen uvnitř pojistkového odpínače, kat FU). **Nový
+`druh: 'vlozka'`**, stejný vzor jako `hreben`.
+
+- **Pole** (`ROZV_VLOZKA_KLICE`): `vyrobce, rada, typ, nazev`; **`velikost`**
+  (10×38, 14×51, 22×58, NH000, NH00, NH1, NH2, D01, D02, DII, DIII —
+  `rozvVelikostZTextu`, povinná, jinak chyba řádku); `In` (povinné), `char`
+  (gG, aM, gR, gS, gPV, aR — jiný text je chyba řádku), `ue`, `icu`
+  (vypínací schopnost, kA), `pv` (W při In, **celkem za jednu vložku**).
+- **FU dostal nová volitelná pole** `velikost` (stejný výčet, stejná funkce
+  `rozvVelikostZTextu` — sdílí se s katalogem vložek) a **`pv_max_vlozky`**
+  (W, max. zátěž vložky, kterou odpínač snese — jen když to výrobce uvádí).
+- **CSV** — nové sloupce `velikost;pv_max_vlozky` **na konci šablony** (po
+  `krytky`, před `poznamka`) — **šablona má teď 58 sloupců**. Sloupec
+  `velikost` slouží oběma druhům (FU i vlozka) jedním společným názvem.
+- **Data (vše volitelné, starý rozvaděč beze změny):** `x.vlozka` (text,
+  **beze změny formátu** — „40 gG", čte ho `rozvVlozkaA`/`rozvVlozkaText`
+  jako dřív) + **nové `x.vlozkaP`** = kopie vybrané položky z knihovny, jen
+  pro přesný Pv a zobrazení výrobce. Bez `vlozkaP` je FU úplně stejné jako
+  dřív — `test-otepleni-pv.js` beze změny.
+- **Panel odpínače** (`rozvVlozkyHtml`, v „Další údaje" u FU): nad polem
+  „Vložka (A, char.)" je **„Vložka z knihovny"** — nabízí jen vložky se
+  stejnou `velikost` jako odpínač (`rozvVlozkyVolby`, bez velikosti u
+  odpínače nabídne všechny). Výběr (`rozvVlozkaKnihNastavit`) zapíše
+  `x.vlozkaP` + přepíše `x.vlozka` na text „N A char" — **stará pole se
+  nerozcházejí od polí z knihovny**, dál platí přesně totéž `rozvVlozkaA`.
+  **Ruční přepis textového pole „Vložka" `x.vlozkaP` smaže** — jinak by
+  popisek lhal o výrobci k jiné vložce, než je skutečně napsaná.
+- **Oteplení** (`rozvOteplVypocet`): u FU se k dosavadnímu Pv odpínače
+  (nezměněný výpočet) **přičte Pv vložky** `Pv_vložky × (Inc/In_vložky)² ×
+  počet pólů`, jen když je `x.vlozkaP` vyplněná a má svůj Pv a In. **Klíč
+  `pvVlozka` se do řádku zapíše JEN s vybranou vložkou** — starý rozvaděč
+  (bez `vlozkaP`) nemá v datech oteplení ani nový prázdný klíč, `pvInc`
+  počítá přesně jako dřív (`test-rozvadec-psc.js`: DBO výpočet oteplení
+  znak po znaku stejný). **Obě složky se zobrazí zvlášť** (`rotPvIncText`):
+  „39 W (z toho vložka 39 W)" v tabulce na obrazovce i v PDF — bez vložky
+  z knihovny beze změny.
+- **Překročení `pv_max_vlozky`** hlásí stávající `rozvVlozkaUpoz` (rozšířená
+  o druhou větev) stejným panelovým upozornění jako „vložka větší než
+  odpínač" — žádné druhé místo pro totéž.
+- **Správa knihovny**: filtr kategorie dostal „Pojistkové vložky".
+
+**Odchylky od zadání (zjednodušení):**
+- **„📚 Doplnit Pv z knihovny…" dialog vložky NEDOPLŇUJE.** Dialog řeší
+  jednu řadu výrobce pro celou skupinu stejných přístrojů (shoda In +
+  charakteristika + póly) — u vložek by se musela řešit zvlášť shoda
+  velikosti ODPÍNAČE a zvlášť In/char VLOŽKY, které spolu přímo nesouvisí
+  (dvě různé knihovní položky). Rozšíření by potřebovalo druhou, nezávislou
+  skupinovací logiku uvnitř téhož dialogu — necháno na později, až bude
+  jasné, jak si to uživatel v praxi představuje. Výběr v panelu konkrétního
+  odpínače funguje a stačí na běžné použití.
+- **Rychlé zadávání příkazem** („3× FU 10x38 25 gG") **vložku z knihovny
+  nehledá** — vloží se obecný odpínač s textem vložky jako dřív
+  (`rzcRozbor`/`rzcPolozka` se neměnily). Vazbu na knihovnu jde doplnit
+  v panelu po vložení.
+
+Test: `testy/test-rozvadec-vlozky.js` (16 kontrol — rozvValidovat, nové
+pole FU, CSV sloupce a import, panel s nabídkou podle velikosti, zápis
+vlozka+vlozkaP, výpočet Pv vložky podle vzorce, zobrazení obou složek,
+upozornění při překročení `pv_max_vlozky`, ruční přepis textu odpojí
+knihovnu). **Upraveno:** `test-rozvadec-psc.js` a `test-rozvadec-stara-data.js`
+(CSV šablona má teď 58 sloupců). Karta v Novinkách se nedělala.
+
 ### Výměna výkresů s CAD — export a import DXF (2026-11-02, bloky „ROZVADĚČ — VÝMĚNA S CAD")
 
 Zadání uživatele: technici kreslí ve Schématech CAD (Elmer), který ukládá
