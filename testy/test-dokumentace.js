@@ -24,6 +24,19 @@ function pomocnik() {
       e.value = v; e.dispatchEvent(new Event('input', { bubbles: true })); e.dispatchEvent(new Event('change', { bubbles: true }));
     },
     vzor(sk, id) { const s = sk.querySelector('.dk-vzor-vyber'); s.value = id; s.dispatchEvent(new Event('change', { bubbles: true })); },
+    // Čekání na SKUTEČNOU podmínku místo pevné prodlevy (zatížená regrese je
+    // pomalejší než jediný běh — 800ms autosave, IndexedDB zápis i stránkování
+    // PDF se pod zátěží prodlouží). `fn` může být async (např. znovu `dokNacist()`
+    // a teprve pak zkontrolovat data). Polling po 30 ms, timeout hlásí, na co se čekalo.
+    async cekej(fn, timeout) {
+      const t0 = Date.now(), lim = timeout || 10000;
+      for (;;) {
+        let ok; try { ok = await fn(); } catch (e) { ok = false; }
+        if (ok) return true;
+        if (Date.now() - t0 > lim) throw new Error('cekej: timeout po ' + lim + ' ms — ' + fn);
+        await new Promise(r => setTimeout(r, 30));
+      }
+    },
     // Otisk dat revizí: všechny klíče STORE z IndexedDB + záloha v localStorage
     async otiskRevizi() {
       const idbData = {};
@@ -161,7 +174,8 @@ function pomocnik() {
     const pozn = sk.querySelector('[data-k="pozn"]').value;
     // ruční změna kódu: AD4 → AD3
     const s = sk.querySelector('select[data-kod="AD"]'); s.value = 'AD3'; s.dispatchEvent(new Event('change', { bubbles: true }));
-    await T.w(1200);
+    // autosave 800 ms po změně — čekat na dokončení (časovač doběhl a dokument je uložený), ne na pevnou dobu
+    await T.cekej(() => __dokCasovac == null && DOK.dokumenty.length === 1 && /Uloženo/.test(document.getElementById('dok-stav').textContent), 10000);
     return { vzorKody, pozn, souhrn: sk.querySelector('.dk-souhrn').textContent, pocet: DOK.dokumenty.length,
              stav: document.getElementById('dok-stav').textContent, skupin: f.querySelectorAll('.dk-skupina').length,
              g1: dokKodyCist(f.querySelector('.dk-skupina')) };
@@ -245,7 +259,11 @@ function pomocnik() {
     // smazat se ZPĚT
     await dokVzorSmazat(vl.id); const poSmazani = DOK.vzory.length;
     const toast = Array.from(document.querySelectorAll('#toast-wrap .toast')).pop();
-    toast.querySelector('button').click(); await __T.w(300); await dokNacist();
+    toast.querySelector('button').click();
+    // ZPĚT v toastu vrací vzor asynchronně (load–uprav–zapiš) — čekat, až se to doopravdy
+    // propíše do úložiště (ne na pevnou dobu), jinak druhé smazání níž nastoupí nad
+    // ještě neuzavřeným zápisem a výsledek se vrátí
+    await __T.cekej(async () => { await dokNacist(); return DOK.vzory.length === poSmazani + 1; }, 10000);
     const poZpet = DOK.vzory.length;
     await dokVzorSmazat(vl.id);
     // vestavěný skrýt / zobrazit
@@ -379,13 +397,24 @@ function pomocnik() {
   await p2.goto(URL); await w(1200); await p2.evaluate(pomocnik);
   await p2.evaluate(async () => { dokOtevritSeznam(); });
   await p.evaluate(async () => { await dokNovy('pouvv'); __T.nast('[data-dk="stavba"]', 'Stavba z prvního okna'); await dokUlozitOtevreny(); });
-  await w(700);
+  // druhé okno reaguje na BroadcastChannel se zpožděním (__dokZnovuCasovac, 150 ms) —
+  // čekat na skutečný obsah, ne na pevnou dobu
+  await p2.evaluate(() => __T.cekej(() => DOK.dokumenty.length === 4, 10000));
   const okno2 = await p2.evaluate(() => ({ n: DOK.dokumenty.length, t: document.getElementById('dok-seznam').innerText }));
   check('druhé okno uvidí nový protokol bez obnovení stránky', okno2.n === 4 && /Stavba z prvního okna/.test(okno2.t), String(okno2.n));
   await p2.evaluate(async () => { await dokOtevrit(DOK.dokumenty.find(x => x.data.stavba === 'Druhá vymyšlená stavba').uid); __T.nast('[data-dk="stavba"]', 'Upraveno ve druhém okně'); await dokUlozitOtevreny(); });
-  await w(500);
-  const obe = await p.evaluate(async () => { await dokNacist(); return DOK.dokumenty.map(x => x.data.stavba).sort().join('|'); });
+  // čekat, až druhé okno svůj zápis doopravdy dokončí (ne jen naplánovalo)
+  await p2.evaluate(() => __T.cekej(() => __dokGen === __dokUlozenoGen, 10000));
+  const obe = await p.evaluate(async () => {
+    await dokNacist();
+    // vlastní (autoritativní) načtení výš už je aktuální — zrušit případný STARŠÍ
+    // časovač zpětného načtení z broadcastu (z prvního zápisu výš), ať pod zátěží
+    // nedoběhne POZDĚJI v další části testu a nepřepíše mezitím novější data
+    clearTimeout(__dokZnovuCasovac);
+    return DOK.dokumenty.map(x => x.data.stavba).sort().join('|');
+  });
   check('uložení ve druhém okně nepřepíše dokument z prvního', /Stavba z prvního okna/.test(obe) && /Upraveno ve druhém okně/.test(obe), obe);
+  await p2.close();   // dál už se nevyužívá — zavřením se dál nevysílají zprávy kanálem
 
   // ── 11. rozbor vloženého seznamu prostorů ─────────────────────────────
   const r11 = await p.evaluate(() => JSON.stringify(dokRozborProstoru('Č. m.\tNázev\n1.01\tZádveří\nA-12 – Sklad\n0.05: Kotelna\nChodba bez čísla\n\n  2.03   Kuchyňka ')));
@@ -515,27 +544,36 @@ function pomocnik() {
     r.dotaz = okno().classList.contains('open') ? document.getElementById('dok-vzor-jmeno-text').textContent : '';
     r.prepsatVidet = document.querySelector('#modal-dok-vzor-jmeno [data-action="tdVzorJmenoPrepsat"]').offsetHeight > 0;
     r.neulozenoPredVolbou = DOK.vzory.length === 1 && DOK.vzory[0].pozn === 'první';
-    document.querySelector('#modal-dok-vzor-jmeno [data-action="tdVzorJmenoPrepsat"]').click(); await w(150); await dokNacist();
+    // Klik na tlačítko spustí `dokVzorUlozit()` BEZ await (handler kliku ho nečeká) —
+    // zápis (dokNacist–uprav–dokZapsat) doběhne až po chvíli a pod zátěží déle. Spolehlivé
+    // znamení, že je hotovo: hlavní dialog `modal-dok-vzor` se zavírá teprve PO zápisu
+    // (`closeModal('modal-dok-vzor')` je poslední řádek úspěšného uložení) — čekat na to,
+    // ne na pevnou dobu.
+    const dopsano = () => __T.cekej(() => !document.getElementById('modal-dok-vzor').classList.contains('open'), 10000);
+    document.querySelector('#modal-dok-vzor-jmeno [data-action="tdVzorJmenoPrepsat"]').click(); await dopsano(); await dokNacist();
     r.poPrepsani = DOK.vzory.map(v => v.nazev + '/' + v.pozn).join('|');
     await ulozJako('Vymyšlený vzor A', 'třetí');
-    document.querySelector('#modal-dok-vzor-jmeno [data-action="tdVzorJmenoNovy"]').click(); await w(150); await dokNacist();
+    document.querySelector('#modal-dok-vzor-jmeno [data-action="tdVzorJmenoNovy"]').click(); await dopsano(); await dokNacist();
     r.poNovem = DOK.vzory.map(v => v.nazev + '/' + v.pozn).join('|');
     await ulozJako('Vymyšlený vzor A', 'čtvrtá');
-    document.querySelector('#modal-dok-vzor-jmeno [data-action="tdVzorJmenoZpet"]').click(); await w(100); await dokNacist();
+    // „Zpět" nespouští žádný zápis — jen zavře okno s dotazem, hlavní dialog zůstane otevřený
+    document.querySelector('#modal-dok-vzor-jmeno [data-action="tdVzorJmenoZpet"]').click();
+    await __T.cekej(() => !document.getElementById('modal-dok-vzor-jmeno').classList.contains('open'), 10000);
+    await dokNacist();
     r.poZpet = DOK.vzory.length + ' ' + document.getElementById('modal-dok-vzor').classList.contains('open');
     closeModal('modal-dok-vzor');
     // vestavěný: přepsat nejde, jen nový
     await ulozJako('Kotelna (plynová, bez trvalé obsluhy)');
     r.vestPrepsat = document.querySelector('#modal-dok-vzor-jmeno [data-action="tdVzorJmenoPrepsat"]').offsetHeight > 0;
     r.vestText = document.getElementById('dok-vzor-jmeno-text').textContent;
-    document.querySelector('#modal-dok-vzor-jmeno [data-action="tdVzorJmenoNovy"]').click(); await w(150); await dokNacist();
+    document.querySelector('#modal-dok-vzor-jmeno [data-action="tdVzorJmenoNovy"]').click(); await dopsano(); await dokNacist();
     r.vestNovy = DOK.vzory.map(v => v.nazev).filter(n => /^Kotelna/.test(n)).join('|');
     // „Jako vlastní" dvakrát → „Kotelna (vlastní) 2"
     dokOtevritSeznam('pouvv'); await w(50);
     for (let k = 0; k < 2; k++) {
       document.querySelector('#dok-vzory [data-vzor="vest-kotelna"] [data-action="tdVzorJakoVlastni"]').click(); await w(50);
       await dokVzorUlozit(); await w(50);
-      if (okno().classList.contains('open')) { document.querySelector('#modal-dok-vzor-jmeno [data-action="tdVzorJmenoNovy"]').click(); await w(150); }
+      if (okno().classList.contains('open')) { document.querySelector('#modal-dok-vzor-jmeno [data-action="tdVzorJmenoNovy"]').click(); await dopsano(); }
     }
     await dokNacist();
     r.jakoVlastni = DOK.vzory.map(v => v.nazev).filter(n => /\(vlastní\)/.test(n)).join('|');
