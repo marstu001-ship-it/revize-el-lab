@@ -43619,7 +43619,10 @@ function rsPrivod(d, g, model, c) {
     svDy = fz.some(Boolean) ? 8.4 : 6.2;
   }
   if (d.napajenZ) h += rsText(14, yP + (jis ? 12 : svDy), rsVejit('z ' + [d.napajenZ.ozn, d.napajenZ.nazev ? '(' + d.napajenZ.nazev + ')' : ''].filter(Boolean).join(' '), 38, 1.9), { fs: 1.9 });
-  h += rsLomitkaVodorovne(ramNovy ? xRam - 6 : g.x0 - 7.5, yP, tri ? 5 : 3);
+  // Lomítka na vstupním kabelu = POČET FÁZÍ, ne L+N+PE dohromady (oprava
+  // 2026-11-19, podle reálného výkresu kolegy — N a PE mají svůj vlastní
+  // štítek/značku tam, kde se připojují, lomítka na hlavní čáře je nepočítají).
+  h += rsLomitkaVodorovne(ramNovy ? xRam - 6 : g.x0 - 7.5, yP, tri ? 3 : 1);
   // N a PE přicházejí s přívodem
   h += rsBod(xQ - 5, yP) + rsBod(xQ - 8, yP) + rsCara(xQ - 5, yP, xQ - 5, g.yN, { carky: true }) + rsCara(xQ - 8, yP, xQ - 8, g.yPE, { carky: true });
   // hlavní vypínač na přívodu
@@ -43662,10 +43665,10 @@ function rsPrivodUsekSvg(d, g, x0, U, c) {
   var popis = [zaz.popis, zaz.in !== '' && zaz.in != null ? 'In ' + rozvJednotka(rozvCisloText(zaz.in) || zaz.in, 'A') : '',
     zaz.zdrojText ? 'z ' + zaz.zdrojText : ''].filter(Boolean).join(' · ');
   if (popis) h += rsText(x0, yP - 1.2, rsVejit(popis, xQ - x0 - 2, 2.1), { fs: 2.1 });
-  // Čára kabelu MUSÍ sahat pod lomítka (počet vodičů), ne končit přesně u x0 —
-  // lomítka by jinak „visela ve vzduchu" bez vodiče pod sebou (připomínka
-  // uživatele 2026-11-19). Lomítka zůstávají na stejném místě jako dřív.
-  h += rsCara(x0 - 7, yP, xQ, yP) + rsLomitkaVodorovne(x0 - 6, yP, tri ? 5 : 3);
+  // Čára kabelu MUSÍ sahat pod lomítka (počet fází — viz rsPrivod), ne končit
+  // přesně u x0 — lomítka by jinak „visela ve vzduchu" bez vodiče pod sebou
+  // (připomínka uživatele 2026-11-19). Lomítka zůstávají na stejném místě.
+  h += rsCara(x0 - 7, yP, xQ, yP) + rsLomitkaVodorovne(x0 - 6, yP, tri ? 3 : 1);
   h += rsBod(xQ - 5, yP) + rsBod(xQ - 8, yP) + rsCara(xQ - 5, yP, xQ - 5, g.yN, { carky: true }) + rsCara(xQ - 8, yP, xQ - 8, g.yPE, { carky: true });
   if (qm) {
     var nz = RS_ZNACKA_KAT[qm.p.kat] || 'vypinac', z = RS_ZNACKY[nz] || RS_ZNACKY.vypinac;
@@ -43690,7 +43693,7 @@ function rsPrivodMostSvg(d, g, x0, U, c) {
     zaz.zdrojText ? 'z ' + zaz.zdrojText : ''].filter(Boolean).join(' · ');
   if (popis) h += rsText(x0, yP - 1.2, rsVejit(popis, xQ - x0 - 2, 2.1), { fs: 2.1 });
   // Čára kabelu MUSÍ sahat pod lomítka, ne končit přesně u x0 (viz rsPrivodUsekSvg).
-  h += rsCara(x0 - 7, yP, xQ, yP) + rsLomitkaVodorovne(x0 - 6, yP, tri ? 5 : 3);
+  h += rsCara(x0 - 7, yP, xQ, yP) + rsLomitkaVodorovne(x0 - 6, yP, tri ? 3 : 1);
   h += rsBod(xQ - 5, yP) + rsBod(xQ - 8, yP) + rsCara(xQ - 5, yP, xQ - 5, g.yN, { carky: true }) + rsCara(xQ - 8, yP, xQ - 8, g.yPE, { carky: true });
   if (zaz2) {
     // Popisek vstupu II celý NAD jeho vlastní čárou (jako u vstupu I), ne
@@ -43699,7 +43702,7 @@ function rsPrivodMostSvg(d, g, x0, U, c) {
     var popis2 = [zaz2.popis, zaz2.in !== '' && zaz2.in != null ? 'In ' + rozvJednotka(rozvCisloText(zaz2.in) || zaz2.in, 'A') : '',
       zaz2.zdrojText ? 'z ' + zaz2.zdrojText : ''].filter(Boolean).join(' · ');
     if (popis2) h += rsText(x0, yP2 - 1.1, rsVejit(popis2, xQ - 9 - x0, 1.9), { fs: 1.9 });
-    h += rsCara(x0 - 7, yP2, xQ + 4.4, yP2) + rsLomitkaVodorovne(x0 - 6, yP2, tri ? 5 : 3);
+    h += rsCara(x0 - 7, yP2, xQ + 4.4, yP2) + rsLomitkaVodorovne(x0 - 6, yP2, tri ? 3 : 1);
     h += rsCara(xQ + 4.4, yP2, xQ + 4.4, yP + 0.6);
     // N vstupu II, je-li nesdílená (nSpolecne: false) — jen ilustrační
     // odbočka u kabelu, PZ nemá vlastní údaj o počtu pólů pro „skutečné"
