@@ -791,6 +791,24 @@ function vsechnyStavy(zalozky) {
     await __M.rozv(); rozvZalozkaNastavit('sch'); __rzSch.list = 1; rozvSchKreslit();
     const o = document.querySelector('[data-oddil="schema"]'); o.open = true; await __M.w(200);
   }));
+  // schéma se dvěma přívody (2026-11-19, odpověď uživatele na otázku A/B/C):
+  // vlastní rozvaděč (nesahá na sdílený RH1), případ 2 — PZ (-Q2) za hlavním
+  // vypínačem přívodu 1, vstup II přímo ze sběrnice přívodu 2 (odkaz + protiodkaz).
+  add('rozvaděč – schéma se dvěma přívody', 'Tvorba dokumentace', E(async () => {
+    await dokNovy('rozv');
+    const dk = (s, v) => { const e = dokForm().querySelector(s); e.value = v; e.dispatchEvent(new Event('input', { bubbles: true })); e.dispatchEvent(new Event('change', { bubbles: true })); };
+    dk('[data-dk="oznaceni"]', 'RS2'); dk('[data-dk="soustava"]', '3NPE ~400/230 V TN-S');
+    rozvSkrinNastavit(rozvKnihPolozka('v-sk-4x24-ocel') || rozvKnihPolozka('v-sk-3x18-n'));
+    const pr = (kat, o) => Object.assign({ uid: rozvUid(), knih: null, p: Object.assign({ kat, vyrobce: 'obecný', poly: '3', In: '40', sirka: 4 }, o || {}), ozn: '', vyvod: '', faze: '' }, {});
+    const Q1 = pr('QM', { In: '63' }); Q1.ozn = '-Q1'; Q1.nadr = '@privod';
+    const PZ = pr('PZ', { In: '32', ovladani: 'ats' }); PZ.ozn = '-Q2'; PZ.nadr = Q1.uid; PZ.nadr2 = '@privod~pv1';
+    const FA1 = pr('FA', { In: '16', poly: '1', char: 'B' }); FA1.ozn = '-FA1'; FA1.nadr = PZ.uid; FA1.vyvod = 'Obvod A'; FA1.kabel = 'CYKY-J'; FA1.prurez = '3×1,5'; FA1.faze = 'L1';
+    const FA2 = pr('FA', { In: '16', poly: '1', char: 'B' }); FA2.ozn = '-FA2'; FA2.nadr = PZ.uid; FA2.vyvod = 'Obvod B'; FA2.kabel = 'CYKY-J'; FA2.prurez = '3×1,5'; FA2.faze = 'L2';
+    __rz.rady = [{ prvky: [Q1, PZ, FA1, FA2] }];
+    __rz.privody = [{ uid: 'pv1', ozn: 'Přívod 2', kabel: 'CYKY-J', prurez: '4Bx10', in: '40', nSpolecne: true }];
+    rozvZalozkaNastavit('sch'); await __M.w(100); rozvSchKreslit();
+    document.getElementById('toast-wrap').innerHTML = ''; await __M.w(200);
+  }));
   // pohled 3D (etapa 5c) — jen na prohlížení
   add('rozvaděč – záložka 3D, šikmo s otevřenými dveřmi', 'Tvorba dokumentace', E(async () => { await __M.rozv(); rozvZalozkaNastavit('3d'); await __M.w(300); }));
   add('rozvaděč – náhled schématu (PDF)', 'Tvorba dokumentace', E(async () => { await __M.rozv(); await TD_AKCE.tdRSchPdf(); await __M.w(300); }));

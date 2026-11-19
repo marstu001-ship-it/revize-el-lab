@@ -6,9 +6,22 @@
 // Ctrl+Z, odebráním posledního přívodu navíc klíč `privody` zmizí, a že se starý
 // jednopřívodový rozvaděč (byt 3+1) nezmění — žádný `privody` v datech, ukazatel
 // v liště schovaný.
+// PZ (přepínač zdrojů, 2026-11-19, dořešení výkresu — odpověď uživatele na
+// otázku A/B/C): case 1 (oba vstupy přímo z přívodů, bez vypínače mezi — PZ
+// je kořen obou, žádné dva úseky, jedna sběrnice) a case 2 (PZ za hlavními
+// vypínači — dva úseky, žádná čára přes hranici, jen odkaz „ze sběrnice …
+// (/list.sloupec)" u PZ a protiodkaz „na -Q… vstup II (/list.sloupec)" na
+// sběrnici druhého přívodu), nová značka se dvěma vstupy vedle sebe (svorky
+// 1/3) a výstupem dole (2), kolize popisků v okolí PZ (getBBox), vektorové
+// PDF obsahuje „Přívod 2" (viz `testy/_beh/case2.pdf`, ověřeno ručně
+// `pdftotext`). Kreslí `rsUseky`/`rsPrivodMostSvg` (případ 1) a
+// `rsHlavaHtml`/`rsPzVstupIIHtml`/`rsPz2Predpocet` (případ 2) v index.html.
 // Vymyšlený byt 3+1 z testy/rozvadec-byt.js.
 const { chromium } = require('./pw');
+const fs = require('fs'), path = require('path');
+const { execFileSync } = require('child_process');
 const PORT = process.env.PORT || 8901, URL = 'http://127.0.0.1:' + PORT + '/index.html';
+const BEH = path.join(__dirname, '_beh'); try { fs.mkdirSync(BEH, { recursive: true }); } catch (e) {}
 const res = []; const check = (n, ok, d) => res.push((ok ? '✅' : '❌') + ' ' + n + (d ? ' — ' + d : ''));
 const w = ms => new Promise(r => setTimeout(r, ms));
 
@@ -205,6 +218,108 @@ const w = ms => new Promise(r => setTimeout(r, ms));
   });
   const kont10 = await p.evaluate(() => rzsKontrola());
   check('propojení JINUDY (ne přes PZ) zůstává chyba', kont10.some(k => k.u === 'chyba' && /propojen/.test(k.text)), JSON.stringify(kont10.filter(k => k.u === 'chyba')));
+
+  // ── 9c. PZ případ 1 — oba vstupy PŘÍMO z přívodů, bez vypínače mezi
+  // (odpověď uživatele 2026-11-19): žádné dva úseky, dva kabely sbíhají
+  // do PZ, z jeho výstupu JEDNA sběrnice. ────────────────────────────────
+  await p.evaluate(async () => {
+    await dokNovy('rozv');
+    __T.dk('[data-dk="oznaceni"]', 'RS4'); __T.dk('[data-dk="soustava"]', '3NPE ~400/230 V TN-S');
+    rozvSkrinNastavit(rozvKnihPolozka('v-sk-3x12-n'));
+    const pr = (kat, o) => Object.assign({ uid: rozvUid(), knih: null, p: Object.assign({ kat, vyrobce: 'obecný', poly: '3', In: '40', sirka: 4 }, o || {}), ozn: '', vyvod: '', faze: '' }, {});
+    const PZ = pr('PZ', { In: '63', ovladani: 'rucni' }); PZ.ozn = '-Q1'; PZ.nadr = '@privod'; PZ.nadr2 = '@privod~pv1';
+    const FA1 = pr('FA', { In: '16', poly: '1', char: 'B' }); FA1.ozn = '-FA1'; FA1.nadr = PZ.uid; FA1.vyvod = 'Obvod A'; FA1.kabel = 'CYKY-J'; FA1.prurez = '3×1,5'; FA1.faze = 'L1';
+    const FA2 = pr('FA', { In: '16', poly: '1', char: 'B' }); FA2.ozn = '-FA2'; FA2.nadr = PZ.uid; FA2.vyvod = 'Obvod B'; FA2.kabel = 'CYKY-J'; FA2.prurez = '3×1,5'; FA2.faze = 'L2';
+    __rz.rady = [{ prvky: [PZ, FA1, FA2] }];
+    __rz.privody = [{ uid: 'pv1', ozn: 'Přívod 2', kabel: 'CYKY-J', prurez: '4Bx10', in: '40', nSpolecne: true }];
+    window.__T0_PZ1 = PZ.uid;
+    await dokUlozitOtevreny();
+  });
+  const pz1 = await p.evaluate(() => {
+    const d = window.__dokOtevreny.data;
+    const koreny = { k1: rozvKorenPrivodu(d.rady, '@privod'), k2: rozvKorenPrivodu(d.rady, '@privod~pv1') };
+    const listy = rozvSchemaListy(d), list1 = listy[1].svg;
+    return { koreny, pz: koreny.k1 === window.__T0_PZ1, svg: list1,
+      sberniceN: (list1.match(/L1, L2, L3/g) || []).length, deliciCara: /1\.4 1/.test(list1) };
+  });
+  check('případ 1: PZ je kořen OBOU přívodů zároveň (rozvKorenPrivodu)', pz1.koreny.k1 === pz1.koreny.k2 && pz1.pz, JSON.stringify(pz1.koreny));
+  check('případ 1: dva kabely (Přívod 1, Přívod 2) do PZ, svorky 1 a 3, výstup 2', /Přívod 1/.test(pz1.svg) && /Přívod 2/.test(pz1.svg) && />1<\/text>/.test(pz1.svg) && />3<\/text>/.test(pz1.svg) && />2<\/text>/.test(pz1.svg));
+  check('případ 1: JEDNA fázová sběrnice (ne dvě), žádná čárkovaná hranice úseků', pz1.sberniceN === 1 && !pz1.deliciCara, JSON.stringify(pz1));
+  check('případ 1: FA1 i FA2 (oba přívody) visí ze stejného výstupu PZ — žádný z nich není v jiném úseku', /-FA1/.test(pz1.svg) && /-FA2/.test(pz1.svg));
+
+  // ── 9d. PZ případ 2 — za hlavními vypínači (odpověď uživatele 2026-11-19):
+  // dva úseky, žádná čára přes hranici, jen odkaz + protiodkaz „/list.sloupec". ──
+  await p.evaluate(async () => {
+    await dokNovy('rozv');
+    __T.dk('[data-dk="oznaceni"]', 'RS5'); __T.dk('[data-dk="soustava"]', '3NPE ~400/230 V TN-S');
+    rozvSkrinNastavit(rozvKnihPolozka('v-sk-3x12-n'));
+    const pr = (kat, o) => Object.assign({ uid: rozvUid(), knih: null, p: Object.assign({ kat, vyrobce: 'obecný', poly: '3', In: '40', sirka: 4 }, o || {}), ozn: '', vyvod: '', faze: '' }, {});
+    const Q1 = pr('QM', { In: '63' }); Q1.ozn = '-Q1'; Q1.nadr = '@privod';
+    const PZ = pr('PZ', { In: '32', ovladani: 'ats' }); PZ.ozn = '-Q2'; PZ.nadr = Q1.uid; PZ.nadr2 = '@privod~pv1';
+    const FA1 = pr('FA', { In: '16', poly: '1', char: 'B' }); FA1.ozn = '-FA1'; FA1.nadr = PZ.uid; FA1.vyvod = 'Obvod A'; FA1.kabel = 'CYKY-J'; FA1.prurez = '3×1,5'; FA1.faze = 'L1';
+    const FA2 = pr('FA', { In: '16', poly: '1', char: 'B' }); FA2.ozn = '-FA2'; FA2.nadr = PZ.uid; FA2.vyvod = 'Obvod B'; FA2.kabel = 'CYKY-J'; FA2.prurez = '3×1,5'; FA2.faze = 'L2';
+    __rz.rady = [{ prvky: [Q1, PZ, FA1, FA2] }];
+    __rz.privody = [{ uid: 'pv1', ozn: 'Přívod 2', kabel: 'CYKY-J', prurez: '4Bx10', in: '40', nSpolecne: true }];
+    window.__T0_PZ2b = PZ.uid;
+    await dokUlozitOtevreny();
+  });
+  const pz2 = await p.evaluate(() => {
+    const d = window.__dokOtevreny.data;
+    const koreny = { k1: rozvKorenPrivodu(d.rady, '@privod'), k2: rozvKorenPrivodu(d.rady, '@privod~pv1') };
+    const listy = rozvSchemaListy(d), list1 = listy[1].svg;
+    const odkaz = (list1.match(/ze sběrnice Přívod 2 \(\/\d\.\d+\)/) || [])[0];
+    const protiodkaz = (list1.match(/na -Q2 vstup II \(\/\d\.\d+\)/) || [])[0];
+    return { koreny, svg: list1, odkaz, protiodkaz, pzUid: window.__T0_PZ2b,
+      deliciCara: /1\.4 1/.test(list1), sberniceN: (list1.match(/L1, L2, L3/g) || []).length };
+  });
+  check('případ 2: Q1 (ne PZ) je kořen přívodu 1 — PZ je BĚŽNÝ přístroj v jeho úseku',
+    pz2.koreny.k1 && pz2.koreny.k1 !== pz2.pzUid && !pz2.koreny.k2, JSON.stringify(pz2.koreny));
+  check('případ 2: dva úseky (dvě sběrnice), čárkovaná hranice mezi nimi', pz2.sberniceN === 2 && pz2.deliciCara, JSON.stringify(pz2));
+  check('případ 2: u PZ odkaz „ze sběrnice Přívod 2 (/list.sloupec)"', !!pz2.odkaz, pz2.svg.length + ' znaků, odkaz=' + pz2.odkaz);
+  check('případ 2: na sběrnici přívodu 2 protiodkaz „na -Q2 vstup II (/list.sloupec)"', !!pz2.protiodkaz, pz2.protiodkaz);
+  check('případ 2: odkaz i protiodkaz míří na STEJNÝ list (čísla listu se shodují)',
+    pz2.odkaz && pz2.protiodkaz && pz2.odkaz.match(/\/(\d)\./)[1] === pz2.protiodkaz.match(/\/(\d)\./)[1]);
+
+  // vektorové PDF (svg2pdf) obsahuje „Přívod 2" — ověřuje pdftotext, ne jen SVG
+  await p.evaluate(async () => { rozvZalozkaNastavit('sch'); rozvSchKreslit(); await TD_AKCE.tdRSchPdf(); });
+  await w(500);
+  const pdfR = await p.evaluate(async () => {
+    const blob = await renderPagesToPDF(dokPdfStranky(), 'x.pdf', { vratitBlob: true }); if (!blob) return null;
+    const a = new Uint8Array(await blob.arrayBuffer()); let s = ''; for (let i = 0; i < a.length; i += 8192) s += String.fromCharCode.apply(null, a.subarray(i, i + 8192));
+    return { b64: btoa(s), vekt: window.__pdfVektor };
+  });
+  let pdfText = '';
+  if (pdfR) {
+    const f = path.join(BEH, 'rozvadec-privody-pz2.pdf');
+    fs.writeFileSync(f, Buffer.from(pdfR.b64, 'base64'));
+    try { pdfText = execFileSync('pdftotext', [f, '-']).toString(); } catch (e) { pdfText = String(e); }
+  }
+  check('vektorové PDF schématu (případ 2) je skutečně vektorové a pdftotext v něm najde „Přívod 2", „vstup II" i „ze sběrnice"',
+    pdfR && pdfR.vekt === true && pdfText.includes('Přívod 2') && pdfText.includes('vstup II') && pdfText.includes('ze sběrnice'), pdfText.slice(0, 400));
+
+  // kolize popisků v okolí PZ (požadavek uživatele 2026-11-19, bod 4) — žádné
+  // dva texty ve výkresu PZ (případ 1 i 2) se navzájem nepřekrývají
+  const kolizeCheck = async (listSvg, label) => {
+    const r = await p.evaluate((svg) => {
+      const doc = new DOMParser().parseFromString(svg, 'image/svg+xml');
+      const host = document.importNode(doc.documentElement, true);
+      host.style.position = 'absolute'; host.style.left = '-9999px'; host.style.width = '297mm';
+      document.body.appendChild(host);
+      const texty = Array.from(host.querySelectorAll('text')).filter(t => /vstup|Přívod|-Q[12]|^[123]$|A ATS|1-0-2/.test(t.textContent));
+      const boxy = texty.map(t => { const b = t.getBoundingClientRect(); return { t: t.textContent, x: b.x, y: b.y, w: b.width, h: b.height }; });
+      host.remove();
+      let koliznich = 0;
+      for (let i = 0; i < boxy.length; i++) for (let j = i + 1; j < boxy.length; j++) {
+        const a = boxy[i], b = boxy[j];
+        const prekryv = a.x < b.x + b.w && a.x + a.w > b.x && a.y < b.y + b.h && a.y + a.h > b.y;
+        if (prekryv) koliznich++;
+      }
+      return { koliznich, n: boxy.length, boxy };
+    }, listSvg);
+    check('kolize popisků v okolí PZ (' + label + '): žádné dva texty se nepřekrývají', r.koliznich === 0, JSON.stringify(r.boxy.map(b => b.t)));
+  };
+  await kolizeCheck(pz1.svg, 'případ 1');
+  await kolizeCheck(pz2.svg, 'případ 2');
 
   // CSV: sloupec ovladani se importuje
   const csvPz = await p.evaluate(() => {
