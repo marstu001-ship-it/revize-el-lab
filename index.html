@@ -43723,7 +43723,13 @@ function rsListSchemaVice0(d, list, idx, listy, c, useky) {
   var naz = rsNSkupiny(useky);
   var posledniList = {}; listy.forEach(function (l, li) { l.useky.forEach(function (e) { posledniList[e.usek.zaznam.uid] = li; }); });
   h += rsObd(g.x0, g.y0, g.x1 - g.x0, g.yB - g.y0, { carky: '3 1.6', w: RS_TENKA });
-  h += rsText((g.x0 + g.x1) / 2, g.y0 + 4.6, 'Rozvaděč ' + (d.oznaceni || '') + (idx > 0 ? ' — pokračování' : ''), { fs: 3.4, tucne: true, zar: 'middle' });
+  // Titulek NAD čárkovaným rámečkem rozvaděče (oprava 2026-11-19, připomínka
+  // uživatele): u jednoho přívodu je štítek „Přívod 1" vlevo u kraje a titulek
+  // uprostřed nekoliduje nikdy; se dvěma úseky vedle sebe může štítek druhého
+  // přívodu padnout doprostřed listu, přesně pod titulek. Místo nad rámečkem
+  // (mezi číslováním zón a rámečkem, y 10–22) je vždycky volné — jen tady,
+  // `rsListSchema` (jeden přívod) zůstává beze změny.
+  h += rsText((g.x0 + g.x1) / 2, g.y0 - 5, 'Rozvaděč ' + (d.oznaceni || '') + (idx > 0 ? ' — pokračování' : ''), { fs: 3.4, tucne: true, zar: 'middle' });
   // rozsah sloupců KAŽDÉHO úseku na TOMTO listu (pro konce sběrnic a odkazy)
   var rozsahy = list.useky.map(function (e, ei) {
     var od = e.od + (e.novy ? RS_PRIV_SL : 0), dalsi = list.useky[ei + 1], doCol = (dalsi ? dalsi.od : list.sloupce.length) - 1;
