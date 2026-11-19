@@ -43280,8 +43280,17 @@ function rsModel(d, o) {
     if (o && o.S) {
       var rs = o.S.vys[x.uid];
       if (rs && rs.pod && rs.rodic) {
-        if (rs.rodic.typ === 'privod') return null;   // přímo z kabelu — kořen své skupiny
-        var rr = vSch[rs.rodic.id]; if (rr) return RS_RIDICI.indexOf(rr.p.kat) === -1 ? rr : null;
+        var ro = rs.rodic;
+        // Řetěz „paralelně na vstup" (QH1 → FA1 → FA2 → FA3 PŘES SPOLEČNÝ uzel, žádný
+        // z nich fyzicky nenapájí ten další) se kreslí PLOCHO pod společným zdrojem
+        // (QH1), ne jako sled vnořených vývodů — jinak by to vypadalo, že FA2/FA3 jedou
+        // „přes" FA1 (sériově), což elektricky neplatí (připomínka uživatele 2026-11-19:
+        // u ručního zapojení musí být z výkresu patrné, že jde o paralelní napájení).
+        // `.nad` je rodic o úroveň výš (spočítaný už uvnitř rzpSpocti), takže stačí
+        // projít řetěz `typ==='par'` až na první skutečný zdroj (zařízení nebo kabel).
+        var hl2 = 0; while (ro && ro.typ === 'par' && hl2++ < 20) ro = ro.nad;
+        if (ro && ro.typ === 'privod') return null;   // přímo z kabelu — kořen své skupiny
+        if (ro && ro.typ === 'z') { var rr = vSch[ro.id]; if (rr) return RS_RIDICI.indexOf(rr.p.kat) === -1 ? rr : null; }
       }
     }
     var r = x.nadr && x.nadr !== x.uid ? vSch[x.nadr] : null; return r && RS_RIDICI.indexOf(r.p.kat) === -1 ? r : null;
