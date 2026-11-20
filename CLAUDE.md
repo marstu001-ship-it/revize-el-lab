@@ -4056,6 +4056,69 @@ změny (byte-identity): `test-rozvadec-schema.js` (60/60), `test-rozvadec-psc.js
 (90/90 vč. DBO schématu znak po znaku), `porovnani2.js`. V `test-mobil.js`
 stav „rozvaděč – schéma se dvěma přívody". Karta v Novinkách se nedělala.
 
+### Schéma víc přívodů bralo topologii JEN z `x.nadr`, panel z vodičů (2026-11-20)
+
+Hlášení uživatele na rozvaděči **ROZ-0001**: QH1 (přívod 2) je k přívodnímu
+kabelu zapojen **jen nataženým vodičem** v režimu 🔌 Zapojení — pole „Napájen
+z" nikdy nevyplnil — a jističe FA1, FA2, FA3 jsou na jeho výstup napojené
+taky jen vodičem, paralelně (vstup na vstup). Panel „Kdo koho napájí"
+(`rzpStav`, který čte natažené vodiče a dopočítává automatiku) je zobrazoval
+správně pod přívodem 2. **Schéma je kreslilo pod přívodem 1** — `rsModel`
+a `rsUseky` tehdy uměly jen statický strom podle `x.nadr`/`rozvZdrojEff`,
+který o vodiči nic neví.
+
+- **Oprava: schéma bere topologii ZE STEJNÉHO VÝPOČTU jako panel.**
+  `rzsTopologie(d)` zavolá `rzpStav(d)` (dočasně prohodí `__rz`, protože
+  `rzpStav` čte přístroje přes globál, ne přes parametr — PDF/export běží
+  mimo otevřený editor). `rzsPrivodKorene(S, uid)` prochází `S.vys[uid].rodic`
+  nahoru, dokud nenarazí na `typ: 'privod'`. `rsUseky` (dřív jen `x.nadr`)
+  teď u KAŽDÉHO přístroje nejdřív zkusí `rzsPrivodKorene`, na statický
+  `rsPrivodZX` spadne jen tam, kde `rzpStav` o přístroji vůbec neví (PRISL /
+  REZ / ovládací přístroje, nebo nic bez napětí). `rzsKorenPrivodu` (hlavní
+  vypínač přívodu) má stejný fallback.
+- **Paralelní napájení „vstup na vstup" (QH1→FA1→FA2→FA3) se kreslí PLOCHO**
+  — `rsModel`'s `rodic()` dostal volitelné `o.S`: když je `S.vys[x].rodic.typ
+  === 'par'`, projde řetězem `par` odkazů až na skutečný zdroj (`typ: 'z'`)
+  a vrátí TEN, takže FA1/FA2/FA3 jsou ve `model.jedn` tři samostatné
+  jednosloupcové záznamy (sourozenci), ne vnořený řetězec FA1→FA2→FA3.
+- **Vzhled upraven podle skutečných výkresů kolegy** (uživatel poslal
+  `RSpra1.pdf`, `RM702.pdf`, `PP-RS01.1.pdf` k porovnání), postupně:
+  - titulek listu u víceprivodového schématu je **nad** čárkovaným rámečkem
+    rozvaděče (`rsListSchemaVice0`), ne uvnitř — kolidoval s popiskem
+    „Přívod 2"; jednopřívodové schéma (`rsListSchema`) beze změny;
+  - **lomítka na vrcholu přívodního kabelu = POČET FÁZÍ** (`rsLomitkaVodorovne`,
+    `tri ? 3 : 1`, dřív `tri ? 5 : 3` — počítalo L+N+PE dohromady, což
+    vypadalo jako víc fází, než kolik jich doopravdy je) a kreslí se **přes**
+    čáru kabelu, ne vedle ní;
+  - **lomítka počtu vodičů NA VÝVODU zrušena úplně** (`rsLomitka`, dřív 3/5
+    čárek za jističem, 2 za výstupem transformátoru/zdroje) — mohla se
+    zaměnit za počet fází a v referenčních výkresech kolegy nejsou;
+  - **koncový RCBO** (žádný další přístroj za ním nevisí) se připojuje na
+    společnou sběrnici N **plným spojem jako kterýkoli jiný přístroj** —
+    žádný vlastní popisek „N-FI/FAx" (ten zůstává jen u RCBO, které samo
+    dál něco napájí — „hlava" skupiny, `model.hlavy`);
+  - **N a PE sběrnice mají jen textový popisek** („N" / „PE"), **žádnou
+    značku původu** — vyzkoušely se a zase zavrhly dvě podoby (kolečko
+    s lomítkem jako přívodní svorka, pak šikmá čárka s tečkou) a uživatel
+    je nakonec nechtěl vůbec.
+- **Postup schválení** (pokyn uživatele, platí jako vzor pro podobné větší
+  vizuální změny příště): dokreslování se pushovalo na vedlejší větev
+  `wip-privody-vodice` (bez bumpu verze), po každé úpravě šel screenshot
+  listu schématu a krátký popis, co je kde — teprve po slovech „výkres
+  schválen" se napsaly testy a sloučilo do `main` s bumpem verze.
+
+Test: `testy/test-rozvadec-privody.js` (+5 — **skutečná fixtura uživatele**
+`testy/rozvadec-roz0001.json`: panel i schéma řadí QH1+FA1+FA2+FA3 pod
+přívod 2 STEJNĚ, jsou to plochí sourozenci, list obsahuje oba přívody,
+otevření a uložení beze změny dat). `test-rozvadec-schema.js`: upravena
+kontrola pro koncový RCBO (žádný popisek „N-…"). `testy/bez-n.js` rozšířen
+o obě zrušená/zúžená lomítka (geometrie čárky je rozlišuje od ostatních
+čar ve schématu) — byte-identity testy (`test-rozvadec-psc.js`,
+`test-rozvadec-stara-data.js`, `test-rozvadec.js`, `test-rozvadec-mezery.js`,
+`test-rozvadec-napajeni.js`, `test-rozvadec-svorky.js`, `test-rozvadec-ovladani.js`
+aj.) tím zase vycházejí bajtově stejně — mění se jen vzhled, ne data.
+Karta v Novinkách se nedělala (je to oprava chyby, ne nová funkce).
+
 ### Propojovací hřeben jako položka knihovny (2026-11-18)
 
 Zadání uživatele: hřeben (dosud jen obecný, `d.hrebeny[]`, viz fáze 1b „jako
