@@ -43514,19 +43514,19 @@ function rsLomitkaVodorovne(x, y, n) {
   for (var i = 0; i < n; i++) h += rsCara(x + i * 1.1 - 0.6, y + 1, x + i * 1.1 + 0.6, y - 1, { w: RS_TENKA });
   return h;
 }
-// Odkud N a PE „přicházejí" — krátký svislý pahýlek s tečkou na začátku
-// sběrnice, bez kreslení čáry zpátky k přívodu (oprava 2026-11-19, podle
-// reálného výkresu kolegy — RSpra1.pdf: N a PE mají svůj vlastní štítek
-// a značku přímo na sběrnici, nejedou čárkovaně z hlavní čáry přívodu).
-// Svisle (ne diagonálně jako kolega) — popisek „N"/„PE" je vlevo od tečky
-// a diagonální pahýlek by se s ním přímo křížil. PE má navíc příčku navrchu
-// (zjednodušená zemnicí značka).
+// Odkud N a PE „přicházejí" — krátký diagonální pahýlek s tečkou na začátku
+// sběrnice, bez kreslení čáry zpátky k přívodu (oprava 2026-11-19, přesně
+// podle reálného výkresu kolegy — PP-RS01.1.pdf i RSpra1.pdf: N a PE mají
+// svůj vlastní štítek a značku přímo na sběrnici, nejedou čárkovaně z
+// hlavní čáry přívodu). Pahýlek jde DOLŮ doleva od tečky (popisek „N"/„PE"
+// je NAD čárou vlevo, na opačné straně — nekříží se). PE má navíc kolmou
+// příčku na konci pahýlku (zjednodušená zemnicí značka).
 function rsNPEpuvod(x, y, zeme) {
   // rsBodSym (ne rsBod): pahýlek + sběrnice jsou na tomhle místě jen DVĚ
   // rameno, rsTecky by samo tečku nenašlo (potřebuje aspoň tři) — tady se
   // ale spoj vynucuje úmyslně, jako u odbočky před hlavním vypínačem.
-  var x2 = x, y2 = y - 2.5, h = rsBodSym(x, y) + rsCara(x, y, x2, y2, { w: RS_TENKA });
-  if (zeme) h += rsCara(x2 - 0.9, y2, x2 + 0.9, y2, { w: RS_TENKA });
+  var x2 = x - 1.8, y2 = y + 1.8, h = rsBodSym(x, y) + rsCara(x, y, x2, y2, { w: RS_TENKA });
+  if (zeme) h += rsCara(x2 - 0.45, y2 + 0.45, x2 + 0.45, y2 - 0.45, { w: RS_TENKA });
   return h;
 }
 // Tečka vodivého spoje (2026-11-12). Při kreslení listu schématu (RS_BODY) se jen zapamatuje
