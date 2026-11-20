@@ -1,0 +1,821 @@
+{
+  "_format": "revize-el-dokumenty",
+  "verze": 1,
+  "vytvoreno": "2026-11-19T07:59:56.797Z",
+  "odesilatel": "",
+  "dokumenty": [
+    {
+      "uid": "dokmwivr4oynnxcbi",
+      "typ": "rozv",
+      "cislo": "ROZ-0001",
+      "vytvoreno": "2026-11-16T06:31:38.498Z",
+      "upraveno": "2026-11-19T07:59:56.797Z",
+      "data": {
+        "model": 1,
+        "cislo": "ROZ-0001",
+        "oznaceni": "",
+        "stavba": "",
+        "objekt": "",
+        "investor": {
+          "ico": "",
+          "nazev": "",
+          "adresa": ""
+        },
+        "misto": "",
+        "soustava": "",
+        "privodIn": "",
+        "privodSmer": "shora",
+        "privodKabel": "",
+        "privodPrurez": "",
+        "krytiZavreno": "",
+        "krytiOtevreno": "",
+        "icc": "",
+        "vyrobce": {
+          "ico": "",
+          "nazev": "",
+          "adresa": ""
+        },
+        "datum": "2026-11-16",
+        "skrin": {
+          "druh": "skrin",
+          "nazev": "Rozvodnice 3×12 modulů, plast, nástěnná",
+          "vyrobce": "obecný",
+          "rada": "",
+          "typ": "",
+          "typSkrine": "domovni",
+          "provedeni": "nástěnná",
+          "material": "plast",
+          "rady": 3,
+          "modulu": 12,
+          "ip": "",
+          "ik": "",
+          "ina": "",
+          "penc": "",
+          "rozmery": "",
+          "trida": "",
+          "pozn": "",
+          "zdroj": "vestaveny",
+          "overeno": false,
+          "_h": "rozvodnice 3x12 modulu, plast, nastenna obecny     ",
+          "knih": "v-sk-3x12-n"
+        },
+        "rady": [
+          {
+            "prvky": [
+              {
+                "uid": "pmwlrekh9kgy62",
+                "knih": "v-qm-1-40",
+                "p": {
+                  "druh": "pristroj",
+                  "kat": "QM",
+                  "nazev": "Hlavní vypínač 1P 40 A",
+                  "vyrobce": "obecný",
+                  "rada": "",
+                  "typ": "",
+                  "poly": "1",
+                  "In": 40,
+                  "char": "",
+                  "icn": "",
+                  "icu": "",
+                  "ics": "",
+                  "idn": "",
+                  "rcdTyp": "",
+                  "spdTrida": "",
+                  "up": "",
+                  "sirka": 1,
+                  "pv": "",
+                  "ue": "",
+                  "pozn": "",
+                  "zdroj": "vestaveny",
+                  "overeno": false,
+                  "_h": "hlavni vypinac 1p 40 a obecny    vypinac / odpinac qm"
+                },
+                "ozn": "-QH1",
+                "vyvod": "",
+                "faze": "",
+                "kabel": "",
+                "prurez": "",
+                "nadr": "",
+                "nadrRucne": false,
+                "ib": "",
+                "pozn": ""
+              },
+              {
+                "uid": "pmwlret0kptn33",
+                "knih": "v-fa-1-B6",
+                "p": {
+                  "druh": "pristroj",
+                  "kat": "FA",
+                  "nazev": "Jistič 1P B6",
+                  "vyrobce": "obecný",
+                  "rada": "",
+                  "typ": "",
+                  "poly": "1",
+                  "In": 6,
+                  "char": "B",
+                  "icn": "",
+                  "icu": "",
+                  "ics": "",
+                  "idn": "",
+                  "rcdTyp": "",
+                  "spdTrida": "",
+                  "up": "",
+                  "sirka": 1,
+                  "pv": "",
+                  "ue": "",
+                  "pozn": "",
+                  "zdroj": "vestaveny",
+                  "overeno": false,
+                  "_h": "jistic 1p b6 obecny    jistic fa"
+                },
+                "ozn": "-FA1",
+                "vyvod": "",
+                "faze": "L1",
+                "kabel": "",
+                "prurez": "",
+                "nadr": "",
+                "nadrRucne": true,
+                "ib": "",
+                "pozn": ""
+              },
+              {
+                "uid": "pmwlrethudtu0z",
+                "knih": "v-fa-1-B10",
+                "p": {
+                  "druh": "pristroj",
+                  "kat": "FA",
+                  "nazev": "Jistič 1P B10",
+                  "vyrobce": "obecný",
+                  "rada": "",
+                  "typ": "",
+                  "poly": "1",
+                  "In": 10,
+                  "char": "B",
+                  "icn": "",
+                  "icu": "",
+                  "ics": "",
+                  "idn": "",
+                  "rcdTyp": "",
+                  "spdTrida": "",
+                  "up": "",
+                  "sirka": 1,
+                  "pv": "",
+                  "ue": "",
+                  "pozn": "",
+                  "zdroj": "vestaveny",
+                  "overeno": false,
+                  "_h": "jistic 1p b10 obecny    jistic fa"
+                },
+                "ozn": "-FA2",
+                "vyvod": "",
+                "faze": "L1",
+                "kabel": "",
+                "prurez": "",
+                "nadr": "",
+                "nadrRucne": true,
+                "ib": "",
+                "pozn": "",
+                "pres": {
+                  "uid": "pmwlret0kptn33",
+                  "strana": "vstup"
+                }
+              },
+              {
+                "uid": "pmwlreu2osoc89",
+                "knih": "v-fa-1-B13",
+                "p": {
+                  "druh": "pristroj",
+                  "kat": "FA",
+                  "nazev": "Jistič 1P B13",
+                  "vyrobce": "obecný",
+                  "rada": "",
+                  "typ": "",
+                  "poly": "1",
+                  "In": 13,
+                  "char": "B",
+                  "icn": "",
+                  "icu": "",
+                  "ics": "",
+                  "idn": "",
+                  "rcdTyp": "",
+                  "spdTrida": "",
+                  "up": "",
+                  "sirka": 1,
+                  "pv": "",
+                  "ue": "",
+                  "pozn": "",
+                  "zdroj": "vestaveny",
+                  "overeno": false,
+                  "_h": "jistic 1p b13 obecny    jistic fa"
+                },
+                "ozn": "-FA3",
+                "vyvod": "",
+                "faze": "L1",
+                "kabel": "",
+                "prurez": "",
+                "nadr": "",
+                "nadrRucne": true,
+                "ib": "",
+                "pozn": "",
+                "pres": {
+                  "uid": "pmwlrethudtu0z",
+                  "strana": "vstup"
+                }
+              }
+            ]
+          },
+          {
+            "prvky": [
+              {
+                "uid": "pmwlrf5nkjwg86",
+                "knih": "v-qm-3-63",
+                "p": {
+                  "druh": "pristroj",
+                  "kat": "QM",
+                  "nazev": "Hlavní vypínač 3P 63 A",
+                  "vyrobce": "obecný",
+                  "rada": "",
+                  "typ": "",
+                  "poly": "3",
+                  "In": 63,
+                  "char": "",
+                  "icn": "",
+                  "icu": "",
+                  "ics": "",
+                  "idn": "",
+                  "rcdTyp": "",
+                  "spdTrida": "",
+                  "up": "",
+                  "sirka": 3,
+                  "pv": "",
+                  "ue": "",
+                  "pozn": "",
+                  "zdroj": "vestaveny",
+                  "overeno": false,
+                  "_h": "hlavni vypinac 3p 63 a obecny    vypinac / odpinac qm"
+                },
+                "ozn": "-Q1",
+                "vyvod": "",
+                "faze": "3f",
+                "kabel": "",
+                "prurez": "",
+                "nadr": "@privod",
+                "nadrRucne": true,
+                "ib": "",
+                "pozn": ""
+              },
+              {
+                "uid": "pmwlrfq5qc8o0g",
+                "knih": "v-fi-2-25-30-A",
+                "p": {
+                  "druh": "pristroj",
+                  "kat": "FI",
+                  "nazev": "Chránič 2P 25 A / 30 mA typ A",
+                  "vyrobce": "obecný",
+                  "rada": "",
+                  "typ": "",
+                  "poly": "2",
+                  "In": 25,
+                  "char": "",
+                  "icn": "",
+                  "icu": "",
+                  "ics": "",
+                  "idn": 30,
+                  "rcdTyp": "A",
+                  "spdTrida": "",
+                  "up": "",
+                  "sirka": 2,
+                  "pv": "",
+                  "ue": "",
+                  "pozn": "",
+                  "zdroj": "vestaveny",
+                  "overeno": false,
+                  "_h": "chranic 2p 25 a / 30 ma typ a obecny    proudovy chranic fi"
+                },
+                "ozn": "-FI1",
+                "vyvod": "",
+                "faze": "L1",
+                "kabel": "",
+                "prurez": "",
+                "nadr": "pmwlrf5nkjwg86",
+                "nadrRucne": true,
+                "ib": "",
+                "pozn": ""
+              },
+              {
+                "uid": "pmwlrfwpzevh0o",
+                "knih": "v-fa-1-B16",
+                "p": {
+                  "druh": "pristroj",
+                  "kat": "FA",
+                  "nazev": "Jistič 1P B16",
+                  "vyrobce": "obecný",
+                  "rada": "",
+                  "typ": "",
+                  "poly": "1",
+                  "In": 16,
+                  "char": "B",
+                  "icn": "",
+                  "icu": "",
+                  "ics": "",
+                  "idn": "",
+                  "rcdTyp": "",
+                  "spdTrida": "",
+                  "up": "",
+                  "sirka": 1,
+                  "pv": "",
+                  "ue": "",
+                  "pozn": "",
+                  "zdroj": "vestaveny",
+                  "overeno": false,
+                  "_h": "jistic 1p b16 obecny    jistic fa"
+                },
+                "ozn": "-FA4",
+                "vyvod": "",
+                "faze": "L1",
+                "kabel": "",
+                "prurez": "",
+                "nadr": "pmwlrfq5qc8o0g",
+                "nadrRucne": true,
+                "ib": "",
+                "pozn": ""
+              },
+              {
+                "uid": "pmwlrfx67kbcyi",
+                "knih": "v-fa-1-B16",
+                "p": {
+                  "druh": "pristroj",
+                  "kat": "FA",
+                  "nazev": "Jistič 1P B16",
+                  "vyrobce": "obecný",
+                  "rada": "",
+                  "typ": "",
+                  "poly": "1",
+                  "In": 16,
+                  "char": "B",
+                  "icn": "",
+                  "icu": "",
+                  "ics": "",
+                  "idn": "",
+                  "rcdTyp": "",
+                  "spdTrida": "",
+                  "up": "",
+                  "sirka": 1,
+                  "pv": "",
+                  "ue": "",
+                  "pozn": "",
+                  "zdroj": "vestaveny",
+                  "overeno": false,
+                  "_h": "jistic 1p b16 obecny    jistic fa"
+                },
+                "ozn": "-FA5",
+                "vyvod": "",
+                "faze": "L1",
+                "kabel": "",
+                "prurez": "",
+                "nadr": "pmwlrfq5qc8o0g",
+                "nadrRucne": true,
+                "ib": "",
+                "pozn": ""
+              },
+              {
+                "uid": "pmwlrfxi406ebz",
+                "knih": "v-fa-1-B16",
+                "p": {
+                  "druh": "pristroj",
+                  "kat": "FA",
+                  "nazev": "Jistič 1P B16",
+                  "vyrobce": "obecný",
+                  "rada": "",
+                  "typ": "",
+                  "poly": "1",
+                  "In": 16,
+                  "char": "B",
+                  "icn": "",
+                  "icu": "",
+                  "ics": "",
+                  "idn": "",
+                  "rcdTyp": "",
+                  "spdTrida": "",
+                  "up": "",
+                  "sirka": 1,
+                  "pv": "",
+                  "ue": "",
+                  "pozn": "",
+                  "zdroj": "vestaveny",
+                  "overeno": false,
+                  "_h": "jistic 1p b16 obecny    jistic fa"
+                },
+                "ozn": "-FA6",
+                "vyvod": "",
+                "faze": "L1",
+                "kabel": "",
+                "prurez": "",
+                "nadr": "pmwlrfq5qc8o0g",
+                "nadrRucne": true,
+                "ib": "",
+                "pozn": ""
+              },
+              {
+                "uid": "pmwlrqqcf47vzc",
+                "knih": "v-x-prip-n",
+                "p": {
+                  "druh": "pristroj",
+                  "kat": "X",
+                  "nazev": "Přípojnice N (počet svorek)",
+                  "vyrobce": "obecný",
+                  "rada": "",
+                  "typ": "",
+                  "poly": "",
+                  "In": "",
+                  "char": "",
+                  "icn": "",
+                  "icu": "",
+                  "ics": "",
+                  "idn": "",
+                  "rcdTyp": "",
+                  "spdTrida": "",
+                  "up": "",
+                  "sirka": 1,
+                  "pv": "",
+                  "ue": "",
+                  "pozn": "",
+                  "zdroj": "vestaveny",
+                  "overeno": false,
+                  "svorky": true,
+                  "prip": "N",
+                  "pocet": 4,
+                  "prurez": "6–16 mm²",
+                  "_h": "pripojnice n (pocet svorek) obecny    svorky x",
+                  "sirkaPodel": 1.5
+                },
+                "ozn": "-X16",
+                "vyvod": "",
+                "faze": "",
+                "kabel": "",
+                "prurez": "",
+                "nadr": "pmwlrfq5qc8o0g",
+                "nadrRucne": true,
+                "ib": "",
+                "pozn": "",
+                "orientace": "kolmo"
+              }
+            ]
+          },
+          {
+            "prvky": [
+              {
+                "uid": "pmwlrg69c4eqq7",
+                "knih": "v-fifa-1N-B10",
+                "p": {
+                  "druh": "pristroj",
+                  "kat": "FIFA",
+                  "nazev": "RCBO 1+N B10 / 30 mA typ A",
+                  "vyrobce": "obecný",
+                  "rada": "",
+                  "typ": "",
+                  "poly": "1+N",
+                  "In": 10,
+                  "char": "B",
+                  "icn": "",
+                  "icu": "",
+                  "ics": "",
+                  "idn": 30,
+                  "rcdTyp": "A",
+                  "spdTrida": "",
+                  "up": "",
+                  "sirka": 2,
+                  "pv": "",
+                  "ue": "",
+                  "pozn": "",
+                  "zdroj": "vestaveny",
+                  "overeno": false,
+                  "_h": "rcbo 1+n b10 / 30 ma typ a obecny    chranic s jisticem (rcbo) fifa"
+                },
+                "ozn": "-FI/FA1",
+                "vyvod": "",
+                "faze": "L2",
+                "kabel": "",
+                "prurez": "",
+                "nadr": "pmwlrf5nkjwg86",
+                "nadrRucne": true,
+                "ib": "",
+                "pozn": ""
+              },
+              {
+                "uid": "pmwlrg6ix8k8wj",
+                "knih": "v-fifa-1N-B10",
+                "p": {
+                  "druh": "pristroj",
+                  "kat": "FIFA",
+                  "nazev": "RCBO 1+N B10 / 30 mA typ A",
+                  "vyrobce": "obecný",
+                  "rada": "",
+                  "typ": "",
+                  "poly": "1+N",
+                  "In": 10,
+                  "char": "B",
+                  "icn": "",
+                  "icu": "",
+                  "ics": "",
+                  "idn": 30,
+                  "rcdTyp": "A",
+                  "spdTrida": "",
+                  "up": "",
+                  "sirka": 2,
+                  "pv": "",
+                  "ue": "",
+                  "pozn": "",
+                  "zdroj": "vestaveny",
+                  "overeno": false,
+                  "_h": "rcbo 1+n b10 / 30 ma typ a obecny    chranic s jisticem (rcbo) fifa"
+                },
+                "ozn": "-FI/FA2",
+                "vyvod": "",
+                "faze": "L3",
+                "kabel": "",
+                "prurez": "",
+                "nadr": "pmwlrf5nkjwg86",
+                "nadrRucne": true,
+                "ib": "",
+                "pozn": ""
+              },
+              {
+                "uid": "pmwlrqgfh1t94q",
+                "knih": "v-x-prip-pe",
+                "p": {
+                  "druh": "pristroj",
+                  "kat": "X",
+                  "nazev": "Přípojnice PE (počet svorek)",
+                  "vyrobce": "obecný",
+                  "rada": "",
+                  "typ": "",
+                  "poly": "",
+                  "In": "",
+                  "char": "",
+                  "icn": "",
+                  "icu": "",
+                  "ics": "",
+                  "idn": "",
+                  "rcdTyp": "",
+                  "spdTrida": "",
+                  "up": "",
+                  "sirka": 1,
+                  "pv": "",
+                  "ue": "",
+                  "pozn": "",
+                  "zdroj": "vestaveny",
+                  "overeno": false,
+                  "svorky": true,
+                  "prip": "PE",
+                  "pocet": 11,
+                  "prurez": "6–16 mm²",
+                  "_h": "pripojnice pe (pocet svorek) obecny    svorky x",
+                  "sirkaPodel": 4
+                },
+                "ozn": "-X1",
+                "vyvod": "",
+                "faze": "",
+                "kabel": "",
+                "prurez": "",
+                "nadr": "",
+                "nadrRucne": false,
+                "ib": "",
+                "pozn": "",
+                "orientace": "kolmo"
+              },
+              {
+                "uid": "pmwlrqpmbzrliv",
+                "knih": "v-x-prip-n",
+                "p": {
+                  "druh": "pristroj",
+                  "kat": "X",
+                  "nazev": "Přípojnice N (počet svorek)",
+                  "vyrobce": "obecný",
+                  "rada": "",
+                  "typ": "",
+                  "poly": "",
+                  "In": "",
+                  "char": "",
+                  "icn": "",
+                  "icu": "",
+                  "ics": "",
+                  "idn": "",
+                  "rcdTyp": "",
+                  "spdTrida": "",
+                  "up": "",
+                  "sirka": 1,
+                  "pv": "",
+                  "ue": "",
+                  "pozn": "",
+                  "zdroj": "vestaveny",
+                  "overeno": false,
+                  "svorky": true,
+                  "prip": "N",
+                  "pocet": 4,
+                  "prurez": "6–16 mm²",
+                  "_h": "pripojnice n (pocet svorek) obecny    svorky x",
+                  "sirkaPodel": 1.5
+                },
+                "ozn": "-X12",
+                "vyvod": "",
+                "faze": "",
+                "kabel": "",
+                "prurez": "",
+                "nadr": "",
+                "nadrRucne": false,
+                "ib": "",
+                "pozn": "",
+                "orientace": "kolmo"
+              }
+            ]
+          }
+        ],
+        "privodJistic": "",
+        "pozn": "",
+        "privody": [
+          {
+            "uid": "pvmwlrgqhaqley",
+            "ozn": "",
+            "kabel": "",
+            "prurez": "",
+            "in": "",
+            "smer": "shora",
+            "zdrojText": "",
+            "nSpolecne": true
+          }
+        ],
+        "vodice": [
+          {
+            "a": {
+              "uid": "@privod",
+              "strana": "o",
+              "pol": 0
+            },
+            "b": {
+              "uid": "pmwlrf5nkjwg86",
+              "strana": "t",
+              "pol": 0
+            },
+            "n": 3,
+            "uid": "wmwlrh0x46coj"
+          },
+          {
+            "a": {
+              "uid": "@privod~pvmwlrgqhaqley",
+              "strana": "o",
+              "pol": 0
+            },
+            "b": {
+              "uid": "pmwlrekh9kgy62",
+              "strana": "t",
+              "pol": 0
+            },
+            "n": 1,
+            "uid": "wmwlrh6f1bigi"
+          },
+          {
+            "a": {
+              "uid": "pmwlrekh9kgy62",
+              "strana": "b",
+              "pol": 0
+            },
+            "b": {
+              "uid": "pmwlret0kptn33",
+              "strana": "b",
+              "pol": 0
+            },
+            "n": 1,
+            "uid": "wmwlrq8ulu3ci"
+          },
+          {
+            "a": {
+              "uid": "pmwlret0kptn33",
+              "strana": "b",
+              "pol": 0
+            },
+            "b": {
+              "uid": "pmwlrethudtu0z",
+              "strana": "b",
+              "pol": 0
+            },
+            "n": 1,
+            "uid": "wmwlrq9ylk7wm"
+          },
+          {
+            "a": {
+              "uid": "pmwlrethudtu0z",
+              "strana": "b",
+              "pol": 0
+            },
+            "b": {
+              "uid": "pmwlreu2osoc89",
+              "strana": "b",
+              "pol": 0
+            },
+            "n": 1,
+            "uid": "wmwlrqba3t68b"
+          },
+          {
+            "a": {
+              "uid": "pmwlrf5nkjwg86",
+              "strana": "b",
+              "pol": 0
+            },
+            "b": {
+              "uid": "pmwlrfq5qc8o0g",
+              "strana": "t",
+              "pol": 0
+            },
+            "n": 1,
+            "uid": "wmwlrvjlu1104"
+          },
+          {
+            "a": {
+              "uid": "pmwlrf5nkjwg86",
+              "strana": "b",
+              "pol": 1
+            },
+            "b": {
+              "uid": "pmwlrg69c4eqq7",
+              "strana": "t",
+              "pol": 0
+            },
+            "n": 1,
+            "uid": "wmwlrvlaohs31"
+          },
+          {
+            "a": {
+              "uid": "pmwlrf5nkjwg86",
+              "strana": "b",
+              "pol": 2
+            },
+            "b": {
+              "uid": "pmwlrg6ix8k8wj",
+              "strana": "t",
+              "pol": 0
+            },
+            "n": 1,
+            "uid": "wmwlrvpir56q1"
+          },
+          {
+            "a": {
+              "uid": "pmwlrfq5qc8o0g",
+              "strana": "b",
+              "pol": 0
+            },
+            "b": {
+              "uid": "pmwlrfwpzevh0o",
+              "strana": "b",
+              "pol": 0
+            },
+            "n": 1,
+            "uid": "wmwn93v2z33ti"
+          },
+          {
+            "a": {
+              "uid": "pmwlrfq5qc8o0g",
+              "strana": "b",
+              "pol": 0
+            },
+            "b": {
+              "uid": "pmwlrfx67kbcyi",
+              "strana": "b",
+              "pol": 0
+            },
+            "n": 1,
+            "uid": "wmwn93wlqcek0"
+          },
+          {
+            "a": {
+              "uid": "pmwlrfq5qc8o0g",
+              "strana": "b",
+              "pol": 0
+            },
+            "b": {
+              "uid": "pmwlrfxi406ebz",
+              "strana": "b",
+              "pol": 0
+            },
+            "n": 1,
+            "uid": "wmwn93y73zqoy"
+          }
+        ],
+        "schema": {
+          "format": "A4",
+          "nazev": "",
+          "projekt": "",
+          "zakazka": "",
+          "metKreslit": false
+        },
+        "tech": {
+          "ochrana": "",
+          "vlivy": "",
+          "pi": "",
+          "pm": ""
+        }
+      }
+    }
+  ],
+  "objekty": []
+}

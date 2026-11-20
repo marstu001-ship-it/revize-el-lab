@@ -17,6 +17,13 @@
 // `pdftotext`). Kreslí `rsUseky`/`rsPrivodMostSvg` (případ 1) a
 // `rsHlavaHtml`/`rsPzVstupIIHtml`/`rsPz2Predpocet` (případ 2) v index.html.
 // Vymyšlený byt 3+1 z testy/rozvadec-byt.js.
+// Schéma bere topologii ZE STEJNÉHO VÝPOČTU jako panel „Kdo koho napájí"
+// (2026-11-20, oprava podle hlášení uživatele): přístroj zapojený JEN
+// nataženým vodičem — bez vyplněného „Napájen z" — se dřív ve schématu
+// kreslil podle statického stromu (jen `x.nadr`), takže vyšel pod ŠPATNÝM
+// přívodem. `testy/rozvadec-roz0001.json` je přesně ten soubor, na kterém
+// se chyba nahlásila: QH1 je na kabel přívodu 2 zapojen jen vodičem, FA1→
+// FA2→FA3 jsou na jeho výstup napojené taky jen vodičem (paralelně).
 const { chromium } = require('./pw');
 const fs = require('fs'), path = require('path');
 const { execFileSync } = require('child_process');
@@ -330,6 +337,61 @@ const w = ms => new Promise(r => setTimeout(r, ms));
     return { pol: v.polozky.length, chyby: v.chyby, ovladani: v.polozky[0] && v.polozky[0].polozka.ovladani };
   });
   check('CSV import: sloupec `ovladani` se čte (ats)', csvPz.pol === 1 && csvPz.chyby.length === 0 && csvPz.ovladani === 'ats', JSON.stringify(csvPz));
+
+  // ── 10. SKUTEČNÁ fixtura ROZ-0001 (přiložený soubor uživatele) — PŮVODNÍ
+  // hlášená chyba: QH1 je zapojen JEN vodičem na kabel přívodu 2 (žádné
+  // vyplněné „Napájen z"), FA1 → FA2 → FA3 jsou na QH1 napojeny řetězem
+  // výstup→výstup (paralelně), taky jen vodičem. Dřív se to vykreslilo na
+  // sběrnici přívodu 1, protože schéma znalo jen statický `x.nadr`. Soubor
+  // je přesně ten, který uživatel poslal (`testy/rozvadec-roz0001.json`,
+  // žádná osobní data — investor/místo/adresa jsou v něm prázdné). ───────
+  const roz0001json = JSON.parse(require('fs').readFileSync(path.join(__dirname, 'rozvadec-roz0001.json'), 'utf8'));
+  await p.evaluate(async (data) => { await dokSouborNacist(data); }, roz0001json);
+  const rz1 = await p.evaluate(async () => {
+    const polozka = DOK.dokumenty.find(x => x.cislo === 'ROZ-0001');
+    await dokOtevrit(polozka.uid);
+    const d = window.__dokOtevreny.data;
+    const S = rzsTopologie(d);
+    const privod2uid = d.privody[0].uid, uidPrivod2 = '@privod~' + privod2uid;
+    const vse = {}; rozvPrvkyVse(d.rady).forEach(x => { vse[x.uid] = x; });
+    const oznUid = {}; rozvPrvkyVse(d.rady).forEach(x => { oznUid[x.ozn] = x.uid; });
+    const korenPanel = {};   // podle panelu (rzsPrivodKorene) — TOTÉŽ, co vidí „Kdo koho napájí"
+    ['-QH1', '-FA1', '-FA2', '-FA3', '-Q1', '-FI1', '-FA4', '-FA5', '-FA6', '-FI/FA1', '-FI/FA2'].forEach(oz => {
+      korenPanel[oz] = rzsPrivodKorene(S, oznUid[oz]);
+    });
+    const listy = rozvSchemaListy(d), list1 = listy[1].svg;
+    // Ve schématu: kterému úseku (přívodu) patří přístroj PODLE TÉHOŽ VSTUPU
+    // (`rsUseky`), ze kterého skutečně kreslí `rozvSchemaListy` — spolehlivější
+    // než hledat sloupec v SVG podle sousedství textu.
+    const useky = rsUseky(d, S);
+    const usekOzn = {}, jednPo = {};   // jednPo[ozn] = délka chainu, do kterého ozn ve svém úseku spadl
+    useky.forEach(u => {
+      if (u.qm) usekOzn[u.qm.ozn] = u.zaznam.uid;
+      u.model.jedn.forEach(j => j.sloupce.forEach((x, i) => { usekOzn[x.ozn] = u.zaznam.uid; jednPo[x.ozn] = { delka: j.sloupce.length, index: i, chain: j.sloupce.map(q => q.ozn).join('>') }; }));
+    });
+    return { korenPanel, usekOzn, jednPo, privod2uid, uidPrivod2,
+      listCount: listy.length, list1obsahujeOba: list1.includes('Přívod 1') && list1.includes('Přívod 2') };
+  });
+  check('ROZ-0001: panel „Kdo koho napájí" (rzsPrivodKorene) řadí QH1+FA1+FA2+FA3 pod přívod 2, zbytek pod přívod 1',
+    rz1.korenPanel['-QH1'] === rz1.uidPrivod2 && rz1.korenPanel['-FA1'] === rz1.uidPrivod2 && rz1.korenPanel['-FA2'] === rz1.uidPrivod2 && rz1.korenPanel['-FA3'] === rz1.uidPrivod2 &&
+    rz1.korenPanel['-Q1'] === '@privod' && rz1.korenPanel['-FI1'] === '@privod' && rz1.korenPanel['-FA4'] === '@privod' && rz1.korenPanel['-FA5'] === '@privod' &&
+    rz1.korenPanel['-FA6'] === '@privod' && rz1.korenPanel['-FI/FA1'] === '@privod' && rz1.korenPanel['-FI/FA2'] === '@privod', JSON.stringify(rz1.korenPanel));
+  check('ROZ-0001: schéma (rsUseky — stejný vstup, který kreslí rozvSchemaListy) řadí QH1/FA1/FA2/FA3 do STEJNÉHO úseku jako panel',
+    rz1.usekOzn['-QH1'] === rz1.uidPrivod2 && rz1.usekOzn['-FA1'] === rz1.uidPrivod2 && rz1.usekOzn['-FA2'] === rz1.uidPrivod2 && rz1.usekOzn['-FA3'] === rz1.uidPrivod2 &&
+    rz1.usekOzn['-Q1'] !== rz1.uidPrivod2 && rz1.usekOzn['-FI/FA1'] !== rz1.uidPrivod2, JSON.stringify(rz1.usekOzn));
+  check('ROZ-0001: FA1/FA2/FA3 jsou PLOCHÍ sourozenci (každý vlastní chain délky 1), ne řetězec FA1→FA2→FA3',
+    ['-FA1', '-FA2', '-FA3'].every(oz => rz1.jednPo[oz] && rz1.jednPo[oz].delka === 1 && rz1.jednPo[oz].index === 0),
+    JSON.stringify(rz1.jednPo));
+  check('ROZ-0001: vygenerovaný list schématu obsahuje popisky obou přívodů', rz1.listCount >= 2 && rz1.list1obsahujeOba, JSON.stringify({ listCount: rz1.listCount, oba: rz1.list1obsahujeOba }));
+  // otevření a zpětné uložení nesmí nic přepsat (stejné pravidlo jako u ostatních rozvaděčů)
+  const rz2 = await p.evaluate(async () => {
+    const pred = JSON.stringify(window.__dokOtevreny.data);
+    rozvSchKreslit && rozvZalozkaNastavit('navrh');
+    await dokUlozitOtevreny();
+    const po = JSON.stringify(window.__dokOtevreny.data);
+    return pred === po;
+  });
+  check('ROZ-0001: otevření a uložení beze změny dat (žádné tiché přepsání)', rz2 === true);
 
   // ── 8. data revizí beze změny po celé práci s přívody ─────────────────
   const otiskPo = await otisk();
