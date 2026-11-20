@@ -43514,21 +43514,6 @@ function rsLomitkaVodorovne(x, y, n) {
   for (var i = 0; i < n; i++) h += rsCara(x + i * 1.1 - 0.6, y + 1, x + i * 1.1 + 0.6, y - 1, { w: RS_TENKA });
   return h;
 }
-// Odkud N a PE „přicházejí" — STEJNÉ lomítko jako počet vodičů jinde ve
-// schématu (rsLomitkaVodorovne: šikmá čárka přes čáru), s tečkou na volném
-// konci — žádný kroužek. Kreslí se PŘÍMO na sběrnici, žádná čára zpátky
-// k přívodu. PE má navíc KRÁTKOU PŘÍČKU KOLMO NA ČÁRKU, uprostřed —
-// NE u dotčky (oprava 2026-11-20 #4, uživatel: „vidím pořád dvě kuličky
-// na lomítku" — příčka blízko tečky v tom tenkém provedení vypadala jako
-// druhý bod; teď je uprostřed čárky, zřetelně oddělená od tečky).
-function rsNPEpuvod(x, y, zeme) {
-  // nb: true — konec šikmé čárky leze těsně k levému konci sběrnice, takže
-  // by ho rsTecky vzalo jako další rameno a vynutilo si tam svou tečku navíc.
-  var h = rsCara(x - 0.6, y + 1, x + 0.6, y - 1, { w: RS_TENKA, nb: true })
-    + '<circle cx="' + rsN(x + 0.95) + '" cy="' + rsN(y - 1.55) + '" r="0.4" fill="#000" stroke="none"/>';
-  if (zeme) h += rsCara(x - 0.6, y - 0.36, x + 0.6, y + 0.36, { w: RS_TENKA, nb: true });
-  return h;
-}
 // Tečka vodivého spoje (2026-11-12). Při kreslení listu schématu (RS_BODY) se jen zapamatuje
 // místo — tečky se kreslí až nakonec nad všemi čarami (rsTecky), spolu s těmi, které se
 // najdou samy: každé místo, kde se potkají aspoň tři čáry a aspoň jedna tam končí
@@ -43638,7 +43623,7 @@ function rsPrivod(d, g, model, c) {
   // 2026-11-19, podle reálného výkresu kolegy — N a PE mají svůj vlastní
   // štítek/značku tam, kde se připojují, lomítka na hlavní čáře je nepočítají).
   h += rsLomitkaVodorovne(ramNovy ? xRam - 6 : g.x0 - 7.5, yP, tri ? 3 : 1);
-  // N a PE se kreslí samostatně až na vlastní sběrnici (rsNPEpuvod, viz níž) —
+  // N a PE se kreslí samostatně až na vlastní sběrnici —
   // žádná čárkovaná odbočka odsud, stejně jako v reálném výkresu kolegy.
   // hlavní vypínač na přívodu
   if (model.qm) {
@@ -43684,7 +43669,7 @@ function rsPrivodUsekSvg(d, g, x0, U, c) {
   // přesně u x0 — lomítka by jinak „visela ve vzduchu" bez vodiče pod sebou
   // (připomínka uživatele 2026-11-19). Lomítka zůstávají na stejném místě.
   h += rsCara(x0 - 7, yP, xQ, yP) + rsLomitkaVodorovne(x0 - 6, yP, tri ? 3 : 1);
-  // N a PE se kreslí samostatně až na vlastní sběrnici (rsNPEpuvod v rsListSchemaVice0).
+  // N a PE se kreslí samostatně až na vlastní sběrnici (v rsListSchemaVice0).
   if (qm) {
     var nz = RS_ZNACKA_KAT[qm.p.kat] || 'vypinac', z = RS_ZNACKY[nz] || RS_ZNACKY.vypinac;
     var qHod = rsHodnoty(qm), qTxt = [qHod, qm.p.typ].filter(Boolean).join(' ');
@@ -43709,7 +43694,7 @@ function rsPrivodMostSvg(d, g, x0, U, c) {
   if (popis) h += rsText(x0, yP - 1.2, rsVejit(popis, xQ - x0 - 2, 2.1), { fs: 2.1 });
   // Čára kabelu MUSÍ sahat pod lomítka, ne končit přesně u x0 (viz rsPrivodUsekSvg).
   h += rsCara(x0 - 7, yP, xQ, yP) + rsLomitkaVodorovne(x0 - 6, yP, tri ? 3 : 1);
-  // N a PE se kreslí samostatně až na vlastní sběrnici (rsNPEpuvod v rsListSchemaVice0).
+  // N a PE se kreslí samostatně až na vlastní sběrnici (v rsListSchemaVice0).
   if (zaz2) {
     // Popisek vstupu II celý NAD jeho vlastní čárou (jako u vstupu I), ne
     // pod ní — pod čarou (yP2…g.yL) je „2" (výstup PZ) a dolní část značky.
@@ -43822,12 +43807,10 @@ function rsListSchemaVice0(d, list, idx, listy, c, useky) {
   Object.keys(nSkup).forEach(function (k) {
     var sk = nSkup[k];
     h += rsCara(sk.od, g.yN, sk.do, g.yN, { w: RS_SBER }) + rsText(sk.prvni ? sk.od - 0.8 : sk.od, g.yN + (sk.prvni ? -1 : 2.6), k, { fs: 2.1, tucne: true, zar: sk.prvni ? 'end' : 'start' });
-    if (sk.prvni) h += rsNPEpuvod(sk.od, g.yN);   // odkud N přichází (podle výkresu kolegy) — jen tam, kde SKUPINA skutečně začíná
   });
   var peOd = Math.min.apply(null, rozsahy.map(function (r) { return r.e.novy ? xs[r.e.od] + 11 - 8 : g.x0 + 3; }));
   var peDo = Math.max.apply(null, rozsahy.map(function (r) { return (posledniList[r.e.usek.zaznam.uid] > idx) ? g.c1 + 4 : (r.prazdny ? peOd + 7 : xs[r.doCol] + 4.5); }));
   h += rsCara(peOd, g.yPE, peDo, g.yPE, { w: RS_SBER }) + rsText(peOd - 0.8, g.yPE - 1, 'PE', { fs: 2.1, tucne: true, zar: 'end' });
-  if (idx === 0) h += rsNPEpuvod(peOd, g.yPE, true);   // PE se nerozděluje, odkaz jen na prvním listu
   // skupiny chráničů (a jiných nadřazených přístrojů): vlastní sběrnice, u chrániče i N můstek
   list.kusy.forEach(function (k) {
     if (!k.fi) return;
@@ -44003,7 +43986,7 @@ function rsSloupecHtml(x, g, sl, kus, c) {
   }
   if (kat === 'TR' || kat === 'ZD') {   // výstup transformátoru / zdroje: vývod s popisem napětí (bez N a PE — malé napětí)
     var ySv = g.ySp, tD = ySv - 1 - (g.yB + 10), fz = rsFaze(x, c.S);
-    h += rsCara(xx, g.yD + z.h, xx, ySv) + rsLomitka(xx, g.yB + 7.2, 2);
+    h += rsCara(xx, g.yD + z.h, xx, ySv);
     h += rsText(xx + 2.2, ySv - 1, rsVejit([fz === 'L?' ? 'L?' : 'z ' + fz, rsKabel(x)].filter(Boolean).join(' · '), tD, 1.9), { fs: 1.9, svisle: true, barva: fz === 'L?' ? '#b00000' : '#000' });
     if (x.vyvod) h += rsText(xx + 4.6, ySv - 1, rsVejit(x.vyvod, tD, 2.05), { fs: 2.05, svisle: true, tucne: true });
     h += rsText(xx, ySv + 3, rsVejit(rozvNapeti(p.uVystup) || 'výstup', RS_SL - 1, 2), { fs: 2, tucne: true, zar: 'middle' });
@@ -44034,7 +44017,6 @@ function rsSloupecHtml(x, g, sl, kus, c) {
   h += rsBod(xx + 1.6, nZdroj) + rsCara(xx + 1.6, nZdroj, xx + 1.6, yJ, { carky: true, w: RS_TENKA }) + rsCara(xx + 1.6, yJ, xx, yJ + 1.8, { carky: true, w: RS_TENKA, nb: true });
   h += rsBod(xx + 3.2, g.yPE) + rsCara(xx + 3.2, g.yPE, xx + 3.2, yJ, { carky: true, w: RS_TENKA }) + rsCara(xx + 3.2, yJ, xx, yJ + 3.2, { carky: true, w: RS_TENKA, nb: true });
   var tri = rsTrif(p);
-  h += rsLomitka(xx, g.yB + 7.2, tri ? 5 : 3);
   var tDelka = ySp - 1 - (g.yB + 14);
   var f = rsFaze(x, c.S), kab = rsKabel(x);
   h += rsText(xx + 2.2, ySp - 1, rsVejit([f, kab].filter(Boolean).join(' · '), tDelka, 1.9), { fs: 1.9, svisle: true, barva: f === 'L?' ? '#b00000' : '#000' });
@@ -44093,7 +44075,6 @@ function rsListSchema0(d, list, idx, listy, c, model) {
   var xNA = g.prvni ? g.xQ - 5 : g.x0 + 3, xPA = g.prvni ? g.xQ - 8 : g.x0 + 3;
   var xPE = g.xMet ? g.xMet : xE;
   h += rsCara(xNA, g.yN, xE, g.yN, { w: model.psc && model.sb ? RS_SBER_PSC : RS_SBER }) + rsCara(xPA, g.yPE, xPE, g.yPE, { w: model.psc && model.sb ? RS_SBER_PSC : RS_SBER });
-  if (g.prvni) h += rsNPEpuvod(xNA, g.yN) + rsNPEpuvod(xPA, g.yPE, true);
   if (model.psc && g.prvni) h += pscSchPripojnice(g, model);
   h += rsText(g.prvni ? xNA - 0.8 : xNA, g.yN + (g.prvni ? -1 : 2.6), 'N', { fs: 2.1, tucne: true, zar: g.prvni ? 'end' : 'start' }) +
     rsText(g.prvni ? xPA - 0.8 : xPA, g.yPE + 2.6, 'PE', { fs: 2.1, tucne: true, zar: g.prvni ? 'end' : 'start' });
