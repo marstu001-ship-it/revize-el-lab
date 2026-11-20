@@ -43517,16 +43517,16 @@ function rsLomitkaVodorovne(x, y, n) {
 // Odkud N a PE „přicházejí" — STEJNÉ lomítko jako počet vodičů jinde ve
 // schématu (rsLomitkaVodorovne: šikmá čárka přes čáru), s tečkou na volném
 // konci — žádný kroužek. Kreslí se PŘÍMO na sběrnici, žádná čára zpátky
-// k přívodu. PE má navíc KRÁTKOU PŘÍČKU KOLMO NA ČÁRKU blízko jejího
-// horního konce (zjednodušená zemnicí značka — oprava 2026-11-20 #3,
-// uživatel ručně dokreslil přesný tvar: ne druhá souběžná čárka, ale
-// příčka přes tu jednu).
+// k přívodu. PE má navíc KRÁTKOU PŘÍČKU KOLMO NA ČÁRKU, uprostřed —
+// NE u dotčky (oprava 2026-11-20 #4, uživatel: „vidím pořád dvě kuličky
+// na lomítku" — příčka blízko tečky v tom tenkém provedení vypadala jako
+// druhý bod; teď je uprostřed čárky, zřetelně oddělená od tečky).
 function rsNPEpuvod(x, y, zeme) {
   // nb: true — konec šikmé čárky leze těsně k levému konci sběrnice, takže
   // by ho rsTecky vzalo jako další rameno a vynutilo si tam svou tečku navíc.
   var h = rsCara(x - 0.6, y + 1, x + 0.6, y - 1, { w: RS_TENKA, nb: true })
     + '<circle cx="' + rsN(x + 0.95) + '" cy="' + rsN(y - 1.55) + '" r="0.4" fill="#000" stroke="none"/>';
-  if (zeme) h += rsCara(x - 0.1, y - 0.61, x + 0.58, y - 0.19, { w: RS_TENKA, nb: true });
+  if (zeme) h += rsCara(x - 0.6, y - 0.36, x + 0.6, y + 0.36, { w: RS_TENKA, nb: true });
   return h;
 }
 // Tečka vodivého spoje (2026-11-12). Při kreslení listu schématu (RS_BODY) se jen zapamatuje
