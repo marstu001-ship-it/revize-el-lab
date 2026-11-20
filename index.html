@@ -37905,7 +37905,9 @@ function rozvNapKontext(wuid) {
 
 // ── panel „Kdo koho napájí" a seznam přístrojů ─────────────────────────
 function rzpPanelHtml() {
-  var S = rzpStav(__rz), vse = rozvPrvkyVse(__rz.rady).filter(function (x) { return rzpFaziX(x) > 0; }), deti = {}, navic = {};
+  // `rzsTopologie` — stejná funkce jako schéma (2026-11-19); u `__rz` beze
+  // změny (jen dočasně nahradí __rz sebou samým).
+  var S = rzsTopologie(__rz), vse = rozvPrvkyVse(__rz.rady).filter(function (x) { return rzpFaziX(x) > 0; }), deti = {}, navic = {};
   vse.forEach(function (x) {
     var r = S.vys[x.uid]; if (!r || !r.pod) return;
     var ro = r.rodic, k = ro && ro.typ === 'privod' ? (ro.privod || '@privod') : '@privod';
@@ -43038,9 +43040,14 @@ function rsSpotrPredikce(vyvod) {
 }
 function rsSpotr(x) { return x.spotr || rsSpotrPredikce(x.vyvod) || 'jine'; }
 function rsSpotrNazev(k) { for (var i = 0; i < RS_SPOTR.length; i++) if (RS_SPOTR[i][0] === k) return RS_SPOTR[i][1]; return ''; }
-function rsFaze(x) {
+// `S` (topologie z vodičů, jen víc přívodů) nepovinná — oprava 2026-11-19:
+// vývod zapojený JEN nataženým vodičem (bez vyplnění `x.faze`) ukazoval
+// červené „L?", i když panel „Kdo koho napájí" fázi zná z vodiče.
+function rsFaze(x, S) {
   if (rsTrif(x.p)) return 'L1 L2 L3';
-  return /^L[123]$/.test(String(x.faze || '')) ? x.faze : 'L?';
+  if (/^L[123]$/.test(String(x.faze || ''))) return x.faze;
+  if (S) { var r = S.vys[x.uid]; if (r && r.pod && /^L[123]$/.test((r.faze || [])[0])) return r.faze[0]; }
+  return 'L?';
 }
 function rsKabel(x) { return [x.kabel, x.prurez].map(function (s) { return String(s || '').trim(); }).filter(Boolean).join(' '); }
 function rsNh(p) { var m = /\bNH\s*(\d+|00|000)\b/i.exec([p.nazev, p.typ].join(' ')); return m ? 'NH' + m[1] : ''; }
@@ -43096,7 +43103,9 @@ function rsChybi(d) {
 //
 // Klasifikace „kterému přívodu item patří" je STATICKÝ strom podle `x.nadr`
 // (přes `rozvZdrojEff`, stejně jako `rsModel.rodic()` — bez vodičů a BFS,
-// čistě z `d`, takže funguje i mimo otevřený editor (tisk/export)).
+// čistě z `d`, takže funguje i mimo otevřený editor (tisk/export)). Jen
+// FALLBACK, když topologie z vodičů (`rzsTopologie` níž) o přístroji nic neví
+// (bez napětí, PRISL/REZ/ovládací přístroje — ty v `rzpStav` vůbec nejsou).
 function rsPrivodZX(x, rady, vse, cache) {
   var cur = x, krok = 0;
   while (cur && krok++ < 300) {
@@ -43110,33 +43119,101 @@ function rsPrivodZX(x, rady, vse, cache) {
   }
   return '@privod';
 }
+// Topologie ze STEJNÉHO výpočtu jako panel „Kdo koho napájí" (`rzpPanelHtml`)
+// — natažené vodiče i automatika podle `x.nadr` (oprava 2026-11-19: schéma
+// dřív znalo jen `x.nadr`, takže přístroj zapojený JEN vodičem — bez vyplnění
+// „Napájen z" — se kreslilo podle statického stromu, který o vodiči neví).
+// `rzpX`/`rozvNajit` (volané uvnitř `rzpStav`) čtou přístroje přes GLOBÁLNÍ
+// `__rz`, ne přes parametr — `d` nemusí být `__rz` (PDF/export mimo otevřený
+// editor), takže se na dobu výpočtu dočasně nahradí a hned vrátí zpět.
+// `rzpStav` samo o sobě na parametru `rz` pracuje správně (čistý výpočet, bez
+// zápisu) — u `d === __rz` (živý editor, panel) je to beze změny.
+function rzsTopologie(d) {
+  var puvodni = __rz, S;
+  __rz = d;
+  try { S = rzpStav(d); } finally { __rz = puvodni; }
+  return S;
+}
+// Kterému přívodu přístroj patří PODLE TOPOLOGIE — chodí po `rodic` nahoru,
+// až najde přímo kabel. `null` = bez napětí (nedosažitelný vodiči ani
+// automatikou — volající má spadnout na statický `rsPrivodZX`).
+function rzsPrivodKorene(S, uid, hl) {
+  hl = hl || 0;
+  var r = S.vys[uid]; if (!r || !r.pod || !r.rodic || hl > 25) return null;
+  return r.rodic.typ === 'privod' ? (r.rodic.privod || '@privod') : rzsPrivodKorene(S, r.rodic.id, hl + 1);
+}
+// Oba vstupy PZ přímo z přívodů (případ 1 — most) — nejdřív statika
+// (`x.nadr`/`x.nadr2`), teprve když nestačí, topologie z vodičů. `t`/`i2`
+// se musí ptát KAŽDÁ STRANA ZVLÁŠŤ (`rzpRodicOdStrany`, parametrizované —
+// bez `__rz`): `S.vys[pz.uid].rodic` je jen JEDEN vítěz BFS (viz rzpSpocti),
+// takže by druhou stranu PZ vůbec neviděl. `null`, když to most není.
+function rzsPzVstupy(d, S, pz) {
+  var t = rozvJePrivod(pz.nadr) ? pz.nadr : null, i2 = rozvJePrivod(pz.nadr2) ? pz.nadr2 : null;
+  if (S) {
+    if (!t) { var r1 = rzpRodicOdStrany(S, d, pz.uid, 't', 0); if (r1 && r1.typ === 'privod') t = r1.privod || '@privod'; }
+    if (!i2) { var r2 = rzpRodicOdStrany(S, d, pz.uid, 'i2', 0); if (r2 && r2.typ === 'privod') i2 = r2.privod || '@privod'; }
+  }
+  return (t && i2 && t !== i2) ? { t: t, i2: i2 } : null;
+}
+// Hlavní vypínač přívodu PODLE TOPOLOGIE — fallback k `rozvKorenPrivodu`
+// (ten zná jen `x.nadr`; vrátí prázdno, je-li hlavní vypínač přívodu
+// zapojený JEN nataženým vodičem, bez vyplnění „Napájen z"). Statický
+// výsledek má přednost vždy, když něco najde — beze změny chování pro
+// všechno, co dřív fungovalo (zaškrtnuté „Hlavní vypínač", svorky…).
+function rzsKorenPrivodu(d, S, privodUid) {
+  var staticky = rozvKorenPrivodu(d.rady || [], privodUid);
+  if (staticky || !S) return staticky;
+  var vse = {}; rozvPrvkyVse(d.rady || []).forEach(function (x) { vse[x.uid] = x; });
+  var nalez = null;
+  Object.keys(S.vys).some(function (uid) {
+    var x = vse[uid]; if (!x || !x.p || (ROZV_SPINACI.indexOf(x.p.kat) === -1 && x.p.kat !== 'PZ')) return false;
+    if (x.p.kat === 'PZ') {
+      var vstupy = rzsPzVstupy(d, S, x);
+      if (vstupy && (vstupy.t === privodUid || vstupy.i2 === privodUid)) { nalez = uid; return true; }
+      return false;
+    }
+    var r = S.vys[uid]; if (!r.pod || !r.rodic || r.rodic.typ !== 'privod') return false;
+    if ((r.rodic.privod || '@privod') !== privodUid) return false;
+    nalez = uid; return true;
+  });
+  return nalez || '';
+}
 // Úseky v pořadí přívodů: { zaznam, qmUid, qm, model }. `model` je výstup
 // `rsModel` přesně jako dřív (qm, jedn, ridici, retez, hlavy, pod, vPod,
-// zplost) — jen nad podmnožinou přístrojů tohoto přívodu.
-function rsUseky(d) {
+// zplost) — jen nad podmnožinou přístrojů tohoto přívodu. `S` (topologie)
+// nepovinná — spočítá se sama, volající (`rozvSchemaListy`) ji dá hotovou,
+// ať se nepočítá dvakrát (potřebuje ji i pro fázi vývodů, viz `rsFaze`).
+function rsUseky(d, S) {
+  S = S || rzsTopologie(d);
   var rady = d.rady || [], vse = {}; rozvPrvkyVse(rady).forEach(function (q) { vse[q.uid] = q; });
   var cache = {}, zaznamy = rozvPrivodySeznam(d), hotovo = {}, out = [];
   zaznamy.forEach(function (zaznam) {
     if (hotovo[zaznam.uid]) return;
-    var qmUid = rozvKorenPrivodu(rady, zaznam.uid) || '', qm = qmUid ? vse[qmUid] : null;
+    var qmUid = rzsKorenPrivodu(d, S, zaznam.uid) || '', qm = qmUid ? vse[qmUid] : null;
     // Případ 1 (most, 2026-11-19): PZ se vstupy přímo z OBOU přívodů — žádné
-    // samostatné úseky, kreslí ho `rsPrivodMostSvg`. `rozvKorenPrivodu` vrací
+    // samostatné úseky, kreslí ho `rsPrivodMostSvg`. `rzsKorenPrivodu` vrací
     // PZ pro oba přívody, takže se sem dřív nebo později dostanou oba a ten
-    // druhý se přeskočí (`hotovo`) — `zazNadr`/`zazNadr2` určují, čí kabel
-    // jde na vstup I a čí na vstup II, bez ohledu na pořadí v `zaznamy`.
-    var most = qm && qm.p && qm.p.kat === 'PZ' && rozvJePrivod(qm.nadr) && rozvJePrivod(qm.nadr2) ? qm : null;
-    var zazNadr = most ? zaznamy.filter(function (z) { return z.uid === most.nadr; })[0] : null;
-    var zazNadr2 = most ? zaznamy.filter(function (z) { return z.uid === most.nadr2; })[0] : null;
+    // druhý se přeskočí (`hotovo`) — `rzsPzVstupy` určuje, čí kabel jde na
+    // vstup I a čí na vstup II (statika, nebo vodiče — stejná záloha jako
+    // `rzsKorenPrivodu`), bez ohledu na pořadí v `zaznamy`.
+    var vstupyPz = qm && qm.p && qm.p.kat === 'PZ' ? rzsPzVstupy(d, S, qm) : null;
+    var most = vstupyPz ? qm : null;
+    var zazNadr = most ? zaznamy.filter(function (z) { return z.uid === vstupyPz.t; })[0] : null;
+    var zazNadr2 = most ? zaznamy.filter(function (z) { return z.uid === vstupyPz.i2; })[0] : null;
     if (zazNadr) hotovo[zazNadr.uid] = true;
     if (zazNadr2) hotovo[zazNadr2.uid] = true;
     var druhyUid = most ? (zazNadr2 ? zazNadr2.uid : null) : null;
+    // Komu patří: PŘEDEVŠÍM podle topologie z vodičů (jako panel „Kdo koho
+    // napájí"), statický `rsPrivodZX` jen jako záloha pro to, co v `rzpStav`
+    // vůbec nežije (PRISL/REZ/ovládací přístroje, nebo nic nenapájené).
     var prv = rozvPrvkyVse(rady).filter(function (x) {
-      var zx = rsPrivodZX(x, rady, vse, cache);
+      var r = S.vys[x.uid], zx = (r && r.pod) ? rzsPrivodKorene(S, x.uid) : null;
+      if (zx == null) zx = rsPrivodZX(x, rady, vse, cache);
       return x.p.kat !== 'REZ' && (zx === zaznam.uid || (druhyUid && zx === druhyUid));
     });
     if (qm && prv.indexOf(qm) === -1) prv.push(qm);
     out.push({ zaznam: most ? (zazNadr || zaznam) : zaznam, zaznam2: zazNadr2 || null, most: most,
-      qmUid: qmUid, qm: qm, model: rsModel(d, { prv: prv, qm: qm }) });
+      qmUid: qmUid, qm: qm, model: rsModel(d, { prv: prv, qm: qm, S: S }) });
   });
   return out;
 }
@@ -43194,7 +43271,30 @@ function rsModel(d, o) {
   // skupině (vlastní sběrnice) a hlubší úrovně zploštěle s poznámkou „z -X".
   var mimo = function (x) { var k = x.p.kat; return x === qm || k === 'X' || k === 'PRISL' || (o && RS_PSC_MIMO.indexOf(k) !== -1); };
   var vSch = {}; prv.forEach(function (x) { if (!mimo(x)) vSch[x.uid] = x; });
-  var rodic = function (x) { var r = x.nadr && x.nadr !== x.uid ? vSch[x.nadr] : null; return r && RS_RIDICI.indexOf(r.p.kat) === -1 ? r : null; };
+  // Rodič PODLE TOPOLOGIE z vodičů (víc přívodů, 2026-11-19 — oprava „paralelní
+  // napájení / napájení zespodu se nekreslilo pod svým zdrojem"), když ji
+  // volající dá (`o.S`, jen `rsUseky`): přístroj zapojený jen nataženým
+  // vodičem (bez vyplnění „Napájen z") se tak zařadí pod svůj skutečný zdroj
+  // stejně jako v panelu. Bez `o.S` (jediný přívod, PSC) beze změny — čistě `x.nadr`.
+  var rodic = function (x) {
+    if (o && o.S) {
+      var rs = o.S.vys[x.uid];
+      if (rs && rs.pod && rs.rodic) {
+        var ro = rs.rodic;
+        // Řetěz „paralelně na vstup" (QH1 → FA1 → FA2 → FA3 PŘES SPOLEČNÝ uzel, žádný
+        // z nich fyzicky nenapájí ten další) se kreslí PLOCHO pod společným zdrojem
+        // (QH1), ne jako sled vnořených vývodů — jinak by to vypadalo, že FA2/FA3 jedou
+        // „přes" FA1 (sériově), což elektricky neplatí (připomínka uživatele 2026-11-19:
+        // u ručního zapojení musí být z výkresu patrné, že jde o paralelní napájení).
+        // `.nad` je rodic o úroveň výš (spočítaný už uvnitř rzpSpocti), takže stačí
+        // projít řetěz `typ==='par'` až na první skutečný zdroj (zařízení nebo kabel).
+        var hl2 = 0; while (ro && ro.typ === 'par' && hl2++ < 20) ro = ro.nad;
+        if (ro && ro.typ === 'privod') return null;   // přímo z kabelu — kořen své skupiny
+        if (ro && ro.typ === 'z') { var rr = vSch[ro.id]; if (rr) return RS_RIDICI.indexOf(rr.p.kat) === -1 ? rr : null; }
+      }
+    }
+    var r = x.nadr && x.nadr !== x.uid ? vSch[x.nadr] : null; return r && RS_RIDICI.indexOf(r.p.kat) === -1 ? r : null;
+  };
   var deti = {}; prv.forEach(function (x) {
     if (!vSch[x.uid] || RS_RIDICI.indexOf(x.p.kat) !== -1) return;
     var r = rodic(x); if (r) (deti[r.uid] = deti[r.uid] || []).push(x);
@@ -43519,9 +43619,12 @@ function rsPrivod(d, g, model, c) {
     svDy = fz.some(Boolean) ? 8.4 : 6.2;
   }
   if (d.napajenZ) h += rsText(14, yP + (jis ? 12 : svDy), rsVejit('z ' + [d.napajenZ.ozn, d.napajenZ.nazev ? '(' + d.napajenZ.nazev + ')' : ''].filter(Boolean).join(' '), 38, 1.9), { fs: 1.9 });
-  h += rsLomitkaVodorovne(ramNovy ? xRam - 6 : g.x0 - 7.5, yP, tri ? 5 : 3);
-  // N a PE přicházejí s přívodem
-  h += rsBod(xQ - 5, yP) + rsBod(xQ - 8, yP) + rsCara(xQ - 5, yP, xQ - 5, g.yN, { carky: true }) + rsCara(xQ - 8, yP, xQ - 8, g.yPE, { carky: true });
+  // Lomítka na vstupním kabelu = POČET FÁZÍ, ne L+N+PE dohromady (oprava
+  // 2026-11-19, podle reálného výkresu kolegy — N a PE mají svůj vlastní
+  // štítek/značku tam, kde se připojují, lomítka na hlavní čáře je nepočítají).
+  h += rsLomitkaVodorovne(ramNovy ? xRam - 6 : g.x0 - 7.5, yP, tri ? 3 : 1);
+  // N a PE se kreslí samostatně až na vlastní sběrnici —
+  // žádná čárkovaná odbočka odsud, stejně jako v reálném výkresu kolegy.
   // hlavní vypínač na přívodu
   if (model.qm) {
     var q = model.qm;
@@ -43562,8 +43665,11 @@ function rsPrivodUsekSvg(d, g, x0, U, c) {
   var popis = [zaz.popis, zaz.in !== '' && zaz.in != null ? 'In ' + rozvJednotka(rozvCisloText(zaz.in) || zaz.in, 'A') : '',
     zaz.zdrojText ? 'z ' + zaz.zdrojText : ''].filter(Boolean).join(' · ');
   if (popis) h += rsText(x0, yP - 1.2, rsVejit(popis, xQ - x0 - 2, 2.1), { fs: 2.1 });
-  h += rsCara(x0, yP, xQ, yP) + rsLomitkaVodorovne(x0 - 6, yP, tri ? 5 : 3);
-  h += rsBod(xQ - 5, yP) + rsBod(xQ - 8, yP) + rsCara(xQ - 5, yP, xQ - 5, g.yN, { carky: true }) + rsCara(xQ - 8, yP, xQ - 8, g.yPE, { carky: true });
+  // Čára kabelu MUSÍ sahat pod lomítka (počet fází — viz rsPrivod), ne končit
+  // přesně u x0 — lomítka by jinak „visela ve vzduchu" bez vodiče pod sebou
+  // (připomínka uživatele 2026-11-19). Lomítka zůstávají na stejném místě.
+  h += rsCara(x0 - 7, yP, xQ, yP) + rsLomitkaVodorovne(x0 - 6, yP, tri ? 3 : 1);
+  // N a PE se kreslí samostatně až na vlastní sběrnici (v rsListSchemaVice0).
   if (qm) {
     var nz = RS_ZNACKA_KAT[qm.p.kat] || 'vypinac', z = RS_ZNACKY[nz] || RS_ZNACKY.vypinac;
     var qHod = rsHodnoty(qm), qTxt = [qHod, qm.p.typ].filter(Boolean).join(' ');
@@ -43586,8 +43692,9 @@ function rsPrivodMostSvg(d, g, x0, U, c) {
   var popis = [zaz.popis, zaz.in !== '' && zaz.in != null ? 'In ' + rozvJednotka(rozvCisloText(zaz.in) || zaz.in, 'A') : '',
     zaz.zdrojText ? 'z ' + zaz.zdrojText : ''].filter(Boolean).join(' · ');
   if (popis) h += rsText(x0, yP - 1.2, rsVejit(popis, xQ - x0 - 2, 2.1), { fs: 2.1 });
-  h += rsCara(x0, yP, xQ, yP) + rsLomitkaVodorovne(x0 - 6, yP, tri ? 5 : 3);
-  h += rsBod(xQ - 5, yP) + rsBod(xQ - 8, yP) + rsCara(xQ - 5, yP, xQ - 5, g.yN, { carky: true }) + rsCara(xQ - 8, yP, xQ - 8, g.yPE, { carky: true });
+  // Čára kabelu MUSÍ sahat pod lomítka, ne končit přesně u x0 (viz rsPrivodUsekSvg).
+  h += rsCara(x0 - 7, yP, xQ, yP) + rsLomitkaVodorovne(x0 - 6, yP, tri ? 3 : 1);
+  // N a PE se kreslí samostatně až na vlastní sběrnici (v rsListSchemaVice0).
   if (zaz2) {
     // Popisek vstupu II celý NAD jeho vlastní čárou (jako u vstupu I), ne
     // pod ní — pod čarou (yP2…g.yL) je „2" (výstup PZ) a dolní část značky.
@@ -43595,7 +43702,7 @@ function rsPrivodMostSvg(d, g, x0, U, c) {
     var popis2 = [zaz2.popis, zaz2.in !== '' && zaz2.in != null ? 'In ' + rozvJednotka(rozvCisloText(zaz2.in) || zaz2.in, 'A') : '',
       zaz2.zdrojText ? 'z ' + zaz2.zdrojText : ''].filter(Boolean).join(' · ');
     if (popis2) h += rsText(x0, yP2 - 1.1, rsVejit(popis2, xQ - 9 - x0, 1.9), { fs: 1.9 });
-    h += rsCara(x0, yP2, xQ + 4.4, yP2) + rsLomitkaVodorovne(x0 - 6, yP2, tri ? 5 : 3);
+    h += rsCara(x0 - 7, yP2, xQ + 4.4, yP2) + rsLomitkaVodorovne(x0 - 6, yP2, tri ? 3 : 1);
     h += rsCara(xQ + 4.4, yP2, xQ + 4.4, yP + 0.6);
     // N vstupu II, je-li nesdílená (nSpolecne: false) — jen ilustrační
     // odbočka u kabelu, PZ nemá vlastní údaj o počtu pólů pro „skutečné"
@@ -43632,7 +43739,13 @@ function rsListSchemaVice0(d, list, idx, listy, c, useky) {
   var naz = rsNSkupiny(useky);
   var posledniList = {}; listy.forEach(function (l, li) { l.useky.forEach(function (e) { posledniList[e.usek.zaznam.uid] = li; }); });
   h += rsObd(g.x0, g.y0, g.x1 - g.x0, g.yB - g.y0, { carky: '3 1.6', w: RS_TENKA });
-  h += rsText((g.x0 + g.x1) / 2, g.y0 + 4.6, 'Rozvaděč ' + (d.oznaceni || '') + (idx > 0 ? ' — pokračování' : ''), { fs: 3.4, tucne: true, zar: 'middle' });
+  // Titulek NAD čárkovaným rámečkem rozvaděče (oprava 2026-11-19, připomínka
+  // uživatele): u jednoho přívodu je štítek „Přívod 1" vlevo u kraje a titulek
+  // uprostřed nekoliduje nikdy; se dvěma úseky vedle sebe může štítek druhého
+  // přívodu padnout doprostřed listu, přesně pod titulek. Místo nad rámečkem
+  // (mezi číslováním zón a rámečkem, y 10–22) je vždycky volné — jen tady,
+  // `rsListSchema` (jeden přívod) zůstává beze změny.
+  h += rsText((g.x0 + g.x1) / 2, g.y0 - 5, 'Rozvaděč ' + (d.oznaceni || '') + (idx > 0 ? ' — pokračování' : ''), { fs: 3.4, tucne: true, zar: 'middle' });
   // rozsah sloupců KAŽDÉHO úseku na TOMTO listu (pro konce sběrnic a odkazy)
   var rozsahy = list.useky.map(function (e, ei) {
     var od = e.od + (e.novy ? RS_PRIV_SL : 0), dalsi = list.useky[ei + 1], doCol = (dalsi ? dalsi.od : list.sloupce.length) - 1;
@@ -43872,8 +43985,8 @@ function rsSloupecHtml(x, g, sl, kus, c) {
     return '<g data-puid="' + esc(x.uid) + '">' + h + '</g>';
   }
   if (kat === 'TR' || kat === 'ZD') {   // výstup transformátoru / zdroje: vývod s popisem napětí (bez N a PE — malé napětí)
-    var ySv = g.ySp, tD = ySv - 1 - (g.yB + 10), fz = rsFaze(x);
-    h += rsCara(xx, g.yD + z.h, xx, ySv) + rsLomitka(xx, g.yB + 7.2, 2);
+    var ySv = g.ySp, tD = ySv - 1 - (g.yB + 10), fz = rsFaze(x, c.S);
+    h += rsCara(xx, g.yD + z.h, xx, ySv);
     h += rsText(xx + 2.2, ySv - 1, rsVejit([fz === 'L?' ? 'L?' : 'z ' + fz, rsKabel(x)].filter(Boolean).join(' · '), tD, 1.9), { fs: 1.9, svisle: true, barva: fz === 'L?' ? '#b00000' : '#000' });
     if (x.vyvod) h += rsText(xx + 4.6, ySv - 1, rsVejit(x.vyvod, tD, 2.05), { fs: 2.05, svisle: true, tucne: true });
     h += rsText(xx, ySv + 3, rsVejit(rozvNapeti(p.uVystup) || 'výstup', RS_SL - 1, 2), { fs: 2, tucne: true, zar: 'middle' });
@@ -43887,19 +44000,25 @@ function rsSloupecHtml(x, g, sl, kus, c) {
     h += rsCara(xx, g.yD + z.h, xx, g.yD + z.h + 0.3) + sk.h + rsCara(xx, g.yD + z.h + 0.3 + sk.dy, xx, ySp);
   } else
   h += rsCara(xx, g.yD + z.h, xx, ySp);
-  if (kat === 'FIFA') {
-    // Jističochránič (RCBO) má vlastní průchozí pól N: pracovní N vývodu vede z jeho
-    // výstupu (N-FI/FA1), ne ze společné sběrnice — jinak by zpětný proud šel mimo
-    // součtový transformátor a přístroj by vybavil (připomínka uživatele 2026-11-09).
+  if (kat === 'FIFA' && model.hlavy && model.hlavy[x.uid]) {
+    // Jističochránič (RCBO), který dál napájí DALŠÍ přístroje (je „hlava"
+    // skupiny — má potomky), má pro NĚ vlastní průchozí pól N: jejich N vede
+    // z jeho výstupu (N-FI/FA1), ne ze společné sběrnice — jinak by zpětný
+    // proud šel mimo součtový transformátor a přístroj by vybavil
+    // (připomínka uživatele 2026-11-09).
     h += rsCara(xx + 1.6, g.yD + z.h, xx + 1.6, yJ, { carky: true, w: RS_TENKA }) + rsCara(xx + 1.6, yJ, xx, yJ + 1.8, { carky: true, w: RS_TENKA, nb: true });
     if (!(ve && rcdH) && !(podH && rsRcd(podH))) h += rsText(xx + 3, g.yN - 0.8, rsVejit('N-' + String(x.ozn || 'FI/FA').replace(/^-/, ''), g.yN - 0.8 - (g.yD + z.h) - 1, 1.6), { fs: 1.6, svisle: true });
   } else
+  // Koncový RCBO (nic dalšího za ním nevisí) se připojuje na společnou
+  // sběrnici N plným spojem jako kterýkoli jiný přístroj — u tohohle jeho
+  // vlastní N nikomu nehrozí (oprava 2026-11-20, podle reálných výkresů
+  // kolegy — RSpra1.pdf, PP-RS01.1.pdf: koncové RCBO tam mají N na tečce
+  // ze společné sběrnice, ne zvlášť podepsané „N-FA…").
   h += rsBod(xx + 1.6, nZdroj) + rsCara(xx + 1.6, nZdroj, xx + 1.6, yJ, { carky: true, w: RS_TENKA }) + rsCara(xx + 1.6, yJ, xx, yJ + 1.8, { carky: true, w: RS_TENKA, nb: true });
   h += rsBod(xx + 3.2, g.yPE) + rsCara(xx + 3.2, g.yPE, xx + 3.2, yJ, { carky: true, w: RS_TENKA }) + rsCara(xx + 3.2, yJ, xx, yJ + 3.2, { carky: true, w: RS_TENKA, nb: true });
   var tri = rsTrif(p);
-  h += rsLomitka(xx, g.yB + 7.2, tri ? 5 : 3);
   var tDelka = ySp - 1 - (g.yB + 14);
-  var f = rsFaze(x), kab = rsKabel(x);
+  var f = rsFaze(x, c.S), kab = rsKabel(x);
   h += rsText(xx + 2.2, ySp - 1, rsVejit([f, kab].filter(Boolean).join(' · '), tDelka, 1.9), { fs: 1.9, svisle: true, barva: f === 'L?' ? '#b00000' : '#000' });
   var vyv = model.zplost && model.zplost[x.uid] ? 'z ' + model.zplost[x.uid] + (x.vyvod ? ' · ' + x.vyvod : '') : x.vyvod;   // hlubší úroveň zploštěle
   if (vyv) h += rsText(xx + 4.6, ySp - 1, rsVejit(vyv, tDelka, 2.05), { fs: 2.05, svisle: true, tucne: true });
@@ -44116,7 +44235,10 @@ function rozvSchemaListy(d, o) {
   };
   c.psc = pscJe(d); c.d = d;
   var vicePrivodu = !c.psc && (d.privody || []).length > 0;   // schéma se dvěma a víc úseky (2026-11-19) — jen DBO
-  var useky = vicePrivodu ? rsUseky(d) : null;
+  // Topologie z vodičů — spočítá se JEDNOU (sdílí ji `rsUseky` i `rsFaze`
+  // u vývodů, oprava 2026-11-19 „úsek druhého přívodu je prázdný").
+  c.S = vicePrivodu ? rzsTopologie(d) : null;
+  var useky = vicePrivodu ? rsUseky(d, c.S) : null;
   var model = vicePrivodu ? null : (c.psc ? pscSchModel(d) : rsModel(d));
   var listy = vicePrivodu ? rsRozlozitVice(useky, fmt, met) : rsRozlozit(model, fmt, met);
   if (vicePrivodu) Object.assign(c, rsPz2Predpocet(d, listy));   // případ 2: odkaz / protiodkaz vstupu II PZ

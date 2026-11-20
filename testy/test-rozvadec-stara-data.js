@@ -13,6 +13,7 @@ const T = __dirname + '/';
 const PORT = process.env.PORT || 8901, STARA = process.env.STARA_PORT || 8902;
 const { chromium } = require(T + 'pw');
 const path = require('path');
+const bezN = require(T + 'bez-n');
 const res = []; const check = (n, ok, d) => res.push((ok ? '✅' : '❌') + ' ' + n + (d ? ' — ' + d : ''));
 const w = ms => new Promise(r => setTimeout(r, ms));
 
@@ -162,9 +163,18 @@ const zpravaOtevritUlozit = async (p) => p.evaluate(async () => {
     return { dok, ot: rozvPdfOtepleni(d, e).map(b => b.html).join(''), sch: rozvSchemaListy(d).map(l => l.svg).join(''), soud: rozvSoudListSvg(d).svg };
   }, uid);
   const pdfS = await pdfTexty(S.p, st.uid), pdfN = await pdfTexty(N.p, st.uid);
+  // 2026-11-20 (víc přívodů — zrušená lomítka počtu vodičů na vývodu a na přívodním
+  // kabelu, viz testy/bez-n.js): schéma a soudobost (vlastní list, stejná funkce
+  // rsListSchemaVice0/rsPrivod) se touhle ZÁMĚRNOU, globální změnou mění vzhledově
+  // u každého rozvaděče — porovnávat bez téhle kresby, zbytek (texty, čísla, popisy)
+  // dál bajtově.
+  // „dok" je prostý text (innerText) — popisek N-FI/FAx koncového RCBO (2026-11-20,
+  // zrušeno viz test-rozvadec-schema.js) se v něm objevuje jako vlastní řádek.
+  const bezNradek = t => t.replace(/\nN-[^\n]*\n/g, '\n');
+  const dokS = bezNradek(pdfS.dok), dokN = bezNradek(pdfN.dok), schS = bezN(pdfS.sch), schN = bezN(pdfN.sch), soudS = bezN(pdfS.soud), soudN = bezN(pdfN.soud);
   check('starý rozvaděč bez pole „zpracovatel": dokumentace (prohlášení i protokol), oteplení, schéma i soudobost bajtově stejné jako ve staré verzi',
-    pdfS.dok === pdfN.dok && pdfS.ot === pdfN.ot && pdfS.sch === pdfN.sch && pdfS.soud === pdfN.soud,
-    'dok:' + (pdfS.dok === pdfN.dok) + ' ot:' + (pdfS.ot === pdfN.ot) + ' sch:' + (pdfS.sch === pdfN.sch) + ' soud:' + (pdfS.soud === pdfN.soud));
+    dokS === dokN && pdfS.ot === pdfN.ot && schS === schN && soudS === soudN,
+    'dok:' + (dokS === dokN) + ' ot:' + (pdfS.ot === pdfN.ot) + ' sch:' + (schS === schN) + ' soud:' + (soudS === soudN));
 
   if (novyRozv.ulozeno !== staryRozv.ulozeno) {
     const a = staryRozv.ulozeno, c = novyRozv.ulozeno; let i = 0; while (a[i] === c[i]) i++;
