@@ -4042,11 +4042,22 @@ byte-identity — vše čisté).
   výpočet oteplení umí jen jedno pole). Bez automaticky nalezeného InA
   u vícepřívodového rozvaděče řádek „chybí": **„jmenovitý proud rozvaděče
   InA — víc přívodů, zadejte ručně (automaticky se bere jen z přívodu 1)"**.
-- **Návod k obsluze — věta NAVRŽENA, NEVLOŽENA** (uživatel chtěl text napřed
-  ke schválení, ne rovnou v programu): „Rozvaděč má víc přívodů (…) — před
-  prací na něm vypněte VŠECHNY, jeden vypnutý vypínač nezaručuje beznapěťový
-  stav." Až bude odsouhlasená, patří do `NAVOD_ODDILY` vedle „Kdo smí
-  rozvaděč obsluhovat" (jen s víc přívody).
+- **Návod k obsluze — schválená věta VLOŽENA (2026-11-20).** Uživatel
+  schválil přesné znění, doplňuje se do `T.kdo` (`navodVychozi`, oddíl
+  „Kdo smí rozvaděč obsluhovat") — jen má-li rozvaděč `d.privody`
+  (`rozvPrivody(d).length`), platí pro DBO i PSC stejně: „Rozvaděč je
+  napájen z více přívodů (Přívod 1, Přívod 2…). Před prací uvnitř
+  rozvaděče vypněte hlavní vypínače VŠECH přívodů, zajistěte je proti
+  opětovnému zapnutí a ověřte beznapěťový stav. Vypnutím jednoho hlavního
+  vypínače nemusí být rozvaděč bez napětí." Je-li v rozvaděči přepínač
+  zdrojů (kat. `PZ`), za ni se pro KAŽDÝ přidá další věta se skutečným
+  označením: „Poloha 0 přepínače zdrojů -Q… odpojí jen obvody za ním,
+  přívodní svorky a přístroje před ním zůstávají pod napětím." Je to jen
+  **výchozí text** (`navodVychozi`) — pole v Dokumentech ho technik může
+  přepsat nebo oddíl vypnout; uložený rozvaděč s vlastním textem se
+  otevřením nepřepíše. Test: `testy/test-rozvadec-privody.js` (+3 —
+  s víc přívody, bez `d.privody` věta chybí, s přepínačem zdrojů obě věty
+  i se skutečným označením).
 
 Test: `testy/test-rozvadec-privody.js` (+12 — oba případy PZ ve výkresu:
 dva kabely na vstupy I/III a jedna sběrnice u případu 1, dva úseky a

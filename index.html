@@ -48478,6 +48478,12 @@ function navodVychozi(d) {
     var q = navodVstupQf(d);
     if (q) T.kdo += '\nVstupní přístroj ' + nm(q) + ' smí ovládat jen osoba poučená nebo znalá (čl. 8.5.3).';
   }
+  // víc přívodů (2026-11-20, schválený text — viz CLAUDE.md „Víc přívodů — hlavní
+  // vypínač KAŽDÉHO přívodu, přepínač zdrojů PZ"): platí pro DBO i PSC stejně.
+  if (rozvPrivody(d).length) {
+    T.kdo += '\nRozvaděč je napájen z více přívodů (Přívod 1, Přívod 2…). Před prací uvnitř rozvaděče vypněte hlavní vypínače VŠECH přívodů, zajistěte je proti opětovnému zapnutí a ověřte beznapěťový stav. Vypnutím jednoho hlavního vypínače nemusí být rozvaděč bez napětí.';
+    has('PZ').forEach(function (x) { T.kdo += '\nPoloha 0 přepínače zdrojů ' + nm(x) + ' odpojí jen obvody za ním, přívodní svorky a přístroje před ním zůstávají pod napětím.'; });
+  }
   // přehled
   T.prehled = 'Tabulka ukazuje, který přístroj ovládá který obvod. Před zásahem do obvodu vypněte příslušný jistič.';
   // běžná obsluha — jen to, co v rozvaděči je

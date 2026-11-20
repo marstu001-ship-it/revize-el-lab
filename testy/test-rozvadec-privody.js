@@ -393,6 +393,22 @@ const w = ms => new Promise(r => setTimeout(r, ms));
   });
   check('ROZ-0001: otevření a uložení beze změny dat (žádné tiché přepsání)', rz2 === true);
 
+  // ── 11. Návod k obsluze — schválená věta o víc přívodech (2026-11-20) ────
+  const nav = await p.evaluate(() => {
+    const d = window.__dokOtevreny.data, bez = JSON.parse(JSON.stringify(d)); delete bez.privody;
+    const sPriv = navodVychozi(d).kdo, bezPriv = navodVychozi(bez).kdo;
+    // PZ: přidat přepínač zdrojů s nadr/nadr2 do první řady a ověřit druhou větu
+    const sPz = JSON.parse(JSON.stringify(d));
+    sPz.rady[0].prvky.unshift({ uid: 'u-pz1', ozn: '-Q9', nadr: '@privod', nadr2: '@privod~' + d.privody[0].uid, p: { kat: 'PZ', In: '63', poly: '3', sirka: 4, ovladani: 'rucni' } });
+    const sPzText = navodVychozi(sPz).kdo;
+    return { sPriv, bezPriv, sPzText };
+  });
+  const VETA_PRIVODY = 'Rozvaděč je napájen z více přívodů (Přívod 1, Přívod 2…). Před prací uvnitř rozvaděče vypněte hlavní vypínače VŠECH přívodů, zajistěte je proti opětovnému zapnutí a ověřte beznapěťový stav. Vypnutím jednoho hlavního vypínače nemusí být rozvaděč bez napětí.';
+  check('návod: rozvaděč s víc přívody má schválenou větu o vypnutí VŠECH přívodů', nav.sPriv.includes(VETA_PRIVODY), nav.sPriv);
+  check('návod: bez `d.privody` (jednopřívodový) se věta nepřidá', !nav.bezPriv.includes('více přívodů'), nav.bezPriv);
+  check('návod: s přepínačem zdrojů navíc věta o poloze 0 s jeho označením (-Q9)',
+    nav.sPzText.includes(VETA_PRIVODY) && nav.sPzText.includes('Poloha 0 přepínače zdrojů -Q9 odpojí jen obvody za ním, přívodní svorky a přístroje před ním zůstávají pod napětím.'), nav.sPzText);
+
   // ── 8. data revizí beze změny po celé práci s přívody ─────────────────
   const otiskPo = await otisk();
   check('data revizí (STORE, archiv) po práci s přívody bajtově stejná', otiskPred === otiskPo);
