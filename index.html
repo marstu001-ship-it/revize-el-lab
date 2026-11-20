@@ -44017,13 +44017,20 @@ function rsSloupecHtml(x, g, sl, kus, c) {
     h += rsCara(xx, g.yD + z.h, xx, g.yD + z.h + 0.3) + sk.h + rsCara(xx, g.yD + z.h + 0.3 + sk.dy, xx, ySp);
   } else
   h += rsCara(xx, g.yD + z.h, xx, ySp);
-  if (kat === 'FIFA') {
-    // Jističochránič (RCBO) má vlastní průchozí pól N: pracovní N vývodu vede z jeho
-    // výstupu (N-FI/FA1), ne ze společné sběrnice — jinak by zpětný proud šel mimo
-    // součtový transformátor a přístroj by vybavil (připomínka uživatele 2026-11-09).
+  if (kat === 'FIFA' && model.hlavy && model.hlavy[x.uid]) {
+    // Jističochránič (RCBO), který dál napájí DALŠÍ přístroje (je „hlava"
+    // skupiny — má potomky), má pro NĚ vlastní průchozí pól N: jejich N vede
+    // z jeho výstupu (N-FI/FA1), ne ze společné sběrnice — jinak by zpětný
+    // proud šel mimo součtový transformátor a přístroj by vybavil
+    // (připomínka uživatele 2026-11-09).
     h += rsCara(xx + 1.6, g.yD + z.h, xx + 1.6, yJ, { carky: true, w: RS_TENKA }) + rsCara(xx + 1.6, yJ, xx, yJ + 1.8, { carky: true, w: RS_TENKA, nb: true });
     if (!(ve && rcdH) && !(podH && rsRcd(podH))) h += rsText(xx + 3, g.yN - 0.8, rsVejit('N-' + String(x.ozn || 'FI/FA').replace(/^-/, ''), g.yN - 0.8 - (g.yD + z.h) - 1, 1.6), { fs: 1.6, svisle: true });
   } else
+  // Koncový RCBO (nic dalšího za ním nevisí) se připojuje na společnou
+  // sběrnici N plným spojem jako kterýkoli jiný přístroj — u tohohle jeho
+  // vlastní N nikomu nehrozí (oprava 2026-11-20, podle reálných výkresů
+  // kolegy — RSpra1.pdf, PP-RS01.1.pdf: koncové RCBO tam mají N na tečce
+  // ze společné sběrnice, ne zvlášť podepsané „N-FA…").
   h += rsBod(xx + 1.6, nZdroj) + rsCara(xx + 1.6, nZdroj, xx + 1.6, yJ, { carky: true, w: RS_TENKA }) + rsCara(xx + 1.6, yJ, xx, yJ + 1.8, { carky: true, w: RS_TENKA, nb: true });
   h += rsBod(xx + 3.2, g.yPE) + rsCara(xx + 3.2, g.yPE, xx + 3.2, yJ, { carky: true, w: RS_TENKA }) + rsCara(xx + 3.2, yJ, xx, yJ + 3.2, { carky: true, w: RS_TENKA, nb: true });
   var tri = rsTrif(p);
