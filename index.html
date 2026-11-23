@@ -36653,12 +36653,18 @@ function rozvVyvodkaSvg(rz, W, Hsvg) {
     '<text x="' + Z(cx + nw / 2 + 1) + '" y="' + Z(shora ? y0 + 3 : y0 - 1) + '" font-size="2.6" fill="#666">přívod</text></g>';
 }
 // Póly přístroje (svorky zleva doprava): fáze a N.
+// Svorkovnice / přípojnice SAMOSTATNÝMI terminály (2026-11-23, LAB): obecný `x-svork`/
+// „Přípojnice …" bez `prip` (N/PE mají svůj, zatím společný, mechanismus — část 3 níž)
+// a s `pocet > 1` je fyzicky N oddělených fyzických svorek, ne jeden svazek jako
+// u 3pólového přístroje — každá nese svou vlastní fázi nezávisle na ostatních.
+function rozvSvorkySamostatne(x) { return !!(x && x.p && x.p.kat === 'X' && x.p.svorky && !x.p.prip && +x.p.pocet > 1); }
 function rozvPoly(x) {
   var p = String((x.p || {}).poly || ''), f = /^L[123]$/.test(x.faze || '') ? x.faze : '';
   if (/^(3\+N|4)$/.test(p)) return ['L1', 'L2', 'L3', 'N'];
   if (p === '3') return ['L1', 'L2', 'L3'];
   if (p === '1+N' || p === '2') return [f || 'L', 'N'];
   if (x.p && x.p.kat === 'X' && x.p.prip === 'N') return ['N'];
+  if (rozvSvorkySamostatne(x)) { var n = Math.max(1, +x.p.pocet || 1), a2 = []; for (var i = 0; i < n; i++) a2.push('L'); return a2; }
   return [f || 'L'];
 }
 function rozvSvorkaBod(g, x, strana, k) {
@@ -36716,16 +36722,22 @@ function rzpVodice(rz) {
 }
 // Vodič mezi dvěma svorkami: svazek mezi vícepólovými (min. počtu fází), z kabelu na vícepólový
 // celý svazek 3f, svorka X (1 pól) na vícepólový přístroj na pól podle své fáze, jinak jeden vodič.
-function rzpVodic(a, b) {
-  a = { uid: a.uid, strana: a.strana, pol: a.pol || 0 }; b = { uid: b.uid, strana: b.strana, pol: b.pol || 0 };
+function rzpVodic(a0, b0) {
+  var a = { uid: a0.uid, strana: a0.strana, pol: a0.pol || 0, zub: a0.zub }, b = { uid: b0.uid, strana: b0.strana, pol: b0.pol || 0, zub: b0.zub };
   var fa = rzpFazi(a.uid), fb = rzpFazi(b.uid);
   if (rozvJePrivod(a.uid) || rozvJePrivod(b.uid)) {
     var P = rozvJePrivod(a.uid) ? a : b, Q = P === a ? b : a;
-    if (rzpFazi(Q.uid) > 1) {
+    // svorkovnice se SAMOSTATNÝMI terminály (rozvSvorkySamostatne, 2026-11-23 LAB) má víc
+    // „pólů", ale NENÍ vícepólový přístroj (jistič, chránič…) — každý vodič z kabelu nese
+    // jen svou vlastní fázi, do konkrétního pólu, kam technik pustil (ne vždy 0 jako dřív).
+    // Hřeben zůstává vícepólový i při puštění přes konkrétní zub (part 2) — z kabelu (vždy
+    // 3f) se tak dál táhne svazek na celý hřeben, jako dosud při puštění přímo na zub.
+    var samostatny = rozvSvorkySamostatne(rzpX(Q.uid));
+    if (rzpFazi(Q.uid) > 1 && !samostatny) {
       var n = Math.min(3, rzpFazi(Q.uid)), A = { uid: P.uid, strana: 'o', pol: 0 }, B = { uid: Q.uid, strana: Q.strana, pol: 0 };
       return P === a ? { a: A, b: B, n: n } : { a: B, b: A, n: n };
     }
-    Q.pol = 0; return { a: a, b: b, n: 1 };
+    return { a: a, b: b, n: 1 };
   }
   if (fa > 1 && fb > 1) return { a: { uid: a.uid, strana: a.strana, pol: 0 }, b: { uid: b.uid, strana: b.strana, pol: 0 }, n: Math.min(fa, fb) };
   var fx = function (e) { var x = rzpX(e.uid); return x && x.p.kat === 'X' && /^L[123]$/.test(x.faze || '') ? RZP_FAZE.indexOf(x.faze) : -1; };
@@ -37601,7 +37613,10 @@ function rzhMaterial(d) {
 function rzpGeomMapa() { var G = {}; rozvGeom().forEach(function (g) { G[g.uid] = g; }); return G; }
 function rzpBod(e, G, VY) {
   if (rozvJePrivod(e.uid)) { var v = VY && VY[e.uid]; return v ? { x: v.x + (e.pol + 0.5) * v.w / 3, y: v.vy } : null; }
-  if (e.strana === 'h') { var hr = rzhNajit(e.uid); return hr ? rzhBod(hr, e.pol) : null; }
+  // `zub` (part 2, 2026-11-23 LAB): vodič puštěný na svorku přístroje POD hřebenem kreslí
+  // bod přesně u TOHO zubu (rzhSvorkaCil), ne u prvního zubu té fáze (rzhBod) — jinak by
+  // u třetího jističe za sebou vodič viditelně skočil ke dřívějšímu.
+  if (e.strana === 'h') { var hr = rzhNajit(e.uid); if (!hr) return null; if (e.zub != null) { var G2 = rzhGeom(hr); return { x: RZG.okraj + (e.zub + 0.5) * RZG.M, y: G2.nah ? G2.by : G2.by + G2.bh }; } return rzhBod(hr, e.pol); }
   var x = rzpX(e.uid), g = G[e.uid]; if (!x || !g) return null;
   return rozvSvorkaBod(g, x, e.strana, e.pol);
 }
@@ -37763,6 +37778,18 @@ function rozvNapSvg(rz) {
 
 // ── ovládání ────────────────────────────────────────────────────────────
 function rzWVybrany() { return __rz && __rz.napVodic ? rzpWNajit(__rz.napVodic) : null; }
+// Svorka přístroje POD HŘEBENEM, na straně hřebenu, je ve skutečnosti ten zub hřebenu
+// pod ní (part 2, 2026-11-23 LAB) — technik v praxi dává vodič pod stejný šroub, kde je
+// i hřeben, ne na samostatnou svorku přístroje. Vrací cíl na hřebenu (stejný pól/fáze jako
+// zub, `zub` navíc pro přesné kreslení — rzpBod), jinak vrací svorku beze změny.
+function rzhSvorkaCil(s) {
+  if (!s || s.strana !== 't' && s.strana !== 'b') return s;
+  var hu = rzhKryteVse(__rz)[s.uid]; if (!hu) return s;
+  var h = rzhNajit(hu); if (!h || rzhStrana(h) !== s.strana) return s;
+  var z = rzhZuby(h, __rz).filter(function (zz) { return zz.x && zz.x.uid === s.uid && zz.k === s.pol; })[0];
+  if (!z || z.faze === 'N') return s;
+  return { uid: h.uid, strana: 'h', pol: z.faze, zub: z.j, el: s.el, telo: s.telo };
+}
 // Svorka u ukazatele (dosah 13 px, prstem 18 px); s `telo` i přístroj (bližší polovina, nejbližší pól).
 function rzpNajdi(cx, cy, krom, telo) {
   var R = (window.matchMedia && matchMedia('(pointer:coarse)').matches) || (__rzTah && __rzTah.dotyk) ? 18 : 13, best = null, bd = 1e9;
@@ -37772,7 +37799,7 @@ function rzpNajdi(cx, cy, krom, telo) {
     var b = el.getBoundingClientRect(), d = Math.hypot(b.left + b.width / 2 - cx, b.top + b.height / 2 - cy);
     if (d < bd) { bd = d; best = { uid: a[0], strana: a[1], pol: +a[2], el: el }; }
   });
-  if (best && bd <= R) return best;
+  if (best && bd <= R) return rzhSvorkaCil(best);
   if (!telo) return null;
   var els = document.elementsFromPoint ? document.elementsFromPoint(cx, cy) : [];
   for (var i = 0; i < els.length; i++) {
@@ -37780,7 +37807,7 @@ function rzpNajdi(cx, cy, krom, telo) {
     var uid = pr.getAttribute('data-puid'), x = rzpX(uid), f = rzpFaziX(x); if (!f || (krom && krom.uid === uid)) return null;
     var g = rzpGeomMapa()[uid], b2 = rozvBodMm(cx, cy); if (!g || !b2) return null;
     var pl = rozvPoly(x).length, k = Math.round(((b2.x - g.x) / g.w) * pl - 0.5);
-    return { uid: uid, strana: b2.y < g.y + (g.h || RZG.H) / 2 ? 't' : 'b', pol: Math.max(0, Math.min(f - 1, k)), telo: true };
+    return rzhSvorkaCil({ uid: uid, strana: b2.y < g.y + (g.h || RZG.H) / 2 ? 't' : 'b', pol: Math.max(0, Math.min(f - 1, k)), telo: true });
   }
   return null;
 }
