@@ -36734,16 +36734,19 @@ function rzpVodic(a0, b0) {
     // 3f) se tak dál táhne svazek na celý hřeben, jako dosud při puštění přímo na zub.
     var samostatny = rozvSvorkySamostatne(rzpX(Q.uid));
     if (rzpFazi(Q.uid) > 1 && !samostatny) {
-      // `zub - pol` = zub prvního pólu skupiny (part 2, 2026-11-23 LAB): klepnutí mohlo
-      // padnout na kterýkoli zub skupiny (L1/L2/L3), svazek se ale kreslí od jejího
-      // začátku po +k (rzpVodicKresba) — ať vodiče jdou přesně na ty tři zuby, ne na první
-      // skupinu v řadě.
-      var n = Math.min(3, rzpFazi(Q.uid)), A = { uid: P.uid, strana: 'o', pol: 0 }, B = { uid: Q.uid, strana: Q.strana, pol: 0, zub: Q.zub != null ? Q.zub - Q.pol : undefined };
+      // Svazek 3f na hřeben se kreslí CELÝ na ten jeden zub, kam technik vodič pustil
+      // (oprava 2026-11-24 LAB, hlášení uživatele: „ostatní dvě fáze se mi udělají
+      // jednou zleva jednou zprava od nataženého") — který fyzický zub je L1/L2/L3 je
+      // dané pevně výrobou hřebenu (rzhZubFaze), ne tím, na kterého konkrétního jističe
+      // technik klikl; kreslit svazek podle téhle pevné skupiny vypadalo nahodile.
+      // Elektricky je to beze změny (bus `hr.uid:h:faze` je stejný pro celý hřeben bez
+      // ohledu na to, kam se kreslí) — jde jen o to, KDE je vidět vstup.
+      var n = Math.min(3, rzpFazi(Q.uid)), A = { uid: P.uid, strana: 'o', pol: 0 }, B = { uid: Q.uid, strana: Q.strana, pol: 0, zub: Q.zub };
       return P === a ? { a: A, b: B, n: n } : { a: B, b: A, n: n };
     }
     return { a: a, b: b, n: 1 };
   }
-  if (fa > 1 && fb > 1) return { a: { uid: a.uid, strana: a.strana, pol: 0, zub: a.zub != null ? a.zub - a.pol : undefined }, b: { uid: b.uid, strana: b.strana, pol: 0, zub: b.zub != null ? b.zub - b.pol : undefined }, n: Math.min(fa, fb) };
+  if (fa > 1 && fb > 1) return { a: { uid: a.uid, strana: a.strana, pol: 0, zub: a.zub }, b: { uid: b.uid, strana: b.strana, pol: 0, zub: b.zub }, n: Math.min(fa, fb) };
   var fx = function (e) { var x = rzpX(e.uid); return x && x.p.kat === 'X' && /^L[123]$/.test(x.faze || '') ? RZP_FAZE.indexOf(x.faze) : -1; };
   if (fa === 1) a.pol = 0; if (fb === 1) b.pol = 0;
   if (fa === 1 && fb > 1 && fx(a) >= 0) b.pol = Math.min(fb - 1, fx(a));
@@ -37620,7 +37623,14 @@ function rzpBod(e, G, VY) {
   // `zub` (part 2, 2026-11-23 LAB): vodič puštěný na svorku přístroje POD hřebenem kreslí
   // bod přesně u TOHO zubu (rzhSvorkaCil), ne u prvního zubu té fáze (rzhBod) — jinak by
   // u třetího jističe za sebou vodič viditelně skočil ke dřívějšímu.
-  if (e.strana === 'h') { var hr = rzhNajit(e.uid); if (!hr) return null; if (e.zub != null) { var G2 = rzhGeom(hr); return { x: RZG.okraj + (e.zub + 0.5) * RZG.M, y: G2.nah ? G2.by : G2.by + G2.bh }; } return rzhBod(hr, e.pol); }
+  if (e.strana === 'h') {
+    var hr = rzhNajit(e.uid); if (!hr) return null;
+    // `e.zub` je index OD ZAČÁTKU HŘEBENU (jako v rzhZuby), ne absolutní modul v řadě —
+    // stejný vzorec jako `z.t = h.od + j + 0.5` tam (2026-11-24 LAB, oprava): bez `hr.od +`
+    // se každý hřeben posunutý od kraje řady (hr.od > 0) kreslil o `hr.od` modulů doleva.
+    if (e.zub != null) { var G2 = rzhGeom(hr); return { x: RZG.okraj + (hr.od + e.zub + 0.5) * RZG.M, y: G2.nah ? G2.by : G2.by + G2.bh }; }
+    return rzhBod(hr, e.pol);
+  }
   var x = rzpX(e.uid), g = G[e.uid]; if (!x || !g) return null;
   return rozvSvorkaBod(g, x, e.strana, e.pol);
 }
@@ -37674,9 +37684,11 @@ function rzpVodicKresba(w, T, G, vy, S, sel, dotyk) {
   var Z = rozvZaokr, vyb = sel && sel.uid === w.uid, hov = __rz.napHovW === w.uid, smer = null, cary = [];
   var pa0 = rzpBod(w.a, G, vy), pb0 = rzpBod(w.b, G, vy); if (pa0 && pb0) smer = pb0.x >= pa0.x;
   for (var k = 0; k < w.n; k++) {
-    // zub + k (part 2, 2026-11-23 LAB): svazek na hřebenu kreslí KAŽDÝ pól na svůj
-    // konkrétní zub skupiny, ne všechny na ten první v řadě.
-    var ea = { uid: w.a.uid, strana: w.a.strana, pol: w.a.pol + k, zub: w.a.zub != null ? w.a.zub + k : undefined }, eb = { uid: w.b.uid, strana: w.b.strana, pol: w.b.pol + k, zub: w.b.zub != null ? w.b.zub + k : undefined };
+    // `pol` se pro adresaci sběrnice (fáze L1/L2/L3) musí posouvat o k dál — ale `zub`
+    // (POZICE KRESBY na hřebenu) zůstává pro všechny póly svazku STEJNÝ, ten, kam technik
+    // vodič pustil (oprava 2026-11-24 LAB výš u rzpVodic) — jinak by se tři vodiče svazku
+    // rozkreslily na tři různé zuby skupiny podle toho, který zub má zrovna fázi L1.
+    var ea = { uid: w.a.uid, strana: w.a.strana, pol: w.a.pol + k, zub: w.a.zub }, eb = { uid: w.b.uid, strana: w.b.strana, pol: w.b.pol + k, zub: w.b.zub };
     var p1 = rzpBod(ea, G, vy), p2 = rzpBod(eb, G, vy); if (!p1 || !p2) continue;
     var e = S.E[rzpK(ea)] || S.E[rzpK(eb)], f = e ? e.f : (rozvJePrivod(w.a.uid) ? RZP_FAZE[ea.pol] : null);
     if (!f) { var xa = rzpX(w.a.uid), la = xa ? rozvPoly(xa)[ea.pol] : ''; if (/^L[123]$/.test(la)) f = la; }
@@ -37798,21 +37810,30 @@ function rzhSvorkaCil(s) {
 }
 // Svorka u ukazatele (dosah 13 px, prstem 18 px); s `telo` i přístroj (bližší polovina, nejbližší pól).
 function rzpNajdi(cx, cy, krom, telo) {
-  var R = (window.matchMedia && matchMedia('(pointer:coarse)').matches) || (__rzTah && __rzTah.dotyk) ? 18 : 13, best = null, bd = 1e9;
-  document.querySelectorAll('#rz-pohled [data-sv]').forEach(function (el) {
-    var a = el.getAttribute('data-sv').split('|');
-    if (krom && a[0] === krom.uid && a[1] === krom.strana && !rozvJePrivod(a[0])) return;
-    var b = el.getBoundingClientRect(), d = Math.hypot(b.left + b.width / 2 - cx, b.top + b.height / 2 - cy);
-    if (d < bd) {
-      bd = d; best = { uid: a[0], strana: a[1], pol: +a[2], el: el };
-      // Klik PŘÍMO na zub hřebenu (part 2, doplněno 2026-11-23 LAB): každý zub téže fáze má
-      // stejné `data-sv` (jsou to pořád tatáž elektrická sběrnice), takže se tu najde ten
-      // geometricky nejbližší — `data-zub` si ale pamatuje, KTERÝ to je, ať se vodič podle
-      // part 2 nahoře nekreslí vždycky k prvnímu zubu řady (rzpBod).
-      if (a[1] === 'h') { var dz = el.getAttribute('data-zub'); if (dz != null) best.zub = +dz; }
-    }
-  });
-  if (best && bd <= R) return rzhSvorkaCil(best);
+  var R = (window.matchMedia && matchMedia('(pointer:coarse)').matches) || (__rzTah && __rzTah.dotyk) ? 18 : 13;
+  // Svorka přístroje POD hřebenem leží na obrazovce PŘESNĚ na stejném místě jako zub
+  // hřebenu pod ní (je to tatáž šroubovací komůrka) — hledat se tedy musí ve DVOU kolech,
+  // ne v jednom společném (oprava 2026-11-24 LAB, hlášení uživatele: „náhodně o jistič
+  // vedle, fáze jednou zleva jednou zprava"). V jednom kole by o výsledek rozhodovaly
+  // podpixelové rozdíly v zaokrouhlení (Z()) mezi dvěma kruhy na témže místě — proto
+  // nejdřív VŽDY svorka KONKRÉTNÍHO přístroje (rzhSvorkaCil ji pak sama přesměruje na
+  // JEJÍ VLASTNÍ zub, deterministicky), a teprve když tam žádná není (volné místo mezi
+  // přístroji, konec hřebenu), zub hřebenu samotný.
+  var zkus = function (sel) {
+    var best = null, bd = 1e9;
+    document.querySelectorAll(sel).forEach(function (el) {
+      var a = el.getAttribute('data-sv').split('|');
+      if (krom && a[0] === krom.uid && a[1] === krom.strana && !rozvJePrivod(a[0])) return;
+      var b = el.getBoundingClientRect(), d = Math.hypot(b.left + b.width / 2 - cx, b.top + b.height / 2 - cy);
+      if (d < bd) {
+        bd = d; best = { uid: a[0], strana: a[1], pol: +a[2], el: el };
+        if (a[1] === 'h') { var dz = el.getAttribute('data-zub'); if (dz != null) best.zub = +dz; }
+      }
+    });
+    return bd <= R ? best : null;
+  };
+  var best = zkus('#rz-pohled [data-sv]:not(.rz-sv-hr)') || zkus('#rz-pohled [data-sv].rz-sv-hr');
+  if (best) return rzhSvorkaCil(best);
   if (!telo) return null;
   var els = document.elementsFromPoint ? document.elementsFromPoint(cx, cy) : [];
   for (var i = 0; i < els.length; i++) {
