@@ -36924,6 +36924,12 @@ function rzpPredpoved(a, b, bezW) {
   else if (!pod(pred, 'a') && !pod(pred, 'b')) { if (!vyst('a') && vyst('b')) otoc(); else if (!pod(full, 'a') && pod(full, 'b') && !vyst('a')) otoc(); }
   if (konf.length) return { ok: false, label: 'tento pól už je pod napětím na obou koncích – nejdřív jeden vodič odpoj' };
   var po = rzpStav(__rz, base.concat([nw]));
+  // Zkrat: vodič by spojil dvě různé fáze (např. L2 na lištu hřebenu, kde už je L1) — 2026-11-24 LAB
+  var zk = rzpUzly(nw).map(function (p) { var x = po.E[p[0]], y = po.E[p[1]]; return x && y && x.f && y.f && x.f !== y.f ? [x.f, y.f] : null; }).filter(Boolean)[0];
+  if (zk) {
+    var hz = [nw.a, nw.b].map(function (e) { return e.strana === 'h' ? rzhNajit(e.uid) : null; }).filter(Boolean)[0];
+    return { ok: false, label: 'zkrat – spojil by ' + zk[0] + ' a ' + zk[1] + (hz && rzhFazi(hz) === 1 ? ' (hřeben je 1P: jedna lišta = jedna fáze; pro tři fáze ho přepněte na 3P)' : '') };
+  }
   dot = dot.concat.apply(dot, dot.map(function (u) { var hr = rzhNajit(u); return hr ? rzhKryte(hr) : []; }));   // vodič na hřeben: změna u přístrojů pod ním
   var zmena = dot.filter(function (id) { var p0 = pred.vys[id] || {}, p1 = po.vys[id] || {}; return p1.pod && (!p0.pod || p0.from !== p1.from || p0.faze.join() !== p1.faze.join()); })[0];
   var sv = nw.n > 1 ? ' · svazek ' + nw.n + 'f' : '';
@@ -37955,7 +37961,30 @@ function rzpTahZaklad(cx, cy) {
     var o = vyb[vyb.length - 1];
     return { druh: 'konec', w: o.w.uid, konec: o.k, pev: o.k === 'a' ? o.w.b : o.w.a };
   }
-  return { druh: 'nap', start: { uid: s.uid, strana: s.strana, pol: s.pol, zub: s.zub }, obs: na.length ? na[na.length - 1].w.uid : null };
+  // Svorka, ze které už vede vodič na hřeben: tah znovu na tentýž hřeben přesune jen tuhle
+  // jednu fázi pod šroubek, kam ji technik pustí (2026-11-24 LAB) — po prvním tahu z FI1/FU2
+  // jsou na hřebenu všechny tři fáze a technik pak „zapojuje" jednotlivé fáze znovu.
+  var navaz = na.map(function (o) { var jk = o.k === 'a' ? 'b' : 'a', e = o.w[jk]; return e.strana === 'h' ? { w: o.w.uid, konec: jk, k: s.pol - o.w[o.k].pol, hr: e.uid } : null; }).filter(Boolean);
+  return { druh: 'nap', start: { uid: s.uid, strana: s.strana, pol: s.pol, zub: s.zub }, obs: na.length ? na[na.length - 1].w.uid : null, navaz: navaz };
+}
+// Přesun pólu `k` konce vodiče na hřebenu pod zub `zub`: ok = cílová lišta je jeho vlastní, nebo
+// ji nepoužívá jiný pól téhož vodiče (jinak by to byl zkrat dvou fází).
+function rzpPresunPolu(wuid, konec, k, zub) {
+  var w = rzpWNajit(wuid); if (!w) return null;
+  var e0 = w[konec], hr = rzhNajit(e0.uid); if (!hr) return null;
+  var f = rzhZubFaze(hr, zub); if (typeof f !== 'number') return { ok: false, label: 'na tento zub vodič nejde' };
+  var jine = []; for (var i = 0; i < w.n; i++) if (i !== k) jine.push(rzpPolPolu(e0, i));
+  if (f !== rzpPolPolu(e0, k) && jine.indexOf(f) !== -1) return { ok: false, label: 'tento šroubek je na liště s jinou fází téhož přívodu – zkrat (zuby se opakují po třech)' };
+  return { ok: true, label: 'přesunout tuto fázi pod tento šroubek' };
+}
+function rzpPresunPoluZapsat(wuid, konec, k, zub) {
+  var w = rzpWNajit(wuid); if (!w) return;
+  var zuby = rzpZubyKonce(w[konec], w.n);
+  if (zuby[k] === zub) { rozvSvgPrekreslit(); return; }
+  zuby[k] = zub;
+  rozvZmena('Přesun fáze', function () {
+    (__rz.vodice || []).forEach(function (q) { if (q.uid === wuid) q[konec].zuby = zuby.slice(); });
+  }, { toast: 'Vodič přesunut pod jiný šroubek hřebenu' });
 }
 // Tah jedné fáze svazku po hřebenu: cíl musí být zub TÉHOŽ hřebenu se STEJNOU fází
 // (fáze zubu je daná hřebenem — L2 na zub L1 by spojila dvě fáze).
@@ -37965,10 +37994,7 @@ function rzpTahFaze(d) {
   var c = rzpNajdi(d.x, d.y, null, true), ok = null, label = '', w = rzpWNajit(d.w);
   d.cil = null; d.mimo = !c;
   if (c && c.uid === d.hr && c.strana === 'h' && c.zub != null && w) {
-    // jiná lišta jde, jen když ji nepoužívá jiný pól téhož vodiče (to by byl zkrat dvou fází)
-    var e0 = w[d.konec], jine = []; for (var i = 0; i < w.n; i++) if (i !== d.k) jine.push(rzpPolPolu(e0, i));
-    if (c.pol === d.faze || jine.indexOf(c.pol) === -1) { ok = true; d.cil = { zub: c.zub }; label = 'přesunout vodič pod tento šroubek'; }
-    else { ok = false; label = 'tento šroubek je na liště s jinou fází téhož přívodu – zkrat (zuby se opakují po třech)'; }
+    var pp = rzpPresunPolu(d.w, d.konec, d.k, c.zub); ok = pp.ok; label = pp.label; if (ok) d.cil = { zub: c.zub };
   } else if (c) { ok = false; label = 'vodič jde přesunout jen po tomtéž hřebenu'; }
   else label = 'pusť sem = odpojit vodič ' + rzpPopisW(w);
   var q = d.cil ? { x: RZG.okraj + (rzhNajit(d.hr).od + d.cil.zub + 0.5) * RZG.M, y: p0.y } : b;
@@ -37987,12 +38013,7 @@ function rzpTahFazeKonec(d) {
     return;
   }
   if (!d.cil || !w) { rozvSvgPrekreslit(); return; }
-  var zuby = rzpZubyKonce(w[d.konec], w.n);
-  if (zuby[d.k] === d.cil.zub) { rozvSvgPrekreslit(); return; }
-  zuby[d.k] = d.cil.zub;
-  rozvZmena('Přesun fáze', function () {
-    (__rz.vodice || []).forEach(function (q) { if (q.uid === d.w) q[d.konec].zuby = zuby.slice(); });
-  }, { toast: 'Vodič přesunut pod jiný šroubek hřebenu' });
+  rzpPresunPoluZapsat(d.w, d.konec, d.k, d.cil.zub);
 }
 function rzpTahPohyb(d) {
   if (d.druh === 'faze') { rzpTahFaze(d); return; }
@@ -38003,6 +38024,9 @@ function rzpTahPohyb(d) {
   var cil = rzpNajdi(d.x, d.y, pev, true);
   d.cil = cil ? { uid: cil.uid, strana: cil.strana, pol: cil.pol, zub: cil.zub } : null;
   var pr = rzpPredpoved(pev, d.cil, d.druh === 'konec' ? d.w : null), T = rzpTrasovac(__rz, G, VY), body;
+  d.presun = null;
+  var nv = d.druh === 'nap' && d.cil && d.cil.strana === 'h' && d.cil.zub != null && (d.navaz || []).filter(function (q) { return q.hr === d.cil.uid; })[0];
+  if (nv) { var pp = rzpPresunPolu(nv.w, nv.konec, nv.k, d.cil.zub); if (pp) { pr = { ok: pp.ok, label: pp.label }; if (pp.ok) d.presun = { w: nv.w, konec: nv.konec, k: nv.k, zub: d.cil.zub }; } }
   d.pr = pr;
   if (d.cil) {
     var q = rzpBod(d.cil, G, VY), e1 = pev, e2 = d.cil, a = p0, c = q;
@@ -38033,6 +38057,7 @@ function rzpTahKonec(d) {
     rozvZmena('Odpojení', function () { __rz.vodice = (__rz.vodice || []).filter(function (w) { return w.uid !== odp; }); }, { toast: 'Odpojen vodič ' + pw });
     return;
   }
+  if (d.presun) { rzpPresunPoluZapsat(d.presun.w, d.presun.konec, d.presun.k, d.presun.zub); return; }
   if (!pr.ok || !pr.nw) { rozvSvgPrekreslit(); return; }
   var nw = pr.nw;
   if (d.druh === 'konec') {
