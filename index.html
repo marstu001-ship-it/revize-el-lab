@@ -36734,12 +36734,16 @@ function rzpVodic(a0, b0) {
     // 3f) se tak dál táhne svazek na celý hřeben, jako dosud při puštění přímo na zub.
     var samostatny = rozvSvorkySamostatne(rzpX(Q.uid));
     if (rzpFazi(Q.uid) > 1 && !samostatny) {
-      var n = Math.min(3, rzpFazi(Q.uid)), A = { uid: P.uid, strana: 'o', pol: 0 }, B = { uid: Q.uid, strana: Q.strana, pol: 0 };
+      // `zub - pol` = zub prvního pólu skupiny (part 2, 2026-11-23 LAB): klepnutí mohlo
+      // padnout na kterýkoli zub skupiny (L1/L2/L3), svazek se ale kreslí od jejího
+      // začátku po +k (rzpVodicKresba) — ať vodiče jdou přesně na ty tři zuby, ne na první
+      // skupinu v řadě.
+      var n = Math.min(3, rzpFazi(Q.uid)), A = { uid: P.uid, strana: 'o', pol: 0 }, B = { uid: Q.uid, strana: Q.strana, pol: 0, zub: Q.zub != null ? Q.zub - Q.pol : undefined };
       return P === a ? { a: A, b: B, n: n } : { a: B, b: A, n: n };
     }
     return { a: a, b: b, n: 1 };
   }
-  if (fa > 1 && fb > 1) return { a: { uid: a.uid, strana: a.strana, pol: 0 }, b: { uid: b.uid, strana: b.strana, pol: 0 }, n: Math.min(fa, fb) };
+  if (fa > 1 && fb > 1) return { a: { uid: a.uid, strana: a.strana, pol: 0, zub: a.zub != null ? a.zub - a.pol : undefined }, b: { uid: b.uid, strana: b.strana, pol: 0, zub: b.zub != null ? b.zub - b.pol : undefined }, n: Math.min(fa, fb) };
   var fx = function (e) { var x = rzpX(e.uid); return x && x.p.kat === 'X' && /^L[123]$/.test(x.faze || '') ? RZP_FAZE.indexOf(x.faze) : -1; };
   if (fa === 1) a.pol = 0; if (fb === 1) b.pol = 0;
   if (fa === 1 && fb > 1 && fx(a) >= 0) b.pol = Math.min(fb - 1, fx(a));
@@ -37670,7 +37674,9 @@ function rzpVodicKresba(w, T, G, vy, S, sel, dotyk) {
   var Z = rozvZaokr, vyb = sel && sel.uid === w.uid, hov = __rz.napHovW === w.uid, smer = null, cary = [];
   var pa0 = rzpBod(w.a, G, vy), pb0 = rzpBod(w.b, G, vy); if (pa0 && pb0) smer = pb0.x >= pa0.x;
   for (var k = 0; k < w.n; k++) {
-    var ea = { uid: w.a.uid, strana: w.a.strana, pol: w.a.pol + k }, eb = { uid: w.b.uid, strana: w.b.strana, pol: w.b.pol + k };
+    // zub + k (part 2, 2026-11-23 LAB): svazek na hřebenu kreslí KAŽDÝ pól na svůj
+    // konkrétní zub skupiny, ne všechny na ten první v řadě.
+    var ea = { uid: w.a.uid, strana: w.a.strana, pol: w.a.pol + k, zub: w.a.zub != null ? w.a.zub + k : undefined }, eb = { uid: w.b.uid, strana: w.b.strana, pol: w.b.pol + k, zub: w.b.zub != null ? w.b.zub + k : undefined };
     var p1 = rzpBod(ea, G, vy), p2 = rzpBod(eb, G, vy); if (!p1 || !p2) continue;
     var e = S.E[rzpK(ea)] || S.E[rzpK(eb)], f = e ? e.f : (rozvJePrivod(w.a.uid) ? RZP_FAZE[ea.pol] : null);
     if (!f) { var xa = rzpX(w.a.uid), la = xa ? rozvPoly(xa)[ea.pol] : ''; if (/^L[123]$/.test(la)) f = la; }
@@ -37767,7 +37773,7 @@ function rozvNapSvg(rz) {
     rzhZuby(hr, rz).forEach(function (z) {
       if (z.faze === 'N') return;
       var E = S.E[hr.uid + ':h:' + z.faze], cx = RZG.okraj + z.t * RZG.M, cy = G2.nah ? G2.by : G2.by + G2.bh;
-      h += '<circle class="rz-sv rz-sv-hr" data-sv="' + esc(hr.uid) + '|h|' + z.faze + '" cx="' + Z(cx) + '" cy="' + Z(cy) + '" r="' + r1 + '" fill="' + (E ? RZP_OK : '#fff') + '" stroke="' + (E ? RZP_OK : '#b0b0b0') + '" stroke-width="0.4"><title>hřeben ' + RZP_FAZE[z.faze] + '</title></circle>';
+      h += '<circle class="rz-sv rz-sv-hr" data-sv="' + esc(hr.uid) + '|h|' + z.faze + '" data-zub="' + z.j + '" cx="' + Z(cx) + '" cy="' + Z(cy) + '" r="' + r1 + '" fill="' + (E ? RZP_OK : '#fff') + '" stroke="' + (E ? RZP_OK : '#b0b0b0') + '" stroke-width="0.4"><title>hřeben ' + RZP_FAZE[z.faze] + '</title></circle>';
     });
     h += '</g>';
   });
@@ -37797,7 +37803,14 @@ function rzpNajdi(cx, cy, krom, telo) {
     var a = el.getAttribute('data-sv').split('|');
     if (krom && a[0] === krom.uid && a[1] === krom.strana && !rozvJePrivod(a[0])) return;
     var b = el.getBoundingClientRect(), d = Math.hypot(b.left + b.width / 2 - cx, b.top + b.height / 2 - cy);
-    if (d < bd) { bd = d; best = { uid: a[0], strana: a[1], pol: +a[2], el: el }; }
+    if (d < bd) {
+      bd = d; best = { uid: a[0], strana: a[1], pol: +a[2], el: el };
+      // Klik PŘÍMO na zub hřebenu (part 2, doplněno 2026-11-23 LAB): každý zub téže fáze má
+      // stejné `data-sv` (jsou to pořád tatáž elektrická sběrnice), takže se tu najde ten
+      // geometricky nejbližší — `data-zub` si ale pamatuje, KTERÝ to je, ať se vodič podle
+      // part 2 nahoře nekreslí vždycky k prvnímu zubu řady (rzpBod).
+      if (a[1] === 'h') { var dz = el.getAttribute('data-zub'); if (dz != null) best.zub = +dz; }
+    }
   });
   if (best && bd <= R) return rzhSvorkaCil(best);
   if (!telo) return null;
@@ -37861,7 +37874,7 @@ function rzpTahZaklad(cx, cy) {
   var s = rzpNajdi(cx, cy, null, false); if (!s) return null;
   var na = rzpNaSvorce(s), vyb = na.filter(function (o) { return o.w.uid === __rz.napVodic; });
   if (vyb.length) { var o = vyb[vyb.length - 1]; return { druh: 'konec', w: o.w.uid, konec: o.k, pev: o.k === 'a' ? o.w.b : o.w.a }; }
-  return { druh: 'nap', start: { uid: s.uid, strana: s.strana, pol: s.pol }, obs: na.length ? na[na.length - 1].w.uid : null };
+  return { druh: 'nap', start: { uid: s.uid, strana: s.strana, pol: s.pol, zub: s.zub }, obs: na.length ? na[na.length - 1].w.uid : null };
 }
 function rzpTahPohyb(d) {
   var tah = document.getElementById('rz-nap-tah'), G = rzpGeomMapa(), VY = pscJe(__rz) ? null : rozvVyvodkaGeomMapa(__rz);
@@ -37869,7 +37882,7 @@ function rzpTahPohyb(d) {
   if (!tah || !p0 || !b) return;
   if (!d.__vyst) { d.__vyst = 1; var vg = !rozvJePrivod(pev.uid) && document.querySelector('#rz-pohled [data-sv-uid="' + pev.uid + '"]'); if (vg) vg.querySelectorAll('.rz-vyst').forEach(function (e) { e.classList.add('rz-vyst-akt'); }); }   // výstupní strana přístroje, ze kterého se táhne
   var cil = rzpNajdi(d.x, d.y, pev, true);
-  d.cil = cil ? { uid: cil.uid, strana: cil.strana, pol: cil.pol } : null;
+  d.cil = cil ? { uid: cil.uid, strana: cil.strana, pol: cil.pol, zub: cil.zub } : null;
   var pr = rzpPredpoved(pev, d.cil, d.druh === 'konec' ? d.w : null), T = rzpTrasovac(__rz, G, VY), body;
   d.pr = pr;
   if (d.cil) {
