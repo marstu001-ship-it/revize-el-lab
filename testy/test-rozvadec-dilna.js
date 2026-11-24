@@ -228,7 +228,9 @@ const w = ms => new Promise(r => setTimeout(r, ms));
       zdroj: rzhZdroj(h, S) === __T.naj('-QH1').uid };
   });
   check('vodič -QH1 → hřeben: bublina předem, svazek 3f na sběrnici hřebenu', vd.w && /hřeben|3f/.test(bub2), bub2);
-  check('vodič -QH1 → hřeben: všechny přístroje na hřebenu pod napětím, fáze podle zubů (-FA5…FA9 = zuby 3–7: L3, L1, L2, L3, L1; zub 2 má krytku)', vd.pod && vd.zdroj && vd.faze === 'L3,L1,L2,L3,L1', vd.faze);
+  // Fázi liště dává vodič (2026-11-24): svazek puštěný na zub -FA3 jde na sousední šroubky
+  // různých lišt zleva doprava — L1 -FA3, L2 -FA5 (-FA4 má krytku), L3 -FA7.
+  check('vodič -QH1 → hřeben: všechny přístroje na hřebenu pod napětím, fáze podle lišt, na které vodiče vedou (-FA5…FA9: L2, L1, L3, L2, L1; -FA4 má krytku)', vd.pod && vd.zdroj && vd.faze === 'L2,L1,L3,L2,L1', vd.faze);
   await p.keyboard.press('Control+z'); await w(100);
   const vz = await p.evaluate(() => (__rz.vodice || []).length + '|' + (rzhZdroj(__rz.hrebeny[0], rzpStav(__rz)) === __T.naj('-QH1').uid));
   check('vodič → hřeben: Ctrl+Z vodič vrátí (hřeben dál napájený automaticky ze společného zdroje)', vz === '0|true', vz);
