@@ -44288,7 +44288,7 @@ function rsSloupecHtml(x, g, sl, kus, c) {
       var sl = String(hodFi).replace(/ typ /, ' typ\u00a0').split(' '), rr = [];
       while (sl.length) { var r1 = ''; while (sl.length && (!r1 || (r1 + ' ' + sl[0]).length * 1.85 * 0.47 <= zn.h)) r1 = (r1 + ' ' + sl.shift()).trim(); rr.push(r1); }
       if (p.typ) rr.push(rsVejit(p.typ, zn.h, 1.85));
-      rr.forEach(function (t, i) { h += rsText(xx + 3.8 + i * 2.1, g.yFI + zn.h, t, { fs: 1.85, svisle: true }); });
+      rr.forEach(function (t, i) { h += rsText(xx + 3.8 + i * 2.1, g.yFI + zn.h, t.replace(/\u00a0/g, ' '), { fs: 1.85, svisle: true }); });
     } else {
     h += rsText(xx + 3.8, g.yFI + zn.h, rsVejit(hodFi, zn.h, 1.85), { fs: 1.85, svisle: true });
     if (p.typ) h += rsText(xx + 5.9, g.yFI + zn.h, rsVejit(p.typ, zn.h, 1.85), { fs: 1.85, svisle: true });

@@ -4265,6 +4265,72 @@ upozornění při překročení `pv_max_vlozky`, ruční přepis textu odpojí
 knihovnu). **Upraveno:** `test-rozvadec-psc.js` a `test-rozvadec-stara-data.js`
 (CSV šablona má teď 58 sloupců). Karta v Novinkách se nedělala.
 
+### Zásuvková skříň — návrh a dokumentace (2026-11-25, bloky „ZÁSUVKOVÁ SKŘÍŇ")
+
+Zadání uživatele 2026-11-25 (podklad: výkres přenosného zásuvkového adaptéru zákazníka —
+**cizí výkres, do repozitáře nepatří**, testy mají vymyšlenou skříň ZS1 podobné stavby).
+Makety a výkres schválil uživatel („výkres schválen" s úpravou svorkovnic od výroby).
+
+- **Typ `zs`** = `Object.create(DOK_TYPY.rozv)` jako PSC — žádný druhý editor. Číslo **ZS-0001**,
+  barva **tyrkysová #00727a** (tmavý #5cc8cf), `data.rezim = 'ZS'`, `zsJe(d)` (i `__rz.zs`).
+  **Bez 3D** (záložka ani zaškrtávátko). Dlaždice ve dvou řádcích (`dokDlazdiceVykreslit`:
+  pořadí DBO · PSC · zásuvkové skříně / riziko LPS · vnější vlivy, na PC 3 sloupce).
+- **Čelo skříně** (`d.celo.zasuvky = [{ uid, knih, ozn, napajen, pos {x, y}, p }]`, `pos` v mm
+  od levého horního rohu skříně): editor pod čelním pohledem (`zsCeloEditorHtml`) kreslí
+  **tatáž funkce jako list 1** (`zsCeloVykres`, `o.edit`, `o.tf` = větší písmo). Tažení myší /
+  prstem, mřížka 5 mm, přichycení k ose sousední zásuvky (4 mm), šipky 5 mm, Delete, Esc,
+  kolize červeně (`zsKolize`: jiná zásuvka, okno s DIN lištou, mimo skříň), vše přes
+  `rozvZmena` (snímek obsahuje `celo`, ZPĚT i Ctrl+Z). Vlastnosti zásuvky (`zsZasPanelHtml`:
+  označení, **Napájí ji** = jistič, druh, póly, In, Un, IP, typ, poloha), u jističe řádek
+  „→ napájí zásuvku: -XZ2…". Wrappery `rozvPohledVykreslit` / `rozvVlastnostiVykreslit`.
+- **Kategorie `XS2`** (zásuvka na čele, **-XZ**) a **`XP`** (vidlice přívodu, -XP), `zs: true`
+  — nabízí se jen v zásuvkové skříni (`rozvKnihZs`, skupina „Zásuvky a vidlice"). Pole
+  `druhZas` (cee / dom), `polyZ` (2P+E = „3P", 3P+E = „4P", 3P+N+E = „5P", dom), `ip` —
+  ukládají se jen vyplněná. Vestavěné jen **obecné, neověřené, bez krytí**. `rozvVlozit`
+  zásuvku dá na čelo (`zsZKnihovny`, napájí ji vybraný jistič, jinak první volný), vidlici
+  do polí přívodu. Bez šířky v modulech (validace ji u nich nevyžaduje).
+- **Svorkovnice od výroby** (`skrin.svorkovnice` = text „N pod, PE pod 8", funkce N / PE / PEN,
+  místo pod / nad / bok, volitelně počet) a **`skrin.rukojet`** = 'ano' — nepovinné, u skříně
+  v knihovně, vlastní velikosti i v CSV; ukládají se jen vyplněné (staré skříně beze změny).
+  **Nezabírají moduly DIN** (kreslí se v okně jako pás se šrouby, `zsGeo` přidá místo),
+  ve schématu jsou to sběrnice N a PE jako dosud. **U ZS** doplní chybějící svorky N/PE
+  (`rzsNP`) a splní 11.7 (`rozvMaPe`) — **u DBO zatím ne** (pokyn uživatele). N na DIN liště
+  zůstává jako možnost (zabírá moduly jako dřív).
+- **Přívod**: v hlavičce „Pohyblivý přívod a vidlice" (`privodOzn` -WL1, `privodDelka`,
+  `vidlice.{ozn, In, poly, ue, ip, typ}`). Ve schématu kabel dolů k vidlici (`rsPrivod`,
+  větev `zsV`). **InA odvozené** = menší z In hlavního přístroje (QM, jinak první chránič)
+  a vidlice (`zsInaOdv`); ruční vyšší → upozornění pod polem i v „Co ještě chybí".
+  **Bez hlavního vypínače** se první přístroje u ZS napájí automaticky z přívodu
+  (wrapper `rozvNadrazeneAuto`, `x.zsAuto`).
+- **Schéma**: vývod se zásuvkou má lomítka podle fází (1 / 3), soustavu vývodu („1/N/PE",
+  „3/N/PE", „3/PE"), „L1 · H07V-K 3×4", značku zásuvky z DBO a pod ní -XZ, In Un póly, IP.
+  Hodnoty přístrojů `zsHodnoty` („C32/3 10 kA" + typ, chránič „40 A 4P 100 mA" / „typ A" / typ
+  zalomené). List 1 = **jeden výkresový čelní pohled** (`zsCeloVykres`: obrys s kótami,
+  rukojeť, okno s DIN a ČB čely přístrojů, svorkovnice od výroby, zásuvky CEE / domovní,
+  vývodka), provedení „přenosná na stojanu" (`ROZV_PROVEDENI_ZS`), ochrana podle třídy skříně
+  (třída II → „dvojitou nebo zesílenou izolací a automatickým odpojením od zdroje").
+- **Norma** `d.norma` = '2' (výchozí, ČSN EN IEC 61439-2 — obsluha poučenou osobou) nebo '3';
+  `e.n2` v `rozvDokEff` řídí normy v prohlášení, protokolu, štítku a tech. údajích.
+  ČSN EN IEC 61439-4 (staveniště) a ČSN EN IEC 60309 jen jako „[ověřit]". Technické údaje
+  a prohlášení: „přenosné zařízení, pohyblivý přívod".
+- **Předání a poučení obsluhy** (`d.pouceni`, NV 194/2022 Sb. § 4): zaškrtávátko
+  `dokVyber.pouceni` + oddíl v Dokumentech + „🤝 Tisk předání a poučení" (`zsPouceniBloky`,
+  `__zsPouSam`). Předávající z profilu (odvozené, ukládá se prázdné), přebírající v řádcích
+  osob, rozsah a pokyny výchozí z návrhu (vlastními slovy, ukládají se jen změněné), obsah
+  poučení (chybí = vše zaškrtnuto), ověření znalostí, věta o výjimce z 30 mA s odkazem na
+  ČSN 33 2000-4-41 ed.3 čl. 411.3.3 (jen číslo článku), podpisy a 8 řádků poučených osob.
+- **Upozornění 30 mA**: chránič > 30 mA a zásuvka ≤ 32 A bez zaškrtnutého poučení
+  s přebírajícím → nenápadný řádek nad pohledem a nález v „Co ještě chybí" (`zsUpozorneni`).
+- **Co by stejné pravidlo svorkovnic od výroby obnášelo u DBO** (zatím se neměnilo):
+  v `rzsNP` a `rozvMaPe` zrušit podmínku `zsJe(d)`, kreslit svorkovnice od výroby i v čelním
+  pohledu DBO (`rozvSvg`) a na listu osazení, nevyžadovat PE přípojnici na DIN v nálezech
+  „Co ještě chybí" a v 11.7, a ve svorkovém plánu / popiscích označit svorky „od výroby".
+
+Test: `testy/test-zasuvkova-skrin.js` (43 kontrol, vymyšlená skříň `testy/zasuvkova-skrin.js`).
+V `test-mobil.js` stavy „zásuvková skříň – …". **Upraveno:** `test-rozvadec-psc.js` (pořadí
+dlaždic, šablona CSV 62 sloupců), `test-rozvadec.js` (pořadí dlaždic, 23 kategorií, zásuvka
+a vidlice bez šířky v modulech). Novinky se nedělaly.
+
 ### Výměna výkresů s CAD — export a import DXF (2026-11-02, bloky „ROZVADĚČ — VÝMĚNA S CAD")
 
 Zadání uživatele: technici kreslí ve Schématech CAD (Elmer), který ukládá

@@ -109,7 +109,7 @@ const presahy = (p, svg) => p.evaluate(svg => {
   dl.tmave = await p.evaluate(() => window.__info());
   await p.evaluate(() => document.documentElement.classList.remove('dark')); await w(700);
   const T = (typ, m) => (dl[m || 'svetle'].find(x => x.typ === typ) || {});
-  check('dlaždice: protokol, DBO, PSC (a za nimi výpočet rizika LPS)', dl.svetle.map(x => x.typ).join() === 'pouvv,rozv,psc,rlps', dl.svetle.map(x => x.typ).join());
+  check('dlaždice: DBO, PSC, zásuvkové skříně, pak výpočet rizika LPS a protokol (2026-11-25)', dl.svetle.map(x => x.typ).join() === 'rozv,psc,zs,rlps,pouvv', dl.svetle.map(x => x.typ).join());
   check('text dlaždice DBO doslova', T('rozv').text.includes('Rozvodnice pro obsluhu laiky (byty, domy, kanceláře) – do 250 A, vývody do 125 A. ČSN EN IEC 61439-3'), T('rozv').text);
   check('text dlaždice PSC doslova', T('psc').text.includes('Výkonové rozvaděče – nad 250 A nebo s obsluhou jen poučenou osobou. ČSN EN IEC 61439-2'), T('psc').text);
   check('barvy: protokol modrý, DBO zelený, PSC oranžový (okraj i nadpis)', T('pouvv').okraj === 'rgb(43, 87, 154)' && T('rozv').okraj === 'rgb(15, 123, 95)' &&
@@ -322,11 +322,11 @@ const presahy = (p, svg) => p.evaluate(svg => {
     // víc přívodů 2026-11-18…) — na KONEC, před poznámkou, ať se tenhle test nemusí
     // přepisovat při každém dalším přidaném sloupci
     const hl51 = hl.replace(';ue;', ';ue;vykon;u_vstup;u_vystup;i_vystup;').replace(';nastaveni;', ';nastaveni;uc;kontakty;ie_ac1;pe_ac3_kw;rozsah_nastaveni;prislusenstvi_k;montaz;typ_prislusenstvi;');
-    const hlAkt = hl51.replace(';poznamka', ';ovladani;prurez;polu;roztec_mm;krytky;velikost;pv_max_vlozky;poznamka');
+    const hlAkt = hl51.replace(';poznamka', ';ovladani;prurez;polu;roztec_mm;krytky;velikost;pv_max_vlozky;druh_zasuvky;poly_zasuvky;svorkovnice_od_vyroby;rukojet;poznamka');   // + zásuvková skříň 2026-11-25
     return { sablona: sablona === hlAkt, pol: v.polozky.map(x => x.polozka), chyby: v.chyby.map(c => c.radek + ': ' + c.text), stare: stare.polozky.map(x => JSON.stringify(x.polozka)), stareCh: stare.chyby.length };
   });
   const qf = csv.pol.find(x => x.kat === 'QF') || {}, pl = csv.pol.find(x => x.druh === 'pole') || {};
-  check('šablona CSV = přesně zadaná hlavička (58 sloupců, i výkon a napětí transformátoru / zdroje, ovládací obvody, přepínač zdrojů, hřeben a pojistková vložka z knihovny); soubor ve starém tvaru (39) se načte', csv.sablona, '');
+  check('šablona CSV = přesně zadaná hlavička (62 sloupců, i výkon a napětí transformátoru / zdroje, ovládací obvody, přepínač zdrojů, hřeben, pojistková vložka a zásuvková skříň); soubor ve starém tvaru (39) se načte', csv.sablona, '');
   check('CSV: MCCB s rozměry v mm, Icu/Ics/Icw, nastavením spouští a Pv celkem', qf.sirkaMm === 105 && qf.vyskaMm === 161 && qf.hloubkaMm === 86 && qf.icu === 36 && qf.icw === 5 &&
     qf.pv === 48 && qf.pvCelkem === true && /Ir 0,4/.test(qf.nastaveni || '') && qf.overeno === false, JSON.stringify(qf));
   check('CSV: MCCB bez rozměrů v mm = chyba řádku (rozměry povinné)', csv.chyby.length === 1 && /^3: /.test(csv.chyby[0]) && /mm/.test(csv.chyby[0]), csv.chyby.join(' | '));

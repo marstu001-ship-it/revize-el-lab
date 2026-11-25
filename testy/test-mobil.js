@@ -822,6 +822,15 @@ function vsechnyStavy(zalozky) {
     o.scrollIntoView({ block: 'start' }); await __M.w(150);
   }));
   add('rozvaděč – náhled tisku návodu k obsluze (PDF)', 'Tvorba dokumentace', E(async () => { await __M.rozv(); await TD_AKCE.tdRNavod(); await __M.w(300); }));
+  // zásuvková skříň (2026-11-25): editor s čelem, vlastnosti zásuvky, hlavička s vidlicí, předání a poučení
+  add('zásuvková skříň – editor s čelem a zásuvkami', 'Tvorba dokumentace', E(async () => { await window.__zsSkrin(); document.getElementById('zs-celo').scrollIntoView({ block: 'start' }); await __M.w(150); }));
+  add('zásuvková skříň – vlastnosti vybrané zásuvky', 'Tvorba dokumentace', E(async () => {
+    await window.__zsSkrin(); __rz.vyberZas = 'z2'; rozvPohledVykreslit(); rozvVlastnostiVykreslit(); document.getElementById('rz-vlastnosti').scrollIntoView({ block: 'start' }); await __M.w(150); }));
+  add('zásuvková skříň – hlavička s pohyblivým přívodem a vidlicí', 'Tvorba dokumentace', E(async () => {
+    await window.__zsSkrin(); const h = document.querySelector('.rz-hlavicka'); h.open = true; h.scrollIntoView({ block: 'start' }); await __M.w(150); }));
+  add('zásuvková skříň – Dokumenty, předání a poučení obsluhy', 'Tvorba dokumentace', E(async () => {
+    await window.__zsSkrin(); rozvZalozkaNastavit('dok'); const o = document.querySelector('[data-oddil="pouceni"]'); o.open = true; o.scrollIntoView({ block: 'start' }); await __M.w(150); }));
+  add('zásuvková skříň – náhled tisku předání a poučení (PDF)', 'Tvorba dokumentace', E(async () => { await window.__zsSkrin(); await TD_AKCE.tdZsPouceni(); await __M.w(300); }));
   // výměna s CAD (2026-11-02): náhled PDF s „Stáhnout pro CAD (DXF)", seznam s „Načíst výkres z CAD", náhled importu
   add('rozvaděč – náhled PDF s tlačítkem Stáhnout pro CAD (DXF)', 'Tvorba dokumentace', E(async () => { await __M.rozv(); await dokNahled(); await __M.w(400); }));
   add('rozvaděč – seznam s Načíst výkres z CAD (DXF)', 'Tvorba dokumentace', E(async () => { dokOtevritSeznam('rozv'); await __M.w(150); }));
@@ -1033,7 +1042,7 @@ async function zvlastni(p, vp) {
     await p.goto('http://127.0.0.1:' + PORT + '/index.html', { waitUntil: 'load' });
     await p.waitForTimeout(900);
     await p.evaluate(pomocnik);
-    await p.evaluate('window.__rozvByt = ' + require('./rozvadec-byt.js').toString());
+    await p.evaluate('window.__rozvByt = ' + require('./rozvadec-byt.js').toString()); await p.evaluate('window.__zsSkrin = ' + require('./zasuvkova-skrin.js').toString());
     await p.evaluate(() => __M.fixture());
     const zalozky = await rozbalitZalozky(p);
     const S = vsechnyStavy(zalozky).filter(s => !JEN || JEN.test(s.id));
@@ -1088,8 +1097,8 @@ async function zvlastni(p, vp) {
       await p.goto('http://127.0.0.1:' + PORT + '/index.html', { waitUntil: 'load' });
       await p.waitForTimeout(900);
       await p.evaluate(pomocnik);
-      await p.evaluate('window.__rozvByt = ' + require('./rozvadec-byt.js').toString());
-    await p.evaluate('window.__rozvByt = ' + require('./rozvadec-byt.js').toString());
+      await p.evaluate('window.__rozvByt = ' + require('./rozvadec-byt.js').toString()); await p.evaluate('window.__zsSkrin = ' + require('./zasuvkova-skrin.js').toString());
+    await p.evaluate('window.__rozvByt = ' + require('./rozvadec-byt.js').toString()); await p.evaluate('window.__zsSkrin = ' + require('./zasuvkova-skrin.js').toString());
       await p.evaluate(() => __M.fixture());
       const v = await p.evaluate(async () => {
         const out = { mq: matchMedia('(max-width:600px), (pointer:coarse) and (max-height:500px)').matches, spatne: [], n: 0 };
