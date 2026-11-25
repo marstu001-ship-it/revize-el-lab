@@ -43289,7 +43289,15 @@ function rsSitText(d) {
   var e = rozvDokEff(d);
   return rozvSitText(e) || d.soustava || '';
 }
-function rsSoustavaTrif(d) { return /^3/.test(String(d.soustava || '')); }
+// Trojfázový rozvaděč: podle zadané soustavy; když soustava chybí, podle hlavního vypínače
+// (3pólový = 3 fáze) — jinak by schéma u 3f rozvaděče kreslilo „L" a jedno lomítko jako
+// jednofázové (2026-11-25 LAB, hlášení uživatele).
+function rsSoustavaTrif(d) {
+  if (String(d.soustava || '').trim()) return /^3/.test(String(d.soustava));
+  var kor = d.rady ? rozvKoren(d.rady) : null, x = null;
+  (d.rady || []).forEach(function (r) { (r.prvky || []).forEach(function (y) { if (y.uid === kor) x = y; }); });
+  return !!(x && rozvPoly(x).filter(function (f) { return f !== 'N'; }).length >= 3);
+}
 
 // Co ve schématu chybí (fáze, kabel) — řádek s odkazy v záložce Schéma.
 function rsChybi(d) {
@@ -44027,18 +44035,20 @@ function rsListSchemaVice0(d, list, idx, listy, c, useky) {
     var poslI = k.od + k.n - 1;
     while (poslI > k.od && c.model.vPod && c.model.vPod[list.sloupce[poslI].uid]) poslI--;
     var a = xs[k.od], b = xs[poslI];
-    var za = k.pred ? g.c0 - 6 : a, zb = k.dalsi && poslI === k.od + k.n - 1 ? g.c1 + 4 : b;
+    // na listu jen podskupina (přímé vývody skupiny byly už dřív): bez sběrnice a popisu skupiny
+    var primo = rsKusPrimo(list, k, c.model.vPod), dalPrimo = !!(k.dalsi && rsKusPrimo(k.dalsi.list, k.dalsi, c.model.vPod));
+    var za = k.pred ? g.c0 - 6 : a, zb = dalPrimo && poslI === k.od + k.n - 1 ? g.c1 + 4 : b;
     var zbN = k.dalsi ? g.c1 + 4 : xs[k.od + k.n - 1];
-    if (zb > za) h += rsCara(za, g.yG, zb, g.yG, { w: 0.55 });
+    if (primo && zb > za) h += rsCara(za, g.yG, zb, g.yG, { w: 0.55 });
     if (zbN > za && rsRcd(k.fi)) {
       h += rsCara(za + (k.pred ? 0 : 1.6), g.yGN, zbN + 1.6, g.yGN, { w: 0.45 });
       h += rsText(za + 1.2, g.yGN - 0.6, 'N-' + String(k.fi.ozn || 'FI').replace(/^-/, ''), { fs: 1.6, zar: 'end' });
     }
-    if (k.pred) {
+    if (k.pred && primo) {
       var pg2 = k.pred.list.g, pc = rsSloupecX(pg2, k.pred.od + k.pred.n - 1);
       h += rsText(za, g.yG - 1.3, (k.fi.ozn || 'chránič') + ' (pokračování z /' + (listy.indexOf(k.pred.list) + 2) + '.' + rsZona(pg2, pc) + ')', { fs: 1.9, tucne: true });
     }
-    if (k.dalsi) {
+    if (dalPrimo) {
       var ng2 = k.dalsi.list.g, nc = rsSloupecX(ng2, k.dalsi.od);
       h += rsText(zb, g.yG - 1.3, (k.fi.ozn || 'chránič') + ' pokračuje na /' + (listy.indexOf(k.dalsi.list) + 2) + '.' + rsZona(ng2, nc), { fs: 1.9, zar: 'end' });
     }
@@ -44048,10 +44058,18 @@ function rsListSchemaVice0(d, list, idx, listy, c, useky) {
     list.sloupce.forEach(function (y, i) { if (y && c.model.vPod[y.uid] === u) iD.push(i); });
     if (!iD.length) return;
     var zC = RS_ZNACKY[c.psc ? pscSchZnacka(C.p) : RS_ZNACKA_KAT[C.p.kat] || 'jistic'] || RS_ZNACKY.jistic;
-    var yS = g.yD - 2.4, yR = g.yD + zC.h + 2.5, xr = xs[iD[0]] - RS_SL / 2 + 1.2, xb = xs[iD[iD.length - 1]];
+    var yS = rsYPod(g), yR = g.yD + zC.h + 2.5, xr = xs[iD[0]] - RS_SL / 2 + 1.2, xb = xs[iD[iD.length - 1]];
     var kusC = list.kusy.filter(function (k) { return iD[0] >= k.od && iD[0] < k.od + k.n; })[0] || {};
+    var pPred = rsPodSoused(listy, idx, u, c.model.vPod, -1), pDal = rsPodSoused(listy, idx, u, c.model.vPod, 1);
     if (iC !== -1) h += rsCesta('M' + rsN(xs[iC]) + ' ' + rsN(yR) + ' L' + rsN(xr) + ' ' + rsN(yR) + ' L' + rsN(xr) + ' ' + rsN(yS), { w: RS_TENKA * 2 });
-    else { xr = g.c0 - 6; h += rsText(xr, yS - 0.9, (C.ozn || '') + ' (pokračování)', { fs: 1.7 }); }
+    else {
+      xr = g.c0 - 6;
+      h += rsText(xr, yS - 1.3, (C.ozn || '') + ' (pokračování' + (pPred ? ' z /' + (listy.indexOf(pPred.list) + 2) + '.' + rsZona(pPred.list.g, rsSloupecX(pPred.list.g, pPred.i)) : '') + ')', { fs: 1.9, tucne: true });
+    }
+    if (pDal) {   // podskupina pokračuje na dalším listu: sběrnice až ke kraji a odkaz
+      xb = g.c1 + 4;
+      h += rsText(xb, yS - 1.3, (C.ozn || '') + ' pokračuje na /' + (listy.indexOf(pDal.list) + 2) + '.' + rsZona(pDal.list.g, rsSloupecX(pDal.list.g, pDal.i)), { fs: 1.9, zar: 'end' });
+    }
     h += rsCara(xr, yS, xb, yS, { w: 0.45 });
     if (rsRcd(C)) { var yNs = g.yGN - (kusC.fi && rsRcd(kusC.fi) ? 1.6 : 0); h += rsCara(iC !== -1 ? xs[iC] + 1.6 : xr, yNs, xb + 1.6, yNs, { w: 0.35 }); }
   });
@@ -44148,10 +44166,26 @@ function rsPzVstupIIHtml(x, g, xx, c, yFI) {
   } else if (info) h += rsText(xx + 4.4 + 1.1, yFI + 3.2, 'vstup II: ' + info.cilOzn, { fs: 1.5, barva: '#555' });
   return h;
 }
+// Sběrnice podskupiny (např. jističe za chráničem v řadě za FU2) leží NAD úrovní označení
+// přístrojů (2026-11-25 LAB — dřív těsně nad značkami přes popisy „-FA26…").
+function rsYPod(g) { return g.yG - 3; }
+// Má skupina na listu (úseku) vlastní, přímo zavěšené vývody? Když jsou tam jen členové její
+// podskupiny, sběrnice ani „pokračování" skupiny se nekreslí — jen podskupiny.
+function rsKusPrimo(list, k, vPod) {
+  if (!list || !k) return false;
+  for (var i = k.od; i < k.od + k.n; i++) { var y = list.sloupce[i]; if (y && !(vPod && vPod[y.uid])) return true; }
+  return false;
+}
+// Podskupina na sousedním listu: { list, i } prvního (dalsi) / posledního (pred) člena.
+function rsPodSoused(listy, idx, u, vPod, smer) {
+  var L = listy[idx + smer]; if (!L) return null;
+  var ii = []; L.sloupce.forEach(function (y, i) { if (y && vPod[y.uid] === u) ii.push(i); });
+  return ii.length ? { list: L, i: smer > 0 ? ii[0] : ii[ii.length - 1] } : null;
+}
 function rsSloupecHtml(x, g, sl, kus, c) {
   var p = x.p || {}, kat = p.kat, h = '', xx = sl, ve = !!(kus.fi && x !== kus.fi), model = c.model || {};
   var zdroj = ve ? g.yG : g.yL;
-  if (model.vPod && model.vPod[x.uid]) zdroj = g.yD - 2.4;   // v podskupině: z její sběrnice
+  if (model.vPod && model.vPod[x.uid]) zdroj = rsYPod(g);   // v podskupině: z její sběrnice
   if (kus.retez) zdroj = null;                                // v řetězu: rovnou pod nadřazeným
   if (!ve && (x === kus.fi && kat !== 'FI' || (model.retez && model.retez[x.uid]))) {
     var ret = model.retez && model.retez[x.uid];
@@ -44306,18 +44340,20 @@ function rsListSchema0(d, list, idx, listy, c, model) {
     var posl = k.od + k.n - 1;
     while (posl > k.od && model.vPod && model.vPod[list.sloupce[posl].uid]) posl--;   // členové podskupiny visí na její sběrnici
     var a = xs[k.od], b = xs[posl];
-    var za = k.pred ? g.c0 - 6 : a, zb = k.dalsi && posl === k.od + k.n - 1 ? g.c1 + 4 : b;
+    // na listu jen podskupina (přímé vývody skupiny byly už dřív): bez sběrnice a popisu skupiny
+    var primo = rsKusPrimo(list, k, c.model.vPod), dalPrimo = !!(k.dalsi && rsKusPrimo(k.dalsi.list, k.dalsi, c.model.vPod));
+    var za = k.pred ? g.c0 - 6 : a, zb = dalPrimo && posl === k.od + k.n - 1 ? g.c1 + 4 : b;
     var zbN = k.dalsi ? g.c1 + 4 : xs[k.od + k.n - 1];
-    if (zb > za) h += rsCara(za, g.yG, zb, g.yG, { w: 0.55 });
+    if (primo && zb > za) h += rsCara(za, g.yG, zb, g.yG, { w: 0.55 });
     if (zbN > za && rsRcd(k.fi)) {
       h += rsCara(za + (k.pred ? 0 : 1.6), g.yGN, zbN + 1.6, g.yGN, { w: 0.45 });
       h += rsText(za + 1.2, g.yGN - 0.6, 'N-' + String(k.fi.ozn || 'FI').replace(/^-/, ''), { fs: 1.6, zar: 'end' });   // vlastní N skupiny chrániče
     }
-    if (k.pred) {
+    if (k.pred && primo) {
       var pg2 = k.pred.list.g, pc = rsSloupecX(pg2, k.pred.od + k.pred.n - 1);
       h += rsText(za, g.yG - 1.3, (k.fi.ozn || 'chránič') + ' (pokračování z /' + (listy.indexOf(k.pred.list) + 2) + '.' + rsZona(pg2, pc) + ')', { fs: 1.9, tucne: true });
     }
-    if (k.dalsi) {
+    if (dalPrimo) {
       var ng2 = k.dalsi.list.g, nc = rsSloupecX(ng2, k.dalsi.od);
       h += rsText(zb, g.yG - 1.3, (k.fi.ozn || 'chránič') + ' pokračuje na /' + (listy.indexOf(k.dalsi.list) + 2) + '.' + rsZona(ng2, nc), { fs: 1.9, zar: 'end' });
     }
@@ -44327,10 +44363,18 @@ function rsListSchema0(d, list, idx, listy, c, model) {
     list.sloupce.forEach(function (y, i) { if (model.vPod[y.uid] === u) iD.push(i); });
     if (!iD.length) return;
     var zC = RS_ZNACKY[c.psc ? pscSchZnacka(C.p) : RS_ZNACKA_KAT[C.p.kat] || 'jistic'] || RS_ZNACKY.jistic;
-    var yS = g.yD - 2.4, yR = g.yD + zC.h + 2.5, xr = xs[iD[0]] - RS_SL / 2 + 1.2, xb = xs[iD[iD.length - 1]];
+    var yS = rsYPod(g), yR = g.yD + zC.h + 2.5, xr = xs[iD[0]] - RS_SL / 2 + 1.2, xb = xs[iD[iD.length - 1]];
     var kusC = list.kusy.filter(function (k) { return iD[0] >= k.od && iD[0] < k.od + k.n; })[0] || {};
+    var pPred = rsPodSoused(listy, idx, u, c.model.vPod, -1), pDal = rsPodSoused(listy, idx, u, c.model.vPod, 1);
     if (iC !== -1) h += rsCesta('M' + rsN(xs[iC]) + ' ' + rsN(yR) + ' L' + rsN(xr) + ' ' + rsN(yR) + ' L' + rsN(xr) + ' ' + rsN(yS), { w: RS_TENKA * 2 });
-    else { xr = g.c0 - 6; h += rsText(xr, yS - 0.9, (C.ozn || '') + ' (pokračování)', { fs: 1.7 }); }
+    else {
+      xr = g.c0 - 6;
+      h += rsText(xr, yS - 1.3, (C.ozn || '') + ' (pokračování' + (pPred ? ' z /' + (listy.indexOf(pPred.list) + 2) + '.' + rsZona(pPred.list.g, rsSloupecX(pPred.list.g, pPred.i)) : '') + ')', { fs: 1.9, tucne: true });
+    }
+    if (pDal) {   // podskupina pokračuje na dalším listu: sběrnice až ke kraji a odkaz
+      xb = g.c1 + 4;
+      h += rsText(xb, yS - 1.3, (C.ozn || '') + ' pokračuje na /' + (listy.indexOf(pDal.list) + 2) + '.' + rsZona(pDal.list.g, rsSloupecX(pDal.list.g, pDal.i)), { fs: 1.9, zar: 'end' });
+    }
     h += rsCara(xr, yS, xb, yS, { w: 0.45 });
     if (rsRcd(C)) { var yNs = g.yGN - (kusC.fi && rsRcd(kusC.fi) ? 1.6 : 0); h += rsCara(iC !== -1 ? xs[iC] + 1.6 : xr, yNs, xb + 1.6, yNs, { w: 0.35 }); }
   });
