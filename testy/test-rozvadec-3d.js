@@ -54,6 +54,10 @@ function srovnej(a, b) {   // poměr šířek a poloh 3D : 2D musí být všude 
   const p = await ctx.newPage(); const err = [];
   p.on('pageerror', e => err.push(e.message)); p.on('dialog', d => d.accept());
   await p.goto(URL); await w(1200); await p.evaluate(pomocnik);
+  // 3D je od 2026-11-26 u DBO i PSC schované (ROZV_3D_SKRYTO) — kód zůstal, tady se pro test zase zapne
+  const skryto = await p.evaluate(async () => { await dokNacist(); await dokNovy('rozv'); return { v: ROZV_3D_SKRYTO, tab: !!document.querySelector('.rz-zal[data-z="3d"]'), pdf: rozvVyber({ dokVyber: { pohled3d: true } }).pohled3d }; });
+  check('3D schované: bez záložky 🧊 3D a uložené dokVyber.pohled3d nejde do PDF', skryto.v === true && !skryto.tab && skryto.pdf === false, JSON.stringify(skryto));
+  await p.evaluate(() => { ROZV_3D_SKRYTO = false; });
 
   // ── 1. byt 3+1: záložka a kvádry ───────────────────────────────────────
   await p.evaluate(async () => { STORE.technik = { jmeno: 'Petr Vymyšlený', firma: 'Vymyšlená elektro s.r.o.', ico: '12345678', mesto: 'Kyjov' };
@@ -233,7 +237,7 @@ function srovnej(a, b) {   // poměr šířek a poloh 3D : 2D musí být všude 
     await c2.addInitScript(() => { try { navigator.serviceWorker.register = () => new Promise(() => {}); } catch (e) {} });
     const t = await c2.newPage(); const err2 = [];
     t.on('pageerror', e => err2.push(e.message)); t.on('dialog', d => d.accept());
-    await t.goto(URL); await w(1200); await t.evaluate(pomocnik);
+    await t.goto(URL); await w(1200); await t.evaluate(pomocnik); await t.evaluate(() => { ROZV_3D_SKRYTO = false; });
     await t.evaluate(async () => { await dokNacist(); await dokNovy('rozv'); rozvSkrinNastavit(rozvKnihPolozka('v-sk-3x12-z')); });
     await t.evaluate(require('./rozvadec-byt.js')); await w(300);
     await t.evaluate(() => document.querySelector('.rz-zal[data-z="3d"]').scrollIntoView({ block: 'center' })); await w(200);

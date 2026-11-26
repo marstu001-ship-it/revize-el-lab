@@ -187,7 +187,8 @@ const zpravaOtevritUlozit = async (p) => p.evaluate(async () => {
   const novyRozv2 = await otevritUlozit(N.p, st.uid2);
   // jediný povolený rozdíl: klíč stitek.tridaII, který obě verze zapisují poprvé při návštěvě Dokumentů —
   // stará výchozí false, nová odvozenou hodnotu '' (třída ochrany není II → značka se netiskne, význam stejný)
-  const bezTr = x => x.replace(/"tridaII":(false|"")/, '"tridaII":#');
+  // 2026-11-26: 3D schované — stará verze z viditelného (nezaškrtnutého) zaškrtávátka zapsala dokVyber.pohled3d: false, nová ho nemá
+  const bezTr = x => x.replace(/"tridaII":(false|"")/, '"tridaII":#').replace(/,"pohled3d":false|"pohled3d":false,?/, '');
   check('rozvaděč se „stupen: B" a „okoli55: true" (Dokumenty poprvé): načtený beze změny, po uložení jako ve staré verzi kromě nově zapsaného tridaII',
     novyRozv2.nacteno === staryRozv2.nacteno && bezTr(novyRozv2.ulozeno) === bezTr(staryRozv2.ulozeno),
     novyRozv2.ulozeno.length + ' × ' + staryRozv2.ulozeno.length);

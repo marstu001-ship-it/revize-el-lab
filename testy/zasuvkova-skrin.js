@@ -22,7 +22,7 @@ module.exports = async function zsSkrin() {
     .forEach(([k, f, pr]) => { const x = rozvVlozit(k, 0, __rz.rady[0].prvky.length); if (!x) return; x.faze = f; if (pr) { x.kabel = 'H07V-K'; x.prurez = pr; } });
   const fa = __rz.rady[0].prvky.filter(x => x.p.kat === 'FA');
   const POS = [[164, 440], [64, 320], [164, 320], [264, 320], [64, 440], [264, 440]];
-  const Z = (i, oz, poly, In, ue, ip, druh, typ) => ({ uid: 'z' + i, ozn: oz, napajen: fa[i].uid, pos: { x: POS[i][0], y: POS[i][1] }, p: { kat: 'XS2', druhZas: druh, polyZ: poly, In: In, ue: ue, ip: ip, typ: typ } });
+  const Z = (i, oz, poly, In, ue, ip, druh, typ) => ({ uid: 'z' + i, ozn: oz, napajen: fa[i].uid, pos: { x: POS[i][0], y: POS[i][1] }, p: { kat: 'XZ', druhZas: druh, polyZ: poly, In: In, ue: ue, ip: ip, typ: typ } });
   __rz.celo = { zasuvky: [Z(0, '-XZ1', '3P+N+E', 32, 400, 'IP67', 'cee', 'VA-CEE 32/5h IP67'), Z(1, '-XZ2', '2P+E', 32, 230, 'IP67', 'cee', 'VA-CEE 32/3/6h IP67'),
     Z(2, '-XZ3', '2P+E', 32, 230, 'IP67', 'cee', 'VA-CEE 32/3/6h IP67'), Z(3, '-XZ4', '2P+E', 32, 230, 'IP67', 'cee', 'VA-CEE 32/3/6h IP67'),
     Z(4, '-XZ5', 'dom', 16, 230, 'IP54', 'dom', 'VA-Z16 IP54'), Z(5, '-XZ6', 'dom', 16, 230, 'IP54', 'dom', 'VA-Z16 IP54')] };

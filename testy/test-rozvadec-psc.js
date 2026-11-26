@@ -359,7 +359,7 @@ const presahy = (p, svg) => p.evaluate(svg => {
   const H = await p.evaluate(require('./rozvadec-psc-hala.js'));
   const h0 = await p.evaluate(() => ({ zal: Array.from(dokForm().querySelectorAll('.rz-zal')).map(b => b.getAttribute('data-z')).join(),
     rady: __rz.rady.map(r => r.prvky.map(x => x.ozn + (x.privod ? '*' : '') + (x.mezera ? '@' + x.mezera : '')).join(',')).filter(Boolean).join(' / ') }));
-  check('5b: PSC má záložky Návrh | Schéma | 3D | Dokumenty (3D od etapy 5c); první MCCB je přívodní (*)', h0.zal === 'navrh,sch,3d,dok' && /-QF1\*,-TA1,-PM1,-XN1,-XPE1/.test(h0.rady) && /-QF2,-QF3,-FU1,-QS1/.test(h0.rady), h0.zal + ' | ' + h0.rady);
+  check('5b: PSC má záložky Návrh | Schéma | Dokumenty (3D schované od 2026-11-26); první MCCB je přívodní (*)', h0.zal === 'navrh,sch,dok' && /-QF1\*,-TA1,-PM1,-XN1,-XPE1/.test(h0.rady) && /-QF2,-QF3,-FU1,-QS1/.test(h0.rady), h0.zal + ' | ' + h0.rady);
 
   // ── fáze: 3f vývody QF / QS na všechny fáze, přívodní QF1 ne ──
   const fz = await p.evaluate(() => { const s = rozvFazeSouhrn(__rz.rady); return { L1: s.F.L1.In, L2: s.F.L2.In, L3: s.F.L3.In, n: s.vyvodu }; });

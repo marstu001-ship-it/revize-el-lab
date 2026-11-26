@@ -38,8 +38,8 @@ const w = ms => new Promise(r => setTimeout(r, ms));
   check('záložky Návrh, Schéma, Dokumenty — bez 3D', t1.zal === 'navrh,sch,dok', t1.zal);
 
   // ── 2. knihovna ──
-  const kn = await p.evaluate(() => ({ skup: rozvSkupinyKat().map(g => g.k), vid: rozvKnihovnaVse().filter(it => rozvKnihVidet(it, 'pristroj')).some(it => it.kat === 'XS2'),
-    vest: rozvVestavene().filter(it => it.kat === 'XS2' || it.kat === 'XP').map(it => it.vyrobce + '|' + (it.overeno ? 1 : 0)) }));
+  const kn = await p.evaluate(() => ({ skup: rozvSkupinyKat().map(g => g.k), vid: rozvKnihovnaVse().filter(it => rozvKnihVidet(it, 'pristroj')).some(it => it.kat === 'XZ'),
+    vest: rozvVestavene().filter(it => it.kat === 'XZ' || it.kat === 'XP').map(it => it.vyrobce + '|' + (it.overeno ? 1 : 0)) }));
   check('knihovna zásuvkové skříně má skupinu „Zásuvky a vidlice" a zásuvky', kn.skup.indexOf('zas') !== -1 && kn.vid, kn.skup.join(','));
   check('vestavěné zásuvky a vidlice jen obecné a neověřené', kn.vest.length >= 10 && kn.vest.every(v => v === 'obecný|0'), kn.vest.length);
 
@@ -50,13 +50,13 @@ const w = ms => new Promise(r => setTimeout(r, ms));
     const np = rzsNP(__rz.rady, __rz);
     const L = rzsKontrola().map(n => n.text);
     return { ok: ok.polozka.svorkovnice, okCh: ok.chyby.length, zle: zle.chyby.join(' '), bezKlic: 'svorkovnice' in bez, volno: rozvVolnoCelkem(__rz), peKap: np.PE.kap, pePot: np.PE.potreba,
-      pe: L.some(t => /svorky PE|přípojnice PE/.test(t)), osaz: rozvMaPe({ rezim: 'ZS', skrin: __rz.skrin, rady: __rz.rady }), dbo: rozvMaPe({ rezim: 'DBO', skrin: __rz.skrin, rady: __rz.rady }) };
+      pe: L.some(t => /svorky PE|přípojnice PE/.test(t)), osaz: rozvMaPe({ rezim: 'ZS', skrin: __rz.skrin, rady: __rz.rady }), dbo: rozvMaPe({ rezim: 'DBO', skrin: __rz.skrin, rady: __rz.rady }), dboBez: rozvMaPe({ rezim: 'DBO', skrin: Object.assign({}, __rz.skrin, { svorkovnice: '' }), rady: __rz.rady }) };
   });
   check('svorkovnice od výroby: „N pod, PE pod 8" projde, nesmysl je chyba', sv.ok === 'N pod, PE pod 8' && sv.okCh === 0 && /svorkovnice od výroby/.test(sv.zle), JSON.stringify(sv));
   check('skříň bez svorkovnic nemá klíč (staré skříně beze změny)', sv.bezKlic === false);
   check('svorkovnice od výroby nezabírají moduly (volno 4 M z 16)', sv.volno && sv.volno.volno === 4, JSON.stringify(sv.volno));
   check('PE od výroby splní svorky PE (žádná chyba ani upozornění na PE)', sv.peKap >= sv.pePot && !sv.pe, sv.peKap + '/' + sv.pePot);
-  check('kusové ověření 11.7: PE od výroby se u ZS počítá, u DBO ne (DBO beze změny)', sv.osaz === true && sv.dbo === false);
+  check('kusové ověření 11.7: PE od výroby se počítá u ZS i u DBO (od 2026-11-26), skříň bez svorkovnic ne', sv.osaz === true && sv.dbo === true && sv.dboBez === false);
 
   // ── 4. CSV ──
   const csv = await p.evaluate(() => {
@@ -67,7 +67,7 @@ const w = ms => new Promise(r => setTimeout(r, ms));
       ch: r.chyby.map(c => c.text).join(' | '), r: JSON.stringify(r.polozky.map(x => x.polozka).map(x => [x.kat || x.druh, x.polyZ || '', x.svorkovnice || '', x.rukojet || ''])) };
   });
   check('CSV má sloupce druh_zasuvky, poly_zasuvky, svorkovnice_od_vyroby, rukojet', csv.hl);
-  check('import CSV: zásuvka 3P → 2P+E (bez šířky v modulech), skříň se svorkovnicemi a rukojetí', !csv.ch && /XS2","2P\+E/.test(csv.r) && /N pod, PE pod","ano/.test(csv.r), csv.r + ' ' + csv.ch);
+  check('import CSV: zásuvka 3P → 2P+E (bez šířky v modulech), skříň se svorkovnicemi a rukojetí', !csv.ch && /XZ","2P\+E/.test(csv.r) && /N pod, PE pod","ano/.test(csv.r), csv.r + ' ' + csv.ch);
 
   // ── 5. editor čela ──
   const ed = await p.evaluate(() => ({ celo: !!document.getElementById('zs-celo'), n: document.querySelectorAll('#zs-celo [data-zasuvka]').length,
@@ -156,6 +156,64 @@ const w = ms => new Promise(r => setTimeout(r, ms));
   check('štítek: InA 32 A, vidlice, ČSN EN IEC 61439-2, CE z rozvCeSvg', st && /32 A/.test(st.t) && /vidlice/i.test(st.t) && /61439-2/.test(st.t) && st.ce, st && st.t.replace(/\n/g, ' | ').slice(0, 200));
   await p.evaluate(() => showScreen('dok-form')); await w(200);
 
+  // ── 8b. připomínky 2026-11-26: kód XZ, tažení zásuvky na čelo, šířka okna, směr přívodu ──
+  const kod = await p.evaluate(() => ({ kat: ROZV_KAT_ZS.join(','), z: __rz.celo.zasuvky.every(z => z.p.kat === 'XZ'), xs2: rozvKatZTextu('XS2'), stara: rozvPolozkaNorm({ druh: 'pristroj', kat: 'XS2', nazev: 'x', sirka: '' }).kat, nazev: (rozvKat('XS2') || {}).k }));
+  check('kategorie zásuvky XZ (vidlice XP); starší kód XS2 se čte jako XZ (CSV, knihovna)', kod.kat === 'XZ,XP' && kod.z && kod.xs2 === 'XZ' && kod.stara === 'XZ' && kod.nazev === 'XZ', JSON.stringify(kod));
+  await p.evaluate(() => { showScreen('dok-form'); rozvZalozkaNastavit('navrh'); __rz.vyber = null; __rz.vyberZas = null; __rzF.skup = 'zas'; rozvKnihovnaVykreslit(); rozvPohledVykreslit(); });
+  await p.setViewportSize({ width: 1920, height: 1500 }); await w(400);
+  const n0 = await p.evaluate(() => ({ z: __rz.celo.zasuvky.length, r: __rz.rady[0].prvky.length }));
+  const pol = p.locator('#dok-form-obsah .rz-polozka[data-kid="v-xz-16-230-3p"]').first();
+  const tahni = async (cil) => {
+    await p.evaluate(() => window.scrollTo(0, 250)); await w(200);
+    const a = await pol.boundingBox(), c = await cil();
+    await p.mouse.move(a.x + 40, a.y + 15); await p.mouse.down(); await p.mouse.move(a.x + 60, a.y + 30, { steps: 3 });
+    await p.mouse.move(c.x, c.y, { steps: 12 }); await w(150);
+    const st = await p.evaluate(() => ({ duch: !!document.querySelector('.rz-duch.zs-duch svg [data-zasuvka], .rz-duch.zs-duch svg circle'), jistic: !!document.querySelector('.rz-duch .rz-duch-svg'),
+      cil: __rzTah && __rzTah.cil, ram: document.getElementById('zs-celo').classList.contains('zs-cil') }));
+    await p.mouse.up(); await w(300); return st;
+  };
+  const tc = await tahni(async () => { const r = await p.locator('#zs-celo .zs-celo-svg').boundingBox(); return { x: r.x + r.width * 0.75, y: r.y + r.height * 0.62 }; });
+  const pc = await p.evaluate(() => ({ z: __rz.celo.zasuvky.length, r: __rz.rady[0].prvky.length, nova: __rz.celo.zasuvky[__rz.celo.zasuvky.length - 1] }));
+  check('tažení zásuvky z knihovny: stín = zásuvka (ne jistič), čelo vyznačené, cíl v mm po 5 mm', tc.duch && !tc.jistic && tc.ram && tc.cil && tc.cil.x % 5 === 0 && tc.cil.y % 5 === 0, JSON.stringify(tc));
+  check('puštění na čelo: nová -XZ7 na místě kurzoru, DIN řada beze změny', pc.z === n0.z + 1 && pc.r === n0.r && pc.nova.ozn === '-XZ7' && pc.nova.pos.x === tc.cil.x && pc.nova.pos.y === tc.cil.y, JSON.stringify(pc));
+  const td = await tahni(async () => { const r = await p.locator('#rz-pohled .rz-svg').boundingBox(); return { x: r.x + r.width * 0.7, y: r.y + r.height * 0.5 }; });
+  const pd = await p.evaluate(() => ({ z: __rz.celo.zasuvky.length, r: __rz.rady[0].prvky.length }));
+  check('do DIN řady zásuvku pustit nejde (nic se nevloží)', !td.cil && pd.z === pc.z && pd.r === pc.r, JSON.stringify(pd));
+  await p.keyboard.press('Control+z'); await w(300);
+  const kl = await p.evaluate(() => { const e = document.querySelector('#dok-form-obsah .rz-polozka[data-kid="v-xz-16-230-3p"]'); e.click(); return { b: (document.querySelector('#rz-pohled .rz-banner') || {}).textContent || '', t: e.title }; });
+  check('klepnutí na zásuvku v knihovně: pruh „klepněte na čelo skříně, kam zásuvku dát"', /klepněte na čelo skříně, kam zásuvku dát/.test(kl.b) && /na čelo/.test(kl.t), kl.b);
+  const kc = await p.evaluate(() => {
+    const svg = document.querySelector('#zs-celo .zs-celo-svg'), r = svg.getBoundingClientRect(), n = __rz.celo.zasuvky.length;
+    svg.dispatchEvent(new PointerEvent('pointerdown', { bubbles: true, clientX: r.left + r.width * 0.3, clientY: r.top + r.height * 0.85 }));
+    return { n: __rz.celo.zasuvky.length - n, vyb: __rz.knihVyber };
+  });
+  check('klepnutí na čelo zásuvku položí (mřížka 5 mm) a výběr z knihovny skončí', kc.n === 1 && !kc.vyb, JSON.stringify(kc));
+  await p.keyboard.press('Control+z'); await w(300);
+  const vd = await p.evaluate(() => { const v = dokForm().querySelector('[data-dk="vidlice.In"]'); v.value = ''; const e = document.querySelector('#dok-form-obsah .rz-polozka[data-kid="v-xp-16-230-3p"]'); e.click();
+    return { vid: dokForm().querySelector('[data-dk="vidlice.In"]').value, vyb: __rz.knihVyber, tah: e.title }; });
+  check('vidlice: klepnutí ji dá rovnou do přívodu (bez tažení a bez výběru)', vd.vid === '16' && !vd.vyb && /přívodu/.test(vd.tah), JSON.stringify(vd));
+  await p.evaluate(() => { const v = dokForm().querySelector('[data-dk="vidlice.In"]'); v.value = '32'; v.dispatchEvent(new Event('input', { bubbles: true })); });
+  // šířka okna
+  for (const sir of [1920, 2560]) {
+    await p.setViewportSize({ width: sir, height: 1300 }); await w(500);
+    const g = await p.evaluate(() => { const r = q => document.querySelector(q).getBoundingClientRect(); const ram = r('#rz-svg-ram'), ce = r('#zs-celo'), wr = r('#dok-form-obsah');
+      return { wrap: Math.round(wr.width), ram: [Math.round(ram.left), Math.round(ram.right), Math.round(ram.top)], ce: [Math.round(ce.left), Math.round(ce.top)], vedle: document.getElementById('rz-pohled').classList.contains('zs-vedle') }; });
+    const ok = g.wrap >= sir - 20 && (sir === 2560 ? g.vedle && g.ce[0] > g.ram[1] && Math.abs(g.ce[1] - g.ram[2]) < 30 : !g.vedle && g.ce[1] > g.ram[2]);
+    check('šířka ' + sir + ' px: editor přes celou šířku, čelo ' + (sir === 2560 ? 'vedle čelního pohledu' : 'pod čelním pohledem'), ok, JSON.stringify(g));
+  }
+  await p.setViewportSize({ width: 1500, height: 1100 }); await w(400);
+  // směr přívodu
+  const smer = async v => p.evaluate(v => { const e = dokForm().querySelector('[data-dk="privodSmer"]'); e.value = v; e.dispatchEvent(new Event('input', { bubbles: true })); e.dispatchEvent(new Event('change', { bubbles: true }));
+    const t = [...document.querySelectorAll('#rz-pohled .rz-svg text')].find(x => x.textContent === 'přívod'), c = [...document.querySelectorAll('#zs-celo text')].find(x => /vývodka/.test(x.textContent));
+    return { p: t ? Math.round(+t.getAttribute('y')) : null, c: c ? Math.round(+c.getAttribute('y')) : null }; }, v);
+  const s1 = await smer('shora'), s2 = await smer('zespodu');
+  check('přívod shora ↔ zespodu: vývodka v čelním pohledu i na čele se překreslí hned', s1.p < 10 && s1.c < 20 && s2.p > s1.p + 30 && s2.c > s1.c + 100, JSON.stringify([s1, s2]));
+  await p.evaluate(() => rozvZalozkaNastavit('sch')); await w(600);
+  const lst = async v => { await smer(v); await w(500); return p.evaluate(() => [...document.querySelectorAll('#rz-pan-sch svg text')].filter(x => /vývodka/.test(x.textContent)).map(x => Math.round(+x.getAttribute('y')))[0]); };
+  const a1 = await lst('shora'), a2 = await lst('zespodu');
+  check('přívod shora ↔ zespodu: list 1 schématu se překreslí hned', a1 < a2 - 50, a1 + ' → ' + a2);
+  await p.evaluate(() => rozvZalozkaNastavit('navrh'));
+
   // ── 9. uložení a otevření ──
   const ul = await p.evaluate(async () => {
     await dokUlozitOtevreny(); const uid = window.__dokOtevreny.uid;
@@ -171,10 +229,10 @@ const w = ms => new Promise(r => setTimeout(r, ms));
     const x = rozvVlozit('v-xz-16-230-3p');
     const d = DOK_TYPY.rozv.cist(dokForm());
     return { vloz: x == null, kl: ['celo', 'vidlice', 'pouceni', 'norma', 'privodDelka'].filter(k => k in d), skup: rozvSkupinyKat().some(g => g.k === 'zas'),
-      zs: rozvKnihovnaVse().filter(it => rozvKnihVidet(it, 'pristroj')).some(it => it.kat === 'XS2' || it.kat === 'XP'), celo: !!document.getElementById('zs-celo'),
+      zs: rozvKnihovnaVse().filter(it => rozvKnihVidet(it, 'pristroj')).some(it => it.kat === 'XZ' || it.kat === 'XP'), celo: !!document.getElementById('zs-celo'),
       skrin: 'svorkovnice' in d.skrin || 'rukojet' in d.skrin, zal: [...document.querySelectorAll('.rz-zal')].map(b => b.dataset.z).join(',') };
   });
-  check('DBO: žádné nové klíče, žádné zásuvky v knihovně, žádné čelo, 3D zůstává', dbo.vloz && !dbo.kl.length && !dbo.skup && !dbo.zs && !dbo.celo && !dbo.skrin && dbo.zal === 'navrh,sch,3d,dok', JSON.stringify(dbo));
+  check('DBO: žádné nové klíče, žádné zásuvky v knihovně, žádné čelo (3D schované i u DBO)', dbo.vloz && !dbo.kl.length && !dbo.skup && !dbo.zs && !dbo.celo && !dbo.skrin && dbo.zal === 'navrh,sch,dok', JSON.stringify(dbo));
 
   check('žádná chyba stránky', !chyby.length, chyby.slice(0, 3).join(' | '));
   await b.close();

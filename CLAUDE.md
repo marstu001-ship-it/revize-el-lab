@@ -2278,6 +2278,8 @@ porovnává bez prázdného `bezIn` u obou verzí.
 
 ### Pohled 3D — etapa 5c (v9.132; DBO i PSC; blok „ROZVADĚČ — 3D NÁHLED")
 
+**Od 2026-11-26 schované** (`ROZV_3D_SKRYTO`, oddíl „3D schované u DBO i PSC" níž) — kód beze změny.
+
 Zadání uživatele 2026-10-22. Editor má čtyři záložky **„🧩 Návrh | ⚡ Schéma |
 🧊 3D | 📄 Dokumenty"** (u DBO i PSC). **V 3D se nic needituje**; kreslí se
 z aktuálního `cist()` při každém přepnutí (`rozvZalozkaNastavit('3d')` →
@@ -4273,7 +4275,7 @@ Makety a výkres schválil uživatel („výkres schválen" s úpravou svorkovni
 
 - **Typ `zs`** = `Object.create(DOK_TYPY.rozv)` jako PSC — žádný druhý editor. Číslo **ZS-0001**,
   barva **tyrkysová #00727a** (tmavý #5cc8cf), `data.rezim = 'ZS'`, `zsJe(d)` (i `__rz.zs`).
-  **Bez 3D** (záložka ani zaškrtávátko). Dlaždice ve dvou řádcích (`dokDlazdiceVykreslit`:
+  **Bez 3D** (záložka ani zaškrtávátko; od 2026-11-26 schované i u DBO a PSC). Dlaždice ve dvou řádcích (`dokDlazdiceVykreslit`:
   pořadí DBO · PSC · zásuvkové skříně / riziko LPS · vnější vlivy, na PC 3 sloupce).
 - **Čelo skříně** (`d.celo.zasuvky = [{ uid, knih, ozn, napajen, pos {x, y}, p }]`, `pos` v mm
   od levého horního rohu skříně): editor pod čelním pohledem (`zsCeloEditorHtml`) kreslí
@@ -4283,7 +4285,8 @@ Makety a výkres schválil uživatel („výkres schválen" s úpravou svorkovni
   `rozvZmena` (snímek obsahuje `celo`, ZPĚT i Ctrl+Z). Vlastnosti zásuvky (`zsZasPanelHtml`:
   označení, **Napájí ji** = jistič, druh, póly, In, Un, IP, typ, poloha), u jističe řádek
   „→ napájí zásuvku: -XZ2…". Wrappery `rozvPohledVykreslit` / `rozvVlastnostiVykreslit`.
-- **Kategorie `XS2`** (zásuvka na čele, **-XZ**) a **`XP`** (vidlice přívodu, -XP), `zs: true`
+- **Kategorie `XZ`** (zásuvka na čele, **-XZ**; do 2026-11-26 kód `XS2` — `rozvKat`, CSV i knihovna
+  ho čtou jako XZ, uložená data se nepřepisují) a **`XP`** (vidlice přívodu, -XP), `zs: true`
   — nabízí se jen v zásuvkové skříni (`rozvKnihZs`, skupina „Zásuvky a vidlice"). Pole
   `druhZas` (cee / dom), `polyZ` (2P+E = „3P", 3P+E = „4P", 3P+N+E = „5P", dom), `ip` —
   ukládají se jen vyplněná. Vestavěné jen **obecné, neověřené, bez krytí**. `rozvVlozit`
@@ -4293,8 +4296,8 @@ Makety a výkres schválil uživatel („výkres schválen" s úpravou svorkovni
   místo pod / nad / bok, volitelně počet) a **`skrin.rukojet`** = 'ano' — nepovinné, u skříně
   v knihovně, vlastní velikosti i v CSV; ukládají se jen vyplněné (staré skříně beze změny).
   **Nezabírají moduly DIN** (kreslí se v okně jako pás se šrouby, `zsGeo` přidá místo),
-  ve schématu jsou to sběrnice N a PE jako dosud. **U ZS** doplní chybějící svorky N/PE
-  (`rzsNP`) a splní 11.7 (`rozvMaPe`) — **u DBO zatím ne** (pokyn uživatele). N na DIN liště
+  ve schématu jsou to sběrnice N a PE jako dosud. Doplní chybějící svorky N/PE (`rzsNP`)
+  a splní 11.7 (`rozvMaPe`) — **od 2026-11-26 i u DBO** (oddíl níž). N na DIN liště
   zůstává jako možnost (zabírá moduly jako dřív).
 - **Přívod**: v hlavičce „Pohyblivý přívod a vidlice" (`privodOzn` -WL1, `privodDelka`,
   `vidlice.{ozn, In, poly, ue, ip, typ}`). Ve schématu kabel dolů k vidlici (`rsPrivod`,
@@ -4321,12 +4324,63 @@ Makety a výkres schválil uživatel („výkres schválen" s úpravou svorkovni
   ČSN 33 2000-4-41 ed.3 čl. 411.3.3 (jen číslo článku), podpisy a 8 řádků poučených osob.
 - **Upozornění 30 mA**: chránič > 30 mA a zásuvka ≤ 32 A bez zaškrtnutého poučení
   s přebírajícím → nenápadný řádek nad pohledem a nález v „Co ještě chybí" (`zsUpozorneni`).
-- **Co by stejné pravidlo svorkovnic od výroby obnášelo u DBO** (zatím se neměnilo):
-  v `rzsNP` a `rozvMaPe` zrušit podmínku `zsJe(d)`, kreslit svorkovnice od výroby i v čelním
-  pohledu DBO (`rozvSvg`) a na listu osazení, nevyžadovat PE přípojnici na DIN v nálezech
-  „Co ještě chybí" a v 11.7, a ve svorkovém plánu / popiscích označit svorky „od výroby".
 
-Test: `testy/test-zasuvkova-skrin.js` (43 kontrol, vymyšlená skříň `testy/zasuvkova-skrin.js`).
+**Připomínky 2026-11-26 (LAB v1.98):**
+
+- **Šířka okna:** editor ZS má `.dok-wrap` bez `max-width` jako DBO/PSC (CSS `data-typ="zs"`).
+  Od šířky plochy pohledu **`ZS_VEDLE` = 1300 px** (na 2560 px) je čelo **vedle** čelního pohledu
+  (`#rz-pohled.zs-vedle` = mřížka 3 : 2, `rozvMeritkoNaSirku` pak počítá měřítko z 60 % plochy),
+  užší okno = čelo pod pohledem.
+- **Tažení zásuvky (XZ) z knihovny jde jen na ČELO:** duch = kresba zásuvky ve stejném měřítku
+  jako editor čela (`zsDuchHtml` → `zsZasKresba`, tatáž funkce kreslí čelo i list 1), cíl jen
+  plocha skříně v editoru čela (`zsCilZBodu`, mm po 5 mm), čelo se při tažení čárkovaně vyznačí
+  (`.zs-cil`), puštění → `zsVlozitNaCelo` → `zsZKnihovny(it, pos)`. Do DIN řady ji pustit ani
+  klepnout nejde (hláška). Klepnutí na zásuvku v knihovně: pruh „klepněte na čelo skříně, kam
+  zásuvku dát", klepnutí na čelo ji položí. **Vidlice (XP) se netáhne** — klepnutí ji dá rovnou
+  do přívodu.
+- **Přívod shora / zespodu** (a kabel, průřez): změna v hlavičce hned překreslí čelní pohled,
+  čelo i otevřené schéma (posluchač `change` na `privodSmer|privodKabel|privodPrurez`, zruší
+  `__rz.__kSir`). Platí pro DBO, PSC i ZS; PSC vývodku v čelním pohledu nekreslí vůbec.
+
+### 3D schované u DBO i PSC (2026-11-26, `ROZV_3D_SKRYTO`)
+
+Pokyn uživatele: záložku 🧊 3D a zaškrtávátko „pohled 3D (ilustrační)" v Dokumentech
+nezobrazovat, **kód nemazat**. `ROZV_3D_SKRYTO = true` (u `ROZV_KAT_ZS`) schová záložku
+i zaškrtávátko a `rozvVyber().pohled3d` je vždy false — 3D strana nejde do PDF, ani když ji
+rozvaděč má uloženou. **Uložené `d.pohled3d` a `dokVyber.pohled3d` se nemažou** (`cist`
+začíná kopií otevřených dat) — otevřený a uložený rozvaděč je bajtově stejný (test).
+`test-rozvadec-3d.js` si 3D pro svůj běh zapne (`ROZV_3D_SKRYTO = false`) a navíc hlídá, že je
+ve výchozím stavu schované. **Upraveno:** `test-rozvadec-psc.js`, `test-rozvadec-dokumenty.js`,
+`test-rozvadec-schema.js`, `test-zasuvkova-skrin.js` (záložky bez 3D, zaškrtávátka bez 3D).
+
+### Svorkovnice od výroby i u DBO (2026-11-26)
+
+Totéž pravidlo jako u zásuvkové skříně, i u DBO (pokyn uživatele): skříň s vyplněným
+`skrin.svorkovnice` (N / PE / PEN, pod / nad lištou, na boku).
+
+- **PE (PEN) od výroby splní kontrolu svorek PE i 11.7** (`rozvMaPe` bez podmínky ZS) a „Co
+  ještě chybí" PE přípojnici na liště nevyžaduje (`rzsNP` doplní chybějící sloty „PE (od
+  výroby) · n").
+- **N od výroby pokryje JEDNU skupinu N** — společné N, nebo jedinou skupinu, které svorky
+  chybí (v ZS1 je to N-FI1). Víc skupin za různými chrániči (N-FI1, N-FI2) jedna svorkovnice
+  nepokryje a dál se hlásí „Chybí přípojnice N-FI…".
+- **Kreslí se** (`rozvTovSvorkySvg`, volá ji `rozvSvg` — obrazovka, tisk i větev osazení listu 1)
+  do okraje skříně: pod lištou pod poslední řadou, nad lištou nad první řadou (vlevo místo pro
+  vývodku), na boku v pravém okraji. Mosazný pás se šrouby, štítek N (modře) / PE (zeleně),
+  „od výroby"; na listu osazení černobíle a jen jednoduché prvky. **Geometrie skříně se nemění**
+  a skříň bez svorkovnic dostane prázdný řetězec — ostatní DBO znak po znaku jako dřív
+  (`test-rozvadec-psc.js` proti předchozí verzi).
+- Popis skříně na listu osazení: „…, svorkovnice od výroby: N pod lištou, PE pod lištou".
+- Svorkový plán: sloty „N (od výroby) · 1", „PE (od výroby) · 1"… Popisky pod přístroje se
+  nemění (svorkovnice od výroby není přístroj v řadě).
+
+Test: `testy/test-rozvadec-tovarni-svorky.js` (14 kontrol — PE 17/17, N jen pro jednu skupinu,
+volno beze změny, kresba na obrazovce, v tisku i na osazení, svorkový plán, popis skříně,
+nad lištou / na boku, skříň bez svorkovnic beze změny, 3D schované u DBO i PSC s bajtově
+stejnými daty, přívod zespodu ↔ shora).
+
+Test: `testy/test-zasuvkova-skrin.js` (54 kontrol, vymyšlená skříň `testy/zasuvkova-skrin.js`; od 2026-11-26
+i kód XZ, tažení zásuvky skutečnou myší na čelo a do řady, klepnutí, vidlice, šířka 1920 / 2560 px, směr přívodu).
 V `test-mobil.js` stavy „zásuvková skříň – …". **Upraveno:** `test-rozvadec-psc.js` (pořadí
 dlaždic, šablona CSV 62 sloupců), `test-rozvadec.js` (pořadí dlaždic, 23 kategorií, zásuvka
 a vidlice bez šířky v modulech). Novinky se nedělaly.
