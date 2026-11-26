@@ -34170,8 +34170,15 @@ document.addEventListener('change', function (e) {
   });
 });
 // Dva vodiče pod jedním šroubem — ruční rozdělení / zpětné párování (x.svorkaSama)
-TD_AKCE.tdRSvRozdelit = function (b) { var U = (b.dataset.uidy || '').split(',').filter(Boolean); rozvZmena('Rozdělit vodiče do samostatných svorek', function () { rozvPrvkyVse(__rz.rady).forEach(function (x) { if (U.indexOf(x.uid) !== -1) x.svorkaSama = true; }); }); rzsObnovitOddil && rzsObnovitOddil(); };
-TD_AKCE.tdRSvParovat = function (b) { var U = (b.dataset.uidy || '').split(',').filter(Boolean); rozvZmena('Povolit dva vodiče v jedné svorce', function () { rozvPrvkyVse(__rz.rady).forEach(function (x) { if (U.indexOf(x.uid) !== -1) delete x.svorkaSama; }); }); rzsObnovitOddil && rzsObnovitOddil(); };
+// Rozdělená dvojice si nese společný klíč (svorkaSama = uid prvního vývodu), takže „⇄ Párovat" u kteréhokoli
+// z nich spojí zpátky celou dvojici jedním krokem (jedno ZPĚT). Starší / ruční svorkaSama = true platí jen pro vývod sám.
+TD_AKCE.tdRSvRozdelit = function (b) { var U = (b.dataset.uidy || '').split(',').filter(Boolean); rozvZmena('Rozdělit vodiče do samostatných svorek', function () { rozvPrvkyVse(__rz.rady).forEach(function (x) { if (U.indexOf(x.uid) !== -1) x.svorkaSama = U[0]; }); }); rzsObnovitOddil && rzsObnovitOddil(); };
+TD_AKCE.tdRSvParovat = function (b) {
+  var U = (b.dataset.uidy || '').split(',').filter(Boolean), V = rozvPrvkyVse(__rz.rady);
+  var klice = V.filter(function (x) { return U.indexOf(x.uid) !== -1 && typeof x.svorkaSama === 'string'; }).map(function (x) { return x.svorkaSama; });
+  rozvZmena('Spojit dvojici vodičů do jedné svorky', function () { V.forEach(function (x) { if (U.indexOf(x.uid) !== -1 || (x.svorkaSama && klice.indexOf(x.svorkaSama) !== -1)) delete x.svorkaSama; }); });
+  rzsObnovitOddil && rzsObnovitOddil();
+};
 function rozvNastaveniPohleduHtml() {
   if (!__rz || __rz.rezim === 'PSC' || !__rz.skrin) return '';
   var r = rozvCislaRezim(), mod = +__rz.skrin.modulu || 12;
@@ -49193,13 +49200,13 @@ function rzsPotrebaN(x) {
   return true;
 }
 // Dva vodiče pod jedním šroubem (2026-11-26): do jedné svorky N / PE smí dva vodiče STEJNÉHO průřezu
-// a téže skupiny. Program páruje sám (v pořadí čelního pohledu), x.svorkaSama = true párování zruší.
+// a téže skupiny. Program páruje sám (v pořadí čelního pohledu), x.svorkaSama (true / klíč dvojice) párování zruší.
 // Přívod a ochranné pospojování (průřez neznámý) se nepárují. → [{ v: [x, x?], pr }]
 function rzsPrNorm(t) { return String(t || '').replace(',', '.').trim(); }
 function rzsParovat(vyv) {
   var J = [], cek = {};
   (vyv || []).forEach(function (x) {
-    var pr = rzsPrNorm(rzsPrurezVodice(x)), smi = pr && x.svorkaSama !== true;
+    var pr = rzsPrNorm(rzsPrurezVodice(x)), smi = pr && !x.svorkaSama;
     if (smi && cek[pr]) { cek[pr].v.push(x); delete cek[pr]; return; }
     var j = { v: [x], pr: rzsPrurezVodice(x) }; J.push(j);
     if (smi) cek[pr] = j;
@@ -49259,7 +49266,7 @@ function rzsRadekJednotky(j, svorka, pot) {   // řádek svorkového plánu: jed
   var X = j.v, dva = X.length > 1;
   var kab = X.map(rzsKabelText).filter(function (t, i, a) { return t && a.indexOf(t) === i; }).join('; ');
   return { svorka: svorka, pot: pot, ozn: X.map(function (x) { return x.ozn || ''; }).join(', '), vyvod: X.map(function (x) { return x.vyvod || ''; }).filter(Boolean).join('; '),
-    kabel: kab, prurez: dva ? '2× ' + j.pr : (j.pr || ''), uidy: X.map(function (x) { return x.uid; }), dva: dva, sama: !dva && X[0].svorkaSama === true };
+    kabel: kab, prurez: dva ? '2× ' + j.pr : (j.pr || ''), uidy: X.map(function (x) { return x.uid; }), dva: dva, sama: !dva && !!X[0].svorkaSama };
 }
 // Řádky svorek N a PE pro tabulku svorkového plánu.
 function rzsNPRadky(rady, d) {

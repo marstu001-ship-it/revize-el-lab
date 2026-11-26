@@ -4411,8 +4411,9 @@ Svorka N / PE (od výroby i přípojnice na DIN) i řadová svorka L smí vzít 
 - N a PE: `rzsParovat(vyv)` páruje vývody téže skupiny se stejným průřezem (`rzsPrurezVodice`) v pořadí
   čelního pohledu; skupina má `jednotky`, `potreba = jednotky + 1` (PE + 2 pospojování). Přívod
   a pospojování se nepárují. Řádek plánu „N-FI1 · 2 · 2 vodiče │ -FA2, -FA3 │ 2× 1,5" (`rzsRadekJednotky`).
-- Ruční zrušení: **„✂ Rozdělit"** u řádku = `x.svorkaSama = true` u obou vývodů (vlastní svorky),
-  **„⇄ Párovat"** u samostatného řádku klíč smaže (obojí ZPĚT). Klíč se ukládá jen po zásahu.
+- Ruční zrušení: **„✂ Rozdělit"** u řádku = `x.svorkaSama = <uid prvního vývodu>` u obou vývodů (klíč dvojice,
+  vlastní svorky), **„⇄ Párovat"** u kteréhokoli z nich jedním klepnutím smaže klíč u celé dvojice
+  (jedno ZPĚT; starší `svorkaSama: true` platí jen pro vývod sám). Klíč se ukládá jen po zásahu.
 - L svorky (`rzsModel`): druhý vývod na témž slotu = `s.dalsi`; jiný průřez → `s.ruzne` = **upozornění**
   „různé průřezy v jedné svorce – použijte samostatné svorky", třetí vodič = **chyba** (v plánu
   i v „Co ještě chybí"). Výběr svorky v tabulce nabízí i svorku s jedním vývodem („druhý vodič k -FA1").

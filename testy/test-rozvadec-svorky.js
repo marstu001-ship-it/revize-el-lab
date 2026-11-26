@@ -210,9 +210,13 @@ async function otevri(b, url, vp) {
     r.pred = souc();
     const uidy = tl.dataset.uidy; TD_AKCE.tdRSvRozdelit(tl); await __T.w(100);
     r.poRozd = souc() - r.pred;
-    r.sama = uidy.split(',').every(u => rozvPrvkyVse(__rz.rady).find(x => x.uid === u).svorkaSama === true);
+    r.sama = uidy.split(',').every(u => !!rozvPrvkyVse(__rz.rady).find(x => x.uid === u).svorkaSama);
     const tp = document.querySelector('#rzs-obsah [data-action="tdRSvParovat"]'); r.tlPar = !!tp;
-    for (const u of uidy.split(',')) { const b2 = [...document.querySelectorAll('#rzs-obsah [data-action="tdRSvParovat"]')].find(x => x.dataset.uidy === u); if (b2) { TD_AKCE.tdRSvParovat(b2); await __T.w(100); } }
+    // jedno klepnutí na „⇄ Párovat" u kteréhokoli z dvojice spojí celou dvojici; jedno ZPĚT ji zase rozdělí
+    const b2 = [...document.querySelectorAll('#rzs-obsah [data-action="tdRSvParovat"]')].find(x => x.dataset.uidy === uidy.split(',')[1]);
+    TD_AKCE.tdRSvParovat(b2); await __T.w(100);
+    r.jedenKrok = uidy.split(',').every(u => !('svorkaSama' in rozvPrvkyVse(__rz.rady).find(x => x.uid === u)));
+    zpetPosledni(); await __T.w(100); r.zpetRozd = souc() - r.pred === 2; TD_AKCE.tdRSvParovat(b2); await __T.w(100);
     r.poPar = souc() - r.pred;
     // jiný průřez se nepáruje
     const fa = __T.naj('-FA25'); rozvZmena('p', () => { fa.prurez = '4'; });
@@ -229,7 +233,7 @@ async function otevri(b, url, vp) {
   });
   check('párování: N-FI1 20 vývodů 2,5 mm² = 10 svorek + přívod (11), PE 44 vývodů → 22 + 1 + 2 = 25', pa.fi1 === '20:11' && pa.pe === '44:25' && pa.dva, pa.fi1 + ' ' + pa.pe);
   check('párování: řádek plánu se dvěma vývody a „2× průřez"', /^-FA\d+, -FA\d+ · 2× /.test(pa.radek), pa.radek);
-  check('párování: „✂ Rozdělit" dá vodičům samostatné svorky (svorkaSama), „⇄ Párovat" je zase spojí', pa.tlRozd && pa.sama && pa.poRozd === 2 && pa.tlPar && pa.poPar === 0, pa.poRozd + ' / ' + pa.poPar);
+  check('párování: „✂ Rozdělit" dá vodičům samostatné svorky (svorkaSama), „⇄ Párovat" jedním klepnutím spojí celou dvojici (ZPĚT jedním krokem)', pa.tlRozd && pa.sama && pa.poRozd === 2 && pa.tlPar && pa.jedenKrok && pa.zpetRozd && pa.poPar === 0, pa.poRozd + ' / ' + pa.poPar);
   check('párování: vodič jiného průřezu zůstane sám', pa.jiny === 1, String(pa.jiny));
   check('svorka L: dva vodiče stejného průřezu bez nálezu, různé průřezy = upozornění, třetí vodič = chyba', pa.dvaL && pa.ruzne && pa.tri, JSON.stringify(pa));
 
