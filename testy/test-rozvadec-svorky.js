@@ -141,6 +141,8 @@ async function otevri(b, url, vp) {
   const np = await p.evaluate(async () => {
     const r = {};
     await __T.rs2(48); TD_AKCE.tdRSvPrirad(); await __T.w(100);
+    // počty po jednom vodiči na svorku: párování (dva vodiče pod šroubem) se vypne — x.svorkaSama, kontroly párování níž
+    rozvZmena('bez párování', () => rozvPrvkyVse(__rz.rady).forEach(x => { x.svorkaSama = true; }));
     let N = rzsNP(__rz.rady, __rz);
     r.skup = N.N.map(g => g.nazev + ':' + g.vyvody.length + ':' + g.potreba + ':' + g.kap).join(' ');
     r.pe = N.PE.potreba + ':' + N.PE.kap;
@@ -177,7 +179,7 @@ async function otevri(b, url, vp) {
     // RCBO a 3P motor se na N nepočítají
     const potrebaPred = rzsNP(__rz.rady, __rz).N.map(g => g.potreba).join();
     const rc = rozvVlozit('v-fifa-1N-B16', 3, __rz.rady[3].prvky.length), ms = rozvVlozit('v-fa-3-B40', 3, __rz.rady[3].prvky.length);
-    ms.spotr = 'motor'; ms.vyvod = 'Motor'; rc.vyvod = 'RCBO'; rozvPrecislovat();
+    ms.spotr = 'motor'; ms.vyvod = 'Motor'; rc.vyvod = 'RCBO'; rc.svorkaSama = ms.svorkaSama = true; rozvPrecislovat();
     r.rcbo = potrebaPred + ' → ' + rzsNP(__rz.rady, __rz).N.map(g => g.potreba).join() + ' PE ' + rzsNP(__rz.rady, __rz).PE.potreba;
     // ZPĚT vrátí přidání přípojnic
     return r;
@@ -191,6 +193,45 @@ async function otevri(b, url, vp) {
   check('N a PE: počet řádků plánu 93 (N 25 + N-FI1 21 + PE 47) a svorky jsou v tabulce', np.radku === 93 && np.vTab, String(np.radku));
   check('N a PE: přípojnice s 12 svorkami → „N-FI1 má 12 svorek, potřeba 21" a „Upravit počet" ji srovná na 21', np.malo && np.upraveno === '21|0', np.upraveno);
   check('N a PE: jističochránič (RCBO) a 3P motor se na N nepočítají (N-FI1 zůstává 21, společná N 25, PE +2)', np.rcbo === '25,21 → 25,21 PE 49', np.rcbo);
+
+  // ── 2b. dva vodiče stejného průřezu pod jedním šroubem (2026-11-26) ──
+  const pa = await p.evaluate(async () => {
+    const r = {};
+    await __T.rs2(48); TD_AKCE.tdRSvPrirad(); await __T.w(100);
+    const N = rzsNP(__rz.rady, __rz), g = N.N.filter(x => x.fi)[0];
+    r.fi1 = g.vyvody.length + ':' + g.potreba; r.pe = N.PE.vyvody.length + ':' + N.PE.potreba;
+    r.dva = g.jednotky.every(j => j.v.length === 2 || j === g.jednotky[g.jednotky.length - 1]);
+    const rows = rzsNPRadky(__rz.rady, __rz), r2 = rows.filter(x => x.dva)[0];
+    r.radek = r2 ? r2.ozn + ' · ' + r2.prurez : '';
+    // ruční rozdělení a zpětné párování
+    rozvZalozkaNastavit('dok'); await __T.w(100); document.querySelector('#rz-pan-dok [data-oddil="svorky"]').open = true;
+    const tl = document.querySelector('#rzs-obsah [data-action="tdRSvRozdelit"]'); r.tlRozd = !!tl;
+    const souc = () => { const q = rzsNP(__rz.rady, __rz); return q.N.reduce((a, g) => a + g.potreba, 0) + q.PE.potreba; };
+    r.pred = souc();
+    const uidy = tl.dataset.uidy; TD_AKCE.tdRSvRozdelit(tl); await __T.w(100);
+    r.poRozd = souc() - r.pred;
+    r.sama = uidy.split(',').every(u => rozvPrvkyVse(__rz.rady).find(x => x.uid === u).svorkaSama === true);
+    const tp = document.querySelector('#rzs-obsah [data-action="tdRSvParovat"]'); r.tlPar = !!tp;
+    for (const u of uidy.split(',')) { const b2 = [...document.querySelectorAll('#rzs-obsah [data-action="tdRSvParovat"]')].find(x => x.dataset.uidy === u); if (b2) { TD_AKCE.tdRSvParovat(b2); await __T.w(100); } }
+    r.poPar = souc() - r.pred;
+    // jiný průřez se nepáruje
+    const fa = __T.naj('-FA25'); rozvZmena('p', () => { fa.prurez = '4'; });
+    r.jiny = rzsNP(__rz.rady, __rz).N.filter(x => x.fi)[0].jednotky.filter(j => j.v.indexOf(fa) !== -1)[0].v.length;
+    // svorka L: druhý vodič stejného průřezu projde, jiný průřez = upozornění, třetí = chyba
+    const M0 = rzsModel(__rz.rady, __rz), s1 = M0.V[0].slots[0], v1 = M0.V[0].x, v2 = M0.V[1].x, v3 = M0.V[2].x;
+    rozvZmena('L', () => { v2.svorky = [{ u: v1.svorky[0].u, i: v1.svorky[0].i }]; });
+    let M = rzsModel(__rz.rady, __rz); r.dvaL = !!M.L.find(s => s.dalsi) && !M.L.find(s => s.dalsi).ruzne && !rzsKontrola().some(n => /různé průřezy|tři a víc/.test(n.text));
+    rozvZmena('L2', () => { v2.prurez = '10'; });
+    r.ruzne = rzsKontrola().some(n => n.u === 'upoz' && /různé průřezy v jedné svorce/.test(n.text));
+    rozvZmena('L3', () => { v3.svorky = [{ u: v1.svorky[0].u, i: v1.svorky[0].i }]; });
+    r.tri = rzsKontrola().some(n => n.u === 'chyba' && /tři a víc vodičů/.test(n.text));
+    return r;
+  });
+  check('párování: N-FI1 20 vývodů 2,5 mm² = 10 svorek + přívod (11), PE 44 vývodů → 22 + 1 + 2 = 25', pa.fi1 === '20:11' && pa.pe === '44:25' && pa.dva, pa.fi1 + ' ' + pa.pe);
+  check('párování: řádek plánu se dvěma vývody a „2× průřez"', /^-FA\d+, -FA\d+ · 2× /.test(pa.radek), pa.radek);
+  check('párování: „✂ Rozdělit" dá vodičům samostatné svorky (svorkaSama), „⇄ Párovat" je zase spojí', pa.tlRozd && pa.sama && pa.poRozd === 2 && pa.tlPar && pa.poPar === 0, pa.poRozd + ' / ' + pa.poPar);
+  check('párování: vodič jiného průřezu zůstane sám', pa.jiny === 1, String(pa.jiny));
+  check('svorka L: dva vodiče stejného průřezu bez nálezu, různé průřezy = upozornění, třetí vodič = chyba', pa.dvaL && pa.ruzne && pa.tri, JSON.stringify(pa));
 
   // ── 3. kontrola „Co ještě chybí" ──────────────────────────────────────
   const ko = await p.evaluate(async () => {
@@ -253,7 +294,7 @@ async function otevri(b, url, vp) {
     // tlačítko „Přidat přípojnici" přímo z pruhu
     const pb = document.querySelector('#rz-chybi [data-action="tdRSvPridatPrip"][data-f="PE"]'); r.tlPE = !!pb;
     pb.click(); await w(400);
-    r.poPE = rzsNP(__rz.rady, __rz).PE.kap;
+    r.poPE = rzsNP(__rz.rady, __rz).PE.kap; r.pePot = rzsNP(__rz.rady, __rz).PE.potreba;
     r.zmizelo = !rzsKontrola().some(n => /Méně než 2 svorky PE/.test(n.text));
     return r;
   });
@@ -261,7 +302,7 @@ async function otevri(b, url, vp) {
   check('Co ještě chybí: chybí přípojnice N a N-FI1, méně než 2 svorky PE (chyba), vložka větší než odpojovač (chyba)', nk.chybiN && nk.pe && nk.vlozka, nk.txt.join(' | '));
   check('Co ještě chybí: SPD bez předjištění, přívodní svorky nic nenapájí, přetížený hřeben (chyba), přístroje bez Pv při zapnutém oteplení (tip)', nk.spd && nk.priv && nk.hreben && nk.pv, nk.txt.join(' | '));
   check('Co ještě chybí: pořadí chyba → upozornění → tip, souhrn v pruhu červeně', /^chyba,upoz,tip$/.test(nk.poradi) && nk.cerv && /^⛔ Co ještě chybí: \d+ chyb\w* · \d+ upozornění · (1 tip|2 tipy)$/.test(nk.pruh), nk.poradi + ' / ' + nk.pruh);
-  check('Co ještě chybí: klepnutí na nález vybere přístroj (-FA5) nebo hřeben; tlačítko „Přidat přípojnici PE" v pruhu nález odstraní', nk.vybran === '-FA5' && nk.hrVyber && nk.tlPE && nk.poPE === 47 && nk.zmizelo, nk.vybran + ' ' + nk.poPE);
+  check('Co ještě chybí: klepnutí na nález vybere přístroj (-FA5) nebo hřeben; tlačítko „Přidat přípojnici PE" v pruhu nález odstraní', nk.vybran === '-FA5' && nk.hrVyber && nk.tlPE && nk.poPE === nk.pePot && nk.zmizelo, nk.vybran + ' ' + nk.poPE);
 
   // bez napětí a chybějící fáze
   const bn = await p.evaluate(async () => {

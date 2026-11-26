@@ -157,7 +157,8 @@ const zpravaOtevritUlozit = async (p) => p.evaluate(async () => {
     await dokOtevrit(uid); rozvZalozkaNastavit('dok'); await new Promise(r => setTimeout(r, 300));
     ['cp', 'schema', 'tech', 'prohl', 'ko'].forEach(k => { const c = dokForm().querySelector('[data-dk="dokVyber.' + k + '"]'); if (c) { c.checked = true; c.dispatchEvent(new Event('change', { bubbles: true })); } });
     await TD_AKCE.tdRDokPdf(); await new Promise(r => setTimeout(r, 400));
-    const dok = document.getElementById('dok-pdf-pages').innerText;
+    // 2026-11-26: list osazení (ČB kresba přístrojů) se záměrně změnil — porovnává se bez něj
+    const dok = [...document.getElementById('dok-pdf-pages').children].filter(pg => !/Osazení rozvaděče/.test(pg.innerText)).map(pg => pg.innerText).join('\n');
     await TD_AKCE.tdPdfZpet(); await dokOtevrit(uid); rozvZalozkaNastavit('dok'); await new Promise(r => setTimeout(r, 200));
     const d = DOK_TYPY.rozv.cist(dokForm()), e = rozvDokEff(d);
     return { dok, ot: rozvPdfOtepleni(d, e).map(b => b.html).join(''), sch: rozvSchemaListy(d).map(l => l.svg).join(''), soud: rozvSoudListSvg(d).svg };

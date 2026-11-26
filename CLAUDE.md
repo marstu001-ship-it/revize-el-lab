@@ -4374,10 +4374,52 @@ Totéž pravidlo jako u zásuvkové skříně, i u DBO (pokyn uživatele): skř�
 - Svorkový plán: sloty „N (od výroby) · 1", „PE (od výroby) · 1"… Popisky pod přístroje se
   nemění (svorkovnice od výroby není přístroj v řadě).
 
-Test: `testy/test-rozvadec-tovarni-svorky.js` (14 kontrol — PE 17/17, N jen pro jednu skupinu,
-volno beze změny, kresba na obrazovce, v tisku i na osazení, svorkový plán, popis skříně,
+Test: `testy/test-rozvadec-tovarni-svorky.js` (17 kontrol — PE 11/11 (s párováním vodičů), N jen pro jednu
+skupinu, víc lišt N, volno beze změny, kresba na obrazovce, v tisku i na osazení, svorkový plán, popis skříně,
 nad lištou / na boku, skříň bez svorkovnic beze změny, 3D schované u DBO i PSC s bajtově
 stejnými daty, přívod zespodu ↔ shora).
+
+### Víc lišt N od výroby (2026-11-26)
+
+Dělená N lišta / dvě lišty N: text `skrin.svorkovnice` smí mít víc položek N (i PEN), např.
+„N pod, N pod, PE pod". **Přiřazení ke skupině** = `skrin.svN` (pole podle pořadí lišt N v textu:
+`''` společné N, uid chrániče = N-FIx, `null` = automaticky), ukládá se jen když ho technik nastaví
+(jen v kopii skříně v rozvaděči).
+- `rzsNP`: přiřazená lišta doplní svou skupinu (`dopl`), nepřiřazené: **jedna lišta = dosavadní pravidlo**
+  (společné N, nebo jediná skupina, které svorky chybí — ZS1 beze změny), víc lišt se rozdělí po pořadí
+  na skupiny, kterým svorky chybí (společné N, pak chrániče zleva). `np.listyN` = jméno skupiny každé lišty.
+- Kresba (`rozvTovSvorkySvg`): štítek lišty „N-FI1"… jen když jsou lišty N dvě a víc nebo je některá
+  přiřazená — jinak beze změny.
+- Panel **„🔩 Svorkovnice od výroby"** ve vlastnostech rozvaděče bez výběru (DBO, ZS; `rozvTovPanelHtml`):
+  u lišty N / PE / PEN, místo, počet svorek, u N „pro skupinu", 🗑 Smazat, ＋ Lišta N / ＋ Lišta PE
+  (`rozvTovUpravit` přes `rozvZmena` — ZPĚT, přiřazení putuje s lištou).
+
+### List osazení DBO — ČB čárová kresba přístrojů (2026-11-26)
+
+List 1 schématu (`rozvSvg` s `o.osazeni`, u PSC DIN segmenty v `pscOsazeniSvg`) kreslí přístroje
+**stejnou funkcí jako čelo zásuvkové skříně** — `rsCeloPrvek(x, px, py, pw, ph, F, zT, o)`: obrys,
+páčka, svorky podle pólů, T u chrániče, přípojnice se šrouby a štítkem N/PE, označení a hodnota nad
+přístrojem (úzké přístroje svisle uvnitř); rezervy a mezery přeškrtnuté jako dřív. **Kóty skříně**
+(šířka dole, výška vpravo) když jsou vyplněné `skrin.rozmery`. Jen jednoduché SVG prvky (vektorové PDF).
+U PSC při zmenšení pod ~2 mm na papíře jen obrys. **Mění se list 1 všech DBO** (záměr); editor, data,
+ostatní listy a PDF beze změny — testy porovnávající se starou verzí vynechávají list osazení
+(`testy/bez-n.js`, konec funkce).
+
+### Dva vodiče pod jedním šroubem (2026-11-26)
+
+Svorka N / PE (od výroby i přípojnice na DIN) i řadová svorka L smí vzít **dva vodiče stejného průřezu**.
+- N a PE: `rzsParovat(vyv)` páruje vývody téže skupiny se stejným průřezem (`rzsPrurezVodice`) v pořadí
+  čelního pohledu; skupina má `jednotky`, `potreba = jednotky + 1` (PE + 2 pospojování). Přívod
+  a pospojování se nepárují. Řádek plánu „N-FI1 · 2 · 2 vodiče │ -FA2, -FA3 │ 2× 1,5" (`rzsRadekJednotky`).
+- Ruční zrušení: **„✂ Rozdělit"** u řádku = `x.svorkaSama = true` u obou vývodů (vlastní svorky),
+  **„⇄ Párovat"** u samostatného řádku klíč smaže (obojí ZPĚT). Klíč se ukládá jen po zásahu.
+- L svorky (`rzsModel`): druhý vývod na témž slotu = `s.dalsi`; jiný průřez → `s.ruzne` = **upozornění**
+  „různé průřezy v jedné svorce – použijte samostatné svorky", třetí vodič = **chyba** (v plánu
+  i v „Co ještě chybí"). Výběr svorky v tabulce nabízí i svorku s jedním vývodem („druhý vodič k -FA1").
+- Data rozvaděče se nemění — mění se jen počty svorek a nálezy (starý rozvaděč otevřený a uložený bajtově stejně).
+
+Test: `testy/test-rozvadec-svorky.js` (oddíl 2b — počty s párováním, řádek plánu, Rozdělit / Párovat,
+jiný průřez, L svorka se dvěma / různými / třemi vodiči; oddíl 2 počítá bez párování přes `svorkaSama`).
 
 Test: `testy/test-zasuvkova-skrin.js` (54 kontrol, vymyšlená skříň `testy/zasuvkova-skrin.js`; od 2026-11-26
 i kód XZ, tažení zásuvky skutečnou myší na čelo a do řady, klepnutí, vidlice, šířka 1920 / 2560 px, směr přívodu).

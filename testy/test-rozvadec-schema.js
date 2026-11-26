@@ -114,7 +114,8 @@ const presahy = (p, svg) => p.evaluate(svg => {
   check('výkres bytu: 2 listy A4 297 × 210 (osazení + jednopólové schéma)', L.length === 2 && L.every(l => l.W === 297 && l.H === 210 && l.fmt === 'A4'), L.length);
   check('list 1: nadpis „Osazení rozvaděče RH1" a „Rozvodnice 3×12 modulů, IP40 / IP20"', t1.includes('Osazení rozvaděče RH1') && t1.includes('Rozvodnice 3×12 modulů, IP40 / IP20'), t1.slice(0, 4).join(' | '));
   const osaz = ['-QH1', 'SPD1', '-FA1', '-FI1', '-FA9', '-FI2', '-FI/FA1', '-FA14'].every(o => t1.includes(o));
-  check('list 1: osazení ze čelního pohledu (svislé označení přístrojů)', osaz && /rotate\(-90/.test(L[0].svg), t1.filter(x => /^-|SPD/.test(x)).join(' '));
+  // 2026-11-26: ČB čárová kresba přístrojů (označení a hodnota nad přístrojem, T u chrániče, svorky podle pólů)
+  check('list 1: osazení ze čelního pohledu — ČB kresba přístrojů s označením, hodnotou a T u chrániče', osaz && t1.includes('T') && t1.some(x => /B16/.test(x)) && !/class=/.test(L[0].svg), 'T:' + t1.includes('T') + ' B16:' + t1.some(x => /B16/.test(x)) + ' class:' + /class=/.test(L[0].svg));
   const rad = ['Rozvaděč', 'Rozvodná soustava', 'Ochrana před nebezpečným dotykem', 'Typ', 'Provedení', 'Přívod / vývody', 'Rozměr', 'Krytí', 'Vnější vlivy', 'Pi [kW]', 'Pm [kW]', 'Hmotnost'];
   check('list 1: tabulka údajů má všech 12 řádků v pořadí', rad.every((r, i) => t1.indexOf(r) !== -1 && (i === 0 || t1.indexOf(r) > t1.indexOf(rad[i - 1]))), rad.filter(r => !t1.includes(r)).join(','));
   check('tabulka: RH1 – Předsíň, 3/N/PE AC 400/230 V 50 Hz TN-S, nástěnná, plast, přívod shora, IP40 / IP20',

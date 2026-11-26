@@ -34,8 +34,8 @@ const w = ms => new Promise(r => setTimeout(r, ms));
       obr: /od výroby/.test(svg) && />N<\/text>/.test(svg) && />PE<\/text>/.test(svg), tisk: /od výroby/.test(tisk), osaz: /od výroby/.test(osaz) && !/class=/.test(rozvTovSvorkySvg(d, true)), pl,
       volno: rozvVolnoCelkem(__rz).volno };
   });
-  check('DBO: PE od výroby splní svorky PE (17/17) a 11.7, „Co ještě chybí" PE na liště nevyžaduje', a.pe === '17/17' && a.maPe && !/svorky PE|přípojnice PE/.test(a.L), a.pe + ' | ' + a.L);
-  check('DBO: N od výroby pokryje společné N; skupiny za chrániči (N-FI1, N-FI2) jedna svorkovnice nepokryje a dál se hlásí', /^N 2\/2,N-FI1 0\/9,N-FI2 0\/5$/.test(a.n) && /N-FI1/.test(a.L), a.n);
+  check('DBO: PE od výroby splní svorky PE (11/11 — dva vodiče 2,5 mm² pod šroubem) a 11.7, „Co ještě chybí" PE na liště nevyžaduje', a.pe === '11/11' && a.maPe && !/svorky PE|přípojnice PE/.test(a.L), a.pe + ' | ' + a.L);
+  check('DBO: N od výroby pokryje společné N; skupiny za chrániči (N-FI1, N-FI2) jedna svorkovnice nepokryje a dál se hlásí', /^N 2\/2,N-FI1 0\/5,N-FI2 0\/4$/.test(a.n) && /N-FI1/.test(a.L), a.n);
   check('DBO: svorkovnice nezabírají moduly (volno beze změny)', a.volno === 0, a.volno);
   check('DBO: kreslí se v čelním pohledu (obrazovka i tisk) a na listu osazení (jen jednoduché prvky)', a.obr && a.tisk && a.osaz, JSON.stringify(a).slice(0, 120));
   check('svorkový plán: svorky PE „od výroby"', /PE \(od výroby\) · 1/.test(a.pl) && /N \(od výroby\)/.test(a.pl), a.pl.slice(0, 200));
@@ -43,6 +43,28 @@ const w = ms => new Promise(r => setTimeout(r, ms));
   const l1 = await p.evaluate(() => { const t = [...document.querySelectorAll('#rz-pan-sch svg text')].map(x => x.textContent).join(' '); return { od: /od výroby/.test(t), pop: /svorkovnice od výroby: N pod lištou, PE pod lištou/.test(t) }; });
   check('list osazení: svorkovnice nakreslené a v popisu skříně „svorkovnice od výroby: N pod lištou, PE pod lištou"', l1.od && l1.pop, JSON.stringify(l1));
   await p.evaluate(() => rozvZalozkaNastavit('navrh')); await w(300);
+
+  // ── 1b. víc lišt N od výroby: přiřazení ke skupinám, kresba, panel ──
+  await zaloz('N pod, N pod, N pod, PE pod');
+  const vn = await p.evaluate(async () => {
+    const r = {}, fi = rozvPrvkyVse(__rz.rady).filter(x => x.p.kat === 'FI');
+    let np = rzsNP(__rz.rady, __rz); r.auto = np.N.map(g => g.nazev + ' ' + g.kap + '/' + g.potreba).join(',') + ' | ' + np.listyN.join(',');
+    rozvZmena('p', () => { __rz.skrin.svN = [fi[1].uid, '', fi[0].uid]; });
+    np = rzsNP(__rz.rady, __rz); r.prir = np.listyN.join(',');
+    r.ok = !rzsKontrola().some(n => /přípojnice N/.test(n.text));
+    const svg = document.querySelector('#rz-pohled .rz-svg').outerHTML; r.stitky = />N-FI2<\/text>/.test(svg) && />N-FI1<\/text>/.test(svg);
+    r.panel = document.querySelectorAll('.rz-tov-radek').length;
+    // panel: smazat druhou lištu (společné N) → přiřazení se posune s lištami
+    TD_AKCE.tdRTovSmazat({ dataset: { i: '1' } }); await new Promise(x => setTimeout(x, 100));
+    r.poSmaz = __rz.skrin.svorkovnice + ' | ' + JSON.stringify(__rz.skrin.svN.map(u => u === fi[0].uid ? 'FI1' : u === fi[1].uid ? 'FI2' : u));
+    TD_AKCE.tdRTovPridat({ dataset: { f: 'N' } }); await new Promise(x => setTimeout(x, 100));
+    r.poPrid = __rz.skrin.svorkovnice;
+    zpetPosledni(); zpetPosledni(); r.zpet = __rz.skrin.svorkovnice;
+    return r;
+  });
+  check('víc lišt N: bez přiřazení se rozdělí po pořadí (společné N, N-FI1, N-FI2) a všechny skupiny vyhoví', /^N 2\/2,N-FI1 5\/5,N-FI2 4\/4 \| N,N-FI1,N-FI2$/.test(vn.auto), vn.auto);
+  check('víc lišt N: ruční přiřazení (svN) splní svou skupinu, lišty mají štítek N-FI1 / N-FI2', vn.prir === 'N-FI2,N,N-FI1' && vn.ok && vn.stitky, JSON.stringify(vn));
+  check('víc lišt N: panel „Svorkovnice od výroby" — smazání lišty posune přiřazení, přidání lišty, ZPĚT', vn.panel === 4 && vn.poSmaz === 'N pod, N pod, PE pod | ["FI2","FI1"]' && vn.poPrid === 'N pod, N pod, PE pod, N pod' && vn.zpet === 'N pod, N pod, N pod, PE pod', JSON.stringify(vn));
 
   // ── 2. nad lištou a na boku ──
   await zaloz('N nad, PE bok');
