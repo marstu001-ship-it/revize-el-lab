@@ -4428,6 +4428,56 @@ V `test-mobil.js` stavy „zásuvková skříň – …". **Upraveno:** `test-ro
 dlaždic, šablona CSV 62 sloupců), `test-rozvadec.js` (pořadí dlaždic, 23 kategorií, zásuvka
 a vidlice bez šířky v modulech). Novinky se nedělaly.
 
+### Editor čela zásuvkové skříně „jako profesionální program" (2026-11-26, bloky „ZÁSUVKOVÁ SKŘÍŇ — editor čela")
+
+Zadání uživatele 2026-11-26 (snímky a GIF schváleny: „Výkres schválen"). Ovládání čela sjednocené s DIN lištou.
+**DBO a PSC beze změny; ČB kresba `zsCeloVykres` zůstává pro PDF (list 1), editor má vlastní `zsCeloEditorSvg`.**
+
+- **Výběr společný s DIN** (`__rz.vyberZas`, `__rz.vicZas`, jen v paměti): klik, Ctrl+klik, Shift+klik, obdélník
+  z prázdného místa (`__zsObd`), Ctrl+A na čele, Esc a klik do prázdna zruší; klik na DIN výběr zásuvek zruší
+  a naopak. **Vybraný přístroj na DIN nikdy neblokuje vložení** — zásuvka jde na čelo a napájí ji ten jistič.
+- **„＋ Zásuvka s jističem"** (`zsZasSJisticem`): zásuvka na čelo + jistič do DIN, propojené, jedno ZPĚT; jistič
+  `zsJisticPro` (In zásuvky, 3P u 400 V, CEE char. C, domovní B) obecný nebo z výchozí řady výrobce (`rzcPolozka`).
+  Volné místo `zsVolneMisto` (po 5 mm, s víčkem, pod oknem, pak kdekoli; není-li, nejmenší kolize + hláška).
+- **Nabídka (pravý klik / dlouhý stisk, `zsKontextZkusit`)**: zásuvka — Vlastnosti, Napájí ji ▸, Duplikovat,
+  Kopírovat, Vložit, (u výběru) Zarovnat ▸, Rozmístit ▸, Vycentrovat, Přečíslovat (i s jističi), Smazat / Smazat
+  i s jističem; prázdné čelo — Vložit zásuvku sem ▸ (oblíbené / poslední), s jističem, Vložit, Vybrat vše,
+  Přečíslovat; vodič, přívod a vidlice vlastní.
+- **Pohyb**: tažení myší i prstem, duch v měřítku, mřížka 5 mm (Shift 1 mm), přichycení k hranám a středům zásuvek
+  i čela se žlutým vodítkem (`zsPrichytit`, `.zs-vodx` / `.zs-vody`), blok se táhne celý, tažení = jedno ZPĚT;
+  šipky 5 mm / Shift 1 mm. **Při stisku se překresluje jen čelo na místě (`zsPrekreslitCelo`, `zsCeloPrekreslit`
+  ponechá tentýž prvek `<svg>`)** — nahrazený prvek by ztratil prst (setPointerCapture) a dlouhý stisk.
+- **Kolize (jen nález, neblokuje)** `zsKolizeDuvody`: mimo čelo, okno DIN, jiná zásuvka, **víčko** (narazí na okno,
+  zásuvku, rukojeť). Prostor pro víčko `zsVicko`: `p.vicko` z knihovny / zadaný, jinak **výchozí návrh programu**
+  CEE 16 A 60 · 32 A 70 · 63 A 90 · domovní 35 mm — ověřte u výrobce.
+- **Kontroly** (`zsKontroly` v `rzsKontrola`, klikatelné): jistič In > zásuvka In, 1P na 4P/5P, 3P na 230 V,
+  Un ≠ napětí vývodu (chyby), zásuvka bez napájení (upozornění), jistič bez vývodu i zásuvky, součet In proti
+  vidlici (tipy). Jistič, který napájí zásuvku, se nehlásí jako vývod bez názvu / kabelu.
+- **Přečíslování podle polohy** (shora zleva, volitelně i jističe), **štítky na čelo** („-XZ2 · 230 V 32 A · -FA2",
+  50 × 12 mm, ořezové značky, úsečka 50 mm, `tdZsStitky`).
+- **Vrtací plán** (`dokVyber.vrtani`, `d.vrtani = { meritko, koty, sablona }`, ukládá se jen zvolené): list s kótami
+  v měřítku, které se vejde (1:1 / 1:2 / 1:2,5 / 1:5 na A4 / A3, titulek měřítka), kóty řetězově / od základny,
+  tabulka otvorů; výřez a rozteč šroubů z knihovny (`p.vyrez`, `p.roztecSroubu`), jinak „výřez – doplňte".
+  **Šablona 1:1 (víc listů A4)** `zsSablonaListy`: čelo ve skutečné velikosti na listy A4 na výšku (plocha
+  190 × 277 mm, přesah 10 mm vyznačený „přesah – přiložte list N"), ořezové značky, „list i / N (sloupec, řada)",
+  schéma skládání (2 × 3), středy otvorů křížkem, obrys výřezu, úsečka 50 mm, pokyn 100 %. Jen jednoduché prvky —
+  co přesahuje plochu, zakryjí bílé okraje (bez clipPath). **Vektorové PDF list na výšku neotáčí** (`vektorStrana`).
+- **Čelo „jako v dílně"** (jen editor): CEE barvou podle napětí **[ověřit v ČSN EN IEC 60309-2]**, přepínač
+  **Zvenku / Zapojení**. V Zapojení svorky jističů, N / PE (svorkovnice od výroby, přípojnice) a zásuvek; vodič se
+  natáhne tažením (L jen z jističe, N z N, PE z PE), `celo.vodice = [{ uid, a, b: { u, s }, prurez }]` jen po
+  natažení, **⚡ Zapojit automaticky** podle „Napájí ji", vodič L určuje „Napájí ji". Vodiče k zásuvkám jdou do
+  **svorkového plánu** (`zsVodiceTabHtml`, i PDF) a **kusovníku** (`rzvMaterial`, „– k zásuvkám na čele N ks").
+- Nové volitelné klíče knihovny / CSV: `vicko_mm`, `vyrez_mm`, `roztec_sroubu_mm` (šablona 65 sloupců).
+- **Nabídka otevřená dlouhým stiskem** (obecně, `ktOtevrit`): zvednutí prstu nad položkou ji nespustí — platí až
+  další klepnutí (dřív se tak na telefonu spustila položka pod prstem).
+
+Test: `testy/test-zs-celo.js` (skutečná myš: vložení s vybraným jističem, výběr, nabídky, zarovnání, tažení
+s vodítkem a ZPĚT, šipky, kolize víčka, Zásuvka s jističem, kontroly a klik na nález, přečíslování, štítky,
+vrtací plán a šablona 1:1, Zapojení a vodiče, svorkový plán a kusovník; telefon 375 px: dlouhý stisk, tah prstem,
+dva prsty; data beze změny po otevření). V `test-mobil.js` stavy „zásuvková skříň – čelo…", „…vrtací plán
+a šablona 1:1", „…náhled štítků". **Upraveno:** `test-zasuvkova-skrin.js` (nový editor: popisky, přichycení,
+kolize s víčkem, text přívodu). Novinky se nedělaly.
+
 ### Výměna výkresů s CAD — export a import DXF (2026-11-02, bloky „ROZVADĚČ — VÝMĚNA S CAD")
 
 Zadání uživatele: technici kreslí ve Schématech CAD (Elmer), který ukládá

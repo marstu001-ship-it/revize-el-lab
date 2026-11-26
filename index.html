@@ -1811,6 +1811,19 @@ html.dark .zs-celo-lista b{color:#5cc8cf}
 .zs-pridat{margin-left:auto}
 .zs-celo-svg{display:block;width:100%;max-width:560px;height:auto;margin:.3rem auto;background:#fff;border-radius:4px;touch-action:none}
 .zs-celo-svg [data-zasuvka]{cursor:grab}
+/* editor čela 2026-11-26: přepínač Zvenku / Zapojení, zoom, svorky a vodiče, štítky na čelo */
+.zs-celo-ram{overflow:auto;max-width:100%;-webkit-overflow-scrolling:touch}
+.zs-prep{display:inline-flex;border:1px solid #9fb0b4;border-radius:6px;overflow:hidden}
+.zs-pohl{border:0;background:transparent;padding:.25rem .6rem;font:inherit;font-size:.82rem;cursor:pointer;color:inherit}
+.zs-pohl.akt{background:#00727a;color:#fff}
+.zs-zoom{display:inline-flex;gap:.2rem}
+.zs-celo-svg [data-puid]{cursor:pointer}
+.zs-celo-svg .zs-sv{cursor:crosshair}
+.zs-celo-svg [data-zs-w]{cursor:pointer}
+.zs-celo-svg [data-zs-privod]{cursor:context-menu}
+#zs-celo:focus{outline:none}
+.zs-stitky-list{position:relative}
+.zs-stitek{position:absolute;box-sizing:border-box;border:.2mm solid #000;display:flex;align-items:center;justify-content:center;font:700 3.4mm/1.1 "DM Sans",Arial,sans-serif;white-space:nowrap;overflow:hidden;color:#000;background:#fff}
 #zs-celo.zs-cil{outline:2px dashed #00727a;outline-offset:2px}
 #rz-pohled.zs-vedle{display:grid;grid-template-columns:minmax(0,3fr) minmax(0,2fr);column-gap:14px;align-items:start}
 #rz-pohled.zs-vedle>*{grid-column:1/-1}
@@ -2062,6 +2075,8 @@ html.dark .r3-bez-hl{color:#f0c27a}
 .a4.rz-sch-strana>svg{display:block;width:297mm;height:210mm}
 .a4.rz-sch-strana.rz-sch-a3{width:420mm;height:297mm;min-height:297mm}
 .a4.rz-sch-strana.rz-sch-a3>svg{width:420mm;height:297mm}
+.a4.rz-sch-strana.zs-sab-strana{width:210mm;height:297mm;min-height:297mm}
+.a4.rz-sch-strana.zs-sab-strana>svg{width:210mm;height:297mm}
 .rz-dok-vyber{display:flex;flex-wrap:wrap;gap:.1rem 1.1rem;align-items:center;font-size:.86rem;margin-bottom:.5rem}
 .rz-dok-vyber-t{font-weight:600}
 .rz-zatrh{font-size:.86rem;margin:.3rem 0}
@@ -8890,12 +8905,16 @@ function ktOtevrit(x, y, pol) {
   box.style.left = Math.max(4, Math.min(x, window.innerWidth - v.width - 8)) + 'px';
   box.style.top = Math.max(4, Math.min(y, window.innerHeight - v.height - 8)) + 'px';
   box.focus();
+  // Otevřeno dlouhým stiskem prstem: zvednutí prstu nad položkou ji nesmí spustit — platí až další klepnutí.
+  var dotykem = !!window.__ktDotykem;
+  box.addEventListener('pointerdown', function () { box.__stisk = true; });
 
   box.addEventListener('click', function (e) {
     var b = e.target.closest('.kt-pol');
     if (!b) return;
     e.preventDefault();
     e.stopPropagation();
+    if (dotykem && !box.__stisk) return;
     var p = pol[+b.dataset.i];
     ktZavrit();          // nejdřív zavřít, teprve pak akce (může otevřít dialog)
     if (!p) return;
@@ -8921,6 +8940,7 @@ function ktOtevrit(x, y, pol) {
 var KT_NECHAT_PROHLIZECI = 'textarea, select, .rich-edit, [contenteditable="true"]';
 
 function ktZkusit(x, y, cil) {
+  if (cil && cil.isConnected === false) { var cz = document.elementFromPoint(x, y); if (cz) cil = cz; }   // prvek se mezitím překreslil (dlouhý stisk)
   if (cil.closest(KT_NECHAT_PROHLIZECI)) return false;
   // přístroj v čelním pohledu rozvaděče (tvorba dokumentace)
   if (typeof rozvKontextZkusit === 'function' && rozvKontextZkusit(x, y, cil)) return true;
@@ -32061,8 +32081,8 @@ var ROZV_CISELNE = ['In', 'icn', 'icu', 'ics', 'idn', 'up', 'sirka', 'pv', 'ue',
 // PSC (etapa 5a): u přístroje jen když jsou vyplněné — položky DBO zůstávají bajt po bajtu stejné.
 var ROZV_PRISTROJ_PSC = ['icw', 'nastaveni', 'sirkaMm', 'vyskaMm', 'hloubkaMm'];
 // Transformátor, zdroj, ostatní (2026-10-22): taky jen vyplněné — starší položky zůstávají beze změny.
-var ROZV_PRISTROJ_NAVIC = ['vykon', 'uVstup', 'uVystup', 'iVystup', 'ozn', 'uc', 'kontakty', 'ieAc1', 'peAc3', 'rozsah', 'prislK', 'montaz', 'prislTyp', 'ovladani', 'velikost', 'pvMaxVlozky', 'druhZas', 'polyZ', 'ip'];
-var ROZV_PRISTROJ_NAVIC_TEXT = ['uVstup', 'uVystup', 'ozn', 'uc', 'kontakty', 'rozsah', 'prislK', 'montaz', 'prislTyp', 'ovladani', 'velikost', 'druhZas', 'polyZ', 'ip'];
+var ROZV_PRISTROJ_NAVIC = ['vykon', 'uVstup', 'uVystup', 'iVystup', 'ozn', 'uc', 'kontakty', 'ieAc1', 'peAc3', 'rozsah', 'prislK', 'montaz', 'prislTyp', 'ovladani', 'velikost', 'pvMaxVlozky', 'druhZas', 'polyZ', 'ip', 'vicko', 'vyrez', 'roztecSroubu'];
+var ROZV_PRISTROJ_NAVIC_TEXT = ['uVstup', 'uVystup', 'ozn', 'uc', 'kontakty', 'rozsah', 'prislK', 'montaz', 'prislTyp', 'ovladani', 'velikost', 'druhZas', 'polyZ', 'ip', 'vyrez', 'roztecSroubu'];
 var ROZV_POLE_KLICE = ['nazev', 'vyrobce', 'rada', 'typ', 'provedeni', 'material', 'sirkaMm', 'vyskaMm', 'hloubkaMm', 'uzitnaSirkaMm', 'uzitnaVyskaMm',
   'ip', 'ik', 'ina', 'penc', 'icw', 'rozmery', 'trida', 'pozn', 'zdroj', 'overeno'];
 var ROZV_POLE_CISELNE = ['sirkaMm', 'vyskaMm', 'hloubkaMm', 'uzitnaSirkaMm', 'uzitnaVyskaMm', 'ina', 'penc', 'icw'];
@@ -37819,6 +37839,11 @@ function rzvMaterial(d) {
     });
   });
   cp.sort(function (a, b) { return a.c - b.c; }).forEach(function (q) { ret.push('vodič ' + q.c + ', H07V-K ' + q.p + ' mm²' + (q.b ? ' ' + RZV_BARVY[q.b] : '') + (cm[q.key] > 1 ? ' – ' + cm[q.key] + ' ks' : '')); });
+  if (typeof zsVodiceRadky === 'function' && d.celo && d.celo.vodice) {   // zásuvková skříň: vodiče k zásuvkám na čele
+    var zm = {}, zp = [];
+    zsVodiceRadky(d).forEach(function (r) { if (!r.pr) return; var key = r.pr + '|' + r.b; if (!zm[key]) { zm[key] = 0; zp.push(key); } zm[key]++; });
+    zp.forEach(function (key) { var q = key.split('|'); ret.push('Vodič H07V-K ' + q[0] + ' mm² ' + (RZV_BARVY[q[1]] || '') + ' – k zásuvkám na čele ' + zm[key] + ' ks'); });
+  }
   return ret;
 }
 function rzvPanelHtml(w) {
@@ -38613,6 +38638,7 @@ function rozvKontextVic(uidy) {
 
 function rozvKontextZkusit(x, y, cil) {
   if (!rozvEditorAktivni() || !cil.closest) return false;
+  if (__rz.zs && cil.closest('#zs-celo')) return zsKontextZkusit(x, y, cil);   // čelo zásuvkové skříně
   var pk = __rz.napRezim && cil.closest('#rz-pohled [data-priv-cable]');
   var pkUid = pk ? pk.getAttribute('data-priv-cable') : null;
   if (!pkUid && __rz.napRezim) {   // svorky L1/L2/L3 kabelu leží VEDLE <g data-priv-cable>, ne uvnitř
@@ -40610,11 +40636,15 @@ function rozvDokHtml(d) {
     '<div class="rz-dok-vyber"><span class="rz-dok-vyber-t">Do PDF patří:</span>' +
       zatrh('cp', 'čelní pohled a seznam přístrojů') + zatrh('schema', 'schéma zapojení') + (zsJe(d) || ROZV_3D_SKRYTO ? '' : zatrh('pohled3d', 'pohled 3D (ilustrační)')) + (rozvSoudMa(d) ? zatrh('soudobost', 'výpočet soudobého příkonu') : '') + zatrh('tech', 'technické údaje') + (psc ? zatrh('overeni', 'ověření návrhu') : '') +
       zatrh('prohl', 'prohlášení o shodě') +
-      zatrh('ko', 'protokol o kusovém ověření') + rozvOteplZatrh(d) + zatrh('navod', 'návod k obsluze') + (psc ? '' : zatrh('popisky', 'popisky pod přístroje')) + (zsJe(d) ? zatrh('pouceni', 'předání a poučení obsluhy') : '') + '</div>' +
-    (zsJe(d) ? '<div class="g3 zs-norma">' + rzVolba(d, {}, 'norma', 'Norma zásuvkové skříně', ZS_NORMY, { span: 'span3' }) + '</div><div class="dk-pozn">' + ZS_NORMA_POZN + '</div>' : '') +
+      zatrh('ko', 'protokol o kusovém ověření') + rozvOteplZatrh(d) + zatrh('navod', 'návod k obsluze') + (psc ? '' : zatrh('popisky', 'popisky pod přístroje')) + (zsJe(d) ? zatrh('pouceni', 'předání a poučení obsluhy') + zatrh('vrtani', 'vrtací plán čela') : '') + '</div>' +
+    (zsJe(d) ? '<div class="g3 zs-norma">' + rzVolba(d, {}, 'norma', 'Norma zásuvkové skříně', ZS_NORMY, { span: 'span3' }) + '</div><div class="dk-pozn">' + ZS_NORMA_POZN + '</div>' +
+      '<div class="g3 zs-vrt">' + rzVolba(d, {}, 'vrtani.meritko', 'Vrtací plán – měřítko', [['', 'automaticky (podle listu)'], ['1', '1:1'], ['2', '1:2'], ['2.5', '1:2,5'], ['5', '1:5']]) +
+        rzVolba(d, {}, 'vrtani.koty', 'Vrtací plán – kóty', [['', 'řetězově'], ['zaklad', 'od základny']]) +
+        rzVolba(d, {}, 'vrtani.sablona', 'Šablona k vrtání', [['', 'ne'], ['1', 'Šablona 1:1 (víc listů A4)']]) + '</div>' : '') +
     '<div class="rz-dok-stitek-r"><button class="rz-dok-tisk2 rz-dok-stitek-btn" data-action="tdRStitek" title="Štítek se tiskne zvlášť, ve skutečné velikosti">🏷 Tisk štítku</button>' +
       '<button class="rz-dok-tisk2 rz-dok-navod-btn" data-action="tdRNavod" title="Návod k obsluze a údržbě se předává odběrateli zvlášť (A4 na výšku)">📘 Tisk návodu</button>' +
-      (zsJe(d) ? '<button class="rz-dok-tisk2 zs-pouceni-btn" data-action="tdZsPouceni" title="Předání skříně a poučení obsluhy podle NV 194/2022 Sb., § 4 (A4 na výšku)">🤝 Tisk předání a poučení</button>' : '') +
+      (zsJe(d) ? '<button class="rz-dok-tisk2 zs-pouceni-btn" data-action="tdZsPouceni" title="Předání skříně a poučení obsluhy podle NV 194/2022 Sb., § 4 (A4 na výšku)">🤝 Tisk předání a poučení</button>' +
+        '<button class="rz-dok-tisk2 zs-stitky-btn" data-action="tdZsStitky" title="Štítky „-XZ2 · 230 V 32 A · -FA2“ ve skutečné velikosti s ořezovými značkami">🏷 Tisk štítků na čelo</button>' : '') +
       (psc ? '<span class="dk-nepov">štítek se tiskne zvlášť, ve skutečné velikosti</span></div>'
       : '<button class="rz-dok-tisk2 rz-dok-popisky-btn" data-action="tdRPopisky" title="Pásky s popisky okruhů, které se nalepí pod přístroje — ve skutečné velikosti">🏷 Tisk popisků přístrojů</button>' +
       '<span class="dk-nepov">štítek a popisky se tisknou zvlášť, ve skutečné velikosti</span></div>') +
@@ -46011,11 +46041,12 @@ function vektorPismo(pdf, v) {
 function vektorStrana(pdf, p, v) {
   var svg = p.querySelector('svg'); if (!svg) return Promise.resolve();
   var vb = (svg.getAttribute('viewBox') || '0 0 297 210').split(/\s+/).map(Number), W = vb[2], H = vb[3];
-  var ns = 'http://www.w3.org/2000/svg', obal = document.createElementNS(ns, 'svg');
+  var ns = 'http://www.w3.org/2000/svg', obal = document.createElementNS(ns, 'svg'), naVysku = W < H;   // list na výšku (šablona 1:1) se neotáčí
+  if (naVysku) { var t0 = W; W = H; H = t0; }
   obal.setAttribute('xmlns', ns); obal.setAttribute('viewBox', '0 0 ' + H + ' ' + W);
   obal.setAttribute('width', H + 'mm'); obal.setAttribute('height', W + 'mm');
   var gg = document.createElementNS(ns, 'g');
-  gg.setAttribute('transform', 'translate(0 ' + W + ') rotate(-90)');
+  if (!naVysku) gg.setAttribute('transform', 'translate(0 ' + W + ') rotate(-90)');
   Array.prototype.forEach.call(svg.childNodes, function (n) { gg.appendChild(n.cloneNode(true)); });
   gg.setAttribute('font-family', RS_PISMO);
   obal.appendChild(gg);
@@ -46363,6 +46394,9 @@ var ROZV_CSV = [
   ['poly_zasuvky', 'polyZ', ['polyzasuvky', 'polyvidlice']],
   ['svorkovnice_od_vyroby', 'svorkovnice', ['svorkovniceodvyroby', 'svorkovnicevyrobce']],
   ['rukojet', 'rukojet', ['rukojet']],
+  ['vicko_mm', 'vicko', ['vickomm', 'prostorvicka']],   // zásuvka na čele (2026-11-26): prostor pro odklopení víčka, výřez, rozteč šroubů
+  ['vyrez_mm', 'vyrez', ['vyrezmm', 'otvormm']],
+  ['roztec_sroubu_mm', 'roztecSroubu', ['roztecsroubumm', 'roztecsroubu']],
   ['poznamka', 'pozn', ['poznamka', 'pozn']]
 ];
 function rozvCsvKlic(h) { return rozvNorm(h).replace(/δ/g, 'd').replace(/[^a-z0-9]/g, ''); }
@@ -46954,18 +46988,40 @@ function zsZasKresba(z, cx, cy, k, zT) {
   return h;
 }
 function zsZasPos(d, z, i) { return z.pos || { x: 50 + (i % 3) * 110, y: zsGeo(d).oy + zsGeo(d).ovys + 60 + Math.floor(i / 3) * 110 }; }
-// Kolize: zásuvka mimo skříň, přes okno s DIN lištou, nebo přes jinou zásuvku.
-function zsKolize(d) {
-  var G = zsGeo(d), Z = zsZasuvky(d), bad = {};
-  var bx = Z.map(function (z, i) { var p = zsZasPos(d, z, i), a = zsZasPul(z); return { u: z.uid, x1: p.x - a, y1: p.y - a, x2: p.x + a, y2: p.y + a }; });
-  var pres = function (a, b) { return a.x1 < b.x2 && b.x1 < a.x2 && a.y1 < b.y2 && b.y1 < a.y2; };
-  var okno = { x1: G.ox, y1: G.oy, x2: G.ox + G.ow, y2: G.oy + G.ovys };
-  bx.forEach(function (a, i) {
-    if (a.x1 < 4 || a.y1 < 4 || a.x2 > G.W - 4 || a.y2 > G.H - 4 || pres(a, okno)) bad[a.u] = 1;
-    bx.forEach(function (b, j) { if (i !== j && pres(a, b)) bad[a.u] = 1; });
-  });
-  return bad;
+// Prostor pro odklopení víčka (mm nad přírubou): z knihovny (p.vicko), jinak VÝCHOZÍ NÁVRH programu —
+// CEE 16 A 60 mm, 32 A 70 mm, 63 A 90 mm, domovní 35 mm (víčko se odklápí nahoru na pantu; ověřte u výrobce).
+function zsVicko(z) {
+  var p = z.p || {}, v = rozvCislo(String(p.vicko == null ? '' : p.vicko));
+  if (v !== '' && v > 0) return { mm: v, odhad: false };
+  return { mm: zsDruh(p) === 'dom' ? 35 : +p.In >= 63 ? 90 : +p.In >= 32 ? 70 : 60, odhad: true };
 }
+function zsZasBox(d, z, i) {
+  var p = zsZasPos(d, z, i), a = zsZasPul(z);
+  return { u: z.uid, z: z, cx: p.x, cy: p.y, a: a, x1: p.x - a, y1: p.y - a, x2: p.x + a, y2: p.y + a };
+}
+// Kolize (jen nález, práci neblokuje): zásuvka mimo čelo, přes okno s DIN lištou, přes jinou zásuvku;
+// víčko se neodklopí (narazí na zásuvku, okno, nebo na rukojeť nad čelem).
+function zsKolizeDuvody(d) {
+  var G = zsGeo(d), Z = zsZasuvky(d), out = {}, sk = d.skrin || {}, ruk = sk.rukojet === true || sk.rukojet === 'ano';
+  var B = Z.map(function (z, i) { return zsZasBox(d, z, i); });
+  var pres = function (a, b) { return a.x1 < b.x2 - 0.01 && b.x1 < a.x2 - 0.01 && a.y1 < b.y2 - 0.01 && b.y1 < a.y2 - 0.01; };
+  var okno = { x1: G.ox, y1: G.oy, x2: G.ox + G.ow, y2: G.oy + G.ovys };
+  var add = function (u, t) { (out[u] = out[u] || []).indexOf(t) === -1 && out[u].push(t); };
+  B.forEach(function (a, i) {
+    if (a.x1 < 4 || a.y1 < 4 || a.x2 > G.W - 4 || a.y2 > G.H - 4) add(a.u, 'leží mimo čelo');
+    if (pres(a, okno)) add(a.u, 'zasahuje do okna s DIN lištou');
+    var v = zsVicko(a.z), vz = { x1: a.x1, x2: a.x2, y1: a.y1 - v.mm, y2: a.y1 };
+    if (pres(vz, okno)) add(a.u, 'víčko se neodklopí – narazí na okno s DIN lištou');
+    if (ruk && vz.y1 < 0 && vz.x2 > G.W * 0.3 && vz.x1 < G.W * 0.7) add(a.u, 'víčko se neodklopí – narazí na rukojeť');
+    B.forEach(function (b, j) {
+      if (i === j) return;
+      if (pres(a, b)) add(a.u, 'překrývá zásuvku ' + (b.z.ozn || ''));
+      if (pres(vz, b)) add(a.u, 'víčko se neodklopí – narazí na zásuvku ' + (b.z.ozn || ''));
+    });
+  });
+  return out;
+}
+function zsKolize(d) { var D = zsKolizeDuvody(d), m = {}; Object.keys(D).forEach(function (u) { m[u] = 1; }); return m; }
 
 // List 1 a editor čela: JEDEN výkresový čelní pohled zásuvkové skříně v měřítku (vzor:
 // výkres čela od projektanta) — obrys s kótami, rukojeť, okno s DIN lištou a čely
@@ -47043,48 +47099,320 @@ function zsCeloVykres(d, x0, y0, wMax, hMax, o) {
   return h;
 }
 
-// ── Editor čela (Návrh, jen zásuvková skříň) ───────────────────────────
-// Zásuvky se táhnou myší / prstem, přichytí se na mřížku 5 mm a k ose sousední
-// zásuvky (do 4 mm); šipky posouvají o 5 mm, Delete smaže. Kolize červeně.
-// Všechny změny přes rozvZmena (ZPĚT, Ctrl+Z). Kreslí se táž funkce jako list 1.
+// ══ ZÁSUVKOVÁ SKŘÍŇ — EDITOR ČELA (2026-11-26, „na úrovni profesionálního programu") ══
+// Čelo se ovládá stejně jako DIN lišta: jeden společný výběr (zásuvka × přístroj), Ctrl / Shift
+// + klik, obdélník, Ctrl+A s fokusem na čele, kontextové menu (ktOtevrit, dlouhý stisk), tažení
+// s přichycením k hranám a středům (žluté vodítko), šipky 5 mm / Shift 1 mm, zarovnání a rozmístění.
+// V editoru se čelo kreslí „jako v dílně" (barvy, víčka, kolíky, vodiče); výkres ČB (zsCeloVykres)
+// zůstává JEN pro PDF. Pohled „Zapojení" = dovnitř skříně, vodiče k zásuvkám se natahují tahem.
+// Všechny změny přes rozvZmena (ZPĚT, Ctrl+Z). Výběr, pohled, zoom a fokus jsou jen v paměti.
 var ZS_ED = { W: 120, H: 190 };   // plocha editoru v „mm listu" (viewBox)
 function zsData() { return { skrin: __rz.skrin, rady: __rz.rady, celo: __rz.celo, privodSmer: zsPole('privodSmer'), privodKabel: zsPole('privodKabel'), privodPrurez: zsPole('privodPrurez') }; }
 function zsPole(k) { var e = typeof dokForm === 'function' && dokForm() ? dokForm().querySelector('[data-dk="' + k + '"]') : null; return e ? e.value : ''; }
 var ZS_VEDLE = 1300;   // od této šířky plochy pohledu je čelo vedle čelního pohledu, jinak pod ním
-function zsCeloEditorHtml() {
-  if (!__rz || !__rz.zs || !__rz.skrin) return '';
-  var d = zsData(), svg = zsCeloVykres(d, 0, 0, ZS_ED.W, ZS_ED.H, { edit: true, vyber: __rz.vyberZas, tf: 1.45 });
-  var kol = Object.keys(zsKolize(d)).length, n = zsZasuvky(d).length, sv = zsSvorkovnicePopis(__rz.skrin);
-  return '<div class="zs-celo" id="zs-celo">' +
-    '<div class="zs-celo-lista"><b>▦ Čelo skříně – zásuvky</b><span class="zs-celo-pozn">volné umístění v mm · mřížka 5 mm · šipky posunou o 5 mm</span>' +
-      '<button type="button" class="dok-mini zs-pridat" data-action="tdZsKnihovna">＋ Zásuvka z knihovny</button></div>' +
-    (sv ? '<div class="zs-celo-pozn">Svorkovnice od výroby: ' + esc(sv) + ' (nezabírají moduly DIN)</div>' : '') +
-    (kol ? '<div class="zs-celo-kol">⚠ ' + dokPocetTvar(kol, ['zásuvka', 'zásuvky', 'zásuvek']) + ' se překrývá nebo leží mimo čelo – posuňte ji.</div>' : '') +
-    '<svg xmlns="http://www.w3.org/2000/svg" class="zs-celo-svg" viewBox="0 0 ' + ZS_ED.W + ' ' + ZS_ED.H + '" font-family="' + RS_PISMO + '" role="img" aria-label="Čelo zásuvkové skříně">' + svg + '</svg>' +
-    (n ? '' : '<div class="zs-celo-pozn">Zatím žádná zásuvka. Klepněte na „＋ Zásuvka z knihovny" a pak na Vložit, nebo zásuvku přetáhněte z knihovny.</div>') +
-  '</div>';
-}
-function zsCeloPrekreslit() {
-  var box = document.getElementById('zs-celo'); if (!box) return;
-  var t = document.createElement('div'); t.innerHTML = zsCeloEditorHtml();
-  if (t.firstChild) box.replaceWith(t.firstChild);
-}
 function zsZasNajit(uid) { if (!__rz || !__rz.celo) return null; var L = __rz.celo.zasuvky || []; for (var i = 0; i < L.length; i++) if (L[i].uid === uid) return L[i]; return null; }
-function zsDalsiOzn() {
-  var m = 0; ((__rz.celo || {}).zasuvky || []).forEach(function (z) { var q = /^-XZ(\d+)$/.exec(z.ozn || ''); if (q) m = Math.max(m, +q[1]); });
+function zsZasIdx(uid) { var L = (__rz && __rz.celo && __rz.celo.zasuvky) || []; for (var i = 0; i < L.length; i++) if (L[i].uid === uid) return i; return -1; }
+function zsDalsiOzn(navic) {
+  var m = 0; ((__rz.celo || {}).zasuvky || []).concat(navic || []).forEach(function (z) { var q = /^-XZ(\d+)$/.exec(z.ozn || ''); if (q) m = Math.max(m, +q[1]); });
   return '-XZ' + (m + 1);
 }
+function zsNoveUid() { return 'xz' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
 var ZS_JISTICE = ['FA', 'FIFA', 'AFDD', 'QM', 'FU'];
 function zsJistice() { return rozvPrvkyVse(__rz.rady).filter(function (x) { return ZS_JISTICE.indexOf(x.p.kat) !== -1; }); }
-function zsVolneMisto(d, z) {   // první volné místo pod oknem s DIN lištou (po 10 mm)
-  var G = zsGeo(d), a = zsZasPul(z);
-  for (var y = G.oy + G.ovys + a + 15; y < G.H - a; y += 10) for (var x = a + 10; x < G.W - a - 4; x += 10) {
+function zsJisticNajit(uid) { var q = uid ? rozvNajit(uid) : null; return q ? q.x : null; }
+function zsVolneMisto(d, z) {   // první volné místo (po 5 mm) bez kolize i s víčkem; pod oknem přednostně, pak kdekoli na čele
+  var G = zsGeo(d), a = zsZasPul(z), v = zsVicko(z).mm, nej = null, nejN = 1e9;
+  var zkus = function (x, y) {
     z.pos = { x: x, y: y };
-    if (!zsKolize(d)[z.uid]) return z.pos;
-  }
-  return { x: G.W / 2, y: G.H - a - 10 };
+    var r = zsKolizeDuvody(d), n = 0;
+    Object.keys(r).forEach(function (u) { n += r[u].length; });
+    if (!n) return true;
+    if (n < nejN) { nejN = n; nej = { x: x, y: y }; }
+    return false;
+  };
+  var y0 = G.oy + G.ovys + a + v + 4;
+  for (var y = y0; y < G.H - a - 4; y += 5) for (var x = a + 6; x < G.W - a - 4; x += 5) if (zkus(x, y)) return z.pos;
+  for (var y2 = a + v + 4; y2 < y0; y2 += 5) for (var x2 = a + 6; x2 < G.W - a - 4; x2 += 5) if (zkus(x2, y2)) return z.pos;
+  z.pos = nej || { x: Math.round(G.W / 2), y: Math.round(G.H - a - 10) };
+  return z.pos;
 }
-// Vložení zásuvky z knihovny (Vložit, tažení, rychlé přidání) — na čelo, ne do řady
+function zsTrif(p) { p = p || {}; var q = zsPolyZ(p); return q === '3P+N+E' || q === '3P+E' || (!q && +p.ue >= 380); }
+function zsMaN(p) { return zsPolyZ(p) !== '3P+E'; }
+// Svorky zásuvky (pohled Zapojení): 1f L N PE, 5P L1 L2 L3 N PE, 4P L1 L2 L3 PE
+function zsSvorkyZas(p) { var q = zsPolyZ(p); return q === '3P+N+E' ? ['L1', 'L2', 'L3', 'N', 'PE'] : q === '3P+E' ? ['L1', 'L2', 'L3', 'PE'] : ['L', 'N', 'PE']; }
+
+// ── výběr (společný s DIN): __rz.vyberZas = hlavní, __rz.vicZas = celý výběr zásuvek ──
+function zsVybrane() {
+  if (!__rz || !__rz.vyberZas || !zsZasNajit(__rz.vyberZas)) return [];
+  var v = (__rz.vicZas || []).filter(function (u) { return zsZasNajit(u); });
+  return v.length > 1 && v.indexOf(__rz.vyberZas) !== -1 ? v : [__rz.vyberZas];
+}
+function zsVyberNastavit(uidy, hlavni) {
+  var a = []; (uidy || []).forEach(function (u) { if (u && a.indexOf(u) === -1 && zsZasNajit(u)) a.push(u); });
+  __rz.vicZas = a.length > 1 ? a : null;
+  __rz.vyberZas = a.length ? (hlavni && a.indexOf(hlavni) !== -1 ? hlavni : a[a.length - 1]) : null;
+  if (a.length) { __rz.vyber = null; __rz.vic = null; __rz.hrVyber = null; __rz.vyberVn = null; __rz.zsVodic = null; __rz.zsFokus = true; }
+}
+function zsPrekreslit(bezVl) { rozvPohledVykreslit(); if (!bezVl) rozvVlastnostiVykreslit(); }
+function zsVyberZrusit() { if (!__rz) return; var mel = !!(__rz.vyberZas || __rz.zsVodic); __rz.vyberZas = null; __rz.vicZas = null; __rz.zsVodic = null; if (mel) zsPrekreslit(); }
+// klik do čelního pohledu DIN (mimo čelo) zruší výběr zásuvek — výběr je jeden pro DIN i čelo
+document.addEventListener('pointerdown', function (e) {
+  if (!__rz || !__rz.zs || !e.target.closest) return;
+  if (e.target.closest('#zs-celo')) { __rz.zsFokus = true; return; }
+  if (e.target.closest('#rz-pohled') || e.target.closest('#rz-vlastnosti') || e.target.closest('.rz-knihovna')) __rz.zsFokus = false;
+  if (e.target.closest('#rz-pohled .rz-svg') && (__rz.vyberZas || __rz.zsVodic)) { __rz.vyberZas = null; __rz.vicZas = null; __rz.zsVodic = null; }
+}, true);
+
+// ── kresba čela „jako v dílně" (jen editor; PDF kreslí ČB zsCeloVykres) ──
+var ZS_CEE_BARVY = { m: ['#5d97e0', '#1f56a6', '#163f7b'], c: ['#e56a5c', '#b3291e', '#7e1c14'], z: ['#f0cc4a', '#c99a12', '#8a6a08'], s: ['#b9bdc3', '#7f858d', '#555a61'] };
+function zsBarvaU(p) { var u = +((p || {}).ue); return u >= 380 && u <= 480 ? 'c' : u >= 200 && u <= 250 ? 'm' : u >= 100 && u <= 130 ? 'z' : 's'; }   // [ověřit v ČSN EN IEC 60309-2]
+function zsEdDefs() {
+  var g = function (id, a, b, vert) { return '<linearGradient id="' + id + '" x1="0" y1="0" x2="' + (vert ? 0 : 1) + '" y2="1"><stop offset="0" stop-color="' + a + '"/><stop offset="1" stop-color="' + b + '"/></linearGradient>'; };
+  var h = '<defs>' + g('zsg-plast', '#f4f5f2', '#d6d9d3', true) + g('zsg-plech', '#e2e5e2', '#c3c8c4', true) + g('zsg-ruk', '#e6e8e4', '#b8bcb7', true) +
+    g('zsg-okno', 'rgba(205,228,240,.55)', 'rgba(160,195,215,.35)', false) + g('zsg-dom', '#ffffff', '#dcdcd6', false) + g('zsg-kab', '#3a3a3a', '#111', true);
+  Object.keys(ZS_CEE_BARVY).forEach(function (k) { var c = ZS_CEE_BARVY[k]; h += g('zsg-cee-' + k, c[0], c[1], false); });
+  return h + '</defs>';
+}
+// Zásuvka zvenku (střed cx, cy; k = měřítko mm → jednotky editoru)
+function zsZasDilnaSvg(z, cx, cy, k) {
+  var p = z.p || {}, a = zsZasPul(z) * k, h = '', n = function (v) { return rsN(v); };
+  if (zsDruh(p) === 'dom') {   // domovní s víčkem: bílé tělo, víčko s pantem nahoře, otvory a ochranný kolík
+    h += '<rect x="' + n(cx - a) + '" y="' + n(cy - a) + '" width="' + n(2 * a) + '" height="' + n(2 * a) + '" rx="' + n(a * 0.18) + '" fill="url(#zsg-dom)" stroke="#8d918c" stroke-width="' + n(0.35) + '"/>' +
+      '<circle cx="' + n(cx) + '" cy="' + n(cy + a * 0.08) + '" r="' + n(a * 0.66) + '" fill="#efefea" stroke="#9a9e98" stroke-width="' + n(0.3) + '"/>' +
+      '<circle cx="' + n(cx - a * 0.25) + '" cy="' + n(cy + a * 0.08) + '" r="' + n(a * 0.08) + '" fill="#2a2a2a"/><circle cx="' + n(cx + a * 0.25) + '" cy="' + n(cy + a * 0.08) + '" r="' + n(a * 0.08) + '" fill="#2a2a2a"/>' +
+      '<rect x="' + n(cx - a * 0.05) + '" y="' + n(cy - a * 0.55) + '" width="' + n(a * 0.1) + '" height="' + n(a * 0.2) + '" fill="#b9b9b2"/>' +   // ochranný kolík
+      '<rect x="' + n(cx - a * 0.7) + '" y="' + n(cy - a * 0.96) + '" width="' + n(a * 1.4) + '" height="' + n(a * 0.16) + '" rx="' + n(a * 0.06) + '" fill="#cfd1cb" stroke="#8d918c" stroke-width="' + n(0.25) + '"/>';   // pant víčka
+  } else {   // CEE: příruba v barvě podle napětí, hrdlo, víčko s pantem nahoře, kolíky (PE větší, „6 h")
+    var c = 'zsg-cee-' + zsBarvaU(p), cc = ZS_CEE_BARVY[zsBarvaU(p)], r = a / 1.15, n2 = (ZS_POLY[zsPolyZ(p)] || {}).n || 5;
+    h += '<rect x="' + n(cx - a) + '" y="' + n(cy - a) + '" width="' + n(2 * a) + '" height="' + n(2 * a) + '" rx="' + n(a * 0.12) + '" fill="url(#' + c + ')" stroke="' + cc[2] + '" stroke-width="' + n(0.35) + '"/>' +
+      '<circle cx="' + n(cx) + '" cy="' + n(cy) + '" r="' + n(r) + '" fill="' + cc[1] + '" stroke="' + cc[2] + '" stroke-width="' + n(0.35) + '"/>' +
+      '<circle cx="' + n(cx) + '" cy="' + n(cy) + '" r="' + n(r * 0.8) + '" fill="#2b2c2f"/>';
+    for (var q = 0; q < n2; q++) {
+      var an = q / n2 * Math.PI * 2 + Math.PI / 2;
+      h += '<circle cx="' + n(cx + Math.cos(an) * r * 0.48) + '" cy="' + n(cy + Math.sin(an) * r * 0.48) + '" r="' + n((q === 0 ? 0.11 : 0.08) * r) + '" fill="#c9a24c" stroke="#7a5f22" stroke-width="' + n(0.1) + '"/>';
+    }
+    h += '<rect x="' + n(cx - r * 0.12) + '" y="' + n(cy + r * 0.7) + '" width="' + n(r * 0.24) + '" height="' + n(r * 0.14) + '" fill="' + cc[1] + '"/>' +   // klíč (drážka) „6 h"
+      '<path d="M' + n(cx - r * 0.86) + ' ' + n(cy - r * 0.62) + ' A' + n(r * 1.02) + ' ' + n(r * 1.02) + ' 0 0 1 ' + n(cx + r * 0.86) + ' ' + n(cy - r * 0.62) + '" fill="none" stroke="' + cc[0] + '" stroke-width="' + n(r * 0.22) + '" stroke-linecap="round" opacity=".95"/>' +   // víčko odklopené nahoru
+      '<rect x="' + n(cx - r * 0.5) + '" y="' + n(cy - a - r * 0.02) + '" width="' + n(r) + '" height="' + n(r * 0.22) + '" rx="' + n(r * 0.08) + '" fill="' + cc[2] + '"/>';   // pant
+  }
+  var t = function (y, txt, fs, b, bar) { return '<text x="' + n(cx) + '" y="' + n(y) + '" font-size="' + n(fs) + '" text-anchor="middle"' + (b ? ' font-weight="700"' : '') + ' fill="' + (bar || '#1d2125') + '">' + esc(txt) + '</text>'; };
+  h += t(cy - a - 1.05, z.ozn || '-XZ', 2.6, true) + t(cy + a + 2.5, [p.ue ? rozvCisloText(p.ue) + ' V' : '', p.In ? rozvCisloText(p.In) + ' A' : '', (ZS_POLY[zsPolyZ(p)] || {}).kr || ''].filter(Boolean).join(' · '), 1.9, false, '#3a3f45');
+  return h;
+}
+// Geometrie editoru: stejné rozměry jako zsCeloVykres (mm skříně → jednotky viewBoxu)
+function zsEdGeo(d) {
+  var G = zsGeo(d), sk = d.skrin || {}, ruk = sk.rukojet === true || sk.rukojet === 'ano', hRuk = ruk ? 26 : 0;
+  var k = Math.min((ZS_ED.W - 16) / G.W, (ZS_ED.H - 16) / (G.H + hRuk)), x0 = 2, y0 = 3 + hRuk * k;
+  return { G: G, k: k, hRuk: hRuk, ruk: ruk, X: function (mm) { return x0 + mm * k; }, Y: function (mm) { return y0 + mm * k; }, x0: x0, y0: y0 };
+}
+// Body pro vodiče v pohledu Zapojení (mm skříně): svorky jističů (dole pod přístrojem), svorkovnic N/PE, zásuvek
+function zsBodyZapojeni(d) {
+  var G = zsGeo(d), M = RZG.M, body = {}, rady = d.rady || [];
+  rady.forEach(function (rada, i) {
+    var ry = G.radaY(i), xm = G.xDin;
+    (rada.prvky || []).forEach(function (x) {
+      xm += rozvMez(x) * M; var w = rozvW(x) * M, n = cpPoly(x.p) || 1;
+      if (ZS_JISTICE.indexOf(x.p.kat) !== -1) for (var q = 0; q < n; q++) body['J|' + x.uid + '|' + q] = { x: xm + w * (q + 0.5) / n, y: ry + 52, f: 'L', t: 'J', u: x.uid, k: q };
+      if (x.p.kat === 'X' && (x.p.prip === 'N' || x.p.prip === 'PE')) { var nn = Math.max(1, +(x.pocet || x.p.pocet) || 6); for (var s = 0; s < nn; s++) body['X|' + x.uid + '|' + s] = { x: xm + w * (s + 0.5) / nn, y: ry + 52, f: x.p.prip, t: 'X', u: x.uid, k: s }; }
+      xm += w;
+    });
+  });
+  var poMiste = { pod: [], nad: [], bok: [] }, Lr = G.sv.map(function (s, i) { s.i = i; return s; });
+  Lr.forEach(function (s) { poMiste[s.m].push(s); });
+  ['pod', 'nad'].forEach(function (m) {
+    var L = poMiste[m]; if (!L.length) return;
+    var yy = m === 'pod' ? G.radaY(G.nr - 1) + 50 + 7 : G.oy + 10, sw = Math.min(110, (G.ow - 30) / L.length - 8);
+    L.forEach(function (s, i) { var xx = G.xDin + i * (sw + 10), n = s.n || 8; for (var q = 0; q < n; q++) body['S|' + s.i + '|' + q] = { x: xx + sw * (q + 0.5) / n, y: yy + 3, f: s.f === 'PEN' ? 'PEN' : s.f, t: 'S', i: s.i, k: q }; });
+  });
+  poMiste.bok.forEach(function (s, i) {
+    var xx = G.ox + G.ow - G.dBok + 4 + i * 11, yy = G.radaY(0), n = s.n || 8, sh = G.nr * 75 - 25;
+    for (var q = 0; q < n; q++) body['S|' + s.i + '|' + q] = { x: xx + 3, y: yy + sh * (q + 0.5) / n, f: s.f === 'PEN' ? 'PEN' : s.f, t: 'S', i: s.i, k: q };
+  });
+  zsZasuvky(d).forEach(function (z, i) {
+    var b = zsZasBox(d, z, i), sv = zsSvorkyZas(z.p);
+    sv.forEach(function (nm, q) { body['Z|' + z.uid + '|' + nm] = { x: b.cx - b.a * 0.72 + (sv.length > 1 ? b.a * 1.44 * q / (sv.length - 1) : b.a * 0.72), y: b.cy + b.a * 0.3, f: nm, t: 'Z', u: z.uid, s: nm }; });
+  });
+  return body;
+}
+var ZS_VOD_BARVA = { hneda: '#7b4a26', cerna: '#1c1c1c', seda: '#8a8f94', modra: '#2a6fd6', zz: '#3c9a3c', cervena: '#c0392b' };
+function zsVodBarva(w) { return w.barva || (w.b && RZV_FAZE_BARVA[w.b.s === 'L' ? 'L1' : w.b.s]) || 'cerna'; }
+function zsVodicKlic(e) { return e.t === 'J' ? 'J|' + e.u + '|' + e.k : e.t === 'X' ? 'X|' + e.u + '|' + e.k : e.t === 'S' ? 'S|' + e.i + '|' + e.k : 'Z|' + e.u + '|' + e.s; }
+function zsVodice(d) { return ((d && d.celo) || {}).vodice || []; }
+// Vodiče k zásuvkám čela pro svorkový plán a kusovník: [{ od, do, pr, b }] (ze skutečně natažených vodičů)
+function zsVodiceRadky(d) {
+  var rady = (d && d.rady) || [], najdi = function (u) { var r = null; rady.forEach(function (rr) { (rr.prvky || []).forEach(function (x) { if (x.uid === u) r = x; }); }); return r; };
+  var zas = {}; (((d && d.celo) || {}).zasuvky || []).forEach(function (z) { zas[z.uid] = z; });
+  return zsVodice(d).map(function (w) {
+    var A = w.a || {}, od = '';
+    if (A.t === 'J') { var J = najdi(A.u); od = (J && J.ozn || '-FA') + ':' + (2 * A.k + 2); }
+    else if (A.t === 'X') { var X = najdi(A.u); od = (X && X.ozn || '-X') + ':' + (A.k + 1); }
+    else { var sv = zsSvorkovnice((d && d.skrin) || {})[A.i] || {}; od = (sv.f || '') + ' (od výroby) · ' + (A.k + 1); }
+    var z = zas[(w.b || {}).u]; if (!z) return null;
+    return { od: od, do: (z.ozn || '-XZ') + ':' + w.b.s, pr: w.prurez || '', b: zsVodBarva(w) };
+  }).filter(Boolean);
+}
+function zsVodiceTabHtml(d) {
+  var R = zsVodiceRadky(d); if (!R.length) return '';
+  return '<table class="dok-pdf-tab rzs-tab"><colgroup><col style="width:34%"><col style="width:26%"><col style="width:20%"><col style="width:20%"></colgroup>' +
+    '<tr><th>Od (svorka v rozvaděči)</th><th>Do (svorka zásuvky)</th><th>Průřez</th><th>Barva</th></tr>' +
+    R.map(function (r) { return '<tr><td>' + esc(r.od) + '</td><td>' + esc(r.do) + '</td><td>' + esc(r.pr ? 'H07V-K ' + r.pr + ' mm²' : '–') + '</td><td>' + esc(RZV_BARVY[r.b] || '') + '</td></tr>'; }).join('') + '</table>';
+}
+function zsCeloEditorSvg(d, o) {
+  o = o || {};
+  var E = zsEdGeo(d), G = E.G, X = E.X, Y = E.Y, k = E.k, sk = d.skrin || {}, n = function (v) { return rsN(v); }, h = zsEdDefs();
+  var zap = o.pohled === 'zapojeni', plech = /plech|ocel/i.test(sk.material || ''), W = G.W, H = G.H, M = RZG.M;
+  zsCeloEditorSvg.g = E;
+  // rukojeť (tělo skříně v barvě materiálu)
+  if (E.ruk) h += '<path d="M' + n(X(W * 0.3)) + ' ' + n(Y(2)) + ' V' + n(Y(-E.hRuk + 6)) + ' Q' + n(X(W * 0.3)) + ' ' + n(Y(-E.hRuk)) + ' ' + n(X(W * 0.3 + 6)) + ' ' + n(Y(-E.hRuk)) +
+    ' H' + n(X(W * 0.7 - 6)) + ' Q' + n(X(W * 0.7)) + ' ' + n(Y(-E.hRuk)) + ' ' + n(X(W * 0.7)) + ' ' + n(Y(-E.hRuk + 6)) + ' V' + n(Y(2)) + '" fill="none" stroke="url(#zsg-ruk)" stroke-width="' + n(12 * k) + '" stroke-linecap="round"/>' +
+    '<path d="M' + n(X(W * 0.38)) + ' ' + n(Y(-E.hRuk)) + ' H' + n(X(W * 0.62)) + '" stroke="#2c2d2f" stroke-width="' + n(12.5 * k) + '" stroke-linecap="round"/>';
+  h += '<rect class="zs-telo" x="' + n(X(0)) + '" y="' + n(Y(0)) + '" width="' + n(W * k) + '" height="' + n(H * k) + '" rx="' + n(10 * k) + '" fill="url(#' + (plech ? 'zsg-plech' : 'zsg-plast') + ')" stroke="#8a8e89" stroke-width="' + n(0.45) + '"/>' +
+    '<rect x="' + n(X(4)) + '" y="' + n(Y(4)) + '" width="' + n((W - 8) * k) + '" height="' + n((H - 8) * k) + '" rx="' + n(7 * k) + '" fill="none" stroke="#fff" stroke-opacity=".7" stroke-width="' + n(0.3) + '"/>';
+  // okno s DIN lištou: vnitřek, lišta, přístroje dílenskou kresbou; zvenku přes průhledné víko
+  h += '<rect x="' + n(X(G.ox)) + '" y="' + n(Y(G.oy)) + '" width="' + n(G.ow * k) + '" height="' + n(G.ovys * k) + '" rx="' + n(3 * k) + '" fill="#c9ccc6" stroke="#6f736e" stroke-width="' + n(0.35) + '"/>';
+  (d.rady || []).forEach(function (rada, i) {
+    var ry = G.radaY(i), xm = G.xDin;
+    h += '<rect x="' + n(X(G.ox + 4)) + '" y="' + n(Y(ry + 25 - 3.75)) + '" width="' + n((G.ow - 8 - G.dBok) * k) + '" height="' + n(7.5 * k) + '" fill="#b9bdc2" stroke="#8a8f94" stroke-width="' + n(0.15) + '"/>';
+    (rada.prvky || []).forEach(function (x) {
+      xm += rozvMez(x) * M; var w = rozvW(x) * M;
+      h += '<g transform="translate(' + n(X(xm)) + ' ' + n(Y(ry)) + ') scale(' + n(k) + ')" class="zs-din-pr' + (__rz && (__rz.vyber === x.uid || (__rz.vic || []).indexOf(x.uid) !== -1) ? ' zs-din-vyb' : '') + '">' +
+        rozvPrvekDinSvg(x, 0, 0, { w: w, k: 1.2, lod: true }) + '</g>';
+      if (__rz && (__rz.vyber === x.uid || (__rz.vic || []).indexOf(x.uid) !== -1)) h += '<rect x="' + n(X(xm) - 0.4) + '" y="' + n(Y(ry) - 0.4) + '" width="' + n(w * k + 0.8) + '" height="' + n(50 * k + 0.8) + '" fill="none" stroke="#2B579A" stroke-width="0.5" pointer-events="none"/>';
+      xm += w;
+    });
+  });
+  // svorkovnice od výroby: mosazný pás se šrouby, štítek N (modře) / PE (zeleně)
+  var poMiste = { pod: [], nad: [], bok: [] };
+  G.sv.forEach(function (s) { poMiste[s.m].push(s); });
+  var pas = function (s, xx, yy, sw, sh, svisle) {
+    var nn = s.n || 8, bar = s.f === 'N' ? '#2a6fd6' : s.f === 'PE' ? '#3c9a3c' : '#9a7b2a', t = '<g data-svorkovnice="' + s.f + '">' +
+      '<rect x="' + n(X(xx)) + '" y="' + n(Y(yy)) + '" width="' + n(sw * k) + '" height="' + n(sh * k) + '" rx="' + n(0.8 * k) + '" fill="#d8b866" stroke="#8a6d22" stroke-width="0.2"/>';
+    for (var q = 0; q < nn; q++) { var cx = svisle ? xx + sw / 2 : xx + sw * (q + 0.5) / nn, cy = svisle ? yy + sh * (q + 0.5) / nn : yy + sh / 2; t += '<circle cx="' + n(X(cx)) + '" cy="' + n(Y(cy)) + '" r="' + n(Math.min(1.6, (svisle ? sh : sw) / nn * 0.32) * k) + '" fill="#e9e9e6" stroke="#55595e" stroke-width="0.12"/>'; }
+    return t + '<text x="' + n(svisle ? X(xx + sw / 2) : X(xx) - 0.6) + '" y="' + n(svisle ? Y(yy) - 0.8 : Y(yy + sh / 2) + 0.9) + '" font-size="2.3" font-weight="700" text-anchor="' + (svisle ? 'middle' : 'end') + '" fill="' + bar + '">' + s.f + '</text></g>';
+  };
+  ['pod', 'nad'].forEach(function (m) {
+    var L = poMiste[m]; if (!L.length) return;
+    var yy = m === 'pod' ? G.radaY(G.nr - 1) + 50 + 7 : G.oy + 10, sw = Math.min(110, (G.ow - 30) / L.length - 8);
+    L.forEach(function (s, i) { h += pas(s, G.xDin + i * (sw + 10), yy, sw, 6, false); });
+  });
+  poMiste.bok.forEach(function (s, i) { h += pas(s, G.ox + G.ow - G.dBok + 4 + i * 11, G.radaY(0), 6, G.nr * 75 - 25, true); });
+  if (!zap) h += '<rect x="' + n(X(G.ox) + 0.2) + '" y="' + n(Y(G.oy) + 0.2) + '" width="' + n(G.ow * k - 0.4) + '" height="' + n(G.ovys * k - 0.4) + '" rx="' + n(3 * k) + '" fill="url(#zsg-okno)" stroke="#9fb6c4" stroke-width="0.45" pointer-events="none"/>' +   // průhledné víko okna
+    '<path d="M' + n(X(G.ox + 6)) + ' ' + n(Y(G.oy + 4)) + ' L' + n(X(G.ox + G.ow * 0.3)) + ' ' + n(Y(G.oy + 4)) + '" stroke="#fff" stroke-opacity=".8" stroke-width="0.5" pointer-events="none"/>';
+  // zásuvky
+  var D = o.edit ? zsKolizeDuvody(d) : {}, vyb = o.vyber || [];
+  zsZasuvky(d).forEach(function (z, i) {
+    var b = zsZasBox(d, z, i), cx = X(b.cx), cy = Y(b.cy), a = b.a * k;
+    h += '<g data-zasuvka="' + esc(z.uid || '') + '" class="zs-zas' + (zap ? ' zs-zas-zad' : '') + '">' + '<rect x="' + n(cx - a) + '" y="' + n(cy - a) + '" width="' + n(2 * a) + '" height="' + n(2 * a) + '" fill="transparent"/>';
+    if (!zap) h += zsZasDilnaSvg(z, cx, cy, k);
+    else {   // zadní strana: tělo, svorky L1/L2/L3/N/PE
+      h += '<rect x="' + n(cx - a) + '" y="' + n(cy - a) + '" width="' + n(2 * a) + '" height="' + n(2 * a) + '" rx="' + n(a * 0.12) + '" fill="#e8e9e5" stroke="#7d827c" stroke-width="0.3" stroke-dasharray="0.8 0.5"/>' +
+        '<circle cx="' + n(cx) + '" cy="' + n(cy) + '" r="' + n(a * 0.8) + '" fill="#d4d6d1" stroke="#8b908a" stroke-width="0.25"/>' +
+        '<text x="' + n(cx) + '" y="' + n(cy - a - 1.05) + '" font-size="2.6" font-weight="700" text-anchor="middle" fill="#1d2125">' + esc(z.ozn || '-XZ') + '</text>';
+    }
+    if (D[z.uid]) {
+      var v = zsVicko(z).mm * k;
+      h += '<rect class="zs-kolize" x="' + n(cx - a - 0.6) + '" y="' + n(cy - a - 0.6) + '" width="' + n(2 * a + 1.2) + '" height="' + n(2 * a + 1.2) + '" fill="none" stroke="#c0392b" stroke-width="0.7"/>';
+      if (D[z.uid].some(function (t) { return /víčko/.test(t); })) h += '<rect class="zs-kolize-vicko" x="' + n(cx - a) + '" y="' + n(cy - a - v) + '" width="' + n(2 * a) + '" height="' + n(v) + '" fill="#c0392b" fill-opacity=".1" stroke="#c0392b" stroke-width="0.35" stroke-dasharray="1 0.7" pointer-events="none"/>';
+    }
+    if (vyb.indexOf(z.uid) !== -1) {
+      h += '<rect class="zs-vybrana" x="' + n(cx - a - 1.2) + '" y="' + n(cy - a - 1.2) + '" width="' + n(2 * a + 2.4) + '" height="' + n(2 * a + 2.4) + '" rx="0.8" fill="#2B579A" fill-opacity=".1" stroke="#2B579A" stroke-width="0.6" pointer-events="none"/>';
+      if (vyb.length === 1 && !zap) h += '<rect x="' + n(cx - a) + '" y="' + n(cy - a - zsVicko(z).mm * k) + '" width="' + n(2 * a) + '" height="' + n(zsVicko(z).mm * k) + '" fill="none" stroke="#2B579A" stroke-width="0.25" stroke-dasharray="0.8 0.6" pointer-events="none"><title>prostor pro odklopení víčka' + (zsVicko(z).odhad ? ' (výchozí návrh)' : '') + '</title></rect>';
+    }
+    h += '</g>';
+  });
+  // pohled Zapojení: vodiče k zásuvkám a svorky (body)
+  if (zap) {
+    var B = zsBodyZapojeni(d), vod = zsVodice(d), yZ = G.oy + G.ovys + 6;
+    vod.forEach(function (w, wi) {
+      var A = B[zsVodicKlic(w.a)], C = B[zsVodicKlic(w.b)]; if (!A || !C) return;
+      var yy = yZ + (wi % 10) * 1.6, bar = ZS_VOD_BARVA[zsVodBarva(w)] || '#333', tl = Math.max(0.45, Math.sqrt(rozvCislo(String(w.prurez || '2,5')) || 2.5) * 0.36);
+      var dP = 'M' + n(X(A.x)) + ' ' + n(Y(A.y)) + ' V' + n(Y(yy)) + ' H' + n(X(C.x)) + ' V' + n(Y(C.y));
+      var sel = __rz && __rz.zsVodic === w.uid;
+      h += '<g data-zs-w="' + esc(w.uid) + '">' + '<path d="' + dP + '" fill="none" stroke="transparent" stroke-width="2.2"/>' +
+        (sel ? '<path d="' + dP + '" fill="none" stroke="#2B579A" stroke-opacity=".35" stroke-width="' + n(tl + 1.4) + '" stroke-linejoin="round"/>' : '') +
+        '<path d="' + dP + '" fill="none" stroke="#111" stroke-opacity=".35" stroke-width="' + n(tl + 0.3) + '" stroke-linejoin="round"/>' +
+        '<path d="' + dP + '" fill="none" stroke="' + bar + '" stroke-width="' + n(tl) + '" stroke-linejoin="round"' + (w.barva === 'zz' || (!w.barva && zsVodBarva(w) === 'zz') ? ' stroke-dasharray="1.4 1.4"' : '') + '/>' +
+        (zsVodBarva(w) === 'zz' ? '<path d="' + dP + '" fill="none" stroke="#e5c822" stroke-width="' + n(tl) + '" stroke-dasharray="1.4 1.4" stroke-dashoffset="1.4" stroke-linejoin="round"/>' : '') + '</g>';
+    });
+    Object.keys(B).forEach(function (key) {
+      var b = B[key], bar = b.f === 'N' ? '#2a6fd6' : b.f === 'PE' || b.f === 'PEN' ? '#3c9a3c' : '#7b4a26';
+      h += '<circle class="zs-sv" data-zs-sv="' + esc(key) + '" cx="' + n(X(b.x)) + '" cy="' + n(Y(b.y)) + '" r="' + n(b.t === 'Z' ? 1.25 : 0.85) + '" fill="#fff" stroke="' + bar + '" stroke-width="0.4"/>';
+      if (b.t === 'Z') h += '<text x="' + n(X(b.x)) + '" y="' + n(Y(b.y) + 2.9) + '" font-size="1.8" font-weight="700" text-anchor="middle" fill="' + bar + '" pointer-events="none">' + esc(b.s) + '</text>';
+    });
+    if (o.tah) h += '<line x1="' + n(o.tah.x1) + '" y1="' + n(o.tah.y1) + '" x2="' + n(o.tah.x2) + '" y2="' + n(o.tah.y2) + '" stroke="' + (o.tah.ok === false ? '#c0392b' : '#e0a800') + '" stroke-width="0.7" stroke-dasharray="1.2 0.8" pointer-events="none"/>';
+  }
+  // vývodka a kabel přívodu
+  var dole = d.privodSmer === 'zespodu', vx = W - 45, vy = dole ? H : 0, sg = dole ? 1 : -1;
+  h += '<g data-zs-privod="1"><rect x="' + n(X(vx) - 2.2) + '" y="' + n(dole ? Y(vy) - 0.4 : Y(vy) - 2.6) + '" width="4.4" height="3" rx="0.5" fill="#2a2b2d"/>' +
+    '<path d="M' + n(X(vx)) + ' ' + n(Y(vy) + sg * 2.4) + ' C' + n(X(vx)) + ' ' + n(Y(vy) + sg * 8) + ' ' + n(X(vx) + 6) + ' ' + n(Y(vy) + sg * 9) + ' ' + n(X(vx) + 10) + ' ' + n(Y(vy) + sg * 11) + '" fill="none" stroke="url(#zsg-kab)" stroke-width="2.1" stroke-linecap="round"/>' +
+    '<text x="' + n(X(vx) + 3.4) + '" y="' + n(Y(vy) + sg * 4.6) + '" font-size="1.9" fill="#3a3f45">' + esc('přívod ' + [d.privodKabel, d.privodPrurez].filter(Boolean).join(' ')) + '</text></g>';
+  // vodítka přichycení (žlutě) a obdélník výběru
+  (o.vodx || []).forEach(function (mm) { h += '<line class="zs-vodx" x1="' + n(X(mm)) + '" y1="' + n(Y(0)) + '" x2="' + n(X(mm)) + '" y2="' + n(Y(H)) + '" stroke="#e0a800" stroke-width="0.35" pointer-events="none"/>'; });
+  (o.vody || []).forEach(function (mm) { h += '<line class="zs-vody" x1="' + n(X(0)) + '" y1="' + n(Y(mm)) + '" x2="' + n(X(W)) + '" y2="' + n(Y(mm)) + '" stroke="#e0a800" stroke-width="0.35" pointer-events="none"/>'; });
+  if (o.obd) h += '<rect class="zs-obd" x="' + n(X(Math.min(o.obd.x1, o.obd.x2))) + '" y="' + n(Y(Math.min(o.obd.y1, o.obd.y2))) + '" width="' + n(Math.abs(o.obd.x2 - o.obd.x1) * k) + '" height="' + n(Math.abs(o.obd.y2 - o.obd.y1) * k) + '" fill="#2B579A" fill-opacity=".08" stroke="#2B579A" stroke-width="0.35" stroke-dasharray="1 0.6" pointer-events="none"/>';
+  return h;
+}
+function zsCeloEditorHtml() {
+  if (!__rz || !__rz.zs || !__rz.skrin) return '';
+  var d = zsData(), zap = __rz.zsPohled === 'zapojeni', vyb = zsVybrane(), z = __rz.zsZoom || 1;
+  var D = zsKolizeDuvody(d), kol = Object.keys(D).length, n = zsZasuvky(d).length, sv = zsSvorkovnicePopis(__rz.skrin), t = __zsTah;
+  var svg = zsCeloEditorSvg(d, { edit: true, vyber: vyb, pohled: zap ? 'zapojeni' : 'zvenku', vodx: t && t.vodx, vody: t && t.vody, obd: __zsObd && __zsObd.akt ? __zsObd : null, tah: __zsVTah && __zsVTah.akt ? __zsVTah : null });
+  var b = function (v, txt) { return '<button type="button" class="zs-pohl' + ((zap ? 'zapojeni' : 'zvenku') === v ? ' akt' : '') + '" data-action="tdZsPohled" data-v="' + v + '">' + txt + '</button>'; };
+  return '<div class="zs-celo' + (zap ? ' zs-zapojeni' : '') + '" id="zs-celo" tabindex="-1">' +
+    '<div class="zs-celo-lista"><b>▦ Čelo skříně</b><span class="zs-prep">' + b('zvenku', '👁 Zvenku') + b('zapojeni', '🔌 Zapojení') + '</span>' +
+      '<button type="button" class="dok-mini zs-pridat" data-action="tdZsSJisticem" title="Vloží zásuvku na čelo a k ní jistič do DIN lišty, rovnou propojené">＋ Zásuvka s jističem</button>' +
+      '<button type="button" class="dok-mini" data-action="tdZsKnihovna" title="Zásuvky z knihovny — Vložit nebo přetáhnout na čelo">＋ Zásuvka z knihovny</button>' +
+      (zap ? '<button type="button" class="dok-mini" data-action="tdZsZapojAuto" title="Natáhne chybějící vodiče L, N a PE podle napájení zásuvek">⚡ Zapojit automaticky</button>' : '') +
+      '<span class="zs-zoom"><button type="button" class="dok-mini" data-action="tdZsZoom" data-z="-1" title="Oddálit čelo">－</button><button type="button" class="dok-mini" data-action="tdZsZoom" data-z="1" title="Přiblížit čelo">＋</button></span></div>' +
+    '<div class="zs-celo-pozn">' + (zap ? 'Pohled dovnitř: táhněte vodič ze svorky jističe (L) nebo svorkovnice N / PE na svorku zásuvky. Klik na vodič ho vybere, Delete ho odpojí.'
+      : 'Táhněte zásuvky myší nebo prstem · mřížka 5 mm (se Shiftem 1 mm) · přichycení k hranám a středům · šipky 5 mm · pravé tlačítko = nabídka') + '</div>' +
+    (sv ? '<div class="zs-celo-pozn">Svorkovnice od výroby: ' + esc(sv) + ' (nezabírají moduly DIN)</div>' : '') +
+    (kol ? '<div class="zs-celo-kol">⚠ ' + Object.keys(D).map(function (u) { var q = zsZasNajit(u); return (q && q.ozn || '-XZ') + ': ' + D[u].join(', '); }).join(' · ') + '</div>' : '') +
+    '<div class="zs-celo-ram" id="zs-celo-ram"><svg xmlns="http://www.w3.org/2000/svg" class="zs-celo-svg" viewBox="0 0 ' + ZS_ED.W + ' ' + ZS_ED.H + '" style="width:' + Math.round(z * 100) + '%' + (z > 1 ? ';max-width:none' : '') + '" font-family="DM Sans, Arial, Helvetica, sans-serif" role="img" aria-label="Čelo zásuvkové skříně">' + svg + '</svg></div>' +
+    (n ? '' : '<div class="zs-celo-pozn">Zatím žádná zásuvka. Klepněte na „＋ Zásuvka s jističem", nebo zásuvku vložte či přetáhněte z knihovny.</div>') +
+  '</div>';
+}
+function zsCeloPrekreslit() {   // jen čelo — posuvník rámečku ani stránky se nehne
+  var box = document.getElementById('zs-celo'); if (!box) return;
+  var ram = document.getElementById('zs-celo-ram'), sl = ram ? ram.scrollLeft : 0, st = ram ? ram.scrollTop : 0;
+  var t = document.createElement('div'); t.innerHTML = zsCeloEditorHtml();
+  var nb = t.firstChild; if (!nb) return;
+  // Obsah se přepíše NA MÍSTĚ a prvek <svg> zůstane tentýž: na něm drží prst / myš (setPointerCapture) —
+  // nahrazený prvek by tah prstem i dlouhý stisk ztratil.
+  var sOld = box.querySelector('.zs-celo-svg'), sNew = nb.querySelector('.zs-celo-svg');
+  if (sOld && sNew) {
+    Array.prototype.slice.call(sOld.attributes).forEach(function (a) { if (!sNew.hasAttribute(a.name)) sOld.removeAttribute(a.name); });
+    Array.prototype.slice.call(sNew.attributes).forEach(function (a) { if (sOld.getAttribute(a.name) !== a.value) sOld.setAttribute(a.name, a.value); });
+    if (sOld.innerHTML !== sNew.innerHTML) sOld.innerHTML = sNew.innerHTML;
+    sNew.parentNode.replaceChild(sOld, sNew);
+    var ramN = nb.querySelector('#zs-celo-ram');
+    Array.prototype.slice.call(box.childNodes).forEach(function (c) { if (!c.contains || !c.contains(sOld)) box.removeChild(c); });
+    var ramO = box.querySelector('#zs-celo-ram');
+    if (ramO && ramN) {
+      Array.prototype.slice.call(ramN.attributes).forEach(function (a) { ramO.setAttribute(a.name, a.value); });
+      Array.prototype.slice.call(ramO.childNodes).forEach(function (c) { if (c !== sOld) ramO.removeChild(c); });
+      var pred = [], za = [], poSvg = false;
+      Array.prototype.slice.call(ramN.childNodes).forEach(function (c) { if (c === sOld) poSvg = true; else (poSvg ? za : pred).push(c); });
+      pred.forEach(function (c) { ramO.insertBefore(c, sOld); }); za.forEach(function (c) { ramO.appendChild(c); });
+      var predR = [], zaR = [], po = false;
+      Array.prototype.slice.call(nb.childNodes).forEach(function (c) { if (c === ramN) po = true; else (po ? zaR : predR).push(c); });
+      predR.forEach(function (c) { box.insertBefore(c, ramO); }); zaR.forEach(function (c) { box.appendChild(c); });
+      Array.prototype.slice.call(nb.attributes).forEach(function (a) { box.setAttribute(a.name, a.value); });
+      ramO.scrollLeft = sl; ramO.scrollTop = st; return;
+    }
+  }
+  box.replaceWith(nb); var r2 = document.getElementById('zs-celo-ram'); if (r2) { r2.scrollLeft = sl; r2.scrollTop = st; }
+}
+TD_AKCE.tdZsPohled = function (el) { if (!__rz) return; __rz.zsPohled = el.getAttribute('data-v') === 'zapojeni' ? 'zapojeni' : null; __rz.zsVodic = null; zsCeloPrekreslit(); rozvVlastnostiVykreslit(); };
+TD_AKCE.tdZsZoom = function (el) { if (!__rz) return; __rz.zsZoom = Math.max(1, Math.min(3, Math.round(((__rz.zsZoom || 1) + (+el.getAttribute('data-z') > 0 ? 0.25 : -0.25)) * 100) / 100)); zsCeloPrekreslit(); };
+
+// ── vložení zásuvky (Vložit, tažení, klepnutí, rychlé přidání) — vždy na čelo, výběr na DIN nevadí ──
+var __zsPosledni = [];   // naposledy vložené zásuvky (id knihovny) — nabídka „Vložit zásuvku sem"
+function zsNovaZas(it) {
+  var p = { kat: 'XZ', nazev: it.nazev || '', vyrobce: it.vyrobce || '', typ: it.typ || '', druhZas: zsDruh(it), polyZ: zsPolyZ(it), In: it.In, ue: it.ue, ip: it.ip || '' };
+  ['vicko', 'vyrez', 'roztecSroubu'].forEach(function (k) { if (it[k] != null && it[k] !== '') p[k] = it[k]; });   // z knihovny, jen vyplněné
+  return { uid: zsNoveUid(), knih: it.id, ozn: zsDalsiOzn(), p: p };
+}
 function zsZKnihovny(it, pos) {
   if (it.kat === 'XP') {   // vidlice: údaje do přívodu v hlavičce
     var nast = { 'vidlice.In': rozvCisloText(it.In), 'vidlice.ue': rozvCisloText(it.ue), 'vidlice.poly': zsPolyZ(it) || '', 'vidlice.ip': it.ip || '', 'vidlice.typ': it.typ || '' };
@@ -47092,98 +47420,344 @@ function zsZKnihovny(it, pos) {
     showToast('Vidlice přívodu: ' + zsVidliceText({ vidlice: { In: it.In, ue: it.ue, poly: zsPolyZ(it), ip: it.ip } }) + ' — v hlavičce (Pohyblivý přívod a vidlice).', { timeout: 5000 });
     return null;
   }
-  var z = { uid: 'xz' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6), knih: it.id, ozn: zsDalsiOzn(),
-    p: { kat: 'XZ', nazev: it.nazev || '', vyrobce: it.vyrobce || '', typ: it.typ || '', druhZas: zsDruh(it), polyZ: zsPolyZ(it), In: it.In, ue: it.ue, ip: it.ip || '' } };
-  var vyb = __rz.vyber ? rozvNajit(__rz.vyber) : null, js = zsJistice();
-  var obs = {}; ((__rz.celo || {}).zasuvky || []).forEach(function (q) { if (q.napajen) obs[q.napajen] = 1; });
-  var nap = vyb && ZS_JISTICE.indexOf(vyb.x.p.kat) !== -1 ? vyb.x : js.filter(function (x) { return !obs[x.uid]; })[0];
+  var z = zsNovaZas(it);
+  // napájí ji: vybraný jistič na DIN, jinak první jistič bez zásuvky (výběr na DIN NIKDY neblokuje vložení)
+  var vyb = __rz.vyber ? rozvNajit(__rz.vyber) : null, js = zsJistice(), obs = {};
+  ((__rz.celo || {}).zasuvky || []).forEach(function (q) { if (q.napajen) obs[q.napajen] = 1; });
+  var nap = vyb && ZS_JISTICE.indexOf(vyb.x.p.kat) !== -1 ? vyb.x : js.filter(function (x) { return !obs[x.uid] && x.p.kat !== 'QM'; })[0];
   if (nap) z.napajen = nap.uid;
   rozvZmena('Zásuvka ' + z.ozn, function () {
     if (!__rz.celo) __rz.celo = { zasuvky: [] };
     __rz.celo.zasuvky.push(z);
     if (pos) z.pos = { x: pos.x, y: pos.y }; else zsVolneMisto(zsData(), z);
-    __rz.vyberZas = z.uid; __rz.vyber = null; __rz.vic = null;
+    zsVyberNastavit([z.uid]); __rz.knihVyber = null;
   });
-  showToast('Zásuvka ' + z.ozn + ' je na čele' + (nap ? ', napájí ji ' + (nap.ozn || '') : ' — vyberte jistič, který ji napájí') + '.', { timeout: 4500 });
+  __zsPosledni = [it.id].concat(__zsPosledni.filter(function (q) { return q !== it.id; })).slice(0, 5);
+  showToast('Zásuvka ' + z.ozn + ' je na čele' + (nap ? ', napájí ji ' + (nap.ozn || '') : ' — vyberte jistič, který ji napájí') + '.' + (!pos && zsKolizeDuvody(zsData())[z.uid] ? ' Na čele už není volné místo bez kolize — přesuňte ji nebo zvolte větší skříň.' : ''), { timeout: 6000 });
   return z;
 }
-function zsZasPanelHtml(z) {
-  var p = z.p || {}, js = zsJistice(), pos = z.pos || {};
-  var sel = function (k, label, volby, akt) {
-    return '<div class="f"><label>' + esc(label) + '</label><select data-zsp="' + k + '">' + volby.map(function (v) { return '<option value="' + esc(v[0]) + '"' + (v[0] === akt ? ' selected' : '') + '>' + esc(v[1]) + '</option>'; }).join('') + '</select></div>';
-  };
-  var inp = function (k, label, v, ph) { return '<div class="f"><label>' + esc(label) + '</label><input type="text" data-zsp="' + k + '" value="' + esc(v == null ? '' : v) + '" placeholder="' + esc(ph || '') + '" autocomplete="off"></div>'; };
-  var barva = +p.ue >= 380 ? '🔴 červená – 380–480 V' : +p.ue >= 200 ? '🔵 modrá – 200–250 V' : p.ue ? '—' : '';
-  return '<div class="rp-t">Vlastnosti</div><h4 class="zs-p-nadpis">🔌 ' + esc(z.ozn || '-XZ') + ' · ' + (zsDruh(p) === 'dom' ? 'Zásuvka domovní' : 'Zásuvka průmyslová (CEE)') + '</h4>' +
-    '<div class="zs-celo-pozn">' + esc([p.vyrobce, p.typ].filter(Boolean).join(' ') || 'obecná položka') + '</div>' +
-    inp('ozn', 'Označení', z.ozn, '-XZ1') +
-    sel('napajen', 'Napájí ji', [['', '— vyberte jistič —']].concat(js.map(function (x) { return [x.uid, (x.ozn || '') + ' ' + zsHodnoty(x) + (x.faze ? ' · ' + x.faze : '')]; })), z.napajen || '') +
-    sel('druhZas', 'Druh', [['cee', 'průmyslová CEE'], ['dom', 'domovní']], zsDruh(p)) +
-    sel('polyZ', 'Póly', [['', '—']].concat(ZS_POLY_VOLBY), zsPolyZ(p)) +
-    inp('In', 'In (A)', rozvCisloText(p.In), '32') + inp('ue', 'Un (V)', rozvCisloText(p.ue), '230') + inp('ip', 'Krytí IP', p.ip, 'IP44') +
-    inp('typ', 'Typ / obj. č.', p.typ, '') +
-    (barva ? '<div class="zs-celo-pozn">Barva podle napětí: ' + barva + ' [ověřit v ČSN EN IEC 60309-2]</div>' : '') +
-    '<div class="g2">' + inp('x', 'Poloha x (mm)', pos.x != null ? rozvCisloText(pos.x) : '') + inp('y', 'Poloha y (mm)', pos.y != null ? rozvCisloText(pos.y) : '') + '</div>' +
-    '<div class="rz-v-akce"><button type="button" class="dok-mini" data-action="tdZsDup">⧉ Duplikovat</button>' +
-      '<button type="button" class="dok-mini" data-action="tdZsSmazat">🗑 Smazat zásuvku</button>' +
-      '<button type="button" class="dok-mini" data-action="tdZsHotovo">✓ Hotovo</button></div>';
+// „＋ Zásuvka s jističem": zásuvka na čelo A jistič do DIN (první volné místo), rovnou propojené; jedno ZPĚT.
+// Jistič: In = In zásuvky, 3P u 400 V (4P/5P), jinak 1P; CEE char. C, domovní B — obecný, nebo z výchozí řady výrobce.
+function zsJisticPro(p) { return { kat: 'FA', poly: zsTrif(p) ? '3' : '1', In: +p.In, char: zsDruh(p) === 'dom' ? 'B' : 'C' }; }
+function zsFazeNejmene() {
+  var c = { L1: 0, L2: 0, L3: 0 };
+  rozvPrvkyVse(__rz.rady).forEach(function (x) { if (c[x.faze] != null) c[x.faze] += +x.p.In || 1; });
+  return ['L1', 'L2', 'L3'].sort(function (a, b) { return c[a] - c[b]; })[0];
 }
-function zsPosunout(uid, dx, dy) {
-  var z = zsZasNajit(uid); if (!z) return;
-  var p = z.pos || zsZasPos(zsData(), z, 0);
-  rozvZmena('Posun zásuvky', function () { z.pos = { x: p.x + dx, y: p.y + dy }; }, { bezVlastnosti: false });
+function zsZasSJisticem(kid, pos) {
+  var it = rozvKnihPolozka(kid); if (!it || window.__formReadOnly || !__rz || !__rz.skrin) return null;
+  var q = zsJisticPro(it), J = rzcPolozka(q);
+  if (!J || !J.it) { showToast('Jistič ' + q.char + rozvCisloText(q.In) + ' ' + q.poly + 'P knihovna nemá — vložte zásuvku a jistič zvlášť.', { timeout: 6000 }); return null; }
+  var z = zsNovaZas(it), x = rozvNovyPrvek(J.it), r = rozvRadaProVlozeni(+J.it.sirka || 1);
+  rozvZmena('Zásuvka s jističem', function () {
+    rozvVlozitNa(__rz.rady[r], __rz.rady[r].prvky.length, [x]);
+    if (q.poly === '1') x.faze = zsFazeNejmene();
+    if (!__rz.celo) __rz.celo = { zasuvky: [] };
+    z.napajen = x.uid; __rz.celo.zasuvky.push(z);
+    if (pos) z.pos = { x: pos.x, y: pos.y }; else zsVolneMisto(zsData(), z);
+    zsVyberNastavit([z.uid]); __rz.aktRada = r;
+  });
+  rozvHlasitPreplneni(r);
+  __zsPosledni = [it.id].concat(__zsPosledni.filter(function (q2) { return q2 !== it.id; })).slice(0, 5);
+  showToast('Zásuvka ' + z.ozn + ' a jistič ' + (x.ozn || '') + ' ' + q.char + rozvCisloText(q.In) + ' ' + q.poly + 'P' + (J.obecna ? ' (obecný)' : '') + ' — propojené.' + (!pos && zsKolizeDuvody(zsData())[z.uid] ? ' Na čele už není volné místo bez kolize — zásuvku přesuňte.' : ''), { timeout: 6000 });
+  return z;
 }
-function zsSmazat(uid) {
-  var z = zsZasNajit(uid); if (!z) return;
-  rozvZmena('Smazat zásuvku', function () { __rz.celo.zasuvky = __rz.celo.zasuvky.filter(function (q) { return q.uid !== uid; }); __rz.vyberZas = null; },
-    { toast: 'Zásuvka ' + (z.ozn || '') + ' smazána.' });
+function zsKnihZasuvky() {   // oblíbené a vestavěné zásuvky pro nabídky
+  var obl = DOK.rozvOblibene || [], V = rozvKnihovnaVse().filter(function (it) { return it.druh === 'pristroj' && it.kat === 'XZ'; });
+  return V.sort(function (a, b) { var oa = obl.indexOf(a.id) !== -1 ? 0 : 1, ob = obl.indexOf(b.id) !== -1 ? 0 : 1; return oa - ob || (+a.ue - +b.ue) || (+a.In - +b.In); });
 }
-TD_AKCE.tdZsSmazat = function () { if (__rz && __rz.vyberZas) zsSmazat(__rz.vyberZas); };
-TD_AKCE.tdZsHotovo = function () { if (!__rz) return; __rz.vyberZas = null; rozvPohledVykreslit(); rozvVlastnostiVykreslit(); };
-TD_AKCE.tdZsDup = function () {
-  var z = __rz && zsZasNajit(__rz.vyberZas); if (!z) return;
-  var n = dokKopie(z); n.uid = 'xz' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); n.ozn = zsDalsiOzn(); delete n.napajen;
-  rozvZmena('Duplikovat zásuvku', function () { __rz.celo.zasuvky.push(n); zsVolneMisto(zsData(), n); __rz.vyberZas = n.uid; });
+TD_AKCE.tdZsSJisticem = function (el) {
+  var r = el.getBoundingClientRect(), pol = zsKnihZasuvky().slice(0, 12).map(function (it) { return { popis: rozvNazev(it), fn: function () { zsZasSJisticem(it.id); } }; });
+  ktOtevrit(r.left, r.bottom + 2, pol);
 };
 TD_AKCE.tdZsKnihovna = function () {   // knihovna: karta Přístroje, skupina Zásuvky a vidlice
   __rzF = rozvFiltrVychozi('pristroje'); __rzF.skup = 'zas';
   rozvFiltryVykreslit(); rozvKnihovnaVykreslit();
   var k = document.querySelector('.rz-knihovna'); if (k && k.scrollIntoView) k.scrollIntoView({ block: 'start', behavior: 'smooth' });
 };
-TD_AKCE.tdZsVyberZas = function (el) { if (!__rz) return; __rz.vyberZas = el.getAttribute('data-u'); __rz.vyber = null; __rz.vic = null; rozvPohledVykreslit(); rozvVlastnostiVykreslit(); };
+
+// ── vlastnosti: jedna zásuvka, víc zásuvek, vybraný vodič ──
+function zsZasPanelHtml(z) {
+  var p = z.p || {}, js = zsJistice(), pos = z.pos || {}, J = zsJisticNajit(z.napajen), D = zsKolizeDuvody(zsData())[z.uid] || [], v = zsVicko(z);
+  var sel = function (k, label, volby, akt) {
+    return '<div class="f"><label>' + esc(label) + '</label><select data-zsp="' + k + '">' + volby.map(function (q) { return '<option value="' + esc(q[0]) + '"' + (q[0] === akt ? ' selected' : '') + '>' + esc(q[1]) + '</option>'; }).join('') + '</select></div>';
+  };
+  var inp = function (k, label, val, ph) { return '<div class="f"><label>' + esc(label) + '</label><input type="text" data-zsp="' + k + '" value="' + esc(val == null ? '' : val) + '" placeholder="' + esc(ph || '') + '" autocomplete="off"></div>'; };
+  var barva = { c: '🔴 červená – 400 V', m: '🔵 modrá – 230 V', z: '🟡 žlutá – 110 V', s: '' }[zsBarvaU(p)];
+  var zv = zsVodice({ celo: __rz.celo }).filter(function (w) { return w.b.u === z.uid; });
+  return '<div class="rp-t">Vlastnosti</div><h4 class="zs-p-nadpis">🔌 ' + esc(z.ozn || '-XZ') + ' · ' + (zsDruh(p) === 'dom' ? 'Zásuvka domovní' : 'Zásuvka průmyslová (CEE)') + '</h4>' +
+    '<div class="zs-celo-pozn">' + esc([p.vyrobce, p.typ].filter(Boolean).join(' ') || 'obecná položka') + '</div>' +
+    (D.length ? '<div class="zs-celo-kol">⚠ ' + esc(D.join(' · ')) + '</div>' : '') +
+    inp('ozn', 'Označení', z.ozn, '-XZ1') +
+    sel('napajen', 'Napájí ji', [['', '— vyberte jistič —']].concat(js.map(function (x) { return [x.uid, (x.ozn || '') + ' ' + zsHodnoty(x) + (x.faze ? ' · ' + x.faze : '')]; })), z.napajen || '') +
+    (J && !zsTrif(p) ? sel('fazeJ', 'Fáze (jističe ' + (J.ozn || '') + ')', [['', '—'], ['L1', 'L1'], ['L2', 'L2'], ['L3', 'L3']], J.faze || '') : '') +
+    (zv.length ? '<div class="zs-celo-pozn">Zapojeno vodiči: ' + esc(zv.map(function (w) { return w.b.s + ' ' + (w.prurez || '?') + ' mm²'; }).join(', ')) + '</div>' : '') +
+    sel('druhZas', 'Druh', [['cee', 'průmyslová CEE'], ['dom', 'domovní']], zsDruh(p)) +
+    sel('polyZ', 'Póly', [['', '—']].concat(ZS_POLY_VOLBY), zsPolyZ(p)) +
+    '<div class="g2">' + inp('In', 'In (A)', rozvCisloText(p.In), '32') + inp('ue', 'Un (V)', rozvCisloText(p.ue), '230') + '</div>' +
+    '<div class="g2">' + inp('ip', 'Krytí IP', p.ip, 'IP44') + inp('typ', 'Typ / obj. č.', p.typ, '') + '</div>' +
+    (barva ? '<div class="zs-celo-pozn">Barva podle napětí: ' + barva + ' [ověřit v ČSN EN IEC 60309-2]</div>' : '') +
+    '<div class="g2">' + inp('x', 'Střed x (mm)', pos.x != null ? rozvCisloText(pos.x) : '') + inp('y', 'Střed y (mm)', pos.y != null ? rozvCisloText(pos.y) : '') + '</div>' +
+    '<details class="rp-dalsi"><summary>Výroba (vrtací plán, víčko)</summary>' +
+      inp('vyrez', 'Výřez / otvor v čele (mm)', p.vyrez, 'např. Ø 56 nebo 70×70') + inp('roztecSroubu', 'Rozteč montážních šroubů (mm)', p.roztecSroubu, 'např. 60 nebo 60×50') +
+      inp('vicko', 'Prostor pro odklopení víčka (mm)', p.vicko, v.odhad ? 'výchozí návrh ' + v.mm + ' mm' : '') + '</details>' +
+    '<div class="rz-v-akce"><button type="button" class="dok-mini" data-action="tdZsDup">⧉ Duplikovat</button>' +
+      '<button type="button" class="dok-mini" data-action="tdZsSmazat">🗑 Smazat zásuvku</button>' +
+      '<button type="button" class="dok-mini" data-action="tdZsHotovo">✓ Hotovo</button></div>';
+}
+function zsVicPanelHtml(sel) {
+  var b = function (a, t, title) { return '<button type="button" class="dok-mini" data-action="tdZsAkce" data-a="' + a + '" title="' + esc(title || t) + '">' + t + '</button>'; };
+  return '<div class="rp-t">Vlastnosti</div><h4 class="zs-p-nadpis">🔌 Vybráno: ' + dokPocetTvar(sel.length, ['zásuvka', 'zásuvky', 'zásuvek']) + '</h4>' +
+    '<div class="zs-celo-pozn">' + esc(sel.map(function (u) { return (zsZasNajit(u) || {}).ozn || ''; }).join(', ')) + '</div>' +
+    '<div class="rp-t">Zarovnat</div><div class="rz-v-akce">' + b('zl', '⇤ Vlevo') + b('zch', '↔ Na střed') + b('zp', 'Vpravo ⇥') + b('zn', '⤒ Nahoru') + b('zcv', '↕ Na střed') + b('zd', 'Dolů ⤓') + '</div>' +
+    '<div class="rp-t">Rozmístit</div><div class="rz-v-akce">' + (sel.length > 2 ? b('rh', '⇹ Rovnoměrně vodorovně') + b('rv', '⇳ Rovnoměrně svisle') : '') + b('cen', '⊕ Vycentrovat na čele', 'Posune vybrané tak, aby byly vodorovně uprostřed čela') + '</div>' +
+    '<div class="rz-v-akce">' + b('dup', '⧉ Duplikovat') + b('del', '🗑 Smazat vybrané (' + sel.length + ')') + b('zrus', 'Zrušit výběr') + '</div>';
+}
+function zsVodicPanelHtml(w) {
+  var A = w.a, J = A.t === 'J' ? zsJisticNajit(A.u) : null, z = zsZasNajit(w.b.u), nv = J ? rzvNavrhPrurez(J.p.In) : '';
+  var o = function (v, t, cur) { return '<option value="' + v + '"' + (cur === v ? ' selected' : '') + '>' + t + '</option>'; };
+  return '<div class="rp-t">Vlastnosti</div><h4 class="zs-p-nadpis">〰 Vodič ' + esc(zsVodicOdText(w)) + ' → ' + esc((z && z.ozn || '-XZ') + ':' + w.b.s) + '</h4>' +
+    '<div class="g2"><div class="f"><label>Průřez</label><select data-zsw="prurez">' + o('', nv ? 'návrh ' + nv + ' mm²' : 'nezadáno', w.prurez || '') + RZV_PRUREZY.map(function (p) { return o(p, p + ' mm²', w.prurez || ''); }).join('') + '</select></div>' +
+    '<div class="f"><label>Barva</label><select data-zsw="barva">' + o('', 'podle svorky', w.barva || '') + Object.keys(RZV_BARVY).map(function (k) { return o(k, RZV_BARVY[k], w.barva || ''); }).join('') + '</select></div></div>' +
+    '<div class="rz-v-akce"><button type="button" class="dok-mini" data-action="tdZsVodicSmazat">✂ Odpojit vodič</button></div>';
+}
+function zsVodicOdText(w) {
+  var A = w.a;
+  if (A.t === 'J') { var J = zsJisticNajit(A.u); return (J && J.ozn || '-FA') + ':' + (2 * A.k + 2); }
+  if (A.t === 'X') { var X = zsJisticNajit(A.u) || (rozvNajit(A.u) || {}).x; return (X && X.ozn || '-X') + ':' + (A.k + 1); }
+  var s = zsSvorkovnice((__rz && __rz.skrin) || {})[A.i] || {}; return s.f + ' (od výroby) · ' + (A.k + 1);
+}
+
+// ── operace nad výběrem (vše přes rozvZmena = jedno ZPĚT) ──
+function zsPosunVyber(dx, dy, popis) {
+  var sel = zsVybrane(); if (!sel.length) return;
+  var d = zsData();
+  rozvZmena(popis || 'Posun zásuvek', function () { sel.forEach(function (u) { var z = zsZasNajit(u), p = zsZasPos(d, z, zsZasIdx(u)); z.pos = { x: rozvZaokr(p.x + dx), y: rozvZaokr(p.y + dy) }; }); }, { bezVlastnosti: false });
+}
+function zsJisticJenPro(z) {   // jistič, který napájí jen tuto zásuvku (nic dalšího) — nabídka „Smazat i s jističem"
+  var J = zsJisticNajit(z.napajen); if (!J) return null;
+  if (zsZasuvky({ celo: __rz.celo }).some(function (q) { return q !== z && q.napajen === J.uid; })) return null;
+  if (rozvPrvkyVse(__rz.rady).some(function (y) { return y.nadr === J.uid || (y.napaji && y.napaji.length); }) || (J.napaji && J.napaji.length)) return null;
+  return J;
+}
+function zsSmazatVyber(sJisticem) {
+  var sel = zsVybrane(); if (!sel.length) return;
+  var J = sJisticem && sel.length === 1 ? zsJisticJenPro(zsZasNajit(sel[0])) : null;
+  var oz = sel.map(function (u) { return (zsZasNajit(u) || {}).ozn || ''; }).join(', ');
+  rozvZmena('Smazat zásuvky', function () {
+    __rz.celo.zasuvky = __rz.celo.zasuvky.filter(function (q) { return sel.indexOf(q.uid) === -1; });
+    if (__rz.celo.vodice) { __rz.celo.vodice = __rz.celo.vodice.filter(function (w) { return sel.indexOf(w.b.u) === -1 && (!J || w.a.u !== J.uid); }); if (!__rz.celo.vodice.length) delete __rz.celo.vodice; }
+    if (J) __rz.rady.forEach(function (r) { r.prvky = (r.prvky || []).filter(function (y) { return y.uid !== J.uid; }); });
+    __rz.vyberZas = null; __rz.vicZas = null;
+  }, { toast: (sel.length > 1 ? 'Zásuvky ' : 'Zásuvka ') + oz + (J ? ' a jistič ' + (J.ozn || '') : '') + ' smazán' + (sel.length > 1 ? 'y' : 'a') + '.' });
+}
+function zsSmazat(uid) { zsVyberNastavit([uid]); zsSmazatVyber(false); }
+var __zsSchranka = null;   // kopie zásuvek (v paměti, jde vložit i do jiné skříně)
+function zsKopirovat() { var sel = zsVybrane(); if (!sel.length) return; __zsSchranka = sel.map(function (u) { var c = dokKopie(zsZasNajit(u)); delete c.napajen; return c; }); showToast('Zkopírováno: ' + dokPocetTvar(sel.length, ['zásuvka', 'zásuvky', 'zásuvek']) + ' — Ctrl+V vloží.', { timeout: 2500 }); }
+function zsVlozitKopie(src, pos, popis) {
+  if (!src || !src.length || !__rz || window.__formReadOnly) return;
+  var nove = [], d = zsData();
+  rozvZmena(popis || 'Vložit zásuvky', function () {
+    if (!__rz.celo) __rz.celo = { zasuvky: [] };
+    var p0 = src[0].pos || { x: 0, y: 0 };
+    src.forEach(function (s, i) {
+      var n = dokKopie(s); n.uid = zsNoveUid(); n.ozn = zsDalsiOzn(nove); delete n.napajen;
+      __rz.celo.zasuvky.push(n); nove.push(n);
+      if (pos) n.pos = { x: pos.x + ((s.pos || p0).x - p0.x), y: pos.y + ((s.pos || p0).y - p0.y) };
+      else if (s.pos) { n.pos = { x: s.pos.x + 15, y: s.pos.y + 15 }; if (zsKolizeDuvody(zsData())[n.uid]) zsVolneMisto(zsData(), n); }
+      else zsVolneMisto(zsData(), n);
+    });
+    zsVyberNastavit(nove.map(function (n) { return n.uid; }));
+  });
+  return nove;
+}
+function zsDuplikovat() { var sel = zsVybrane(); if (sel.length) zsVlozitKopie(sel.map(function (u) { return zsZasNajit(u); }), null, 'Duplikovat zásuvky'); }
+function zsVyberBoxy() { var d = zsData(); return zsVybrane().map(function (u) { return zsZasBox(d, zsZasNajit(u), zsZasIdx(u)); }); }
+function zsZarovnat(kind) {
+  var B = zsVyberBoxy(); if (B.length < 2) return;
+  var mn = function (f) { return Math.min.apply(null, B.map(f)); }, mx = function (f) { return Math.max.apply(null, B.map(f)); };
+  var L = mn(function (b) { return b.x1; }), R = mx(function (b) { return b.x2; }), T = mn(function (b) { return b.y1; }), Bo = mx(function (b) { return b.y2; });
+  rozvZmena('Zarovnat zásuvky', function () {
+    B.forEach(function (b) {
+      var z = b.z, x = b.cx, y = b.cy;
+      if (kind === 'zl') x = L + b.a; else if (kind === 'zp') x = R - b.a; else if (kind === 'zch') x = (L + R) / 2;
+      else if (kind === 'zn') y = T + b.a; else if (kind === 'zd') y = Bo - b.a; else if (kind === 'zcv') y = (T + Bo) / 2;
+      z.pos = { x: rozvZaokr(x), y: rozvZaokr(y) };
+    });
+  });
+}
+function zsRozmistit(smer) {   // stejné mezery mezi zásuvkami; krajní zůstanou
+  var B = zsVyberBoxy(); if (B.length < 3) return;
+  var h = smer === 'h', key = h ? 'cx' : 'cy';
+  B.sort(function (a, b) { return a[key] - b[key]; });
+  var od = h ? B[0].x2 : B[0].y2, kon = h ? B[B.length - 1].x1 : B[B.length - 1].y1;
+  var sirky = B.slice(1, -1).reduce(function (s, b) { return s + 2 * b.a; }, 0), mez = (kon - od - sirky) / (B.length - 1);
+  rozvZmena('Rozmístit zásuvky', function () {
+    var c = od;
+    B.slice(1, -1).forEach(function (b) { c += mez; var st = c + b.a; c += 2 * b.a; b.z.pos = h ? { x: rozvZaokr(st), y: b.cy } : { x: b.cx, y: rozvZaokr(st) }; });
+  });
+}
+function zsVycentrovat() {
+  var B = zsVyberBoxy(); if (!B.length) return;
+  var G = zsGeo(zsData()), L = Math.min.apply(null, B.map(function (b) { return b.x1; })), R = Math.max.apply(null, B.map(function (b) { return b.x2; })), dx = rozvZaokr(G.W / 2 - (L + R) / 2);
+  rozvZmena('Vycentrovat zásuvky', function () { B.forEach(function (b) { b.z.pos = { x: rozvZaokr(b.cx + dx), y: b.cy }; }); });
+}
+// Přečíslování podle polohy: řádky shora dolů (tolerance 25 mm), v řádku zleva doprava.
+// Volitelně i jističe, které zásuvky napájejí: -FA1 → -XZ1, -FA2 → -XZ2… (ostatní -FA pokračují dál).
+function zsPoradiPolohy() {
+  var d = zsData(), B = zsZasuvky(d).map(function (z, i) { return zsZasBox(d, z, i); }).sort(function (a, b) { return a.cy - b.cy; }), radky = [];
+  B.forEach(function (b) { var r = radky[radky.length - 1]; if (r && Math.abs(b.cy - r[0].cy) <= 25) r.push(b); else radky.push([b]); });
+  return [].concat.apply([], radky.map(function (r) { return r.sort(function (a, b) { return a.cx - b.cx; }); })).map(function (b) { return b.z; });
+}
+function zsPrecislovat(sJistici) {
+  var Z = zsPoradiPolohy(); if (!Z.length) return;
+  rozvZmena(sJistici ? 'Přečíslovat zásuvky i jističe' : 'Přečíslovat zásuvky', function () {
+    Z.forEach(function (z, i) { z.ozn = '-XZ' + (i + 1); });
+    if (!sJistici) return;
+    var J = [], vse = rozvPrvkyVse(__rz.rady);
+    Z.forEach(function (z) { var x = zsJisticNajit(z.napajen); if (x && x.p.kat === 'FA' && J.indexOf(x) === -1) J.push(x); });
+    var n = 0; J.forEach(function (x) { x.ozn = '-FA' + (++n); });
+    vse.forEach(function (x) { if (x.p.kat === 'FA' && J.indexOf(x) === -1 && /^-FA\d+$/.test(x.ozn || '')) x.ozn = '-FA' + (++n); });
+  });
+  showToast('Zásuvky přečíslované podle polohy' + (sJistici ? ' a jističe podle zásuvek' : '') + '.', { timeout: 3000 });
+}
+TD_AKCE.tdZsAkce = function (el) {
+  var a = el.getAttribute('data-a');
+  if (/^z/.test(a) && a !== 'zrus') zsZarovnat(a); else if (a === 'rh' || a === 'rv') zsRozmistit(a === 'rh' ? 'h' : 'v');
+  else if (a === 'cen') zsVycentrovat(); else if (a === 'dup') zsDuplikovat(); else if (a === 'del') zsSmazatVyber(false); else if (a === 'zrus') zsVyberZrusit();
+};
+TD_AKCE.tdZsSmazat = function () { zsSmazatVyber(false); };
+TD_AKCE.tdZsHotovo = function () { zsVyberZrusit(); };
+TD_AKCE.tdZsDup = function () { zsDuplikovat(); };
+TD_AKCE.tdZsVyberZas = function (el) { if (!__rz) return; zsVyberNastavit([el.getAttribute('data-u')]); zsPrekreslit(); };
 // pole ve vlastnostech zásuvky
 document.addEventListener('change', function (e) {
-  var el = e.target; if (!el || !el.getAttribute || !el.getAttribute('data-zsp') || !__rz) return;
+  var el = e.target; if (!el || !el.getAttribute || !__rz) return;
+  var kw = el.getAttribute('data-zsw');
+  if (kw) {
+    var w = zsVodicNajit(__rz.zsVodic); if (!w) return;
+    rozvZmena('Vodič k zásuvce', function () { if (el.value) w[kw] = el.value; else delete w[kw]; });
+    return;
+  }
+  if (!el.getAttribute('data-zsp')) return;
   var z = zsZasNajit(__rz.vyberZas); if (!z) return;
   var k = el.getAttribute('data-zsp'), v = el.value.trim();
   rozvZmena('Vlastnosti zásuvky', function () {
     if (k === 'ozn') z.ozn = v;
-    else if (k === 'napajen') { if (v) z.napajen = v; else delete z.napajen; }
+    else if (k === 'napajen') { if (v) z.napajen = v; else delete z.napajen; zsVodiceDleNapajeni(z); }
+    else if (k === 'fazeJ') { var J = zsJisticNajit(z.napajen); if (J) { if (v) J.faze = v; else delete J.faze; } }
     else if (k === 'x' || k === 'y') { var p = z.pos || zsZasPos(zsData(), z, 0), n = rozvCislo(v); if (n !== '') { z.pos = { x: p.x, y: p.y }; z.pos[k] = n; } }
-    else if (k === 'In' || k === 'ue') z.p[k] = rozvCislo(v);
+    else if (k === 'In' || k === 'ue' || k === 'vicko') { var c = rozvCislo(v); if (c === '' && k === 'vicko') delete z.p.vicko; else z.p[k] = c; }
+    else if (k === 'vyrez' || k === 'roztecSroubu') { if (v) z.p[k] = v; else delete z.p[k]; }
     else z.p[k] = v;
   });
 });
-// Zásuvka (XZ) z knihovny patří na ČELO, ne do DIN řady (pokyn uživatele 2026-11-26):
-// duch = kresba zásuvky ve stejném měřítku jako editor čela, cíl jen plocha čela
-// (poloha v mm, mřížka 5 mm). Vidlice (XP) jde rovnou do přívodu — netáhne se.
+
+// ── vodiče k zásuvkám (pohled Zapojení) ──
+// __rz.celo.vodice = [{ uid, a: zdroj { t:'J', u, k } | { t:'S', i, k } | { t:'X', u, k }, b: { u: zásuvka, s: 'L1'… }, prurez, barva }]
+// (klíč vzniká až s prvním vodičem). „Napájí ji" vzniká z vodiče L; ruční volba zůstává jako rychlá oprava.
+function zsVodicNajit(uid) { return uid ? zsVodice({ celo: __rz.celo }).filter(function (w) { return w.uid === uid; })[0] || null : null; }
+function zsSkupinaJisticeN(J) { var fi = J ? rzsFiPredek(J, __rz.rady) : null; return fi ? 'N-' + String(fi.ozn || 'FI').replace(/^-/, '') : 'N'; }
+function zsSkupinaZdroje(A) {   // skupina N, ke které patří svorka zdroje (svorkovnice od výroby / přípojnice N na DIN)
+  if (A.t === 'S') {
+    var L = zsSvorkovnice(__rz.skrin), s = L[A.i]; if (!s) return '';
+    if (s.f === 'PE') return 'PE';
+    var nIdx = L.slice(0, A.i).filter(function (q) { return q.f === 'N' || q.f === 'PEN'; }).length, np = rzsNP(__rz.rady, __rz);
+    return (np && np.listyN && np.listyN[nIdx]) || 'N';
+  }
+  if (A.t === 'X') { var x = zsJisticNajit(A.u) || ((rozvNajit(A.u) || {}).x); if (!x) return ''; if (x.p.prip === 'PE') return 'PE'; var fi = rzsFiPredek(x, __rz.rady); return fi ? 'N-' + String(fi.ozn || 'FI').replace(/^-/, '') : 'N'; }
+  return '';
+}
+function zsFunkceZdroje(A, B) { var b = B['' + zsVodicKlic(A)]; return b ? b.f : ''; }
+function zsVodicPridat(A, C) {   // A = zdroj, C = svorka zásuvky; vrací text chyby nebo ''
+  var B = zsBodyZapojeni(zsData()), fa = zsFunkceZdroje(A, B), fc = C.s, z = zsZasNajit(C.u); if (!z) return 'zásuvka nenalezena';
+  var L = /^L/.test(fc);
+  if (L && A.t !== 'J') return 'fázi (' + fc + ') natáhněte ze svorky jističe';
+  if (fc === 'N' && !(fa === 'N' || fa === 'PEN')) return 'N natáhněte ze svorkovnice nebo přípojnice N';
+  if (fc === 'PE' && !(fa === 'PE' || fa === 'PEN')) return 'PE natáhněte ze svorkovnice nebo přípojnice PE';
+  var J = A.t === 'J' ? zsJisticNajit(A.u) : zsJisticNajit(z.napajen), pr = J ? rzvNavrhPrurez(J.p.In) : '';
+  rozvZmena('Vodič k zásuvce ' + (z.ozn || ''), function () {
+    if (!__rz.celo.vodice) __rz.celo.vodice = [];
+    __rz.celo.vodice = __rz.celo.vodice.filter(function (w) { return !(w.b.u === C.u && w.b.s === fc); });   // na svorce zásuvky jen jeden vodič
+    var w = { uid: 'zw' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5), a: A, b: { u: C.u, s: fc } };
+    if (pr) w.prurez = pr;
+    __rz.celo.vodice.push(w); __rz.zsVodic = w.uid;
+    zsSyncNapajeni();
+  });
+  return '';
+}
+function zsSyncNapajeni() {   // „Napájí ji" podle vodiče L (vodič je zdroj pravdy, menu jen rychlá oprava)
+  zsZasuvky({ celo: __rz.celo }).forEach(function (z) {
+    var w = zsVodice({ celo: __rz.celo }).filter(function (q) { return q.b.u === z.uid && /^L/.test(q.b.s) && q.a.t === 'J'; })[0];
+    if (w && zsJisticNajit(w.a.u)) z.napajen = w.a.u;
+  });
+}
+function zsVodiceDleNapajeni(z) {   // ruční změna „Napájí ji" přepojí natažené vodiče L na nový jistič (póly v pořadí)
+  if (!__rz.celo || !__rz.celo.vodice) return;
+  __rz.celo.vodice.forEach(function (w) { if (w.b.u === z.uid && /^L/.test(w.b.s) && w.a.t === 'J') { if (z.napajen) w.a = { t: 'J', u: z.napajen, k: w.a.k }; } });
+  if (!z.napajen) __rz.celo.vodice = __rz.celo.vodice.filter(function (w) { return !(w.b.u === z.uid && /^L/.test(w.b.s)); });
+  if (!__rz.celo.vodice.length) delete __rz.celo.vodice;
+}
+function zsZapojAuto(uidy) {   // natáhne chybějící vodiče L / N / PE podle „Napájí ji"
+  var d = zsData(), B = zsBodyZapojeni(d), Z = zsZasuvky(d).filter(function (z) { return !uidy || uidy.indexOf(z.uid) !== -1; }), nov = 0, chybi = [];
+  var zdroje = Object.keys(B).map(function (k) { return B[k]; }).filter(function (b) { return b.t === 'S' || b.t === 'X'; });
+  var obsaz = {}; zsVodice(d).forEach(function (w) { obsaz[zsVodicKlic(w.a)] = (obsaz[zsVodicKlic(w.a)] || 0) + 1; });
+  var volnaSvorka = function (f, skup) {
+    var c = zdroje.filter(function (b) { return (b.f === f || b.f === 'PEN') && (f === 'PE' || zsSkupinaZdroje(b) === skup); });
+    c.sort(function (a, b) { return (obsaz[zsVodicKlic(a)] || 0) - (obsaz[zsVodicKlic(b)] || 0); });
+    return c[0] || null;
+  };
+  rozvZmena('Zapojit automaticky', function () {
+    if (!__rz.celo.vodice) __rz.celo.vodice = [];
+    var V = __rz.celo.vodice, ma = function (z, s) { return V.some(function (w) { return w.b.u === z.uid && w.b.s === s; }); };
+    Z.forEach(function (z) {
+      var J = zsJisticNajit(z.napajen); if (!J) { chybi.push((z.ozn || '-XZ') + ' nemá jistič'); return; }
+      var pr = rzvNavrhPrurez(J.p.In), n = cpPoly(J.p) || 1, li = 0;
+      zsSvorkyZas(z.p).forEach(function (s) {
+        if (ma(z, s)) { if (/^L/.test(s)) li++; return; }
+        var A = null;
+        if (/^L/.test(s)) { if (li < n) A = { t: 'J', u: J.uid, k: li }; li++; }
+        else { var b = volnaSvorka(s, zsSkupinaJisticeN(J)); if (b) A = b.t === 'S' ? { t: 'S', i: b.i, k: b.k } : { t: 'X', u: b.u, k: b.k }; else chybi.push((z.ozn || '') + ': chybí svorka ' + (s === 'N' ? zsSkupinaJisticeN(J) : 'PE')); }
+        if (!A) return;
+        obsaz[zsVodicKlic(A)] = (obsaz[zsVodicKlic(A)] || 0) + 1;
+        var w = { uid: 'zw' + Date.now().toString(36) + Math.random().toString(36).slice(2, 5) + nov, a: A, b: { u: z.uid, s: s } }; if (pr) w.prurez = pr;
+        V.push(w); nov++;
+      });
+    });
+    if (!V.length) delete __rz.celo.vodice;
+    zsSyncNapajeni();
+  });
+  showToast((nov ? 'Nataženo ' + dokPocetTvar(nov, ['vodič', 'vodiče', 'vodičů']) : 'Všechny zásuvky už jsou zapojené') + (chybi.length ? ' · ' + chybi.join(' · ') : '') + '.', { timeout: 6000 });
+}
+function zsVodicSmazat(uid) {
+  if (!zsVodicNajit(uid)) return;
+  rozvZmena('Odpojit vodič', function () { __rz.celo.vodice = __rz.celo.vodice.filter(function (w) { return w.uid !== uid; }); if (!__rz.celo.vodice.length) delete __rz.celo.vodice; __rz.zsVodic = null; }, { toast: 'Vodič odpojen.' });
+}
+TD_AKCE.tdZsZapojAuto = function () { var s = zsVybrane(); zsZapojAuto(s.length ? s : null); };
+TD_AKCE.tdZsVodicSmazat = function () { if (__rz) zsVodicSmazat(__rz.zsVodic); };
+
+// ── zásuvka z knihovny patří na ČELO (tažení, klepnutí) ──
 function zsKnihZas(it) { return !!(it && __rz && __rz.zs && it.kat === 'XZ'); }
 function zsKnihVidl(it) { return !!(it && __rz && __rz.zs && it.kat === 'XP'); }
+function zsBodMm(e) {   // bod obrazovky → mm skříně (null mimo plochu editoru)
+  var svg = document.querySelector('#zs-celo .zs-celo-svg'), g = zsCeloEditorSvg.g; if (!svg || !g) return null;
+  var r = svg.getBoundingClientRect(); if (!r.width) return null;
+  var px = (e.clientX - r.left) * ZS_ED.W / r.width, py = (e.clientY - r.top) * ZS_ED.H / r.height;
+  return { x: (px - g.x0) / g.k, y: (py - g.y0) / g.k, vx: px, vy: py };
+}
 function zsCilZBodu(cx, cy) {   // místo na čele pod kurzorem (mm, po 5 mm), nebo null mimo čelo
   var b = zsBodMm({ clientX: cx, clientY: cy }); if (!b) return null;
   var G = zsGeo(zsData());
   if (b.x < 0 || b.y < 0 || b.x > G.W || b.y > G.H) return null;
   return { x: Math.round(b.x / PSC_MRIZKA) * PSC_MRIZKA, y: Math.round(b.y / PSC_MRIZKA) * PSC_MRIZKA };
 }
-function zsDuchHtml(it) {   // duch: zásuvka v pixelech stejně velká jako na čele
-  var svg = document.querySelector('#zs-celo .zs-celo-svg'), g = zsCeloVykres.g;
+function zsDuchHtml(it) {   // duch: zásuvka v pixelech stejně velká jako na čele (dílenská kresba)
+  var svg = document.querySelector('#zs-celo .zs-celo-svg'), g = zsCeloEditorSvg.g;
   var z = { ozn: zsDalsiOzn(), p: { kat: 'XZ', druhZas: zsDruh(it), polyZ: zsPolyZ(it), In: it.In, ue: it.ue, typ: it.typ || '' } };
   var k = g ? g.k : 0.25, a = zsZasPul(z) * k, m = 7, w = 2 * a + 2 * m, hh = 2 * a + 2 * m;
   var px = svg ? svg.getBoundingClientRect().width / ZS_ED.W : 4;
-  var zT = function (x, y, t, oo) { oo = Object.assign({}, oo || {}); oo.fs = (oo.fs || 2.2) * 1.45; return rsText(x, y, t, oo); };
   return { html: '<svg xmlns="http://www.w3.org/2000/svg" class="zs-duch-svg" viewBox="0 0 ' + rsN(w) + ' ' + rsN(hh) + '" width="' + Math.round(w * px) + '" height="' + Math.round(hh * px) +
-    '" font-family="' + RS_PISMO + '">' + rsObd(w / 2 - a, hh / 2 - a, 2 * a, 2 * a, { w: 0.1, fill: '#fff' }).replace('stroke="#000"', 'stroke="none"') +
-    zsZasKresba(z, w / 2, hh / 2, k, zT) + '</svg>', ox: w / 2 * px, oy: hh / 2 * px };
+    '" font-family="DM Sans, Arial, sans-serif">' + zsEdDefs() + zsZasDilnaSvg(z, w / 2, hh / 2, k) + '</svg>', ox: w / 2 * px, oy: hh / 2 * px };
 }
 function zsTahZacit(d, it) {
   d.zs = true; d.duch = document.createElement('div'); d.duch.className = 'rz-duch zs-duch';
@@ -47204,63 +47778,232 @@ function zsVlozitNaCelo(kid, pos) {
   return z;
 }
 
-// tažení zásuvky po čele
-var __zsTah = null;
-function zsBodMm(e) {
-  var svg = document.querySelector('#zs-celo .zs-celo-svg'), g = zsCeloVykres.g; if (!svg || !g) return null;
-  var r = svg.getBoundingClientRect(), sx = ZS_ED.W / r.width, sy = ZS_ED.H / r.height;
-  var px = (e.clientX - r.left) * sx, py = (e.clientY - r.top) * sy;
-  return { x: (px - g.x0 - 2) / g.k, y: (py - g.y0 - 3 - g.hRuk * g.k) / g.k };
+// ── přichycení: hrany a STŘEDY ostatních zásuvek a střed čela (do 4 mm), jinak mřížka 5 mm (Shift 1 mm) ──
+function zsPrichytit(box, ostatni, W, shift) {
+  var mriz = shift ? 1 : PSC_MRIZKA, out = { dx: 0, dy: 0, vodx: [], vody: [] };
+  var X = [], Y = []; ostatni.forEach(function (b) { X.push(b.x1, b.cx, b.x2); Y.push(b.y1, b.cy, b.y2); }); X.push(W / 2);
+  var nej = function (moje, cile) { var best = null; moje.forEach(function (m) { cile.forEach(function (c) { var d = c - m; if (Math.abs(d) <= PSC_PRICHYT && (!best || Math.abs(d) < Math.abs(best.d))) best = { d: d, c: c }; }); }); return best; };
+  var bx = shift ? null : nej([box.x1, box.cx, box.x2], X), by = shift ? null : nej([box.y1, box.cy, box.y2], Y);
+  if (bx) { out.dx = bx.d; out.vodx.push(bx.c); } else out.dx = Math.round(box.cx / mriz) * mriz - box.cx;
+  if (by) { out.dy = by.d; out.vody.push(by.c); } else out.dy = Math.round(box.cy / mriz) * mriz - box.cy;
+  return out;
 }
+
+// ── myš a prst na čele: výběr, tažení, obdélník, vodiče, dva prsty = zoom ──
+var __zsTah = null, __zsObd = null, __zsVTah = null, __zsPrsty = {}, __zsPinch = null;
+// Při stisku na čele se překreslí jen čelo (prvek <svg> zůstane — drží prst / myš), kresba DIN a vlastnosti;
+// celý čelní pohled by čelo vyměnil a tah prstem i dlouhý stisk by se ztratily.
+function zsPrekreslitCelo() { zsCeloPrekreslit(); if (typeof rozvSvgPrekreslit === 'function') rozvSvgPrekreslit(); rozvVlastnostiVykreslit(); }
 document.addEventListener('pointerdown', function (e) {
   if (!__rz || !__rz.zs || !e.target.closest) return;
   var svg = e.target.closest('#zs-celo .zs-celo-svg'); if (!svg) return;
+  __rz.zsFokus = true;
+  if (e.pointerType === 'touch') {
+    __zsPrsty[e.pointerId] = { x: e.clientX, y: e.clientY };
+    var ids = Object.keys(__zsPrsty);
+    if (ids.length === 2) {   // dva prsty = přiblížení čela
+      var a = __zsPrsty[ids[0]], b = __zsPrsty[ids[1]];
+      __zsPinch = { d0: Math.hypot(a.x - b.x, a.y - b.y) || 1, z0: __rz.zsZoom || 1 };
+      if (__zsTah) { var t0 = __zsTah; __zsTah = null; t0.puv.forEach(function (q) { q.z.pos = q.p; }); }
+      __zsObd = null; __zsVTah = null; zsCeloPrekreslit(); return;
+    }
+  }
+  if (e.button === 2) return;   // pravé tlačítko — nabídka (contextmenu)
   if (__rz.knihVyber && zsKnihZas(rozvKnihPolozka(__rz.knihVyber))) {
     e.preventDefault(); var cil = zsCilZBodu(e.clientX, e.clientY);
     if (cil) zsVlozitNaCelo(__rz.knihVyber, cil);
     return;
   }
+  var b0 = zsBodMm(e), ctrl = e.ctrlKey || e.metaKey, shift = e.shiftKey;
+  if (__rz.zsPohled === 'zapojeni') {
+    var sv = e.target.closest('[data-zs-sv]');
+    if (sv && !window.__formReadOnly) { e.preventDefault(); __zsVTah = { od: sv.getAttribute('data-zs-sv'), x1: b0.vx, y1: b0.vy, x2: b0.vx, y2: b0.vy, akt: false }; try { svg.setPointerCapture(e.pointerId); } catch (er) {} return; }
+    var wv = e.target.closest('[data-zs-w]');
+    if (wv) { __rz.zsVodic = wv.getAttribute('data-zs-w'); __rz.vyberZas = null; __rz.vicZas = null; __rz.vyber = null; __rz.vic = null; zsPrekreslitCelo(); return; }
+  }
+  var din = e.target.closest('[data-puid]');
+  if (din && !e.target.closest('[data-zasuvka]')) { __rz.vyberZas = null; __rz.vicZas = null; __rz.zsVodic = null; rozvVybrat(din.getAttribute('data-puid'), false); return; }   // přístroj v okně = výběr na DIN
   var gEl = e.target.closest('[data-zasuvka]');
-  if (!gEl) { if (__rz.vyberZas) { __rz.vyberZas = null; rozvPohledVykreslit(); rozvVlastnostiVykreslit(); } return; }
-  if (window.__formReadOnly) return;
-  var z = zsZasNajit(gEl.getAttribute('data-zasuvka')); if (!z) return;
+  if (!gEl) {   // prázdné místo: zrušit výběr, myší obdélník
+    if (!ctrl && !shift) { __rz.vyberZas = null; __rz.vicZas = null; __rz.zsVodic = null; __rz.vyber = null; __rz.vic = null; }
+    if (e.pointerType !== 'touch' && b0) { e.preventDefault(); __zsObd = { x1: b0.x, y1: b0.y, x2: b0.x, y2: b0.y, akt: false, pridat: ctrl || shift, pred: zsVybrane() }; try { svg.setPointerCapture(e.pointerId); } catch (er) {} }
+    zsPrekreslitCelo(); return;
+  }
+  var uid = gEl.getAttribute('data-zasuvka'), sel = zsVybrane();
+  if (ctrl || shift) {   // Ctrl / Shift + klik: přidat / ubrat
+    var i = sel.indexOf(uid);
+    if (i !== -1 && ctrl) sel.splice(i, 1); else if (i === -1) sel.push(uid);
+    if (sel.length) zsVyberNastavit(sel, i === -1 ? uid : sel[sel.length - 1]); else { __rz.vyberZas = null; __rz.vicZas = null; }
+    zsPrekreslitCelo(); return;
+  }
+  if (sel.indexOf(uid) === -1) zsVyberNastavit([uid]); else { __rz.vyberZas = uid; __rz.vyber = null; __rz.vic = null; }
+  if (window.__formReadOnly || !b0) { zsPrekreslitCelo(); return; }
   e.preventDefault();
-  var b = zsBodMm(e), p0 = z.pos || zsZasPos(zsData(), z, 0);
-  __zsTah = { z: z, b0: b, p0: { x: p0.x, y: p0.y }, pohyb: false };
+  var d = zsData(), vyb = zsVybrane();
+  __zsTah = { hlavni: uid, b0: b0, puv: vyb.map(function (u) { var z = zsZasNajit(u), p = zsZasPos(d, z, zsZasIdx(u)); return { z: z, p: { x: p.x, y: p.y } }; }), pohyb: false };
   try { svg.setPointerCapture(e.pointerId); } catch (er) {}
+  zsPrekreslitCelo();
 });
 document.addEventListener('pointermove', function (e) {
+  if (__zsPrsty[e.pointerId]) __zsPrsty[e.pointerId] = { x: e.clientX, y: e.clientY };
+  if (__zsPinch) {
+    var ids = Object.keys(__zsPrsty); if (ids.length < 2) return;
+    var a = __zsPrsty[ids[0]], b = __zsPrsty[ids[1]], z = Math.max(1, Math.min(3, __zsPinch.z0 * Math.hypot(a.x - b.x, a.y - b.y) / __zsPinch.d0));
+    if (Math.abs(z - (__rz.zsZoom || 1)) > 0.04) { __rz.zsZoom = Math.round(z * 100) / 100; var s = document.querySelector('#zs-celo .zs-celo-svg'); if (s) { s.style.width = Math.round(__rz.zsZoom * 100) + '%'; s.style.maxWidth = __rz.zsZoom > 1 ? 'none' : ''; } }
+    return;
+  }
+  if (__zsVTah) {
+    var bv = zsBodMm(e); if (!bv) return;
+    __zsVTah.x2 = bv.vx; __zsVTah.y2 = bv.vy; __zsVTah.akt = true;
+    var nad = document.elementFromPoint(e.clientX, e.clientY), sv = nad && nad.closest && nad.closest('[data-zs-sv]');
+    __zsVTah.ok = sv ? zsVodicKontrola(__zsVTah.od, sv.getAttribute('data-zs-sv')) === '' : null;
+    zsCeloPrekreslit(); return;
+  }
+  if (__zsObd) {
+    var bo = zsBodMm(e); if (!bo) return;
+    __zsObd.x2 = bo.x; __zsObd.y2 = bo.y; if (Math.abs(bo.x - __zsObd.x1) + Math.abs(bo.y - __zsObd.y1) > 3) __zsObd.akt = true;
+    if (__zsObd.akt) {
+      var x1 = Math.min(__zsObd.x1, __zsObd.x2), x2 = Math.max(__zsObd.x1, __zsObd.x2), y1 = Math.min(__zsObd.y1, __zsObd.y2), y2 = Math.max(__zsObd.y1, __zsObd.y2), d0 = zsData();
+      var v = zsZasuvky(d0).map(function (z, i) { return zsZasBox(d0, z, i); }).filter(function (q) { return q.x1 < x2 && q.x2 > x1 && q.y1 < y2 && q.y2 > y1; }).map(function (q) { return q.u; });
+      var s2 = __zsObd.pridat ? __zsObd.pred.concat(v.filter(function (u) { return __zsObd.pred.indexOf(u) === -1; })) : v;
+      __rz.vicZas = s2.length > 1 ? s2 : null; __rz.vyberZas = s2[s2.length - 1] || null;
+      zsCeloPrekreslit();
+    }
+    return;
+  }
   if (!__zsTah) return;
   var b = zsBodMm(e); if (!b) return;
   var dx = b.x - __zsTah.b0.x, dy = b.y - __zsTah.b0.y;
   if (!__zsTah.pohyb && Math.abs(dx) + Math.abs(dy) < 2) return;
-  __zsTah.pohyb = true;
-  var nx = Math.round((__zsTah.p0.x + dx) / PSC_MRIZKA) * PSC_MRIZKA, ny = Math.round((__zsTah.p0.y + dy) / PSC_MRIZKA) * PSC_MRIZKA;
-  zsZasuvky({ celo: __rz.celo }).forEach(function (q) {   // přichycení k ose sousední zásuvky
-    if (q === __zsTah.z || !q.pos) return;
-    if (Math.abs(q.pos.x - (__zsTah.p0.x + dx)) <= PSC_PRICHYT) nx = q.pos.x;
-    if (Math.abs(q.pos.y - (__zsTah.p0.y + dy)) <= PSC_PRICHYT) ny = q.pos.y;
-  });
-  __zsTah.z.pos = { x: nx, y: ny };
+  if (!__zsTah.pohyb) { __zsTah.pohyb = true; document.body.classList.add('rz-tahne'); }
+  var d = zsData(), G = zsGeo(d), hl = __zsTah.puv.filter(function (q) { return q.z.uid === __zsTah.hlavni; })[0] || __zsTah.puv[0];
+  var tah = __zsTah.puv.map(function (q) { return q.z.uid; }), a = zsZasPul(hl.z);
+  var box = { cx: hl.p.x + dx, cy: hl.p.y + dy }; box.x1 = box.cx - a; box.x2 = box.cx + a; box.y1 = box.cy - a; box.y2 = box.cy + a;
+  var ost = zsZasuvky(d).map(function (z, i) { return zsZasBox(d, z, i); }).filter(function (q) { return tah.indexOf(q.u) === -1; });
+  var P = zsPrichytit(box, ost, G.W, e.shiftKey);
+  __zsTah.vodx = P.vodx; __zsTah.vody = P.vody;
+  __zsTah.puv.forEach(function (q) { q.z.pos = { x: rozvZaokr(q.p.x + dx + P.dx), y: rozvZaokr(q.p.y + dy + P.dy) }; });
   zsCeloPrekreslit();
 });
-document.addEventListener('pointerup', function () {
+function zsVodicKontrola(od, kam) {   // tah vodiče: jeden konec zásuvka, druhý zdroj se správnou funkcí; '' = smí
+  var B = zsBodyZapojeni(zsData()), a = B[od], c = B[kam]; if (!a || !c || od === kam) return 'vyberte svorku';
+  if (a.t === 'Z' && c.t === 'Z') return 'zásuvku propojte se zdrojem (jistič, svorkovnice N / PE)';
+  var Z = a.t === 'Z' ? a : c.t === 'Z' ? c : null, S = Z === a ? c : a; if (!Z) return 'jeden konec vodiče musí být na zásuvce';
+  if (/^L/.test(Z.s)) return S.t === 'J' ? '' : 'fázi natáhněte ze svorky jističe';
+  if (Z.s === 'N') return S.f === 'N' || S.f === 'PEN' ? '' : 'N natáhněte ze svorkovnice nebo přípojnice N';
+  return S.f === 'PE' || S.f === 'PEN' ? '' : 'PE natáhněte ze svorkovnice nebo přípojnice PE';
+}
+document.addEventListener('pointerup', function (e) {
+  delete __zsPrsty[e.pointerId];
+  if (__zsPinch) { if (Object.keys(__zsPrsty).length < 2) { __zsPinch = null; zsCeloPrekreslit(); } return; }
+  if (__zsVTah) {
+    var vt = __zsVTah; __zsVTah = null;
+    var nad = document.elementFromPoint(e.clientX, e.clientY), sv = nad && nad.closest && nad.closest('[data-zs-sv]');
+    if (!vt.akt || !sv) { zsCeloPrekreslit(); return; }
+    var kam = sv.getAttribute('data-zs-sv'), chyba = zsVodicKontrola(vt.od, kam);
+    if (chyba) { zsCeloPrekreslit(); showToast('⚠ Vodič nejde: ' + chyba + '.', { timeout: 4000 }); return; }
+    var B = zsBodyZapojeni(zsData()), a = B[vt.od], c = B[kam], Z = a.t === 'Z' ? a : c, S = Z === a ? c : a;
+    var A = S.t === 'J' ? { t: 'J', u: S.u, k: S.k } : S.t === 'S' ? { t: 'S', i: S.i, k: S.k } : { t: 'X', u: S.u, k: S.k };
+    zsVodicPridat(A, { u: Z.u, s: Z.s });
+    return;
+  }
+  if (__zsObd) { var ob = __zsObd; __zsObd = null; if (ob.akt) zsPrekreslit(); return; }
   if (!__zsTah) return;
-  var t = __zsTah; __zsTah = null;
-  if (!t.pohyb) { __rz.vyberZas = t.z.uid; __rz.vyber = null; __rz.vic = null; rozvPohledVykreslit(); rozvVlastnostiVykreslit(); return; }
-  var konec = t.z.pos; t.z.pos = t.p0;
-  rozvZmena('Přesun zásuvky', function () { t.z.pos = konec; __rz.vyberZas = t.z.uid; __rz.vyber = null; });
+  var t = __zsTah; __zsTah = null; document.body.classList.remove('rz-tahne');
+  if (!t.pohyb) { zsPrekreslit(); return; }
+  var konec = t.puv.map(function (q) { return q.z.pos; });
+  t.puv.forEach(function (q) { q.z.pos = q.p; });
+  rozvZmena(t.puv.length > 1 ? 'Přesun zásuvek' : 'Přesun zásuvky', function () { t.puv.forEach(function (q, i) { q.z.pos = konec[i]; }); });   // tažení = jeden krok ZPĚT
 });
-// klávesy u vybrané zásuvky: šipky 5 mm, Delete smaže, Esc zruší výběr
+document.addEventListener('pointercancel', function (e) { delete __zsPrsty[e.pointerId]; if (Object.keys(__zsPrsty).length < 2) __zsPinch = null; });
+
+// ── klávesy s fokusem na čele (nebo s vybranou zásuvkou): šipky 5 mm / Shift 1 mm, Delete, Ctrl+A/C/V/D, Esc ──
 document.addEventListener('keydown', function (e) {
-  if (!__rz || !__rz.zs || !__rz.vyberZas || window.__formReadOnly) return;
+  if (!__rz || !__rz.zs || !document.getElementById('zs-celo')) return;
   var t = e.target; if (t && (/^(INPUT|TEXTAREA|SELECT)$/.test(t.tagName) || t.isContentEditable)) return;
-  if (!document.getElementById('zs-celo')) return;
-  var m = { ArrowLeft: [-5, 0], ArrowRight: [5, 0], ArrowUp: [0, -5], ArrowDown: [0, 5] }[e.key];
-  if (m) { e.preventDefault(); e.stopPropagation(); zsPosunout(__rz.vyberZas, m[0], m[1]); return; }
-  if (e.key === 'Delete') { e.preventDefault(); e.stopPropagation(); zsSmazat(__rz.vyberZas); return; }
-  if (e.key === 'Escape') { e.stopPropagation(); __rz.vyberZas = null; rozvPohledVykreslit(); rozvVlastnostiVykreslit(); }
+  if (document.querySelector('.modal-overlay.open') || __ktMenu) return;
+  var sel = zsVybrane(), fok = __rz.zsFokus || sel.length || __rz.zsVodic; if (!fok) return;
+  var ctrl = (e.ctrlKey || e.metaKey) && !e.altKey, k = e.key, pism = String(k).toLowerCase();
+  var stop = function () { e.preventDefault(); e.stopPropagation(); };
+  if (k === 'Escape') {
+    if (__zsTah) { var q = __zsTah; __zsTah = null; q.puv.forEach(function (x) { x.z.pos = x.p; }); document.body.classList.remove('rz-tahne'); zsCeloPrekreslit(); stop(); return; }
+    if (sel.length || __rz.zsVodic) { stop(); zsVyberZrusit(); }
+    return;
+  }
+  if (__rz.zsVodic && (k === 'Delete' || k === 'Backspace') && !window.__formReadOnly) { stop(); zsVodicSmazat(__rz.zsVodic); return; }
+  if (ctrl && pism === 'a' && __rz.zsFokus) { stop(); zsVyberNastavit(zsZasuvky({ celo: __rz.celo }).map(function (z) { return z.uid; })); zsPrekreslit(); return; }
+  if (ctrl && pism === 'v' && __zsSchranka && __rz.zsFokus && !window.__formReadOnly) { stop(); zsVlozitKopie(__zsSchranka); return; }
+  if (!sel.length) return;
+  if (ctrl && pism === 'c') { stop(); zsKopirovat(); return; }
+  if (window.__formReadOnly) return;
+  if (ctrl && pism === 'd') { stop(); zsDuplikovat(); return; }
+  if ((k === 'Delete' || k === 'Backspace') && !ctrl) { stop(); zsSmazatVyber(false); return; }
+  var m = { ArrowLeft: [-1, 0], ArrowRight: [1, 0], ArrowUp: [0, -1], ArrowDown: [0, 1] }[k];
+  if (m && !ctrl) { stop(); var s = e.shiftKey ? 1 : 5; zsPosunVyber(m[0] * s, m[1] * s); }
 }, true);
+
+// ── kontextové menu (pravý klik, dlouhý stisk) — stejné menu jako u přístrojů ──
+function zsSubmenu(x, y, pol) { setTimeout(function () { ktOtevrit(x + 12, y + 8, pol); }, 0); }
+function zsKontextZkusit(x, y, cil) {
+  if (!__rz || !__rz.zs || !cil.closest('#zs-celo')) return false;
+  __zsTah = null; __zsObd = null; __zsVTah = null; document.body.classList.remove('rz-tahne');   // dlouhý stisk prstem: tah se ruší, otevírá se nabídka
+  if (cil.closest('[data-zs-w]')) { var wu = cil.closest('[data-zs-w]').getAttribute('data-zs-w'); __rz.zsVodic = wu; zsPrekreslit(); ktOtevrit(x, y, [{ popis: 'Vlastnosti vodiče', fn: function () { zsVlastnostiUkaz(); } }, { popis: 'Odpojit vodič', klavesa: 'Delete', vypnuto: !!window.__formReadOnly, fn: function () { zsVodicSmazat(wu); } }]); return true; }
+  if (cil.closest('[data-zs-privod]')) {
+    ktOtevrit(x, y, [
+      { popis: 'Vlastnosti přívodu', fn: function () { var h = document.querySelector('.rz-hlavicka'); if (h) { h.open = true; var f = h.querySelector('[data-dk="vidlice.In"]') || h; f.scrollIntoView({ block: 'center' }); if (f.focus) f.focus(); } } },
+      { popis: 'Změnit vidlici…', fn: function () { TD_AKCE.tdZsKnihovna(); } },
+      { popis: 'Odebrat vidlici', vypnuto: !!window.__formReadOnly, fn: zsVidliceOdebrat }]);
+    return true;
+  }
+  var g = cil.closest('[data-zasuvka]'), ro = !!window.__formReadOnly, bod = zsBodMm({ clientX: x, clientY: y });
+  if (!g) {   // prázdné čelo
+    var pos = bod ? { x: Math.round(bod.x / 5) * 5, y: Math.round(bod.y / 5) * 5 } : null;
+    var nab = function () {
+      var L = __zsPosledni.map(rozvKnihPolozka).filter(Boolean), V = zsKnihZasuvky().filter(function (it) { return L.indexOf(it) === -1; });
+      zsSubmenu(x, y, L.concat(V).slice(0, 12).map(function (it, i) { return { popis: (i < L.length ? '↺ ' : '') + rozvNazev(it), oddel: i === L.length && L.length > 0, fn: function () { zsZKnihovny(it, pos); } }; }));
+    };
+    ktOtevrit(x, y, [
+      { popis: 'Vložit zásuvku sem ▸', vypnuto: ro, fn: nab },
+      { popis: 'Vložit zásuvku s jističem sem ▸', vypnuto: ro, fn: function () { zsSubmenu(x, y, zsKnihZasuvky().slice(0, 12).map(function (it) { return { popis: rozvNazev(it), fn: function () { zsZasSJisticem(it.id, pos); } }; })); } },
+      { popis: 'Vložit', klavesa: 'Ctrl+V', vypnuto: ro || !__zsSchranka, fn: function () { zsVlozitKopie(__zsSchranka, pos); } },
+      { popis: 'Vybrat vše', klavesa: 'Ctrl+A', oddel: true, fn: function () { zsVyberNastavit(zsZasuvky({ celo: __rz.celo }).map(function (z) { return z.uid; })); zsPrekreslit(); } },
+      { popis: 'Přečíslovat zásuvky (podle polohy)', vypnuto: ro, fn: function () { zsPrecislovat(false); } }]);
+    return true;
+  }
+  var uid = g.getAttribute('data-zasuvka'), sel = zsVybrane();
+  if (sel.indexOf(uid) === -1) { zsVyberNastavit([uid]); zsPrekreslit(); sel = [uid]; }
+  var z = zsZasNajit(uid), J = sel.length === 1 ? zsJisticJenPro(z) : null, vic = sel.length > 1;
+  var pol = [
+    { popis: 'Vlastnosti', fn: zsVlastnostiUkaz },
+    { popis: 'Napájí ji ▸', vypnuto: ro, fn: function () {
+      zsSubmenu(x, y, [{ popis: '— žádný', fn: function () { zsNapajeniNastavit(sel, ''); } }].concat(zsJistice().map(function (j) {
+        return { popis: (z.napajen === j.uid ? '✓ ' : '') + (j.ozn || '') + ' ' + zsHodnoty(j) + (j.faze ? ' · ' + j.faze : ''), fn: function () { zsNapajeniNastavit(sel, j.uid); } };
+      })));
+    } },
+    { popis: 'Duplikovat', klavesa: 'Ctrl+D', oddel: true, vypnuto: ro, fn: zsDuplikovat },
+    { popis: 'Kopírovat', klavesa: 'Ctrl+C', fn: zsKopirovat },
+    { popis: 'Vložit', klavesa: 'Ctrl+V', vypnuto: ro || !__zsSchranka, fn: function () { zsVlozitKopie(__zsSchranka); } }];
+  if (vic) pol.push({ popis: 'Zarovnat ▸', oddel: true, vypnuto: ro, fn: function () { zsSubmenu(x, y, [['zl', 'Vlevo'], ['zch', 'Na střed vodorovně'], ['zp', 'Vpravo'], ['zn', 'Nahoru'], ['zcv', 'Na střed svisle'], ['zd', 'Dolů']].map(function (q) { return { popis: q[1], fn: function () { zsZarovnat(q[0]); } }; })); } });
+  pol.push({ popis: 'Rozmístit rovnoměrně ▸', oddel: !vic, vypnuto: ro || sel.length < 3, fn: function () { zsSubmenu(x, y, [{ popis: 'Vodorovně', fn: function () { zsRozmistit('h'); } }, { popis: 'Svisle', fn: function () { zsRozmistit('v'); } }]); } });
+  pol.push({ popis: 'Vycentrovat na čele', vypnuto: ro, fn: zsVycentrovat });
+  pol.push({ popis: 'Přečíslovat zásuvky (podle polohy)', oddel: true, vypnuto: ro, fn: function () { zsPrecislovat(false); } });
+  pol.push({ popis: 'Přečíslovat zásuvky i jističe', vypnuto: ro, fn: function () { zsPrecislovat(true); } });
+  pol.push({ popis: vic ? 'Smazat vybrané (' + sel.length + ')' : 'Smazat', klavesa: 'Delete', oddel: true, vypnuto: ro, fn: function () { zsSmazatVyber(false); } });
+  if (J) pol.push({ popis: 'Smazat i s jističem ' + (J.ozn || ''), vypnuto: ro, fn: function () { zsSmazatVyber(true); } });
+  ktOtevrit(x, y, pol);
+  return true;
+}
+function zsVlastnostiUkaz() { rozvVlastnostiVykreslit(); var v = document.getElementById('rz-vlastnosti'); if (v && v.scrollIntoView && window.innerWidth < 900) v.scrollIntoView({ block: 'start', behavior: 'smooth' }); var f = v && v.querySelector('select, input'); if (f && window.innerWidth >= 900) f.focus({ preventScroll: true }); }
+function zsNapajeniNastavit(sel, uid) {
+  rozvZmena('Napájí ji', function () { sel.forEach(function (u) { var z = zsZasNajit(u); if (!z) return; if (uid) z.napajen = uid; else delete z.napajen; zsVodiceDleNapajeni(z); }); });
+}
+function zsVidliceOdebrat() {
+  var f = dokForm(); if (!f) return;
+  var k = ['vidlice.In', 'vidlice.ue', 'vidlice.poly', 'vidlice.ip', 'vidlice.typ', 'vidlice.ozn'], puv = {};
+  k.forEach(function (q) { var e = f.querySelector('[data-dk="' + q + '"]'); if (e) { puv[q] = e.value; e.value = ''; e.dispatchEvent(new Event('change', { bubbles: true })); } });
+  dokZmena(); rozvPohledVykreslit();
+  showToast('Vidlice přívodu odebrána.', { timeout: 8000, actionLabel: '↩ ZPĚT', action: function () { k.forEach(function (q) { var e = f.querySelector('[data-dk="' + q + '"]'); if (e && puv[q] != null) { e.value = puv[q]; e.dispatchEvent(new Event('change', { bubbles: true })); } }); dokZmena(); rozvPohledVykreslit(); } });
+}
 
 // Napájení zásuvky ve vlastnostech jističe + čelo pod čelním pohledem + panel zásuvky
 (function () {
@@ -47283,7 +48026,13 @@ document.addEventListener('keydown', function (e) {
   var vlast = rozvVlastnostiVykreslit;
   rozvVlastnostiVykreslit = function () {
     var box = document.getElementById('rz-vlastnosti');
+    if (box && __rz && __rz.zs && __rz.zsVodic && !__rz.vyber) {
+      var w = zsVodicNajit(__rz.zsVodic); if (w) { box.innerHTML = zsVodicPanelHtml(w); return; }
+      __rz.zsVodic = null;
+    }
     if (box && __rz && __rz.zs && __rz.vyberZas && !__rz.vyber) {
+      var sel = zsVybrane();
+      if (sel.length > 1) { box.innerHTML = zsVicPanelHtml(sel); return; }
       var z = zsZasNajit(__rz.vyberZas);
       if (z) { box.innerHTML = zsZasPanelHtml(z); return; }
       __rz.vyberZas = null;
@@ -47336,6 +48085,192 @@ function zsUpozorneni(d, pou) {
 function zsVidliceText(d) {
   var v = d.vidlice || {}, q = ZS_POLY[zsPolyZ(v)];
   return [v.In ? rozvJednotka(v.In, 'A') : '', v.ue ? rozvJednotka(v.ue, 'V') : '', q ? q.t : '', v.ip || ''].filter(Boolean).join(' ');
+}
+
+// ══ ZÁSUVKOVÁ SKŘÍŇ — elektrické kontroly (D, G4): nic se nevymýšlí, jen porovnání zadaných hodnot ══
+// Nálezy jdou do „Co ještě chybí" (rzsKontrola) a jsou klikací: { zas } vybere zásuvku, { uid } jistič.
+function zsKontroly(add) {
+  if (!__rz || !__rz.zs) return;
+  var d = zsData(), Z = zsZasuvky(d), D = zsKolizeDuvody(d), V = zsVodice(d), js = zsJistice(), obs = {}, sumIn = 0;
+  Z.forEach(function (z) {
+    var p = z.p || {}, oz = z.ozn || '-XZ', J = zsJisticNajit(z.napajen);
+    if (+p.In > 0) sumIn += +p.In;
+    if (D[z.uid]) add('upoz', oz + ': ' + D[z.uid].join(', ') + '.', { zas: z.uid });
+    if (!J) { add('upoz', oz + ' nemá napájení — vyberte jistič („Napájí ji") nebo natáhněte vodič.', { zas: z.uid }); return; }
+    obs[J.uid] = 1;
+    var jn = J.ozn || 'jistič', nP = cpPoly(J.p) || 1, tri = zsTrif(p), q = zsPolyZ(p);
+    if (+J.p.In > 0 && +p.In > 0 && +J.p.In > +p.In) add('chyba', jn + ' ' + rozvCisloText(J.p.In) + ' A je větší než zásuvka ' + oz + ' ' + rozvCisloText(p.In) + ' A.', { zas: z.uid, uid: J.uid });
+    if (nP < 3 && (q === '3P+N+E' || q === '3P+E')) add('chyba', jn + ' je ' + nP + 'pólový, ale zásuvka ' + oz + ' je ' + ZS_POLY[q].kr + ' (trojfázová).', { zas: z.uid, uid: J.uid });
+    if (nP >= 3 && !tri) add('chyba', jn + ' je trojpólový, ale zásuvka ' + oz + ' je jednofázová (230 V).', { zas: z.uid, uid: J.uid });
+    var uv = nP >= 3 ? 400 : 230, u = +p.ue;
+    if (u > 0 && ((uv === 400 && (u < 380 || u > 415)) || (uv === 230 && (u < 220 || u > 240)))) add('chyba', 'Un zásuvky ' + oz + ' ' + rozvCisloText(u) + ' V neodpovídá napětí vývodu ' + jn + ' (' + uv + ' V).', { zas: z.uid, uid: J.uid });
+    // zapojení vodiči (pohled Zapojení): kontroluje se jen zásuvka, ke které vede aspoň jeden vodič
+    var W = V.filter(function (w) { return w.b.u === z.uid; }); if (!W.length) return;
+    var maN = W.filter(function (w) { return w.b.s === 'N'; })[0], maPE = W.some(function (w) { return w.b.s === 'PE'; });
+    if (zsMaN(p) && !maN) add('upoz', oz + ': chybí vodič N.', { zas: z.uid });
+    if (!maPE) add('upoz', oz + ': chybí vodič PE.', { zas: z.uid });
+    if (maN) { var sk = zsSkupinaZdroje(maN.a), ma = zsSkupinaJisticeN(J); if (sk && sk !== ma && sk !== 'PE') add('chyba', oz + ': N je ze skupiny ' + sk + ', ale ' + jn + ' je ve skupině ' + ma + '.', { zas: z.uid }); }
+    var min = rzvNavrhPrurez(J.p.In), minN = rozvCislo(min);
+    W.forEach(function (w) { var pr = rozvCislo(String(w.prurez || '')); if (minN !== '' && pr !== '' && pr < minN) add('chyba', oz + ':' + w.b.s + ' vodič ' + rozvCisloText(pr) + ' mm² je slabší, než odpovídá jističi ' + jn + ' ' + rozvCisloText(J.p.In) + ' A (' + min + ' mm²).', { zas: z.uid }); });
+  });
+  js.forEach(function (J) {
+    if (obs[J.uid] || J.p.kat === 'QM' || String(J.vyvod || '').trim()) return;
+    if (rozvPrvkyVse(__rz.rady).some(function (y) { return y.nadr === J.uid; }) || (J.napaji && J.napaji.length)) return;
+    add('tip', (J.ozn || 'Jistič') + ' nemá vývod ani zásuvku.', { uid: J.uid });
+  });
+  var vid = rfNum(zsPole('vidlice.In'));
+  if (vid !== '' && sumIn > 0) add('tip', 'Součet In zásuvek ' + rozvCisloText(sumIn) + ' A · vidlice přívodu ' + rozvCisloText(vid) + ' A (jen informace — soudobost).', {});
+}
+
+// ══ ZÁSUVKOVÁ SKŘÍŇ — štítky na čelo (E) ══
+// „-XZ2 · 230 V 32 A · -FA2", skutečná velikost 50 × 12 mm, ořezové značky, A4 na výšku.
+var ZS_STITEK = { w: 50, h: 12, mx: 15, my: 18, mez: 6 };
+function zsStitekText(z, d) { var p = z.p || {}, J = null; (d.rady || []).forEach(function (r) { (r.prvky || []).forEach(function (x) { if (x.uid === z.napajen) J = x; }); }); return [z.ozn || '-XZ', [p.ue ? rozvCisloText(p.ue) + ' V' : '', p.In ? rozvCisloText(p.In) + ' A' : ''].filter(Boolean).join(' '), J ? J.ozn || '' : ''].filter(Boolean).join(' · '); }
+function zsStitkyStranky(d, box) {
+  var S = ZS_STITEK, Z = zsZasuvky(d).slice().sort(function (a, b) { return String(a.ozn).localeCompare(String(b.ozn), 'cs', { numeric: true }); });
+  var sl = Math.floor((210 - 2 * S.mx + S.mez) / (S.w + S.mez)), rd = Math.floor((297 - 2 * S.my - 10 + S.mez) / (S.h + S.mez)), na = sl * rd, stran = 0;
+  for (var o = 0; o < Math.max(1, Z.length); o += na) {
+    var str = document.createElement('div'); str.className = 'a4 zs-stitky-list'; stran++;
+    var h = '<div class="rz-st-pokyn" style="left:' + S.mx + 'mm;bottom:8mm">Štítky na čelo' + (d.oznaceni ? ' — ' + esc(d.oznaceni) : '') + ' · ' + S.w + ' × ' + S.h + ' mm · tiskněte ve skutečné velikosti (100 %). Kontrolní úsečka 50 mm: <span class="rz-st-useka"></span></div>';
+    Z.slice(o, o + na).forEach(function (z, i) {
+      var x = S.mx + (i % sl) * (S.w + S.mez), y = S.my + Math.floor(i / sl) * (S.h + S.mez);
+      h += '<div class="zs-stitek" data-zas="' + esc(z.uid) + '" style="left:' + x + 'mm;top:' + y + 'mm;width:' + S.w + 'mm;height:' + S.h + 'mm">' + esc(zsStitekText(z, d)) + '</div>';
+      [[x, y], [x + S.w, y], [x, y + S.h], [x + S.w, y + S.h]].forEach(function (b, q) {
+        var sx = q % 2 ? 1 : -1, sy = q < 2 ? -1 : 1;
+        h += '<i class="rz-orez" style="left:' + (sx < 0 ? b[0] - 4 : b[0] + 1) + 'mm;top:' + b[1] + 'mm;width:3mm;height:0"></i><i class="rz-orez" style="left:' + b[0] + 'mm;top:' + (sy < 0 ? b[1] - 4 : b[1] + 1) + 'mm;width:0;height:3mm"></i>';
+      });
+    });
+    str.innerHTML = h; box.appendChild(str);
+  }
+  box.querySelectorAll('.zs-stitek').forEach(function (c) { var f = 1; while (c.scrollWidth > c.clientWidth + 0.5 && f > 0.6) { f -= 0.05; c.style.fontSize = (f * 100) + '%'; } });
+  return { stran: stran, kusu: Z.length };
+}
+TD_AKCE.tdZsStitky = async function () {
+  var o = window.__dokOtevreny; if (!o) return;
+  await dokUlozitOtevreny();
+  var d = o.data || {}; if (!zsZasuvky(d).length) { showToast('Na čele zatím nejsou zásuvky — není co popsat.'); return; }
+  var box = document.getElementById('dok-pdf-pages'); showScreen('dok-pdf'); box.innerHTML = '';
+  var r = zsStitkyStranky(d, box), e = rozvDokEff(d);
+  __dokPdf = { x: { uid: o.uid, typ: o.typ, data: d }, zpet: 'dok-form', nazev: ((e.vc || d.cislo || 'ZS') + '_stitky_cela').replace(/[\\\/:*?"<>|\s]+/g, '_') + '.pdf' };
+  var info = document.getElementById('dok-pdf-info'); if (info) info.textContent = 'Štítky na čelo · ' + r.kusu + ' ks · ' + r.stran + ' ' + (r.stran === 1 ? 'list' : 'listy') + ' A4 · tiskněte ve skutečné velikosti (100 %), bez přizpůsobení stránce';
+  window.scrollTo(0, 0);
+};
+
+// ══ ZÁSUVKOVÁ SKŘÍŇ — vrtací plán čela (F): nový list PDF, zaškrtávátko v Dokumentech ══
+// Čelo v měřítku (automaticky 1:1, 1:2, 1:2,5 nebo 1:5 podle listu A4 / A3, nebo zvolené), kóty středů otvorů od levé
+// a horní hrany (řetězově nebo od základny), průměr / výřez a rozteč šroubů z knihovny — chybí-li, „výřez – doplňte".
+var ZS_VRT_MERITKA = [1, 2, 2.5, 5];
+function zsVrtani(d) { var v = d.vrtani || {}; return { meritko: v.meritko || '', koty: v.koty === 'zaklad' ? 'zaklad' : 'retez', sablona: v.sablona === '1' }; }
+function zsVrtaniSvg(d) {
+  var G = zsGeo(d), W = G.W, H = G.H, V = zsVrtani(d), t = rozvProfil(d), Z = zsZasuvky(d).map(function (z, i) { return zsZasBox(d, z, i); });
+  var vejde = function (fmt, s) { var F = RS_FORMATY[fmt]; return W / s + 46 <= F.W - 20 - 120 && H / s + 46 <= F.H - 30; };
+  var fmt = 'A4', s = 0;
+  if (V.meritko) { s = +V.meritko; fmt = vejde('A4', s) ? 'A4' : 'A3'; }
+  else ['A4', 'A3'].some(function (f) { return ZS_VRT_MERITKA.some(function (m) { if (vejde(f, m)) { fmt = f; s = m; return true; } return false; }); });
+  if (!s) { fmt = 'A3'; s = 5; }
+  var g = rsGeom(fmt, false, false), h = rsRam(g), c = { vypracoval: rozvZpracovatelJmeno(d) || t.jmeno || '', datum: dokDatumCz(d.datum) || '', akce: d.stavba || '', investor: (d.investor || {}).nazev || '',
+    nazev: 'Vrtací plán čela', projekt: d.stavba || '', zakazka: d.cislo || '', soubor: (d.cislo || 'ZS') + '_vrtaci_plan.pdf', listu: 1 };
+  h += rsRazitko(g, c, 1);
+  var x0 = 16 + 22, y0 = 22 + 24, k = 1 / s, X = function (mm) { return x0 + mm * k; }, Y = function (mm) { return y0 + mm * k; };
+  h += rsText(16, 17, 'VRTACÍ PLÁN ČELA' + (d.oznaceni ? ' – ' + d.oznaceni : ''), { fs: 4, tucne: true }) +
+    rsText(16, 22, 'Měřítko 1:' + rozvCisloText(s) + ' · rozměry v mm · kóty středů otvorů od levé a horní hrany čela (' + (V.koty === 'zaklad' ? 'od základny' : 'řetězově') + ')', { fs: 2.3 });
+  h += rsObd(X(0), Y(0), W * k, H * k, { w: 0.6 });
+  // výřez okna DIN
+  h += rsObd(X(G.ox), Y(G.oy), G.ow * k, G.ovys * k, { w: 0.4, carky: '2 1' }) + rsText(X(G.ox) + 1, Y(G.oy) + 3, 'výřez okna DIN ' + rozvCisloText(G.ow) + ' × ' + rozvCisloText(G.ovys), { fs: 1.9 });
+  var tab = [];
+  Z.forEach(function (b) {
+    var p = b.z.p || {}, cx = X(b.cx), cy = Y(b.cy), vy = String(p.vyrez || '').trim(), m;
+    h += rsCara(cx - 3, cy, cx + 3, cy, { w: 0.2 }) + rsCara(cx, cy - 3, cx, cy + 3, { w: 0.2 });
+    if ((m = /(\d+(?:[.,]\d+)?)\s*[x×]\s*(\d+(?:[.,]\d+)?)/.exec(vy))) { var aw = rozvCislo(m[1]), ah = rozvCislo(m[2]); h += rsObd(cx - aw * k / 2, cy - ah * k / 2, aw * k, ah * k, { w: 0.45 }); }
+    else if ((m = /(\d+(?:[.,]\d+)?)/.exec(vy))) h += rsKruh(cx, cy, rozvCislo(m[1]) * k / 2, { w: 0.45 });
+    else h += rsObd(cx - b.a * k, cy - b.a * k, 2 * b.a * k, 2 * b.a * k, { w: 0.25, carky: '1 0.8' }) + rsText(cx, cy + b.a * k + 2.6, 'výřez – doplňte', { fs: 1.7, zar: 'middle' });
+    var ro = String(p.roztecSroubu || '').trim(), mr = /(\d+(?:[.,]\d+)?)(?:\s*[x×]\s*(\d+(?:[.,]\d+)?))?/.exec(ro);
+    if (mr) { var rx = rozvCislo(mr[1]), ry = mr[2] ? rozvCislo(mr[2]) : rx; [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(function (q) { var sx = cx + q[0] * rx * k / 2, sy = cy + q[1] * ry * k / 2; h += rsCara(sx - 1, sy, sx + 1, sy, { w: 0.2 }) + rsCara(sx, sy - 1, sx, sy + 1, { w: 0.2 }); }); }
+    h += rsText(cx + 1.2, cy - 1.2, b.z.ozn || '-XZ', { fs: 1.9, tucne: true });
+    tab.push([b.z.ozn || '-XZ', rozvCisloText(b.cx), rozvCisloText(b.cy), vy || 'výřez – doplňte', ro || '—']);
+  });
+  // kóty: vodorovné nad čelem, svislé vlevo
+  var xs = Z.map(function (b) { return b.cx; }).filter(function (v, i, a) { return a.indexOf(v) === i; }).sort(function (a, b) { return a - b; });
+  var ys = Z.map(function (b) { return b.cy; }).filter(function (v, i, a) { return a.indexOf(v) === i; }).sort(function (a, b) { return a - b; });
+  var kotaH = function (a, b, yy, txt) { return rsCara(X(a), yy, X(b), yy, { w: RS_TENKA }) + rsCara(X(a), yy - 1.2, X(a), yy + 1.2, { w: RS_TENKA }) + rsCara(X(b), yy - 1.2, X(b), yy + 1.2, { w: RS_TENKA }) + rsText((X(a) + X(b)) / 2, yy - 0.7, txt, { fs: 1.9, zar: 'middle' }); };
+  var kotaV = function (a, b, xx, txt) { return rsCara(xx, Y(a), xx, Y(b), { w: RS_TENKA }) + rsCara(xx - 1.2, Y(a), xx + 1.2, Y(a), { w: RS_TENKA }) + rsCara(xx - 1.2, Y(b), xx + 1.2, Y(b), { w: RS_TENKA }) + rsText(xx - 0.7, (Y(a) + Y(b)) / 2, txt, { fs: 1.9, zar: 'middle', svisle: true }); };
+  if (V.koty === 'zaklad') {
+    xs.forEach(function (v, i) { h += kotaH(0, v, Y(0) - 4 - i * 3.2, rozvCisloText(v)); });
+    ys.forEach(function (v, i) { h += kotaV(0, v, X(0) - 4 - i * 3.2, rozvCisloText(v)); });
+  } else {
+    var px = 0; xs.forEach(function (v) { h += kotaH(px, v, Y(0) - 4, rozvCisloText(rozvZaokr(v - px))); px = v; });
+    var py = 0; ys.forEach(function (v) { h += kotaV(py, v, X(0) - 4, rozvCisloText(rozvZaokr(v - py))); py = v; });
+  }
+  h += kotaH(0, W, Y(H) + 6, rozvCisloText(W)) + kotaV(0, H, X(W) + 6, rozvCisloText(H));
+  // tabulka otvorů vpravo
+  var tx = g.W - 14 - 118, ty = 30, sl = [[0, 16, 'Zásuvka'], [16, 14, 'x'], [30, 14, 'y'], [44, 42, 'Výřez / otvor'], [86, 32, 'Rozteč šroubů']];
+  sl.forEach(function (c2) { h += rsText(tx + c2[0] + 1, ty, c2[2], { fs: 2, tucne: true }); });
+  h += rsCara(tx, ty + 1, tx + 118, ty + 1, { w: RS_TENKA });
+  tab.forEach(function (r, i) { sl.forEach(function (c2, j) { h += rsText(tx + c2[0] + 1, ty + 4.4 + i * 3.8, rsVejit(String(r[j]), c2[1] - 2, 2), { fs: 2 }); }); });
+  h += rsText(tx, ty + 6 + tab.length * 3.8, 'Bez údaje z knihovny se výřez ani rozteč nevymýšlí — doplňte je u zásuvky (Vlastnosti → Výroba).', { fs: 1.7, barva: '#333' });
+  return { svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + g.W + ' ' + g.H + '" width="' + g.W + 'mm" height="' + g.H + 'mm" font-family="' + RS_PISMO + '">' + h + '</svg>', fmt: fmt, meritko: s };
+}
+var zsVrtPdfPuv = DOK_TYPY.rozv.pdf;
+DOK_TYPY.rozv.pdf = function (d) {
+  var B = zsVrtPdfPuv(d);
+  if (zsJe(d) && (d.dokVyber || {}).vrtani === true && zsZasuvky(d).length) {
+    var v = zsVrtaniSvg(d); B.push({ cela: '<div class="a4 a4-landscape rz-sch-strana' + (v.fmt === 'A3' ? ' rz-sch-a3' : '') + ' zs-vrt-strana" data-vektor="1">' + v.svg + '</div>' });
+    if (zsVrtani(d).sablona) zsSablonaListy(d).forEach(function (L) { B.push({ cela: '<div class="a4 rz-sch-strana zs-sab-strana" data-vektor="1" data-list="' + L.i + '">' + L.svg + '</div>' }); });
+  }
+  return B;
+};
+// Šablona k vrtání 1:1: čelo ve skutečné velikosti rozdělené na listy A4 na výšku. Tisknutelná plocha
+// 190 × 277 mm (okraj 10 mm), sousední listy se překrývají o 10 mm (ZS_SAB.prekryv) — přesah je na listu
+// vyznačený čárkovaně, list se přiloží na značky souseda. Ořezové značky v rozích plochy, číslo listu
+// a schéma skládání (sloupce × řady, aktuální list vyplněný), kontrolní úsečka 50 mm, pokyn k tisku 100 %.
+// Jen jednoduché prvky SVG (bez ořezové cesty): co přesahuje plochu, zakryjí bílé obdélníky okrajů.
+var ZS_SAB = { W: 210, H: 297, okraj: 10, prekryv: 10 };
+function zsSablonaRozvrh(d) {
+  var G = zsGeo(d), S = ZS_SAB, pw = S.W - 2 * S.okraj, ph = S.H - 2 * S.okraj, kx = pw - S.prekryv, ky = ph - S.prekryv;
+  var sl = Math.max(1, Math.ceil((G.W - S.prekryv) / kx)), rd = Math.max(1, Math.ceil((G.H - S.prekryv) / ky));
+  return { G: G, pw: pw, ph: ph, kx: kx, ky: ky, sl: sl, rd: rd, n: sl * rd };
+}
+function zsSablonaListy(d) {
+  var R = zsSablonaRozvrh(d), G = R.G, S = ZS_SAB, o = S.okraj, Z = zsZasuvky(d).map(function (z, i) { return zsZasBox(d, z, i); }), out = [];
+  for (var r = 0; r < R.rd; r++) for (var c = 0; c < R.sl; c++) {
+    var i = r * R.sl + c + 1, ox = c * R.kx, oy = r * R.ky, X = function (mm) { return o + mm - ox; }, Y = function (mm) { return o + mm - oy; }, h = '';
+    // obsah: obrys čela, výřez okna DIN, otvory zásuvek
+    h += rsObd(X(0), Y(0), G.W, G.H, { w: 0.5 });
+    h += rsObd(X(G.ox), Y(G.oy), G.ow, G.ovys, { w: 0.35, carky: '3 1.5' }) + rsText(X(G.ox) + 2, Y(G.oy) + 5, 'výřez okna DIN ' + rozvCisloText(G.ow) + ' × ' + rozvCisloText(G.ovys) + ' mm', { fs: 3 });
+    Z.forEach(function (b) {
+      var p = b.z.p || {}, cx = X(b.cx), cy = Y(b.cy), vy = String(p.vyrez || '').trim(), m;
+      h += rsCara(cx - 10, cy, cx + 10, cy, { w: 0.25 }) + rsCara(cx, cy - 10, cx, cy + 10, { w: 0.25 }) + rsKruh(cx, cy, 1, { w: 0.2 });
+      if ((m = /(\d+(?:[.,]\d+)?)\s*[x×]\s*(\d+(?:[.,]\d+)?)/.exec(vy))) { var aw = rozvCislo(m[1]), ah = rozvCislo(m[2]); h += rsObd(cx - aw / 2, cy - ah / 2, aw, ah, { w: 0.4 }); }
+      else if ((m = /(\d+(?:[.,]\d+)?)/.exec(vy))) h += rsKruh(cx, cy, rozvCislo(m[1]) / 2, { w: 0.4 });
+      else h += rsObd(cx - b.a, cy - b.a, 2 * b.a, 2 * b.a, { w: 0.3, carky: '2 1.2' }) + rsText(cx, cy + b.a - 3, 'výřez – doplňte', { fs: 2.8, zar: 'middle' });
+      var ro = String(p.roztecSroubu || '').trim(), mr = /(\d+(?:[.,]\d+)?)(?:\s*[x×]\s*(\d+(?:[.,]\d+)?))?/.exec(ro);
+      if (mr) { var rx = rozvCislo(mr[1]), ry = mr[2] ? rozvCislo(mr[2]) : rx; [[-1, -1], [1, -1], [-1, 1], [1, 1]].forEach(function (q) { var sx = cx + q[0] * rx / 2, sy = cy + q[1] * ry / 2; h += rsCara(sx - 2.5, sy, sx + 2.5, sy, { w: 0.2 }) + rsCara(sx, sy - 2.5, sx, sy + 2.5, { w: 0.2 }); }); }
+      h += rsText(cx + 1.5, cy - 1.5, (b.z.ozn || '-XZ') + '  x ' + rozvCisloText(b.cx) + ' · y ' + rozvCisloText(b.cy), { fs: 2.8, tucne: true });
+    });
+    // bílé okraje zakryjí, co přesahuje plochu listu
+    h += '<rect x="0" y="0" width="' + S.W + '" height="' + o + '" fill="#fff" stroke="none"/><rect x="0" y="' + (S.H - o) + '" width="' + S.W + '" height="' + o + '" fill="#fff" stroke="none"/>' +
+      '<rect x="0" y="0" width="' + o + '" height="' + S.H + '" fill="#fff" stroke="none"/><rect x="' + (S.W - o) + '" y="0" width="' + o + '" height="' + S.H + '" fill="#fff" stroke="none"/>';
+    // přesah k sousedům (čárkovaně) a čísla sousedních listů
+    if (c < R.sl - 1) h += rsCara(S.W - o - S.prekryv, o, S.W - o - S.prekryv, S.H - o, { w: 0.25, carky: '4 2' }) + rsText(S.W - o - S.prekryv / 2, S.H / 2, 'přesah – přiložte list ' + (i + 1), { fs: 2.4, zar: 'middle', svisle: true });
+    if (r < R.rd - 1) h += rsCara(o, S.H - o - S.prekryv, S.W - o, S.H - o - S.prekryv, { w: 0.25, carky: '4 2' }) + rsText(S.W / 2, S.H - o - S.prekryv / 2 + 1, 'přesah – přiložte list ' + (i + R.sl), { fs: 2.4, zar: 'middle' });
+    // ořezové značky v rozích tisknutelné plochy
+    [[o, o], [S.W - o, o], [o, S.H - o], [S.W - o, S.H - o]].forEach(function (q, k) {
+      var sx = k % 2 ? 1 : -1, sy = k < 2 ? -1 : 1;
+      h += rsCara(q[0] + sx * 1, q[1], q[0] + sx * 7, q[1], { w: 0.2 }) + rsCara(q[0], q[1] + sy * 1, q[0], q[1] + sy * 7, { w: 0.2 });
+    });
+    // hlavička: číslo listu a schéma skládání, pata: kontrolní úsečka a pokyn
+    h += rsText(o + 3, 6.5, 'Šablona k vrtání čela 1:1' + (d.oznaceni ? ' – ' + d.oznaceni : '') + ' · list ' + i + ' / ' + R.n + ' (sloupec ' + (c + 1) + ', řada ' + (r + 1) + ')', { fs: 3, tucne: true });
+    var bw = 4, bh = 5, sx0 = S.W - o - R.sl * bw - 18;
+    h += rsText(sx0 - 1.5, 6.5, 'skládání ' + R.sl + ' × ' + R.rd + ':', { fs: 2.2, zar: 'end' });
+    for (var rr = 0; rr < R.rd; rr++) for (var cc = 0; cc < R.sl; cc++) {
+      var akt = rr === r && cc === c;
+      h += '<rect x="' + rsN(sx0 + cc * bw) + '" y="' + rsN(1.5 + rr * bh / R.rd * 1.4) + '" width="' + bw + '" height="' + rsN(bh / R.rd * 1.4) + '" fill="' + (akt ? '#000' : '#fff') + '" stroke="#000" stroke-width="0.15"/>';
+    }
+    h += rsText(S.W - o, S.H - 4, 'Tiskněte ve skutečné velikosti (100 %), bez přizpůsobení stránce.', { fs: 2.4, zar: 'end' }) +
+      rsText(o, S.H - 6, 'Kontrolní úsečka 50 mm:', { fs: 2.2 }) + rsCara(o + 26, S.H - 6.6, o + 76, S.H - 6.6, { w: 0.3 }) + rsCara(o + 26, S.H - 8, o + 26, S.H - 5.2, { w: 0.3 }) + rsCara(o + 76, S.H - 8, o + 76, S.H - 5.2, { w: 0.3 });
+    out.push({ i: i, c: c, r: r, svg: '<svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 ' + S.W + ' ' + S.H + '" width="' + S.W + 'mm" height="' + S.H + 'mm" font-family="' + RS_PISMO + '">' + h + '</svg>' });
+  }
+  return out;
 }
 
 function rozvTyp(typ) { return !!(DOK_TYPY[typ] && DOK_TYPY[typ].rozvadec); }
@@ -49087,7 +50022,8 @@ function rzsObsahHtml(rady, d) {
     '<div class="rzs-akce"><button type="button" class="btn btn-gold rzs-hlavni" data-action="tdRSvPrirad">🔌 Přiřadit svorky</button>' +
     '<button type="button" class="dok-mini" data-action="tdRSvZnovu" title="Smaže všechna přiřazení a rozdělí svorky znovu v pořadí čelního pohledu">Přiřadit znovu</button></div>' +
     '<div id="rzs-stav">' + rzsStavHtml(M, rady) + '</div>' + (typeof rzsNPStavHtml === 'function' ? rzsNPStavHtml(rady, d) : '') +
-    (M.V.length ? rzsTabulkaHtml(M, { edit: true, nrows: np, cisla: rzsCislujeVodice(), vodice: (__rz && __rz.vodice) || d.vodice }) : '');
+    (M.V.length ? rzsTabulkaHtml(M, { edit: true, nrows: np, cisla: rzsCislujeVodice(), vodice: (__rz && __rz.vodice) || d.vodice }) : '') +
+    (d && d.celo && d.celo.vodice && d.celo.vodice.length ? '<div class="dk-pozn" style="margin-top:.6rem"><b>Vodiče k zásuvkám na čele</b> (natažené v pohledu Zapojení)</div>' + zsVodiceTabHtml(d) : '');
 }
 function rzsObnovitOddil() {
   var box = document.getElementById('rzs-obsah'); if (!box || !__rz) return;
@@ -49184,6 +50120,7 @@ function rzsPdf(d, e) {
   else B.push({ delit: true, html: rzsTabulkaHtml(M, { nrows: np, cisla: cisla, vodice: d.vodice }) });
   var nez = M.V.filter(function (v) { return v.chybi > 0; });
   if (nez.length && !M.bezSvorek) B.push({ html: '<p class="rz-pdf-pozn">Vývody bez svorky: ' + esc(nez.map(function (v) { return v.x.ozn || ''; }).join(', ')) + '.</p>' });
+  if (zsJe(d) && zsVodiceRadky(d).length) B.push({ delit: true, html: '<div class="dok-pdf-h2">Vodiče k zásuvkám na čele</div>' + zsVodiceTabHtml(d) });
   return B;
 }
 // ── N a PE podle vývodů (jen DBO) ───────────────────────────────────────
@@ -49377,7 +50314,8 @@ function rzsKontrola() {
   bez.forEach(function (x) { add('chyba', nm(x) + ' není nikam zapojený (bez napětí) — napájejte ho z hlavního vypínače, přístroje nebo hřebenu.', { uid: x.uid }); });
   fz.forEach(function (x) { add('chyba', nm(x) + ': chybí fáze — pod napětím je jen část pólů.', { uid: x.uid }); });
   // 2. vývody bez názvu, kabelu, svorky
-  var vyv = vse.filter(function (x) { return rzsJeVyvod(x, rady, __rz.vnejsi); });
+  var zsNap = {}; if (__rz.zs) ((__rz.celo || {}).zasuvky || []).forEach(function (z) { if (z.napajen) zsNap[z.napajen] = 1; });
+  var vyv = vse.filter(function (x) { return rzsJeVyvod(x, rady, __rz.vnejsi) && !zsNap[x.uid]; });   // jistič zásuvky na čele: vývodem je zásuvka
   var seznam = function (kriterium, text, tip) {
     var s = vyv.filter(kriterium); if (!s.length) return;
     add('upoz', dokPocetTvar(s.length, ['vývod', 'vývody', 'vývodů']) + ' ' + text + ': ' + rzsSkup(rady, s) + '.', { uidy: s.map(function (x) { return x.uid; }) });
@@ -49435,6 +50373,8 @@ function rzsKontrola() {
     Dpv.forEach(function (dd) { if (!Object.keys(dd.dosah).length) add('upoz', dd.p.ozn + ' nenapájí žádný přístroj.', {}); });
     add('tip', 'Rozvaděč má víc přívodů – označte ho výstražným štítkem, že má víc přívodů, a před prací vypínejte všechny.', {});
   }
+  // 4c. zásuvková skříň: zásuvky, jističe, kolize, vodiče k zásuvkám
+  if (__rz.zs) zsKontroly(add);
   // 5. obecné přístroje bez Pv, je-li zapnuté oteplení výpočtem
   try {
     var d = rozvOteplData();
@@ -49489,6 +50429,7 @@ TD_AKCE.tdRChybiKlik = function (el) {
   var n = (__rz.__chybi || [])[+el.getAttribute('data-i')]; if (!n) return;
   if (__rz.zalozka && __rz.zalozka !== 'navrh') rozvZalozkaNastavit('navrh');
   if (n.hr) { __rz.hrVyber = n.hr; __rz.vyber = null; __rz.vic = null; rozvPohledVykreslit(); rozvVlastnostiVykreslit(); return; }
+  if (n.zas && zsZasNajit(n.zas)) { zsVyberNastavit([n.zas]); zsPrekreslit(); var ce = document.getElementById('zs-celo'); if (ce && ce.scrollIntoView) ce.scrollIntoView({ block: 'nearest', behavior: 'smooth' }); return; }
   var uidy = n.uidy || (n.uid ? [n.uid] : []);
   if (!uidy.length) return;
   if (uidy.length === 1) rozvVybrat(uidy[0], false);
@@ -49971,6 +50912,8 @@ DOK_TYPY.rozv.cist = function (koren) {
   if (P.osoby && !P.osoby.length) delete P.osoby;
   if (Object.keys(P).length) d.pouceni = P; else delete d.pouceni;
   if (d.dokVyber && d.dokVyber.pouceni !== true) delete d.dokVyber.pouceni;
+  if (d.dokVyber && d.dokVyber.vrtani !== true) delete d.dokVyber.vrtani;   // vrtací plán čela (2026-11-26) — jen zaškrtnutý
+  if (d.vrtani) { uklid(d.vrtani); if (!Object.keys(d.vrtani).length) delete d.vrtani; }
   if (d.vidlice) { uklid(d.vidlice); if (!Object.keys(d.vidlice).length) delete d.vidlice; }
   ['privodDelka', 'privodOzn'].forEach(function (k) { if (String(d[k] == null ? '' : d[k]).trim() === '') delete d[k]; });
   return d;
@@ -50048,8 +50991,7 @@ rzsKontrola = function () {
   });
   zsUpozorneni(d, zsPouceniForm()).forEach(function (t) { L.push({ u: 'upoz', text: t }); });
   var ina = zsPole('tech.ina'), ui = ina ? zsInaUpoz(d, ina) : ''; if (ui) L.push({ u: 'upoz', text: ui });
-  zsZasuvky(d).forEach(function (z) { if (!z.napajen || !rozvNajit(z.napajen)) L.push({ u: 'upoz', text: 'Zásuvka ' + (z.ozn || '') + ' nemá jistič, který ji napájí — vyberte ho ve vlastnostech zásuvky.' }); });
-  var kol = Object.keys(zsKolize(d)).length; if (kol) L.push({ u: 'upoz', text: dokPocetTvar(kol, ['zásuvka se překrývá', 'zásuvky se překrývají', 'zásuvek se překrývá']) + ' nebo leží mimo čelo skříně.' });
+  // zásuvka bez napájení a kolize: zsKontroly (podrobně, klikací)
   if (!zsVidliceForm().In) L.push({ u: 'upoz', text: 'Chybí vidlice přívodu (jmenovitý proud) — Hlavička → Pohyblivý přívod a vidlice.' });
   var por = { chyba: 0, upoz: 1, tip: 2 };
   return L.map(function (n, i) { n.__i = i; return n; }).sort(function (a, b) { return por[a.u] - por[b.u] || a.__i - b.__i; });

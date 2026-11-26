@@ -81,18 +81,18 @@ const w = ms => new Promise(r => setTimeout(r, ms));
   });
   check('Vložit zásuvku: na čelo (řada beze změny), -XZ7, napájí vybraný jistič, volné místo bez kolize', vl.r && vl.ozn === '-XZ7' && vl.nap && !vl.kol && vl.n === 7 && vl.vyb, JSON.stringify(vl));
   const pan = await p.evaluate(() => document.getElementById('rz-vlastnosti').innerText);
-  check('vlastnosti vybrané zásuvky (napájí ji, póly, poloha)', /-XZ7/.test(pan) && /Napájí ji/i.test(pan) && /Poloha x/i.test(pan), pan.slice(0, 120));
+  check('vlastnosti vybrané zásuvky (napájí ji, póly, poloha)', /-XZ7/.test(pan) && /Napájí ji/i.test(pan) && /Střed x/i.test(pan), pan.slice(0, 120));
   await p.keyboard.press('Control+z'); await w(200);
   check('Ctrl+Z vrátí vložení zásuvky', await p.evaluate(() => __rz.celo.zasuvky.length === 6));
   // tažení myší
   await p.evaluate(() => { __rz.vyberZas = null; rozvPohledVykreslit(); document.getElementById('zs-celo').scrollIntoView(); });
   await w(200);
   const g = await p.$('#zs-celo [data-zasuvka="z1"]'); const bb = await g.boundingBox();
-  const kMm = await p.evaluate(() => { const r = document.querySelector('#zs-celo .zs-celo-svg').getBoundingClientRect(); return r.width / ZS_ED.W * zsCeloVykres.g.k; });   // px na mm skříně
+  const kMm = await p.evaluate(() => { const r = document.querySelector('#zs-celo .zs-celo-svg').getBoundingClientRect(); return r.width / ZS_ED.W * zsCeloEditorSvg.g.k; });   // px na mm skříně
   await p.mouse.move(bb.x + bb.width / 2, bb.y + bb.height / 2); await p.mouse.down();
   await p.mouse.move(bb.x + bb.width / 2 + 12 * kMm, bb.y + bb.height / 2 + 3, { steps: 6 }); await p.mouse.up(); await w(200);
   const ta = await p.evaluate(() => zsZasNajit('z1').pos);
-  check('tažení myší: posun po mřížce 5 mm', ta.x % 5 === 0 && ta.y % 5 === 0 && ta.x > 64, JSON.stringify(ta));
+  check('tažení myší: posun po mřížce 5 mm nebo přichycení k hraně / středu', ta.x > 64 && (ta.x % 5 === 0 || ta.x % 0.5 === 0) && ta.y === 320, JSON.stringify(ta));
   await p.keyboard.press('Control+z'); await w(200);
   check('Ctrl+Z vrátí tažení', await p.evaluate(() => zsZasNajit('z1').pos.x === 64));
   // šipky, Delete
@@ -105,7 +105,7 @@ const w = ms => new Promise(r => setTimeout(r, ms));
   check('Ctrl+Z vrátí smazání i posun', await p.evaluate(() => !!zsZasNajit('z1') && zsZasNajit('z1').pos.x === 64));
   // kolize
   const ko = await p.evaluate(() => { const d = { skrin: __rz.skrin, rady: __rz.rady, celo: dokKopie(__rz.celo) }; d.celo.zasuvky[1].pos = { x: 164, y: 320 }; d.celo.zasuvky[3].pos = { x: 160, y: 60 }; return Object.keys(zsKolize(d)).sort().join(','); });
-  check('kolize: přes jinou zásuvku a přes okno s DIN lištou', ko === 'z1,z2,z3', ko);
+  check('kolize: přes jinou zásuvku a přes okno s DIN lištou (i víčko)', /z1,z2,z3/.test(ko), ko);
   // jistič ukazuje zásuvku
   const jp = await p.evaluate(() => { __rz.vyberZas = null; __rz.vyber = __rz.rady[0].prvky[1].uid; rozvVlastnostiVykreslit(); return (document.querySelector('#rz-vlastnosti .zs-napaji') || {}).textContent || ''; });
   check('vlastnosti jističe: „→ napájí zásuvku: -XZ1 32 A 400 V 5P"', /napájí zásuvku: -XZ1 32 A 400 V 5P/.test(jp), jp);
@@ -204,7 +204,7 @@ const w = ms => new Promise(r => setTimeout(r, ms));
   await p.setViewportSize({ width: 1500, height: 1100 }); await w(400);
   // směr přívodu
   const smer = async v => p.evaluate(v => { const e = dokForm().querySelector('[data-dk="privodSmer"]'); e.value = v; e.dispatchEvent(new Event('input', { bubbles: true })); e.dispatchEvent(new Event('change', { bubbles: true }));
-    const t = [...document.querySelectorAll('#rz-pohled .rz-svg text')].find(x => x.textContent === 'přívod'), c = [...document.querySelectorAll('#zs-celo text')].find(x => /vývodka/.test(x.textContent));
+    const t = [...document.querySelectorAll('#rz-pohled .rz-svg text')].find(x => x.textContent === 'přívod'), c = [...document.querySelectorAll('#zs-celo text')].find(x => /^přívod/.test(x.textContent));
     return { p: t ? Math.round(+t.getAttribute('y')) : null, c: c ? Math.round(+c.getAttribute('y')) : null }; }, v);
   const s1 = await smer('shora'), s2 = await smer('zespodu');
   check('přívod shora ↔ zespodu: vývodka v čelním pohledu i na čele se překreslí hned', s1.p < 10 && s1.c < 20 && s2.p > s1.p + 30 && s2.c > s1.c + 100, JSON.stringify([s1, s2]));

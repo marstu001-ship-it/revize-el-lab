@@ -837,6 +837,13 @@ function vsechnyStavy(zalozky) {
     await window.__zsSkrin(); const h = document.querySelector('.rz-hlavicka'); h.open = true; h.scrollIntoView({ block: 'start' }); await __M.w(150); }));
   add('zásuvková skříň – Dokumenty, předání a poučení obsluhy', 'Tvorba dokumentace', E(async () => {
     await window.__zsSkrin(); rozvZalozkaNastavit('dok'); const o = document.querySelector('[data-oddil="pouceni"]'); o.open = true; o.scrollIntoView({ block: 'start' }); await __M.w(150); }));
+  add('zásuvková skříň – čelo: výběr víc zásuvek (vlastnosti, zarovnání)', 'Tvorba dokumentace', E(async () => {
+    await window.__zsSkrin(); zsVyberNastavit(['z1', 'z2', 'z3']); rozvPohledVykreslit(); rozvVlastnostiVykreslit(); document.getElementById('rz-vlastnosti').scrollIntoView({ block: 'start' }); await __M.w(150); }));
+  add('zásuvková skříň – čelo v pohledu Zapojení s vodiči', 'Tvorba dokumentace', E(async () => {
+    await window.__zsSkrin(); __rz.zsPohled = 'zapojeni'; zsZapojAuto(); rozvPohledVykreslit(); document.getElementById('zs-celo').scrollIntoView({ block: 'start' }); await __M.w(150); document.querySelectorAll('.toast').forEach(t => t.remove()); }));
+  add('zásuvková skříň – Dokumenty, vrtací plán a šablona 1:1', 'Tvorba dokumentace', E(async () => {
+    await window.__zsSkrin(); rozvZalozkaNastavit('dok'); const v = document.querySelector('.zs-vrt'); v && v.scrollIntoView({ block: 'start' }); await __M.w(150); document.querySelectorAll('.toast').forEach(t => t.remove()); }));
+  add('zásuvková skříň – náhled štítků na čelo', 'Tvorba dokumentace', E(async () => { await window.__zsSkrin(); await TD_AKCE.tdZsStitky(); await __M.w(300); }));
   add('zásuvková skříň – náhled tisku předání a poučení (PDF)', 'Tvorba dokumentace', E(async () => { await window.__zsSkrin(); await TD_AKCE.tdZsPouceni(); await __M.w(300); }));
   // výměna s CAD (2026-11-02): náhled PDF s „Stáhnout pro CAD (DXF)", seznam s „Načíst výkres z CAD", náhled importu
   add('rozvaděč – náhled PDF s tlačítkem Stáhnout pro CAD (DXF)', 'Tvorba dokumentace', E(async () => { await __M.rozv(); await dokNahled(); await __M.w(400); }));
