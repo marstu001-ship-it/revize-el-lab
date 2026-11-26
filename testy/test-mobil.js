@@ -119,6 +119,7 @@ function pomocnik() {
     rozvSkrinNastavit(rozvKnihPolozka('v-sk-3x12-n'));
     if (window.__rozvByt) window.__rozvByt();   // testy/rozvadec-byt.js
     await dokUlozitOtevreny();
+    __M.rozvRH1 = dokKopie(DOK.dokumenty.find(x => x.uid === window.__dokOtevreny.uid));   // stav „seznam s objekty" seznam rozvaděčů přepisuje — M.rozv si RH1 vrátí
     // ROZVADĚČ PSC — tři pole, DIN segment, montážní deska, sběrnice přes dvě pole
     await dokNovy('psc');
     dk('[data-dk="oznaceni"]', 'RH-hala'); dk('[data-dk="stavba"]', 'Hala Vymyšlená 3');
@@ -141,7 +142,13 @@ function pomocnik() {
           { uid: 'm-rs1', nazev: 'RS1 kuchyň', umisteni: 'Kuchyň', mereni: [o('1', 'Chránič', '', 'A', '40', { rowtype: 'rcd-header', idn: '0,03' }), o('2', 'Zásuvky', '', 'B', '1x16')] }] } });
     dokOtevritSeznam('rozv'); await w(100); TD_AKCE.tdRZRevize(); await w(100);
   };
-  M.rozv = async () => { await dokOtevrit(DOK.dokumenty.find(x => x.typ === 'rozv').uid); await w(200); };
+  // RH1 z fixture, ne „první rozvaděč v seznamu" — jiné stavy seznam mění (seznam s objekty, zakreslení, CAD)
+  // a stav by pak závisel na pořadí; každý stav musí jít spustit sám i s filtrem STAVY
+  M.rozv = async () => {
+    const z = M.rozvRH1, i = z ? DOK.dokumenty.findIndex(x => x.uid === z.uid) : -1;
+    if (z) { if (i === -1) DOK.dokumenty.push(dokKopie(z)); else DOK.dokumenty[i] = dokKopie(z); }
+    await dokOtevrit(z ? z.uid : DOK.dokumenty.find(x => x.typ === 'rozv').uid); await w(200);
+  };
   M.rlps = async (pln) => {
     await dokNovy('rlps'); await w(100);
     if (!pln) return;
