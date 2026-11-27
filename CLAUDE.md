@@ -51,6 +51,10 @@ Co blok přesměruje (program sám pořád píše `revize_el_…`, `revize-el-db
 | Uložit jako / stažení (PDF, `Zpravy_…json`, plán, záloha, xlsx, zip, výkres pro CAD `.dxf`) | název dostane předponu **`LAB_`**, dialog má vlastní zapamatovanou složku (`id: 'revize-lab'`) |
 | vzhled | oranžová lišta, štítek **LAB vX.Y** v liště, titulek „Revize EL – LAB", ikona LAB |
 
+Řádek „Úložiště: … · obsazeno X MB" v Nastavení (`navigator.storage.estimate()`)
+počítá celý původ — v labu tedy **i data ostrého programu**. Je to jen číslo,
+nic se tím nečte ani nemíchá; `persist()` platí pro oba programy naráz.
+
 **Formáty souborů zůstávají stejné** (`revize-el-backup`, `revize-el-zpravy`,
 `revize-el-plan`) — soubor uložený v labu jde načíst v revize-el a naopak,
 **když to uživatel sám udělá**. Lab sám od sebe do dat ostrého programu nesáhne.
