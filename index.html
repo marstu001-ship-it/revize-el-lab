@@ -4107,6 +4107,7 @@ html.dark .rz-imp-chyby{background:#3a1f1c;border-color:#6b2c25}
       <button class="btn btn-ghost" id="btn-zrusit-autozalohu" style="display:none;background:var(--bg);color:var(--text);border:1px solid var(--border)" data-action="zrusitSlozkuZaloh">✕ Vypnout automatické zálohy</button>
     </div>
     <div style="margin-top:.5rem;font-size:.72rem;color:var(--muted)">Funguje v Chrome a Edge na počítači. Na mobilu a v jiných prohlížečích zůstává ruční stažení.</div>
+    <div id="nast-uloziste" style="display:none;margin-top:.35rem;font-size:.72rem;color:var(--muted)"></div>
   </div>
 
   <div class="scard">
@@ -6699,21 +6700,42 @@ function toggleVoice() {
   }
 }
 
+// Jednou při startu požádat o trvalé úložiště — prohlížeč se buď sám rozhodne
+// (Chrome podle používání, bez dotazu), nebo odmítne; uživatele se nikdo neptá.
 function requestPersistentStorage() {
-  if (navigator.storage && navigator.storage.persist) {
+  if (navigator.storage && navigator.storage.persist && navigator.storage.persisted) {
     navigator.storage.persisted().then(function(isPersisted) {
-      if (!isPersisted) {
-        navigator.storage.persist().catch(function() {});
-      }
-    }).catch(function() {});
+      if (!isPersisted) return navigator.storage.persist().catch(function() {});
+    }).catch(function() {}).then(ulozisteRadek);
   }
+}
+// Nenápadný řádek v Nastavení: „Úložiště: trvalé · obsazeno 12,3 MB".
+// Bez podpory API (starší Safari) se řádek neukazuje vůbec.
+function ulozisteRadek() {
+  var el = document.getElementById('nast-uloziste');
+  if (!el) return;
+  var st = navigator.storage;
+  if (!st || !st.estimate) { el.style.display = 'none'; return; }
+  Promise.all([
+    st.persisted ? st.persisted().catch(function() { return null; }) : Promise.resolve(null),
+    st.estimate().catch(function() { return null; })
+  ]).then(function(r) {
+    var odhad = r[1];
+    if (!odhad || typeof odhad.usage !== 'number') { el.style.display = 'none'; return; }
+    var mb = (odhad.usage / (1024 * 1024)).toFixed(1).replace('.', ',');
+    var stav = r[0] === true ? 'trvalé' : r[0] === false ? 'může ho prohlížeč smazat' : '';
+    el.textContent = 'Úložiště: ' + (stav ? stav + ' · ' : '') + 'obsazeno ' + mb + ' MB';
+    el.title = r[0] === true ? 'Prohlížeč data programu sám nesmaže ani při nedostatku místa.'
+      : 'Při nedostatku místa na disku může prohlížeč data programu smazat — zálohujte.';
+    el.style.display = '';
+  });
 }
 
 function showScreen(id) {
   document.querySelectorAll('.screen').forEach(function(s){ s.classList.remove('active'); });
   var sc = document.getElementById('screen-' + id);
   if (sc) sc.classList.add('active');
-  if (id === 'nastaveni') nacistTechnika();
+  if (id === 'nastaveni') { nacistTechnika(); ulozisteRadek(); }
   // „💾 Uložit" a „📄 Generovat PDF" patří k otevřené zprávě — mimo ni
   // mizí, aby nebylo matoucí, co by vlastně uložily/vygenerovaly.
   var veZprave = (id === 'form' || id === 'pdf');
@@ -29680,7 +29702,24 @@ async function dokKnihovnaNacist() {
   return null;
 }
 
+// Bez IndexedDB (soukromé okno, iOS, zakázané úložiště) zbývá jen localStorage
+// (limit ~5 MB na CELÝ program — sdílí ho i zprávy a dokumenty). Knihovnu větší
+// než ~4 MB tam zapsat naslepo nejde: buď by zápis selhal, nebo by se vešla
+// a pak by nezbylo místo pro zprávy. Import se proto zastaví (rozvKnihovnaVejdeSe).
+var KNIH_LS_MAX = 4 * 1024 * 1024;   // znaků JSON
+var KNIH_NEJDE_ULOZIT = 'Knihovnu nejde v tomto okně uložit (prohlížeč nepovoluje úložiště) – otevřete program v běžném okně';
+function rozvKnihovnaVejdeSe(seznam) {
+  if (idb) return true;
+  try { return JSON.stringify(seznam).length <= KNIH_LS_MAX; } catch (e) { return false; }
+}
+
 async function dokKnihovnaZapsat(seznam, zOkna) {
+  if (!idb && !rozvKnihovnaVejdeSe(seznam)) {
+    // Nic se nepřepisuje — uložená knihovna v localStorage zůstane, jak byla.
+    __dokKnihovnaBezUloziste = true;
+    if (typeof showToast === 'function') showToast(KNIH_NEJDE_ULOZIT, { timeout: 12000 });
+    return false;
+  }
   if (idb) {
     try { await idbSetMulti({ dok_rozvKnihovna: seznam }); __dokKnihovnaBezUloziste = false; }
     catch (e) {
@@ -46589,10 +46628,16 @@ TD_AKCE.tdRImportUlozit = async function () {
   closeModal('modal-rz-import'); __rzImport = null;
   await dokNacist();
   var pred = dokKopie(DOK.rozvKnihovna);
+  // Výsledek se nejdřív složí stranou — když se bez IndexedDB nevejde,
+  // import se zastaví a dosavadní knihovna zůstane netknutá.
+  var nova = DOK.rozvKnihovna.slice(), poz = {};
+  nova.forEach(function (y, i) { poz[y.id] = i; });
   x.v.polozky.forEach(function (p) {
-    var i = DOK.rozvKnihovna.findIndex(function (y) { return y.id === p.polozka.id; });
-    if (i >= 0) DOK.rozvKnihovna[i] = p.polozka; else DOK.rozvKnihovna.push(p.polozka);
+    var i = poz[p.polozka.id];
+    if (i !== undefined) nova[i] = p.polozka; else { poz[p.polozka.id] = nova.length; nova.push(p.polozka); }
   });
+  if (!rozvKnihovnaVejdeSe(nova)) { showToast(KNIH_NEJDE_ULOZIT, { timeout: 12000 }); return; }
+  DOK.rozvKnihovna = nova;
   await dokZapsat();
   try { localStorage.removeItem(ROZV_INFO_KLIC); } catch (e) {}   // s daty výrobců se pruh sám sbalí
   rozvKnihovnaZmenena();

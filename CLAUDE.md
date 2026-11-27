@@ -1387,6 +1387,24 @@ a prohlášení (hlavička + `skrin` + `p`). `data.model = 1`.
   takové zálohy importovanou knihovnu nikdy nesmaže, vlastní položky
   sloučí podle id (`rozvKnihovnaSloucitVlastni`). Test:
   `testy/test-knihovna-uloziste.js` (syntetická knihovna 15 000 položek).
+- **Pojistky úložiště (2026-11-27):** bez IndexedDB (soukromé okno, iOS,
+  zakázané úložiště) se knihovna větší než **~4 MB JSON** (`KNIH_LS_MAX`)
+  do localStorage **nezapisuje naslepo** — `rozvKnihovnaVejdeSe()`. Import
+  (`tdRImportUlozit`) si výsledek složí stranou, a když se nevejde, zastaví
+  se s hláškou `KNIH_NEJDE_ULOZIT` („Knihovnu nejde v tomto okně uložit
+  (prohlížeč nepovoluje úložiště) – otevřete program v běžném okně"); DOK ani
+  uložená knihovna se nezmění. Totéž hlídá `dokKnihovnaZapsat()` (obnova
+  zálohy) — vrátí `false` a nic nepřepíše. Import páruje id přes mapu, ne
+  `findIndex` (30 000 položek by jinak bylo kvadratické). Na iOS IndexedDB
+  program vypíná vždy, takže tam velký import neprojde nikdy (localStorage
+  by stejně nestačil). **Trvalé úložiště:** `requestPersistentStorage()` při
+  startu jednou `navigator.storage.persist()` (bez dotazu), v Nastavení pod
+  automatickými zálohami řádek `#nast-uloziste` „Úložiště: trvalé / může ho
+  prohlížeč smazat · obsazeno X MB" (`ulozisteRadek`, `estimate()`); bez API
+  se neukazuje. Test: `testy/test-uloziste-pojistky.js` (bez IndexedDB malý
+  import projde a velký se zastaví, přímý zápis, persist jednou, tři podoby
+  řádku, 30 000 položek: vykreslení, hledání, filtr < 100 ms). **Upraveno:**
+  `test-knihovna-uloziste.js` (iOS: velký import se zastaví místo „jen v paměti").
 - **Informační pruh nahoře v knihovně** (pokyn uživatele 2026-10-19,
   `ROZV_INFO_KNIHOVNA`, `rozvInfoKnihovnaHtml`) — v editoru nad kartami
   Přístroje/Skříně i ve správě knihovny na seznamu, text doslova:

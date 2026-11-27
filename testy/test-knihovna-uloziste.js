@@ -275,12 +275,15 @@ function nastavOznaceni(p, hodnota) {
     // velká knihovna (15000) se do localStorage (sdílené 5 MB) nevejde
     const velkaInfo = await importKnihovnu(p, csv15k);
     await w(300);
+    // Od 2026-11-27 (pojistky úložiště) se import, který by se bez IDB do
+    // localStorage nevešel, ZASTAVÍ — dosavadní knihovna zůstane (dřív se
+    // velká knihovna nechala jen v paměti a po zavření okna zmizela).
     const stavVelka = await p.evaluate(() => ({
       pocet: (DOK.rozvKnihovna || []).length,
-      bezUloziste: window.__dokKnihovnaBezUloziste
+      vLs: JSON.parse(localStorage.getItem('revize_el_rz_knihovna') || '[]').length
     }));
-    check('iOS: po importu 15000 je knihovna v paměti', stavVelka.pocet === 15000, stavVelka.pocet);
-    check('iOS: velká knihovna se do localStorage NEVEŠLA — „bez úložiště" je true', stavVelka.bezUloziste === true, JSON.stringify(stavVelka));
+    check('iOS: velký import (15000) se zastavil — knihovna zůstala 200', stavVelka.pocet === 200, stavVelka.pocet);
+    check('iOS: v localStorage zůstala dosavadní knihovna (200)', stavVelka.vLs === 200, JSON.stringify(stavVelka));
 
     // dokumenty (jiné úložiště) tím nejsou poškozené
     await nastavOznaceni(p, 'IOS-PO-PRETECENI');
