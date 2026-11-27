@@ -33,7 +33,7 @@
 <script>
 (function() {
   'use strict';
-  var LAB_VERZE = 'v1.101 · 2026-11-26';   // bumpni spolu s CACHE_NAME v sw.js
+  var LAB_VERZE = 'v1.102 · 2026-11-27';   // bumpni spolu s CACHE_NAME v sw.js
 
   // ── klíče localStorage / sessionStorage ────────────────────────────────
   function klic(k) {
@@ -2914,7 +2914,7 @@ html.dark .rz-imp-chyby{background:#3a1f1c;border-color:#6b2c25}
 <body>
 
 <div class="topbar">
-  <div class="brand" data-action="home" style="cursor:pointer" title="Hlavní stránka">⚡ Revize <em>EL</em> <span class="ver">v9.147<span class="ver-date"> · 2026-11-20</span></span></div>
+  <div class="brand" data-action="home" style="cursor:pointer" title="Hlavní stránka">⚡ Revize <em>EL</em> <span class="ver">v9.149<span class="ver-date"> · 2026-11-27</span></span></div>
   <div class="topbar-right">
     <button class="btn btn-ghost" id="theme-toggle" data-action="toggleTheme" title="Přepnout světlý / tmavý režim">🌙</button>
     <button class="btn btn-ghost" id="view-toggle" data-action="toggleView" title="Přepnout zobrazení PC / Mobil">💻 PC</button>
@@ -3077,6 +3077,26 @@ html.dark .rz-imp-chyby{background:#3a1f1c;border-color:#6b2c25}
     <button type="button" class="nov-lupa-x" data-action="novinkyHledatZrusit" title="Zrušit hledání (Esc)">✕</button>
   </div>
   <div id="nov-hledat-info" class="nov-lupa-info"></div>
+
+  <div class="scard" data-nov-datum="2026-11-26">
+    <div class="scard-title">🗄 Rozvaděče – zásuvková skříň, víc přívodů a další <span class="nov-datum">26. 11. 2026</span></div>
+    <div style="font-size:.85rem;line-height:1.7">
+      <ul style="margin:.3rem 0 0 1.4rem;padding:0">
+        <li><strong>Zásuvková skříň</strong> – nová dlaždice vedle DBO a PSC. Do DIN lišty dáte přístroje, na čelo skříně zásuvky CEE a domovní a myší je rozmístíte v mm. Každá zásuvka má svůj jistič (<strong>„＋ Zásuvka s jističem"</strong> vloží obojí naráz), zásuvky jde zarovnat, rozmístit, přichytávají se k sobě; pravým tlačítkem menu jako u přístrojů.</li>
+        <li>V pohledu <strong>Zapojení</strong> na čele natáhnete vodiče od jističe k zásuvce tahem; „Zapojit automaticky" doplní N a PE.</li>
+        <li>Přívod je pohyblivý kabel s vidlicí – program hlídá, aby InA nebyl vyšší než vidlice, a upozorní na jistič větší než zásuvka, špatný počet pólů nebo napětí zásuvky, které neodpovídá vývodu.</li>
+        <li>V Dokumentech: <strong>výkres skříně v měřítku</strong>, vrtací plán čela s kótami a šablona 1:1 na více listů A4, štítky na čelo a <strong>Předání a poučení obsluhy</strong> k podpisu (s chráničem nad 30 mA smí skříň používat jen poučená osoba).</li>
+        <li><strong>Víc přívodů:</strong> rozvaděč může mít dva a více přívodů, každý s vlastním hlavním vypínačem (-QH1, -QH2), nebo přepínač zdrojů 1-0-2; schéma, štítek i návod k obsluze s tím počítají.</li>
+        <li><strong>Návod k obsluze a údržbě</strong> rozvaděče se sestaví z návrhu – v Dokumentech k zaškrtnutí.</li>
+        <li><strong>Svorkovnice od výroby:</strong> u skříně zadáte, že má lišty N a PE od výroby (pod lištou, nad lištou, na boku, i víc lišt N); nezabírají moduly a PE na DIN liště program už nechce.</li>
+        <li><strong>Dva vodiče stejného průřezu pod jedním šroubem:</strong> program je ve svorkovém plánu spáruje, „⇄ Párovat" dvojici spojí nebo rozdělí.</li>
+        <li><strong>Hřebeny a pojistkové vložky</strong> jdou vybrat z knihovny výrobců; hřeben jde napájet vodičem pod šroub kteréhokoli přístroje na něm a z kabelu jdou natáhnout všechny fáze.</li>
+        <li><strong>Doplnit Pv a Penc z knihovny</strong> u oteplení vyplní ztrátové výkony přístrojů a skříně z dat výrobce.</li>
+        <li><strong>List osazení</strong> ve výkresu kreslí přístroje jako skutečné (páčka, svorky, tlačítko T).</li>
+        <li>Záložka <strong>3D</strong> je u rozvaděčů dočasně schovaná, připravuje se nová; uložená data se nemažou.</li>
+      </ul>
+    </div>
+  </div>
 
   <div class="scard" data-nov-datum="2026-11-08">
     <div class="scard-title">🛠 Čelní pohled jako v dílně <span class="nov-datum">8. 11. 2026</span></div>
@@ -9622,6 +9642,36 @@ function getNapetoveSoustavy() {
     }
   });
   return result.join(', ');
+}
+
+// Zaškrtnutá ochranná opatření ze scard-ochrana-char (ČSN 33 2000-4-41
+// ed.3 / ČSN EN 61140 ed.3) — do v9.148 se zaškrtnutí jen ukládalo pro
+// obnovu formuláře (ochrana_checks), ale nikam se netisklo: zaškrtnutá
+// opatření se ve vygenerované zprávě neobjevila vůbec (nahlásil uživatel
+// 2026-11-26). Volá se v getData() a ukládá do D.ochrana_vybrane, ať je
+// k dispozici i při tisku uložené zprávy z archivu.
+function getOchranaVybrane() {
+  var result = [];
+  var items = document.querySelectorAll('#ochrana-checkboxy .char-row input[type=checkbox]');
+  items.forEach(function(chk) {
+    if (chk.checked) {
+      var lbl = document.querySelector('label[for="' + chk.id + '"]');
+      if (lbl) result.push(lbl.textContent.trim());
+    }
+  });
+  return result;
+}
+
+// Krátký text pro tisk — spojí volný text pole „Ochrana před úrazem el.
+// proudem" s krátkými popisky zaškrtnutých opatření (bez citace článku
+// normy za pomlčkou — ta je dlouhá a do krátké kolonky se nevejde).
+function ochranaPdfText(D) {
+  var parts = [];
+  if (D.ochrana) parts.push(String(D.ochrana).trim());
+  var vybrane = Array.isArray(D.ochrana_vybrane) ? D.ochrana_vybrane : [];
+  var kratke = vybrane.map(function(s) { return String(s).split(' — ')[0].trim(); }).filter(Boolean);
+  if (kratke.length) parts.push(kratke.join('; '));
+  return parts.join(' · ');
 }
 
 var OCHRANA = [
@@ -16659,6 +16709,9 @@ function getData() {
     rt_ico: gv('f_rt_ico') || (rtPrazdny ? t.ico || '' : ''),
     trida: gv('f_trida'),
     zdroj: gv('f_zdroj'), ochrana: gv('f_ochrana'),
+    // Jen při skutečném zaškrtnutí — jinak by i zpráva, kde se checklistu
+    // nikdo nedotkl, dostala nový prázdný klíč (porovnani2.js).
+    ochrana_vybrane: (function() { var v = getOchranaVybrane(); return v.length ? v : undefined; })(),
     predano_misto: gv('f_predano_misto'), predano_datum: gv('f_predano_datum'),
     predchozi: gv('f_predchozi'),
     prebira: gv('f_prebira'), vyhotoveni: gv('f_vyhotoveni'), rozdelovnik: gv('f_rozdelovnik'),
@@ -17547,7 +17600,7 @@ function generujPDF() {
              '<div>' +
                (isStrojePdf ? '' :
                  '<div class="pbox-label">Ochrana před úrazem:</div>' +
-                 '<div class="pbox" style="min-height:8mm;font-size:9pt">' + esc(D.ochrana) + '</div>') +
+                 '<div class="pbox" style="min-height:8mm;font-size:9pt">' + esc(ochranaPdfText(D)) + '</div>') +
                // Bez kolonky nad sebou nesmí „Síť" začínat odsazením — srovnala by
                // se špatně s „Použitými normami" v levém sloupci.
                '<div' + (isStrojePdf ? '' : ' style="margin-top:1mm"') + '><div class="pbox-label">Síť:</div>' +
@@ -17655,7 +17708,7 @@ function generujPDF() {
       ? ((vicStroju ? '<strong>' + PJ.pocetStroju + '</strong> ' + strojList.length + '<br>' : '')
         + (!vicStroju && strojList[0] && strojList[0].nazev ? '<strong>Stroj:</strong> ' + esc(strojList[0].nazev) + (strojList[0].typ ? ', typ ' + esc(strojList[0].typ) : '') + '<br>' : '')
         + (D.napetova_soustava ? '<strong>Napěťová soustava:</strong> ' + esc(D.napetova_soustava) + '<br>' : '')
-        + '<strong>Ochrana před úrazem el. proudem:</strong> ' + esc(D.ochrana || '—') + '<br>'
+        + '<strong>Ochrana před úrazem el. proudem:</strong> ' + esc(ochranaPdfText(D) || '—') + '<br>'
         + (D.normy ? '<strong>' + PJ.provedenaDle + '</strong> ' + esc(D.normy) + '<br>' : ''))
       : isLpsPdf
       ? ((D.lps && D.lps.trida) ? '<strong>Třída LPS:</strong> ' + esc(D.lps.trida) + '<br>' : '')
@@ -17664,7 +17717,7 @@ function generujPDF() {
         + (D.normy ? '<strong>' + PJ.provedenaDle + '</strong> ' + esc(D.normy) + '<br>' : '')
       : (D.trida ? '<strong>Třída VTEZ (§4 NV 190/2022 Sb.):</strong> ' + esc(D.trida) + '<br>' : '')
         + (D.napetova_soustava ? '<strong>Napěťová soustava:</strong> ' + esc(D.napetova_soustava) + '<br>' : '')
-        + '<strong>Ochrana před úrazem el. proudem:</strong> ' + esc(D.ochrana || '—') + '<br>') +
+        + '<strong>Ochrana před úrazem el. proudem:</strong> ' + esc(ochranaPdfText(D) || '—') + '<br>') +
     (D.preruseni_od || D.preruseni_do ? '<strong>' + PJ.preruseniPdf + '</strong> ' + (D.preruseni_od ? fmtDate(D.preruseni_od) : '—') + ' – ' + (D.preruseni_do ? fmtDate(D.preruseni_do) : '—') + '<br>' : '') +
     (D.objednatel ? '<strong>' + PJ.objednatelPdf + '</strong> ' + esc(D.objednatel) + '<br>' : '') +
     (D.pritomen2 ? '<strong>' + PJ.pritomenPdf + '</strong> ' + esc(D.pritomen2) + '<br>' : '') +
@@ -32037,7 +32090,7 @@ var ROZV_SOUSTAVY = ['1NPE ~230 V', '3NPE ~400/230 V TN-S', '3PEN ~400/230 V TN-
 var ROZV_FAZE = ['L1', 'L2', 'L3', '3f'];
 
 function rozvKat(k) {
-  if (k === 'XS2') k = 'XZ';   // zásuvka na čele: kód XS2 z LAB v1.97 (data, která už vznikla) = XZ
+  if (k === 'XS2') k = 'XZ';   // zásuvka na čele: starší kód XS2 (data, která už vznikla) = XZ
   for (var i = 0; i < ROZV_KAT.length; i++) if (ROZV_KAT[i].k === k) return ROZV_KAT[i];
   return null;
 }
@@ -32119,7 +32172,7 @@ function rozvPolozkaNorm(o, druh) {
       var v = ROZV_PRISTROJ_NAVIC_TEXT.indexOf(k) !== -1 ? String(o[k] == null ? '' : o[k]).trim() : rozvCislo(o[k]);
       if (v !== '') r[k] = v;
     });
-    if (r.kat === 'XS2') r.kat = 'XZ';   // starší kód zásuvky na čele (LAB v1.97)
+    if (r.kat === 'XS2') r.kat = 'XZ';   // starší kód zásuvky na čele
     if (r.kat !== 'JINE') delete r.ozn;   // předponu si nese jen „Ostatní přístroj"
     if (r.kat === 'QF') r.pvCelkem = true;   // u MCCB je Pv celkem za přístroj, ne na pól
   }
@@ -38189,7 +38242,7 @@ function rzpTahZaklad(cx, cy) {
 // Přesun pólu `k` konce vodiče na hřebenu pod zub `zub`: ok = cílová lišta je jeho vlastní, nebo
 // ji nepoužívá jiný pól téhož vodiče (jinak by to byl zkrat dvou fází).
 // Šroubek na liště, kterou má jiný pól j téhož vodiče: póly se PROHODÍ — j jde na šroubek,
-// který pól k uvolnil (2026-11-24 LAB: „L2 na FA27" → L3 jde tam, kde byla L2). Jinak by to byl zkrat.
+// který pól k uvolnil (příklad: „L2 na FA27" → L3 jde tam, kde byla L2). Jinak by to byl zkrat.
 function rzpPresunPolu(wuid, konec, k, zub) {
   var w = rzpWNajit(wuid); if (!w) return null;
   var e0 = w[konec], hr = rzhNajit(e0.uid); if (!hr) return null;

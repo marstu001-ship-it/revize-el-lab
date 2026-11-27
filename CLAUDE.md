@@ -217,7 +217,7 @@ Revize EL je single-page PWA (HTML + JS + service worker). Obsah se cachuje
 v prohlížeči přes `sw.js`, takže uživatel nevidí změny, dokud se neinvalidně
 cache.
 
-**Aktuální verze: v9.147 · 2026-11-20**
+**Aktuální verze: v9.149 · 2026-11-27**
 
 ## Povinné při každé změně kódu před commitem
 
@@ -280,6 +280,51 @@ jste nic neudělali.
    záložka nebo dialog = přidat stav do `vsechnyStavy()` v testu. Úprava
    pro telefon patří **jen do bloku MOBIL** (oddíl „Mobil" níž), verze
    pro PC se jí nesmí změnit.
+
+## 🛑 Zaškrtnutá „Ochrana před úrazem el. proudem" se nikdy netiskla (v9.148)
+
+Nahlásil uživatel 2026-11-26 jako akutní problém v ostré verzi — zaškrtnutá
+ochranná opatření (karta `scard-ochrana-char`, tab „A. Popis instalace",
+ČSN 33 2000-4-41 ed.3 / ČSN EN 61140 ed.3) nikde v PDF nejsou, kolonka
+„Ochrana před úrazem" na titulce zůstává prázdná.
+
+**Příčina:** zaškrtnutí se ukládala a obnovovala (`ochrana_checks`, přes
+`collectCheckboxIds('och-')` / `restoreChecklistGroup`), ale **nikde se
+nečetla pro tisk** — žádná funkce ani netvořila z checkboxů text, žádné
+místo v `generujPDF()` je nepoužívalo. Kolonka „Ochrana před úrazem" vždy
+tiskla jen `D.ochrana` = samostatné volné textové pole `f_ochrana`
+(s datalistem, na titulní straně, karta VTEZ) — to je ÚPLNĚ JINÉ pole než
+checklist v tabu „A. Popis instalace" a technik ho nevyplnil, protože
+vyplnil checklist. **Bug byl ve zprávě od vzniku checklistu**, nejde o
+regresi z poslední sady změn (git historie jde jen k jednomu squashi).
+
+- **`getOchranaVybrane()`** (vzor `getNapetoveSoustavy()`) čte zaškrtnuté
+  `#ochrana-checkboxy .char-row input[type=checkbox]` a vrací pole popisků.
+  Do `getData()` jde jako **`ochrana_vybrane`** — **jen když je něco
+  zaškrtnuté** (`v.length ? v : undefined`), jinak by každá zpráva dostala
+  nový prázdný klíč navíc (`porovnani2.js`).
+- **`ochranaPdfText(D)`** spojí volný text `D.ochrana` s krátkými popisky
+  zaškrtnutých položek (bez citace článku normy za pomlčkou — ta je na
+  krátkou kolonku dlouhá). Nahrazuje `esc(D.ochrana)` na všech třech
+  místech, kde se „Ochrana před úrazem" tiskne: titulní strana (pbox)
+  a kapitola 2 „Charakteristika zařízení" (elektro i stroje — karta se
+  zobrazuje u obou typů, u LPS se vůbec nenabízí a nic se netiskne).
+- **Čerstvá zpráva bez jediného zaškrtnutí vychází bajt po bajtu stejně
+  jako dřív** (`porovnani2.js`) — mění se jen PDF zpráv, kde je něco
+  zaškrtnuté, a to je právě ten případ, který byl dřív tiše ignorovaný.
+- **Checklist „Příloha – Prohlídka VEZ"** (tab „Prohlídka", `CL` pole,
+  stejné `chk-` id jako `collectCheckboxIds('chk-')` → `prohlidka_checks`)
+  má **stejnou chybu** — zaškrtnutí se taky jen ukládají a obnovují, nikam
+  se netisknou. **Neopraveno** — uživatel o to nežádal, tahle oprava řeší
+  jen nahlášenou „Ochranu před úrazem". Až si o to řekne, postup je stejný
+  (čtecí funkce + zapojení do PDF na místě, kde dnes stojí
+  `D.prohlídka`/výsledek prohlídky).
+
+Test: `testy/test-ochrana-pred-urazem.js` (10 kontrol — prázdno beze
+zaškrtnutí, zaškrtnutí na titulce i v kap. 2, citace se nezkracuje do PDF,
+nezaškrtnutá položka se netiskne, volný text + zaškrtnutí dohromady,
+přežití uložení do archivu a znovuotevření, stroje, LPS bez kolonky vůbec).
+Do Novinek nejde — oprava chyby.
 
 ## 🧭 Přívětivost obrazovek — platí pro KAŽDOU novou obrazovku (pokyn uživatele 2026-10-16)
 
@@ -4325,7 +4370,7 @@ Makety a výkres schválil uživatel („výkres schválen" s úpravou svorkovni
 - **Upozornění 30 mA**: chránič > 30 mA a zásuvka ≤ 32 A bez zaškrtnutého poučení
   s přebírajícím → nenápadný řádek nad pohledem a nález v „Co ještě chybí" (`zsUpozorneni`).
 
-**Připomínky 2026-11-26 (LAB v1.98):**
+**Připomínky 2026-11-26 (po vyzkoušení uživatelem):**
 
 - **Šířka okna:** editor ZS má `.dok-wrap` bez `max-width` jako DBO/PSC (CSS `data-typ="zs"`).
   Od šířky plochy pohledu **`ZS_VEDLE` = 1300 px** (na 2560 px) je čelo **vedle** čelního pohledu

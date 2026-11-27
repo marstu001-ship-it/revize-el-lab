@@ -45,11 +45,11 @@ jobs:
           # Cesta k složce, která se má deploynout (root repa)
           path: '.'
 
-      # 2026-11-24: čtyři deploye za sebou selhaly hned na kroku "Deploy to GitHub
-      # Pages" s "Found 0 artifact(s)" — deploy-pages se zeptal na metadata artefaktu
-      # dřív, než ho GitHubovo API stihlo zaindexovat (upload hlásil úspěch během
-      # ~2 s, deploy selhal o necelou vteřinu později). Krátká pauza mezi oběma
-      # kroky dá indexaci čas a odstraní ten závod.
+      # 2026-11-26: deploy hned po uploadu selhal na "Found 0 artifact(s)" —
+      # deploy-pages se zeptal na metadata artefaktu dřív, než ho GitHubovo
+      # API stihlo zaindexovat (upload hlásil úspěch, o necelou vteřinu
+      # později deploy artefakt nenašel). Krátká pauza mezi oběma kroky dá
+      # indexaci čas a odstraní ten závod.
       - name: Pauza před deployem (indexace artefaktu na GitHubu)
         run: sleep 20
 

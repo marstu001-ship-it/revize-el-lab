@@ -40,7 +40,7 @@ const w = ms => new Promise(r => setTimeout(r, ms));
 
   // ── 2. CSV: nové sloupce na konci šablony ─────────────────────────────
   const csvHl = await p.evaluate(() => ROZV_CSV.map(c => c[0]).join(';'));
-  check('šablona CSV končí …krytky;velikost;pv_max_vlozky;poznamka', /;krytky;velikost;pv_max_vlozky;poznamka$/.test(csvHl), csvHl.slice(-60));
+  check('šablona CSV má …krytky;velikost;pv_max_vlozky… (pozdější sloupce ZS mohou následovat)', /;krytky;velikost;pv_max_vlozky;/.test(csvHl), csvHl.slice(-80));
 
   // ── 3. FU s velikostí (CSV) a vložka z knihovny (CSV) ─────────────────
   await p.evaluate(async () => {

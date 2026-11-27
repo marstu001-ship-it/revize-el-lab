@@ -81,7 +81,7 @@ function pomocnik() {
     vzhled: !!document.querySelector('#dok-dlazdice.home-grid .home-card.dok-dlazdice')
   }));
   check('karta otevře nejdřív dlaždice typů dokumentů (ne seznam)', dl.akt === 'screen-dokumentace', dl.akt);
-  check('dlaždice se skládají z DOK_TYPY, vzhled jako karty na úvodu', dl.typy.split(',')[0] === 'pouvv' && dl.vzhled, dl.typy);
+  check('dlaždice se skládají z DOK_TYPY, vzhled jako karty na úvodu (1. řádek rozvaděče, 2. řádek riziko LPS a vnější vlivy)', dl.typy === 'rozv,psc,zs,rlps,pouvv' && dl.vzhled, dl.typy);
   check('dlaždice: název, popis normy a počet uložených', /Protokol o určení vnějších vlivů/i.test(dl.text) && /Dle ČSN 33 2000-5-51 ed\.3\+Z1\+Z2 a TNI 33 2000-5-51/.test(dl.text) && /Zatím žádný uložený/.test(dl.text), dl.text.replace(/\n/g, ' | '));
   check('dlaždice „připravuje se" nejsou', !/připravuje/i.test(dl.text));
   const uvod = await p.evaluate(() => {
