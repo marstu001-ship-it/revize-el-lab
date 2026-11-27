@@ -4268,6 +4268,40 @@ s chybami i bez, CSV sloupce a import, panel s nabídkou a předvolbou podle
 výrobce, zápis knih/p/prurez/In, délková kontrola i v materiálu, návrat na
 obecný, obecný hřeben beze změny). Karta v Novinkách se nedělala.
 
+### Propojovací hřebeny 2P a 4P (2026-11-27)
+
+Zadání uživatele: knihovna výrobců má hřebeny OEZ S2L a S4L a import je odmítal (program znal
+jen 1, 1+N, 3, 3+N). Snímky schváleny („výkres schválen", výchozí L + N).
+
+- **Póly hřebenu** `'2'` a `'4'` v `RZH_POLY` (popisky 2P / 4P), `rozvValidovat` (druh hreben)
+  přijme 1, 1+N, 2, 3, 3+N, 4 — chyba „(1, 1+N, 2, 3, 3+N nebo 4)". Vestavěné obecné
+  `v-hreben-2-16` a `v-hreben-4-16` (PRISL, 57 pólů jako ostatní obecné).
+- **4P** = přípojnice L1 L2 L3 N, zuby po řadě L1 L2 L3 N — chová se přesně jako 3+N
+  (`rzhZubFaze`, `rzhZubProFazi`), jen označení 4P. Nabídka z knihovny bere 4 a 3+N jako totéž.
+- **2P** = dvě přípojnice, zuby střídavě. **Zapojení `h.zapojeni`**: chybí = **L + N (výchozí)**
+  — program bere každý 2pólový přístroj jako L + N (`rozvPoly`: `[faze || 'L', 'N']`) a 2P hřeben
+  se v DBO dává hlavně na 2P chrániče, jističe 1+N a RCBO; `'2L'` = **dvě fáze** (`rzh2L`,
+  `rzhFazi` 2) — jen přes jednopólové přístroje (na přístroji L + N vznikne fázový zub na pólu N
+  a kontrola poradí „přepněte zapojení hřebenu na L + N"). **Fáze pro automatické napájení
+  `h.faze`**: u L + N `'L1' | 'L2' | 'L3'` (jinak podle prvního přístroje jako u 1P), u dvou fází
+  `'L1L2'` (výchozí) / `'L2L3'` / `'L1L3'` (`RZH_FAZE_2L`; L1 + L3 nejsou po sobě jdoucí póly,
+  `rzhAuto` dá dva jednopólové automatické vodiče). Natažený vodič má přednost — fáze pak určuje
+  on (panel to říká). Ukládá se jen nastavené; změna zapojení `faze` smaže, změna pólů obojí.
+- **Panel** (`rzh2PanelHtml`): u 2P volby Zapojení a Fáze; póly 1P / 3P / 1P+N / 3P+N / 2P / 4P;
+  kontextová nabídka 2P ↔ 4P. Čelní pohled u 2P a 4P píše nad zuby fáze i N (`nove` v `rzhSvg`);
+  starší hřebeny kreslí přesně jako dřív.
+- **Navrhnout hřebeny / lišta akcí**: `rzhPolyPristroju` — samé 2pólové přístroje se šířkou
+  2 moduly (pól na modul) → 2P, samé 4pólové se šířkou 4 → 4P; jinak jako dřív (1P / 3P).
+- Fáze, napětí, nadřazený (`rzpSpocti`, `rzpSync`), schéma (čte `nadr`), svorkový plán
+  a materiál („Propojovací hřeben 2P …") berou 2P/4P bez dalších úprav. Pv ani In se nedopočítávají.
+
+Test: `testy/test-rozvadec-hreben-2p4p.js` (30 kontrol — import a validace, L + N na jističích
+1+N i s fází L2, panel a uložení zapojení, dvě fáze L1+L2 / L2+L3 / L1+L3, 4P na 3+N, Navrhnout
+hřebeny, nabídka z knihovny, **starý rozvaděč s hřebeny 1/3/1+N/3+N bajtově stejně a čelní pohled
+v tisku znak po znaku jako stará verze**). V `test-mobil.js` stav „rozvaděč – hřeben 2P v panelu…".
+**Upraveno:** `test-rozvadec-hreben-knihovna.js` (neplatné póly už 5, ne 2), `test-rozvadec-dilna.js`
+(10 vestavěných hřebenů).
+
 ### Pojistková vložka jako položka knihovny (2026-11-18)
 
 Zadání uživatele: stejně jako hřeben výš, pojistková vložka má svého

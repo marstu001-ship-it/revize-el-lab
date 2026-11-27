@@ -596,6 +596,15 @@ function vsechnyStavy(zalozky) {
     document.querySelector('.rz-banner-hr').scrollIntoView({ block: 'start' }); await __M.w(100);
     setTimeout(() => { if (__rz) { __rz.hrNastroj = false; __rz.hrVyber = null; __rz.hrebeny = []; } }, 3000);
   }));
+  add('rozvaděč – hřeben 2P v panelu (zapojení dvě fáze, fáze)', 'Tvorba dokumentace', E(async () => {
+    await __M.rozv(); document.getElementById('toast-wrap').innerHTML = '';
+    const r = __rz.rady[1], poz = rozvPozice(r);
+    if (r.prvky.length > 1) { const h = rzhNovy(1, poz[0], poz[r.prvky.length - 1] + rozvW(r.prvky[r.prvky.length - 1]), '2'); h.zapojeni = '2L'; __rz.hrebeny = [h]; __rz.hrVyber = h.uid; }   // bez rozvZmena — stav se neukládá
+    rozvPohledVykreslit(); rozvVlastnostiVykreslit();
+    document.getElementById('toast-wrap').innerHTML = '';
+    document.getElementById('rz-vlastnosti').scrollIntoView({ block: 'start' }); await __M.w(100);
+    setTimeout(() => { if (__rz) { __rz.hrVyber = null; __rz.hrebeny = []; } }, 3000);
+  }));
   add('rozvaděč – navrhnout hřebeny (okno)', 'Tvorba dokumentace', E(async () => {
     await __M.rozv(); document.getElementById('toast-wrap').innerHTML = '';
     rzhNavrhyOtevrit(); await __M.w(100);

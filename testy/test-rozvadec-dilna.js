@@ -301,7 +301,7 @@ const w = ms => new Promise(r => setTimeout(r, ms));
     r.zKnih = (__rz.hrebeny || []).map(h => h.poly + ':' + h.prurez + ':' + (h.do - h.od)).join();
     return r;
   });
-  check('knihovna: obecné hřebeny 1P / 3P 10 / 16 / 25 mm² a 1P+N / 3P+N (PRISL, druh hreben), import CSV pozná „hreben"', kn.it === 'PRISL|hreben|3' && kn.vsech === 8 && kn.csv === 'hreben|hreben', JSON.stringify(kn));
+  check('knihovna: obecné hřebeny 1P / 3P 10 / 16 / 25 mm² , 1P+N / 3P+N, 2P a 4P (PRISL, druh hreben), import CSV pozná „hreben"', kn.it === 'PRISL|hreben|3' && kn.vsech === 10 && kn.csv === 'hreben|hreben', JSON.stringify(kn));
   check('knihovna: hřeben se nenabízí jako příslušenství přístroje; z knihovny přes vybrané → hřeben 3P 16 mm²', kn.prislNe === false && kn.zKnih === '3:16:2', kn.zKnih);
   check('starý / nový rozvaděč bez hřebenů a vodičů: data bez nových klíčů', kn.klice === 'false|false|-1', kn.klice);
 

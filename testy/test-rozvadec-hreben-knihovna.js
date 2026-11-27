@@ -35,8 +35,8 @@ const w = ms => new Promise(r => setTimeout(r, ms));
   check('hreben s vyplněnými poli validuje se bez chyb, druh = hreben', val.primo.chyby.length === 0 && val.primo.polozka.druh === 'hreben' &&
     val.primo.polozka.poly === '3' && val.primo.polozka.prurez === 10 && val.primo.polozka.In === 63 && val.primo.polozka.polu === 12 && val.primo.polozka.roztecMm === 18,
     JSON.stringify(val.primo.polozka));
-  const neplatne = await p.evaluate(() => rozvValidovat({ druh: 'hreben', poly: '2', prurez: '10', polu: '12' }));
-  check('neplatné póly hřebenu (2) = chyba', neplatne.chyby.some(c => /póly hřebenu/.test(c)), JSON.stringify(neplatne.chyby));
+  const neplatne = await p.evaluate(() => rozvValidovat({ druh: 'hreben', poly: '5', prurez: '10', polu: '12' }));
+  check('neplatné póly hřebenu (5) = chyba', neplatne.chyby.some(c => /póly hřebenu/.test(c)), JSON.stringify(neplatne.chyby));
 
   // ── 2. CSV: nové sloupce na konci šablony ─────────────────────────────
   const csvHl = await p.evaluate(() => ROZV_CSV.map(c => c[0]).join(';'));

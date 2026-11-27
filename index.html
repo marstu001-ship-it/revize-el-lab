@@ -32350,6 +32350,8 @@ function rozvVestavene() {
   });
   P('hreben-1N-16', 'PRISL', 'Propojovací hřeben 1P+N 16 mm², 57 pólů', { prislTyp: 'hreben', poly: '1+N', prurez: '16 mm²', sirka: 1 });
   P('hreben-3N-16', 'PRISL', 'Propojovací hřeben 3P+N 16 mm², 57 pólů', { prislTyp: 'hreben', poly: '3+N', prurez: '16 mm²', sirka: 1 });
+  P('hreben-2-16', 'PRISL', 'Propojovací hřeben 2P 16 mm², 57 pólů', { prislTyp: 'hreben', poly: '2', prurez: '16 mm²', sirka: 1 });
+  P('hreben-4-16', 'PRISL', 'Propojovací hřeben 4P 16 mm², 57 pólů', { prislTyp: 'hreben', poly: '4', prurez: '16 mm²', sirka: 1 });
   P('vn-vyraz', 'VNEJSI', 'Vyrážecí tlačítko CENTRAL STOP', { prislTyp: 'hrib', kontakty: '1Z1V' });
   P('vn-tl', 'VNEJSI', 'Tlačítko (mimo rozvaděč)', { prislTyp: 'tlacitko', kontakty: '1Z' });
   P('vn-hdo', 'VNEJSI', 'Kontakt HDO (přijímač HDO)', { prislTyp: 'hdo', kontakty: '1Z' });
@@ -37336,7 +37338,14 @@ function rzpWNajit(uid) { return rzpVodice(__rz).filter(function (w) { return w.
 // s prvním hřebenem, starý rozvaděč se nemění. Jen DBO.
 var RZH_RADA = [{ prurez: 10, In: 63 }, { prurez: 16, In: 80 }, { prurez: 25, In: 100 }];
 var RZH_POLU = 57;
-var RZH_POLY = { '1': { f: 1, t: '1P' }, '3': { f: 3, t: '3P' }, '1+N': { f: 1, t: '1P+N' }, '3+N': { f: 3, t: '3P+N' } };
+var RZH_POLY = { '1': { f: 1, t: '1P' }, '3': { f: 3, t: '3P' }, '1+N': { f: 1, t: '1P+N' }, '3+N': { f: 3, t: '3P+N' }, '2': { f: 1, t: '2P' }, '4': { f: 3, t: '4P' } };
+// Hřeben 2P (2026-11-27, OEZ S2L „L2 (N) L1"): dvě přípojnice, zuby střídavě. Zapojení
+// `h.zapojeni`: chybí / 'LN' = L + N (výchozí — program bere 2pólové přístroje jako L + N,
+// `rozvPoly`), '2L' = dvě fáze. Fáze pro automatické napájení `h.faze` (jen nastavená):
+// u L + N 'L1' | 'L2' | 'L3', u dvou fází 'L1L2' | 'L2L3' | 'L1L3'. Hřeben 4P = L1 L2 L3 N
+// (jako 3P+N, jen označení 4P). Ukládá se jen nastavené — starší hřebeny beze změny.
+var RZH_FAZE_2L = { L1L2: [0, 1], L2L3: [1, 2], L1L3: [0, 2] };
+function rzh2L(h) { return h.poly === '2' && h.zapojeni === '2L'; }
 var RZH_KAT_NAVRH = ['FA', 'FIFA', 'AFDD'];
 var RZH_STRANA_KLIC = 'rz_hreben_strana';   // v profilu technika (STORE.technik) — jde se zálohou
 var __rzhStranaDotaz = false;
@@ -37344,14 +37353,14 @@ function rzhVse(rz) { rz = rz || __rz; return (rz && !pscJe(rz) && rz.hrebeny) |
 function rzhNajit(uid, rz) { if (!uid) return null; var a = rzhVse(rz); for (var i = 0; i < a.length; i++) if (a[i].uid === uid) return a[i]; return null; }
 function rzhJe(uid) { return !!rzhNajit(uid); }
 function rzhUid() { return 'hr' + Date.now().toString(36) + Math.random().toString(36).slice(2, 6); }
-function rzhFazi(h) { return (RZH_POLY[h.poly] || RZH_POLY['3']).f; }
+function rzhFazi(h) { return rzh2L(h) ? 2 : (RZH_POLY[h.poly] || RZH_POLY['3']).f; }
 function rzhPolu(h) { return Math.max(1, Math.round(h.do - h.od)); }
 // Zub hřebenu pro fázi `f`, kam se kreslí pól vodiče puštěného na zub `z` (2026-11-24 LAB):
 // v praxi jde každá fáze svazku pod vlastní šroubek — kliknutý zub dostane svou fázi,
 // ostatní fáze nejbližší zuby se svou fází VPRAVO od něj (u konce hřebenu vlevo).
 // Jen kresba — elektricky je sběrnice hr.uid:h:f stejná pro celý hřeben.
 function rzhZubProFazi(hr, z, f) {
-  var n = rzhPolu(hr), per = hr.poly === '3+N' ? 4 : hr.poly === '1+N' ? 2 : 3, kr = {}, j;
+  var n = rzhPolu(hr), per = hr.poly === '3+N' || hr.poly === '4' ? 4 : hr.poly === '1+N' || hr.poly === '2' ? 2 : 3, kr = {}, j;
   (hr.krytky || []).forEach(function (k) { kr[k] = 1; });
   var ok = function (j) { return j >= 0 && j < n && !kr[j] && rzhZubFaze(hr, j) === f; };
   for (j = z; j < z + per && j < n; j++) if (ok(j)) return j;
@@ -37370,7 +37379,8 @@ function rzhStrana(h) { return h && h.strana === 'dole' ? 'b' : 't'; }
 function rzhZubFaze(h, j) {
   if (h.poly === '1') return 0;
   if (h.poly === '1+N') return j % 2 ? 'N' : 0;
-  if (h.poly === '3+N') return j % 4 === 3 ? 'N' : j % 4;
+  if (h.poly === '3+N' || h.poly === '4') return j % 4 === 3 ? 'N' : j % 4;
+  if (h.poly === '2') return rzh2L(h) ? j % 2 : (j % 2 ? 'N' : 0);
   return j % 3;
 }
 function rzhStranaVychozi() { var v = STORE.technik && STORE.technik[RZH_STRANA_KLIC]; return v === 'dole' ? 'dole' : 'nahore'; }
@@ -37431,6 +37441,15 @@ function rzhAuto(rz, manual, krom, vyst) {
     var S = rzpX(z), fs = rzpFaziX(S); if (!fs) return;
     var ia = 0;
     if (fs > 1 && f === 1) { var x0 = rzpX(cov[0]), kf = RZP_FAZE.indexOf(x0 && x0.faze); ia = kf >= 0 && kf < fs ? kf : 0; }
+    if (h.poly === '2' && fs >= 3 && h.faze) {   // hřeben 2P: fáze zvolená v panelu (jen u automatického napájení)
+      if (f === 1 && RZP_FAZE.indexOf(h.faze) !== -1) ia = RZP_FAZE.indexOf(h.faze);
+      var dv = f === 2 && RZH_FAZE_2L[h.faze];
+      if (dv && dv[1] - dv[0] > 1) {   // L1 + L3 nejdou jedním svazkem po sobě jdoucích pólů — dva vodiče
+        dv.forEach(function (pa, k) { out.push({ auto: 1, hreben: 1, a: { uid: z, strana: vyst(z), pol: pa }, b: { uid: h.uid, strana: 'h', pol: k }, n: 1 }); });
+        return;
+      }
+      if (dv) ia = dv[0];
+    }
     out.push({ auto: 1, hreben: 1, a: { uid: z, strana: vyst(z), pol: ia }, b: { uid: h.uid, strana: 'h', pol: 0 }, n: Math.min(fs, f) });
   });
   return out;
@@ -37497,7 +37516,8 @@ function rzhKontroly(h, S) {
   var kat = {}; cov.forEach(function (x) { kat[x.p.kat === 'FI' || x.p.kat === 'QM' ? 'velky' : 'maly'] = 1; });
   if (kat.velky && kat.maly) u.push({ t: 'Hřeben přes přístroje různé výšky nebo roztečí (chránič / vypínač s jističi) – ověřte typ hřebenu (hřeben pro chránič + jističe).' });
   if (rzhFazi(h) === 1) cov.forEach(function (x) { if (rzpFaziX(x) >= 3) u.push({ t: (x.ozn || rozvNazev(x.p)) + ' je trojfázový na jednofázovém hřebenu – použijte 3P hřeben.' }); });
-  zub.forEach(function (z) { if (z.konflikt === 'N') u.push({ t: 'Zub ' + (z.j + 1) + ' (fáze) míří na pól N přístroje ' + (z.x.ozn || '') + ' – dejte krytku, nebo použijte hřeben s N.' }); });
+  if (rzhFazi(h) === 2) cov.forEach(function (x) { if (rzpFaziX(x) >= 3) u.push({ t: (x.ozn || rozvNazev(x.p)) + ' je trojfázový na hřebenu se dvěma fázemi – použijte 3P hřeben.' }); });
+  zub.forEach(function (z) { if (z.konflikt === 'N') u.push({ t: 'Zub ' + (z.j + 1) + ' (fáze) míří na pól N přístroje ' + (z.x.ozn || '') + ' – ' + (rzh2L(h) ? 'přepněte zapojení hřebenu na L + N, nebo dejte krytku.' : 'dejte krytku, nebo použijte hřeben s N.') }); });
   var man = rzpVodice(__rz);
   cov.forEach(function (x) { if (man.some(function (w) { return w.b.uid === x.uid; })) u.push({ t: (x.ozn || rozvNazev(x.p)) + ' má kromě hřebenu i natažený vodič – ověřte, odkud je napájený.' }); });
   return u;
@@ -37527,12 +37547,14 @@ function rzhSvg(rz, o) {
       else h += '<rect class="rz-hr-zub" data-zub="' + z.j + '" data-faze="' + (z.faze === 'N' ? 'N' : RZP_FAZE[z.faze]) + '" x="' + Z(cx - 0.6) + '" y="' + Z(G.zy1) + '" width="1.2" height="' + Z(G.zy2 - G.zy1) + '" fill="#b87333" stroke="#7a4a1e" stroke-width="0.15"/>';
     });
     h += '<rect class="rz-hr-lista" x="' + Z(G.x1 + 0.2) + '" y="' + Z(G.by) + '" width="' + Z(G.x2 - G.x1 - 0.4) + '" height="' + G.bh + '" rx="0.8" fill="' + (nahled ? 'rgba(74,74,74,.45)' : '#4a4a4a') + '" stroke="' + (vyb ? '#2B579A' : '#222') + '" stroke-width="' + (vyb ? 0.7 : 0.25) + '"' + (nahled ? ' stroke-dasharray="1.6 1"' : '') + '/>';
-    if (rzhFazi(hr) === 3 && !o.lod) {   // L1 L2 L3 nad zuby (jen když je místo)
+    var nove = hr.poly === '2' || hr.poly === '4';   // 2P / 4P (2026-11-27): popisky i u 2 fází a N
+    if ((rzhFazi(hr) === 3 || nove) && !o.lod) {   // L1 L2 L3 nad zuby (jen když je místo)
       // skutečná fáze lišty podle toho, který vodič ji napájí (2026-11-24 LAB); bez napětí výchozí pořadí
       var SE = null; try { SE = (rzpStav(rz, rzpVodice(rz)) || {}).E; } catch (er) { SE = null; }
       zuby.forEach(function (z) {
-        if (z.faze === 'N' || z.krytka || !z.x) return;
-        var en = SE && SE[hr.uid + ':h:' + z.faze], fl = en && en.f ? en.f : RZP_FAZE[z.faze];
+        if (z.krytka || !z.x) return;
+        if (z.faze === 'N') { if (nove && z.lab === 'N') h += '<text class="rz-hr-f" x="' + Z(RZG.okraj + z.t * M) + '" y="' + Z(G.by + G.bh - 0.65) + '" font-size="1.7" text-anchor="middle" fill="#9cc7ff" pointer-events="none">N</text>'; return; }
+        var en = SE && SE[hr.uid + ':h:' + z.faze], fl = en && en.f ? en.f : (rzhFazi(hr) === 1 ? 'L' : RZP_FAZE[z.faze]);
         h += '<text class="rz-hr-f" x="' + Z(RZG.okraj + z.t * M) + '" y="' + Z(G.by + G.bh - 0.65) + '" font-size="1.7" text-anchor="middle" fill="#e7e7e7" pointer-events="none">' + fl + '</text>';
       });
     }
@@ -37555,10 +37577,25 @@ function rzhNovy(rada, od, dd, poly, o) {
   o = o || {};
   return { uid: rzhUid(), rada: rada, od: od, do: dd, poly: poly, strana: o.strana || rzhStranaVychozi(), prurez: o.prurez || 10, krytky: [] };
 }
-function rzhPolyNavrh(rada, od, dd) {   // samé 1P → 1P, přes trojfázový přístroj → 3P
+function rzhPolyNavrh(rada, od, dd) {   // samé 1P → 1P, přes trojfázový přístroj → 3P; samé 2P / 4P → 2P / 4P
   var t = { rada: rada, od: od, do: dd, poly: '1', krytky: [] }, tri = false;
   rzhZuby(t).forEach(function (z) { if (z.x && rzpFaziX(z.x) >= 3) tri = true; });
-  return tri ? '3' : '1';
+  return rzhPolyPristroju(rada, od, dd) || (tri ? '3' : '1');
+}
+// Hřeben 2P / 4P jen přes samé přístroje se 2 / 4 póly po jednom pólu na modul
+// (2P chránič, 2P jistič, 4P chránič) — přístroj 1+N v jednom modulu má oba póly
+// pod jedním zubem a 2P hřeben se na něj nehodí.
+function rzhPolyPristroju(rada, od, dd) {
+  var r = __rz && __rz.rady[rada]; if (!r) return null;
+  var poz = rozvPozice(r), pocty = {};
+  (r.prvky || []).forEach(function (x, i) {
+    var p0 = poz[i], w = rozvW(x);
+    if (p0 + w <= od + 0.02 || p0 >= dd - 0.02 || !rzpZapojitelny(x)) return;
+    var n = rozvPoly(x).length;
+    pocty[(n === 2 || n === 4) && Math.abs(w - n) < 0.05 ? n : 'jine'] = 1;
+  });
+  var k = Object.keys(pocty);
+  return k.length === 1 && k[0] !== 'jine' ? (k[0] === '2' ? '2' : '4') : null;
 }
 // Přidá hřeben (průřez podle zátěže); zeptá se jednou na stranu, když ji profil nezná.
 function rzhPridat(h, popis, vodic) {
@@ -37631,7 +37668,7 @@ function rzhNavrhy(jenRada) {
   });
   return out.map(function (q) {
     var od = Math.floor(q.od * 2 + 1e-6) / 2, dd = od + Math.max(1, Math.ceil(q.do - od - 1e-6));
-    var fz = rozvJePrivod(q.z) ? 3 : rzpFaziX(rzpX(q.z)), poly = fz >= 3 ? '3' : rzhPolyNavrh(q.rada, od, dd);
+    var fz = rozvJePrivod(q.z) ? 3 : rzpFaziX(rzpX(q.z)), poly = rzhPolyPristroju(q.rada, od, dd) || (fz >= 3 ? '3' : rzhPolyNavrh(q.rada, od, dd));
     var h = rzhNovy(q.rada, od, dd, poly);
     var S = rzpStav(__rz), vs = function (u) { var r = S.vys[u]; return r && r.pod && r.vstup === 'b' ? 't' : 'b'; };
     var w = null;
@@ -37783,7 +37820,8 @@ function rzhKnihVolby(h) {
     if (r) rady[r] = (rady[r] || 0) + 1;
     if (v) vyrobci[v] = (vyrobci[v] || 0) + 1;
   });
-  var lib = rozvKnihovnaVse().filter(function (it) { return it.druh === 'hreben' && it.poly === h.poly; });
+  var stejne = function (a, b) { var n = function (v) { return v === '4' ? '3+N' : v; }; return n(a) === n(b); };   // 4P = 3P+N (L1 L2 L3 N)
+  var lib = rozvKnihovnaVse().filter(function (it) { return it.druh === 'hreben' && stejne(it.poly, h.poly); });
   var skore = function (it) {
     var tok = String(it.prislK || '').split(/[,;\/]+/).map(function (s) { return rozvNorm(s).trim(); }).filter(Boolean);
     if (tok.some(function (s) { return rady[s]; })) return 2;
@@ -37832,8 +37870,9 @@ function rzhPanelHtml(h) {
       'napájí: <b>' + esc(rzhOzn(h) || '—') + '</b> · ' + (src ? 'z ' + esc(rozvJePrivod(src) ? (src === '@privod' ? 'přívodu' : 'přívodu (' + rozvPrivodPopisUid(__rz, src) + ')') : rzpOzn(src)) : '<span class="rz-hr-bez">zatím bez napájení – natáhněte vodič na hřeben (🔌 Zapojení)</span>') + '<br>' +
       esc(rzhZatezText(zt)) + (kap ? ' · hřeben ' + kap + ' A' : '') + '</div>' +
     (u.length ? '<div class="rp-upoz rz-hr-upoz">' + u.map(function (q) { return '⚠ ' + esc(q.t) + (q.prurez ? ' <button class="dok-mini" data-action="tdRHrPrurez" data-p="' + q.prurez + '">Použít</button>' : ''); }).join('<br>') + '</div>' : '') +
-    '<div class="g2"><div class="f"><label>Póly</label>' + sel('poly', [['1', '1P'], ['3', '3P'], ['1+N', '1P+N'], ['3+N', '3P+N']], h.poly) + '</div>' +
+    '<div class="g2"><div class="f"><label>Póly</label>' + sel('poly', [['1', '1P'], ['3', '3P'], ['1+N', '1P+N'], ['3+N', '3P+N'], ['2', '2P'], ['4', '4P']], h.poly) + '</div>' +
     '<div class="f"><label>Strana</label>' + sel('strana', [['nahore', 'shora'], ['dole', 'zespodu']], h.strana) + '</div></div>' +
+    (h.poly === '2' ? rzh2PanelHtml(h, sel) : '') +
     '<div class="f"><label>Průřez (zatížitelnost – ověřte podle výrobce hřebenu)</label>' + sel('prurez', RZH_RADA.map(function (r) { return [r.prurez, r.prurez + ' mm² – ' + r.In + ' A']; }), h.prurez) + '</div>' +
     '<div class="f"><label>Hřeben z knihovny' + (knihVolby.length ? '' : ' (žádný s póly ' + RZH_POLY[h.poly].t + ' v knihovně není)') + '</label>' + knihSel + '</div>' +
     '<div class="rp-akce"><button class="dok-mini" data-action="tdRHrPrepnout" title="Hřeben shora ↔ zespodu (klávesa S)">⇅ Shora / zespodu</button>' +
@@ -37845,17 +37884,34 @@ document.addEventListener('change', function (e) {
   var t = e.target; if (!t || !t.classList || !t.classList.contains('rz-hr-pole') || !__rz || !__rz.hrVyber) return;
   var k = t.getAttribute('data-hr-pole'), v = t.value;
   if (k === 'knih') { rzhKnihNastavit(__rz.hrVyber, v); return; }
-  rzhZmenit(__rz.hrVyber, 'Hřeben', function (h) { if (k === 'prurez') { h.prurez = +v; delete h.In; delete h.knih; delete h.p; } else h[k] = v; });
+  rzhZmenit(__rz.hrVyber, 'Hřeben', function (h) {
+    if (k === 'prurez') { h.prurez = +v; delete h.In; delete h.knih; delete h.p; }
+    else if (k === 'zapojeni') { if (v === '2L') h.zapojeni = '2L'; else delete h.zapojeni; delete h.faze; }   // jiné zapojení = jiné fáze
+    else if (k === 'faze') { if (v) h.faze = v; else delete h.faze; }
+    else { h[k] = v; if (k === 'poly' && v !== '2') { delete h.zapojeni; delete h.faze; } }
+  });
 });
 TD_AKCE.tdRHrPrurez = function (el) { var p = +el.getAttribute('data-p'); if (__rz && __rz.hrVyber) rzhZmenit(__rz.hrVyber, 'Průřez hřebenu', function (h) { h.prurez = p; delete h.In; }); };
 TD_AKCE.tdRHrPrepnout = function () { if (__rz && __rz.hrVyber) rzhZmenit(__rz.hrVyber, 'Strana hřebenu', function (h) { h.strana = h.strana === 'dole' ? 'nahore' : 'dole'; }); };
 TD_AKCE.tdRHrSmazat = function () { if (__rz && __rz.hrVyber) rzhSmazat(__rz.hrVyber); };
 TD_AKCE.tdRHrHotovo = function () { if (!__rz) return; __rz.hrVyber = null; rozvSvgPrekreslit(); rozvVlastnostiVykreslit(); };
+// Panel hřebenu 2P: zapojení L + N / dvě fáze a fáze pro automatické napájení.
+function rzh2PanelHtml(h, sel) {
+  var dv = rzh2L(h), man = rzpVodice(__rz).some(function (w) { return w.a.uid === h.uid || w.b.uid === h.uid; });
+  var fv = dv ? [['', 'L1 + L2'], ['L2L3', 'L2 + L3'], ['L1L3', 'L1 + L3']] : [['', 'automaticky'], ['L1', 'L1'], ['L2', 'L2'], ['L3', 'L3']];
+  return '<div class="g2"><div class="f"><label>Zapojení</label>' + sel('zapojeni', [['LN', 'L + N'], ['2L', 'dvě fáze']], dv ? '2L' : 'LN') + '</div>' +
+    '<div class="f"><label>Fáze' + (dv ? '' : ' (L)') + '</label>' + sel('faze', fv, h.faze || '') + '</div></div>' +
+    '<div class="dk-pozn">' + (dv ? 'Zuby střídavě L1 / L2 (dvě přípojnice). Na 2pólový přístroj (L + N) se nehodí — jen přes jednopólové přístroje.'
+      : 'Zuby střídavě L / N (dvě přípojnice) — pro 2pólové chrániče a jističe.') +
+    (man ? ' Hřeben napájí natažený vodič — fáze určuje vodič, volba platí jen pro automatické napájení.' : '') + '</div>';
+}
 function rzhKontext(uid) {
   var h = rzhNajit(uid); if (!h) return [];
   return [
     { popis: 'Přepnout ' + (h.strana === 'dole' ? 'nahoru' : 'dolů'), klavesa: 'S', fn: function () { rzhZmenit(uid, 'Strana hřebenu', function (q) { q.strana = q.strana === 'dole' ? 'nahore' : 'dole'; }); } },
-    { popis: rzhFazi(h) === 3 ? '3P → 1P' : '1P → 3P', fn: function () { rzhZmenit(uid, 'Póly hřebenu', function (q) { q.poly = rzhFazi(q) === 3 ? (/N/.test(q.poly) ? '1+N' : '1') : (/N/.test(q.poly) ? '3+N' : '3'); }); } }
+    h.poly === '2' || h.poly === '4'
+      ? { popis: h.poly === '4' ? '4P → 2P' : '2P → 4P', fn: function () { rzhZmenit(uid, 'Póly hřebenu', function (q) { q.poly = q.poly === '4' ? '2' : '4'; delete q.zapojeni; delete q.faze; }); } }
+      : { popis: rzhFazi(h) === 3 ? '3P → 1P' : '1P → 3P', fn: function () { rzhZmenit(uid, 'Póly hřebenu', function (q) { q.poly = rzhFazi(q) === 3 ? (/N/.test(q.poly) ? '1+N' : '1') : (/N/.test(q.poly) ? '3+N' : '3'); }); } }
   ].concat(RZH_RADA.map(function (r, i) {
     return { popis: 'Průřez ' + r.prurez + ' mm² (' + r.In + ' A)' + (+h.prurez === r.prurez ? ' ✓' : ''), oddel: i === 0, fn: function () { rzhZmenit(uid, 'Průřez hřebenu', function (q) { q.prurez = r.prurez; delete q.In; }); } };
   })).concat([{ popis: 'Smazat hřeben', klavesa: 'Delete', oddel: true, fn: function () { rzhSmazat(uid); } }]);
@@ -46376,7 +46432,7 @@ function rozvValidovat(raw) {
     ['ip', 'ik', 'rozmery'].forEach(function (k) { r[k] = t0(k); });
   } else if (druh === 'hreben') {   // propojovací hřeben (2026-11-18) — nikdy se nekreslí jako přístroj
     var polyH = rozvPolyZTextu(o.poly);
-    if (polyH === null || ['1', '3', '1+N', '3+N'].indexOf(polyH) === -1) { chyby.push('póly hřebenu „' + o.poly + '" (1, 1+N, 3 nebo 3+N)'); polyH = ''; }
+    if (polyH === null || ['1', '1+N', '2', '3', '3+N', '4'].indexOf(polyH) === -1) { chyby.push('póly hřebenu „' + o.poly + '" (1, 1+N, 2, 3, 3+N nebo 4)'); polyH = ''; }
     r.poly = polyH;
     r.prurez = cislo('prurez', 'průřez', true);
     r.In = cislo('In', 'In', false);
