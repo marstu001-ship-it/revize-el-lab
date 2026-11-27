@@ -1399,16 +1399,34 @@ a prohlášení (hlavička + `skrin` + `p`). `data.model = 1`.
   (prohlížeč nepovoluje úložiště) – otevřete program v běžném okně"); DOK ani
   uložená knihovna se nezmění. Totéž hlídá `dokKnihovnaZapsat()` (obnova
   zálohy) — vrátí `false` a nic nepřepíše. Import páruje id přes mapu, ne
-  `findIndex` (30 000 položek by jinak bylo kvadratické). Na iOS IndexedDB
-  program vypíná vždy, takže tam velký import neprojde nikdy (localStorage
-  by stejně nestačil). **Trvalé úložiště:** `requestPersistentStorage()` při
+  `findIndex` (30 000 položek by jinak bylo kvadratické). **iOS (2026-11-27):**
+  revize, dokumenty a ostatní data dál jen v localStorage (`IS_IOS` v `openIdb`
+  beze změny), ale **knihovna výrobců má vlastní spojení s IndexedDB**
+  (`openIdbKnihovna` → `idbKnih`, `knihDb()`; mimo iOS = `idb`), jen klíč
+  `dok_rozvKnihovna`, se stejnou pojistkou (časový limit 3 s, selhání →
+  localStorage / hláška); knihovna z dřívějška v localStorage se při načtení
+  přestěhuje do IndexedDB. **Výběr výrobců v náhledu importu** (`rozvImportVyrobci`,
+  `__rzImport.vyrVyp` = odškrtnutí, výchozí vše; zaškrtávátka s počtem položek
+  a odhadem velikosti = délka JSON): sbalené „Importovat jen vybrané výrobce",
+  a když se knihovna nevejde (bez IndexedDB nad ~4 MB), okno zůstane otevřené
+  s rozbaleným výběrem a hláškou „Celá knihovna se do tohoto zařízení nevejde –
+  vyberte jen výrobce, které používáte (odhad: OEZ 1,1 MB, …)". Výběr jde
+  doplnit dalším importem (sloučení podle id/totožnosti, `rozvImportSlouceni`).
+  `KNIH_NEJDE_ULOZIT` (přímý zápis, obnova zálohy) = „Knihovna výrobců se do
+  tohoto zařízení nevejde – naimportujte jen výrobce, které používáte".
+  **Trvalé úložiště:** `requestPersistentStorage()` při
   startu jednou `navigator.storage.persist()` (bez dotazu), v Nastavení pod
   automatickými zálohami řádek `#nast-uloziste` „Úložiště: trvalé / může ho
   prohlížeč smazat · obsazeno X MB" (`ulozisteRadek`, `estimate()`); bez API
   se neukazuje. Test: `testy/test-uloziste-pojistky.js` (bez IndexedDB malý
-  import projde a velký se zastaví, přímý zápis, persist jednou, tři podoby
-  řádku, 30 000 položek: vykreslení, hledání, filtr < 100 ms). **Upraveno:**
-  `test-knihovna-uloziste.js` (iOS: velký import se zastaví místo „jen v paměti").
+  import projde, velký nabídne výběr výrobců a 2 výrobci projdou, doplnění
+  dalším importem, přímý zápis; iOS (UA iPhone): knihovna 15 000 do IndexedDB,
+  v IndexedDB jen ona a revize v localStorage bajtově jako stará verze; iOS bez
+  IndexedDB: hláška s výběrem a import 3 výrobců; iPad s desktopovým UA beze
+  změny; persist jednou, tři podoby řádku, 30 000 položek < 100 ms). V
+  `test-mobil.js` stav „rozvaděč – import knihovny, výběr výrobců (okno)".
+  **Upraveno:** `test-knihovna-uloziste.js` (iOS bez IndexedDB: velký import
+  se zastaví; IndexedDB se v tom oddílu simuluje jako nedostupná).
 - **Informační pruh nahoře v knihovně** (pokyn uživatele 2026-10-19,
   `ROZV_INFO_KNIHOVNA`, `rozvInfoKnihovnaHtml`) — v editoru nad kartami
   Přístroje/Skříně i ve správě knihovny na seznamu, text doslova:

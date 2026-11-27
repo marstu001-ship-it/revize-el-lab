@@ -47,8 +47,11 @@ function genCsv(n, dlouhyText) {
 }
 
 async function stranka(b, port, ctxOpts) {
-  const ctx = await b.newContext(Object.assign({ viewport: { width: 1366, height: 900 }, acceptDownloads: true }, ctxOpts || {}));
+  const o2 = Object.assign({}, ctxOpts || {}); delete o2.__bezIdb;
+  const ctx = await b.newContext(Object.assign({ viewport: { width: 1366, height: 900 }, acceptDownloads: true }, o2));
   await ctx.addInitScript(() => { try { navigator.serviceWorker.register = () => new Promise(() => {}); } catch (e) {} });
+  // iOS bez IndexedDB (od 2026-11-27 má iOS IndexedDB pro knihovnu — tady se simuluje její selhání)
+  if (ctxOpts && ctxOpts.__bezIdb) await ctx.addInitScript(() => { Object.defineProperty(window, 'indexedDB', { get: () => undefined, configurable: true }); });
   const p = await ctx.newPage();
   p.__err = [];
   p.on('pageerror', e => p.__err.push(e.message));
@@ -151,6 +154,7 @@ function nastavOznaceni(p, hodnota) {
       window.__idbWrites = [];
       const puv = idbSetMulti;
       idbSetMulti = function (obj) { window.__idbWrites.push(Object.keys(obj)); return puv(obj); };
+      if (typeof knihKvSet === 'function') { const puv2 = knihKvSet; knihKvSet = function (db, obj) { window.__idbWrites.push(Object.keys(obj)); return puv2(db, obj); }; }
     });
 
     const uid = await otevritRozvadec(p1);
@@ -245,7 +249,7 @@ function nastavOznaceni(p, hodnota) {
   //    velká (15000) ne: hláška, dokumenty zůstanou v pořádku.
   // ═══════════════════════════════════════════════════════════════════
   {
-    const p = await stranka(b, PORT, { userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15' });
+    const p = await stranka(b, PORT, { userAgent: 'Mozilla/5.0 (iPhone; CPU iPhone OS 17_0 like Mac OS X) AppleWebKit/605.1.15', __bezIdb: true });
     const jeIos = await p.evaluate(() => IS_IOS);
     check('simulace iOS: IS_IOS === true (žádná IndexedDB)', jeIos === true);
     const maIdb = await p.evaluate(() => idb);

@@ -2613,6 +2613,12 @@ html.dark .rz-imp-chyby{background:#3a1f1c;border-color:#6b2c25}
 .rl-pdf-verdikt .v2{font-size:9.5pt;margin-top:1mm}
 .rl-pdf-graf{display:block;margin:1mm 0 2mm}
 .dok-pdf-p.rl-pdf-tucne{font-weight:700}
+/* Import knihovny — výběr výrobců (2026-11-27) */
+.rz-imp-vyr{margin:.2rem 0 .6rem;border:1px solid var(--border);border-radius:6px;padding:.35rem .6rem}
+.rz-imp-vyr summary{cursor:pointer;font-weight:600}
+.rz-imp-vyr-akce{margin:.35rem 0}
+.rz-imp-vyr-seznam{max-height:40vh;overflow:auto}
+.rz-imp-nevejde{margin:.35rem 0;padding:.35rem .5rem;border-left:3px solid #a85400;background:rgba(168,84,0,.08);font-size:.85rem}
 /* ═══ MOBIL ═══════════════════════════════════════════════════════════════
    Telefon na výšku (≤ 600 px) a telefon na šířku (dotyk + výška ≤ 500 px).
    Platí JEN tady — verze pro PC se tím nemění ani o pixel (hlídá
@@ -25543,6 +25549,7 @@ async function init() {
     if (!t.getAttribute('lang')) t.setAttribute('lang', 'cs');
   });
   await loadStore();
+  try { await openIdbKnihovna(); } catch (e) {}   // knihovna výrobců (na iOS jen ona v IndexedDB)
   try { await dokNacist(); } catch (e) {}   // tvorba dokumentace — vlastní úložiště
   migraceKolonky();
   archiv = STORE.archiv || [];
@@ -29687,53 +29694,102 @@ async function dokZapsat() {
 // knihovny (import, vlastní položka, úprava, smazání, ZPĚT), ne při
 // každém uložení dokumentu. Víc oken: tatáž zpráva na kanálu `revize-el-dok`
 // (`{ knihovna: true }`) řekne druhému oknu, že si knihovnu má načíst znovu.
-var DOK_KNIHOVNA_LS = 'revize_el_rz_knihovna';   // jen bez IDB (iOS)
-var __dokKnihovnaBezUloziste = false;   // bez IDB se nevešla ani do localStorage — zůstává jen v paměti pro tuto session
+var DOK_KNIHOVNA_LS = 'revize_el_rz_knihovna';   // jen bez IDB pro knihovnu (selhala i na iOS)
+var __dokKnihovnaBezUloziste = false;   // nevešla se nikam — zůstává jen v paměti pro tuto session
+
+// iOS (2026-11-27): revize, dokumenty a ostatní data dál JEN v localStorage (IS_IOS
+// v openIdb se nemění — historické chyby WebKitu), ale knihovna výrobců (CSV 6,5 MB)
+// se do localStorage nevejde nikdy. Pro ni jediný klíč `dok_rozvKnihovna` v IndexedDB
+// se stejnou pojistkou jako openIdb (časový limit 3 s, při selhání localStorage /
+// hláška). Knihovna jde vždy naimportovat znovu, takže selhání nic neztratí.
+// Mimo iOS je `idbKnih` totéž spojení jako `idb`.
+var idbKnih = null;
+function knihDb() { return idbKnih || idb; }
+function openIdbKnihovna() {
+  return new Promise(function (resolve) {
+    if (idb) { idbKnih = idb; resolve(idb); return; }
+    if (!IS_IOS || !window.indexedDB) { resolve(null); return; }
+    var done = false;
+    var timer = setTimeout(function () { if (!done) { done = true; resolve(null); } }, 3000);
+    function finish(v) { if (done) return; done = true; clearTimeout(timer); idbKnih = v; resolve(v); }
+    try {
+      var req = indexedDB.open(IDB_NAME, IDB_VERSION);
+      req.onupgradeneeded = function (e) { try { var d = e.target.result; if (!d.objectStoreNames.contains(IDB_STORE)) d.createObjectStore(IDB_STORE); } catch (er) {} };
+      req.onsuccess = function () { finish(req.result); };
+      req.onerror = function () { finish(null); };
+      req.onblocked = function () { finish(null); };
+    } catch (e) { finish(null); }
+  });
+}
+function knihKvGet(db, key) {
+  return new Promise(function (resolve) {
+    try { var r = db.transaction(IDB_STORE, 'readonly').objectStore(IDB_STORE).get(key); r.onsuccess = function () { resolve(r.result); }; r.onerror = function () { resolve(undefined); }; }
+    catch (e) { resolve(undefined); }
+  });
+}
+function knihKvSet(db, obj) {   // true = zapsáno
+  return new Promise(function (resolve) {
+    try {
+      var tx = db.transaction(IDB_STORE, 'readwrite'), st = tx.objectStore(IDB_STORE);
+      Object.keys(obj).forEach(function (k) { st.put(obj[k], k); });
+      tx.oncomplete = function () { resolve(true); }; tx.onerror = function () { resolve(false); }; tx.onabort = function () { resolve(false); };
+    } catch (e) { resolve(false); }
+  });
+}
 
 async function dokKnihovnaNacist() {
-  if (idb) {
-    var v = await idbGet('dok_rozvKnihovna');
-    return Array.isArray(v) ? v : null;
+  var db = knihDb();
+  if (db) {
+    var v = await knihKvGet(db, 'dok_rozvKnihovna');
+    if (Array.isArray(v)) return v;
+    if (idb) return null;
   }
   try {
     var s = localStorage.getItem(DOK_KNIHOVNA_LS);
-    if (s) { var p = JSON.parse(s); if (Array.isArray(p)) return p; }
+    if (s) {
+      var p = JSON.parse(s);
+      if (Array.isArray(p)) {
+        // iOS: knihovna z dřívějška v localStorage → přestěhovat do IndexedDB (uvolní místo zprávám)
+        if (db && await knihKvSet(db, { dok_rozvKnihovna: p })) { try { localStorage.removeItem(DOK_KNIHOVNA_LS); } catch (e) {} }
+        return p;
+      }
+    }
   } catch (e) {}
   return null;
 }
 
-// Bez IndexedDB (soukromé okno, iOS, zakázané úložiště) zbývá jen localStorage
-// (limit ~5 MB na CELÝ program — sdílí ho i zprávy a dokumenty). Knihovnu větší
-// než ~4 MB tam zapsat naslepo nejde: buď by zápis selhal, nebo by se vešla
-// a pak by nezbylo místo pro zprávy. Import se proto zastaví (rozvKnihovnaVejdeSe).
+// Bez IndexedDB pro knihovnu (soukromé okno, zakázané úložiště, iOS se selháním
+// IndexedDB) zbývá jen localStorage (limit ~5 MB na CELÝ program — sdílí ho i
+// zprávy a dokumenty). Knihovnu větší než ~4 MB tam zapsat naslepo nejde: buď by
+// zápis selhal, nebo by se vešla a pak by nezbylo místo pro zprávy. Import proto
+// nabídne výběr výrobců (rozvImportNahled) a dokKnihovnaZapsat nic nepřepíše.
 var KNIH_LS_MAX = 4 * 1024 * 1024;   // znaků JSON
-var KNIH_NEJDE_ULOZIT = 'Knihovnu nejde v tomto okně uložit (prohlížeč nepovoluje úložiště) – otevřete program v běžném okně';
+var KNIH_NEJDE_ULOZIT = 'Knihovna výrobců se do tohoto zařízení nevejde – naimportujte jen výrobce, které používáte';
 function rozvKnihovnaVejdeSe(seznam) {
-  if (idb) return true;
+  if (knihDb()) return true;
   try { return JSON.stringify(seznam).length <= KNIH_LS_MAX; } catch (e) { return false; }
 }
 
 async function dokKnihovnaZapsat(seznam, zOkna) {
-  if (!idb && !rozvKnihovnaVejdeSe(seznam)) {
-    // Nic se nepřepisuje — uložená knihovna v localStorage zůstane, jak byla.
-    __dokKnihovnaBezUloziste = true;
-    if (typeof showToast === 'function') showToast(KNIH_NEJDE_ULOZIT, { timeout: 12000 });
-    return false;
+  var db = knihDb(), ok = false;
+  if (db) {
+    ok = await knihKvSet(db, { dok_rozvKnihovna: seznam });
+    if (ok && !idb) { try { localStorage.removeItem(DOK_KNIHOVNA_LS); } catch (e) {} }
+    if (!ok && !idb) idbKnih = null;   // iOS: IndexedDB selhala → zkusit localStorage
   }
-  if (idb) {
-    try { await idbSetMulti({ dok_rozvKnihovna: seznam }); __dokKnihovnaBezUloziste = false; }
-    catch (e) {
+  if (!ok && !knihDb()) {
+    if (!rozvKnihovnaVejdeSe(seznam)) {
+      // Nic se nepřepisuje — uložená knihovna zůstane, jak byla.
       __dokKnihovnaBezUloziste = true;
-      if (typeof showToast === 'function') showToast('Knihovna výrobců se do úložiště tohoto prohlížeče nevejde – po zavření okna ji bude potřeba načíst znovu.', { timeout: 10000 });
+      if (typeof showToast === 'function') showToast(KNIH_NEJDE_ULOZIT, { timeout: 12000 });
+      return false;
     }
-  } else {
-    try { localStorage.setItem(DOK_KNIHOVNA_LS, JSON.stringify(seznam)); __dokKnihovnaBezUloziste = false; }
-    catch (e) {
-      __dokKnihovnaBezUloziste = true;
-      if (typeof showToast === 'function') showToast('Knihovna výrobců se do úložiště tohoto prohlížeče nevejde – po zavření okna ji bude potřeba načíst znovu.', { timeout: 10000 });
-    }
+    try { localStorage.setItem(DOK_KNIHOVNA_LS, JSON.stringify(seznam)); ok = true; } catch (e) { ok = false; }
   }
+  __dokKnihovnaBezUloziste = !ok;
+  if (!ok && typeof showToast === 'function') showToast('Knihovna výrobců se do úložiště tohoto prohlížeče nevejde – po zavření okna ji bude potřeba načíst znovu.', { timeout: 10000 });
   if (!zOkna) { try { if (__dokKanal) __dokKanal.postMessage({ okno: __oknoId, t: Date.now(), knihovna: true }); } catch (e) {} }
+  return ok;
 }
 
 // Další volné číslo pro typ dokumentu: POUVV-0001, POUVV-0002… (max + 1).
@@ -46657,6 +46713,17 @@ async function rozvImportSoubor(soubor) {
 
 function rozvImportNahled() {
   var x = __rzImport, v = x.v, box = document.getElementById('rz-import-obsah');
+  var sel = rozvImportVybrane(x), vyr = rozvImportVyrobci(x);
+  var nevejde = !knihDb() && !rozvKnihovnaVejdeSe(rozvImportSlouceni(sel));
+  var celaNe = nevejde && sel.length === v.polozky.length;
+  var otevr = x.vyrOtevr || nevejde;
+  var odhad = vyr.map(function (q) { return esc(q.v) + ' ' + rozvImportMB(q.zn); }).join(', ');
+  var vyrHtml = (vyr.length > 1 || nevejde) ? '<details class="rz-imp-vyr" id="rz-imp-vyr"' + (otevr ? ' open' : '') + '><summary>Importovat jen vybrané výrobce <span class="dk-nepov">(vybráno ' + vyr.filter(function (q) { return !x.vyrVyp[q.v]; }).length + ' z ' + vyr.length + ')</span></summary>' +
+    (nevejde ? '<div class="rz-imp-nevejde" id="rz-imp-nevejde">' + (celaNe ? 'Celá knihovna se do tohoto zařízení nevejde – vyberte jen výrobce, které používáte' : 'Vybraní výrobci se do tohoto zařízení nevejdou – odeberte některé') + ' (odhad: ' + odhad + ')</div>' : '') +
+    '<div class="rz-imp-vyr-akce"><button type="button" class="dok-mini" data-action="tdRImpVyrVse" data-v="1">Označit vše</button> <button type="button" class="dok-mini" data-action="tdRImpVyrVse" data-v="0">Zrušit výběr</button></div>' +
+    '<div class="rz-imp-vyr-seznam">' + vyr.map(function (q) {
+      return '<label class="teren-radek"><input type="checkbox" class="rz-imp-vyr-ch" data-v="' + esc(q.v) + '"' + (x.vyrVyp[q.v] ? '' : ' checked') + '> <span><b>' + esc(q.v) + '</b> · ' + q.n + ' ' + dokPocetTvar(q.n, ['položka', 'položky', 'položek']).replace(/^\d+ /, '') + ' · ' + rozvImportMB(q.zn) + '</span></label>';
+    }).join('') + '</div><div class="dk-nepov">Výběr jde kdykoli doplnit dalším importem téhož souboru — položky se sloučí, nic se nezdvojí.</div></details>' : '';
   var pr = v.polozky.filter(function (p) { return p.polozka.druh === 'pristroj'; }).length;
   var h = '<div class="rz-imp-souhrn"><b>' + esc(x.soubor) + '</b> (' + esc(v.format) + ')<br>' +
     'Načte se <b>' + v.polozky.length + '</b> ' + dokPocetTvar(v.polozky.length, ['položka', 'položky', 'položek']).replace(/^\d+ /, '') +
@@ -46672,33 +46739,75 @@ function rozvImportNahled() {
     return '<div>' + esc(rozvNazev(it)) + ' <span class="dk-nepov">· ' + esc([it.vyrobce, it.druh === 'skrin' ? it.rady + '×' + it.modulu + ' M'
       : it.druh === 'pole' ? rozvCisloText(it.sirkaMm) + ' × ' + rozvCisloText(it.vyskaMm) + ' mm' : rozvRozmerText(it)].filter(Boolean).join(' · ')) + '</span></div>';
   }).join('') + (v.polozky.length > 8 ? '<div class="dk-nepov">…</div>' : '') + '</div>';
-  box.innerHTML = h;
+  var sc = box.closest('.modal'), top = sc ? sc.scrollTop : 0;
+  box.innerHTML = vyrHtml + h;
+  if (sc) sc.scrollTop = top;
   var b = document.getElementById('rz-import-ulozit');
-  b.disabled = !v.polozky.length;
-  b.textContent = v.polozky.length ? '✓ Uložit do knihovny (' + v.polozky.length + ')' : 'Není co uložit';
+  b.disabled = !sel.length;
+  b.textContent = sel.length ? '✓ Uložit do knihovny (' + sel.length + ')' : (v.polozky.length ? 'Vyberte aspoň jednoho výrobce' : 'Není co uložit');
 }
+// Výběr výrobců v náhledu importu (2026-11-27): `__rzImport.vyrVyp` = odškrtnutí výrobci
+// (výchozí žádný = importuje se vše). Odhad velikosti = délka JSON jejich položek.
+function rozvImportVyrKlic(p) { return String(p.polozka.vyrobce || '').trim() || '(bez výrobce)'; }
+function rozvImportVyrobci(x) {
+  var m = {}, por = [];
+  x.v.polozky.forEach(function (p) {
+    var k = rozvImportVyrKlic(p);
+    if (!m[k]) { m[k] = { v: k, n: 0, zn: 0 }; por.push(m[k]); }
+    m[k].n++;
+    try { m[k].zn += JSON.stringify(p.polozka).length + 1; } catch (e) {}
+  });
+  return por.sort(function (a, b) { return b.zn - a.zn; });
+}
+function rozvImportVybrane(x) { x.vyrVyp = x.vyrVyp || {}; return x.v.polozky.filter(function (p) { return !x.vyrVyp[rozvImportVyrKlic(p)]; }); }
+function rozvImportMB(zn) { var mb = zn / 1048576; return mb < 0.1 ? '< 0,1 MB' : mb.toFixed(1).replace('.', ',') + ' MB'; }
+function rozvImportSlouceni(sel) {   // knihovna po importu vybraných (sloučení podle id = totožnosti)
+  var nova = DOK.rozvKnihovna.slice(), poz = {};
+  nova.forEach(function (y, i) { poz[y.id] = i; });
+  sel.forEach(function (p) {
+    var i = poz[p.polozka.id];
+    if (i !== undefined) nova[i] = p.polozka; else { poz[p.polozka.id] = nova.length; nova.push(p.polozka); }
+  });
+  return nova;
+}
+document.addEventListener('change', function (e) {
+  var t = e.target; if (!t || !t.classList || !t.classList.contains('rz-imp-vyr-ch') || !__rzImport) return;
+  __rzImport.vyrVyp = __rzImport.vyrVyp || {};
+  if (t.checked) delete __rzImport.vyrVyp[t.getAttribute('data-v')]; else __rzImport.vyrVyp[t.getAttribute('data-v')] = 1;
+  __rzImport.vyrOtevr = true; rozvImportNahled();
+});
+TD_AKCE.tdRImpVyrVse = function (el) {
+  var x = __rzImport; if (!x) return;
+  x.vyrVyp = {};
+  if (el.getAttribute('data-v') === '0') rozvImportVyrobci(x).forEach(function (q) { x.vyrVyp[q.v] = 1; });
+  x.vyrOtevr = true; rozvImportNahled();
+};
 
 TD_AKCE.tdRImportZavrit = function () { __rzImport = null; closeModal('modal-rz-import'); };
 TD_AKCE.tdRImportUlozit = async function () {
   var x = __rzImport; if (!x || !x.v.polozky.length) return;
-  closeModal('modal-rz-import'); __rzImport = null;
+  var sel = rozvImportVybrane(x);
+  if (!sel.length) { showToast('Vyberte aspoň jednoho výrobce.'); return; }
   await dokNacist();
   var pred = dokKopie(DOK.rozvKnihovna);
-  // Výsledek se nejdřív složí stranou — když se bez IndexedDB nevejde,
-  // import se zastaví a dosavadní knihovna zůstane netknutá.
-  var nova = DOK.rozvKnihovna.slice(), poz = {};
-  nova.forEach(function (y, i) { poz[y.id] = i; });
-  x.v.polozky.forEach(function (p) {
-    var i = poz[p.polozka.id];
-    if (i !== undefined) nova[i] = p.polozka; else { poz[p.polozka.id] = nova.length; nova.push(p.polozka); }
-  });
-  if (!rozvKnihovnaVejdeSe(nova)) { showToast(KNIH_NEJDE_ULOZIT, { timeout: 12000 }); return; }
+  // Výsledek se nejdřív složí stranou — když se do zařízení nevejde, okno zůstane
+  // otevřené s výběrem výrobců a dosavadní knihovna zůstane netknutá.
+  var nova = rozvImportSlouceni(sel);
+  if (!rozvKnihovnaVejdeSe(nova)) {
+    x.vyrOtevr = true; rozvImportNahled();
+    var hl = document.getElementById('rz-imp-nevejde');
+    showToast(hl ? hl.textContent : KNIH_NEJDE_ULOZIT, { timeout: 12000 });
+    return;
+  }
+  closeModal('modal-rz-import'); __rzImport = null;
+  var mamId = {}; pred.forEach(function (y) { mamId[y.id] = 1; });
+  x.akt = sel.filter(function (p) { return mamId[p.polozka.id]; }).length; x.nove = sel.length - x.akt;
   DOK.rozvKnihovna = nova;
   await dokZapsat();
   try { localStorage.removeItem(ROZV_INFO_KLIC); } catch (e) {}   // s daty výrobců se pruh sám sbalí
   rozvKnihovnaZmenena();
   rozvInfoPrekreslit();
-  showToast('📥 Do knihovny uloženo ' + x.v.polozky.length + ' (nových ' + x.nove + ', aktualizovaných ' + x.akt + ')', { timeout: 9000,
+  showToast('📥 Do knihovny uloženo ' + sel.length + ' (nových ' + x.nove + ', aktualizovaných ' + x.akt + ')', { timeout: 9000,
     actionLabel: '↩ ZPĚT', action: function () { dokNacist().then(function () { DOK.rozvKnihovna = pred; return dokZapsat(); }).then(rozvKnihovnaZmenena); } });
 };
 

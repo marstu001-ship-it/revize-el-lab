@@ -978,6 +978,11 @@ function vsechnyStavy(zalozky) {
     dokOtevritSeznam('rozv');
     await rozvImportSoubor(new File(['kategorie;typ;sirka_moduly;poly\nFA;VYM-1;1;1\nXY;VYM-2;;5\n'], 'vymysleny.csv')); await __M.w(100);
   }));
+  add('rozvaděč – import knihovny, výběr výrobců (okno)', 'Tvorba dokumentace', E(async () => {
+    dokOtevritSeznam('rozv');
+    await rozvImportSoubor(new File(['druh;kategorie;vyrobce;typ;sirka_moduly;poly;in;charakteristika\npristroj;FA;Výrobce A;VA-1;1;1;16;B\npristroj;FA;Výrobce B s delším jménem;VB-1;1;1;10;B\npristroj;FA;Výrobce C;VC-1;1;3;25;C\n'], 'vymysleny.csv'));
+    __rzImport.vyrOtevr = true; __rzImport.vyrVyp = { 'Výrobce C': 1 }; rozvImportNahled(); await __M.w(100);
+  }), '#modal-rz-import');
   D('modal-plan-objekt', E(async () => {
     otevritPlan(); await __M.w(300); document.querySelectorAll('.modal-overlay.open').forEach(o => o.classList.remove('open'));
     const el = document.querySelector('#screen-plan [data-action="planOtevritObjekt"], #screen-plan .plan-nazev');
