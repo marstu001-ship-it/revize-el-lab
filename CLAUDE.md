@@ -4286,6 +4286,37 @@ s chybami i bez, CSV sloupce a import, panel s nabídkou a předvolbou podle
 výrobce, zápis knih/p/prurez/In, délková kontrola i v materiálu, návrat na
 obecný, obecný hřeben beze změny). Karta v Novinkách se nedělala.
 
+### Připomínky ze skládání zásuvkové skříně — délka hřebenu, hledání podle obj. č., víčka (2026-11-27)
+
+Snímky schválil uživatel („to schvaluji").
+
+- **Hřeben se zkracuje na délku přesně přes přístroje, které propojuje.** Dřív se délka zaokrouhlovala po ½ modulu
+  podle místa, kde začal tah myší — zuby pak seděly o ½ modulu vedle (chytil se jen kus FA1) a hřeben přejel i přes
+  svorky (chytil se na ně a automatika napájení se rozpadla). **`rzhPrichytit(rada, a, b, kotva)`** vrátí
+  `{od, do}` = začátek prvního a konec posledního přístroje, jehož STŘED leží v [a, b], jen souvislý úsek přístrojů
+  `rzhNaHreben` (ne svorky X, rezervy, příslušenství; mezera úsek ukončí); `kotva` vybere úsek, kde tah začal.
+  Používá ho natažení myší (i náhled během tahu), tah za kraj, „Navrhnout hřebeny", „Hřeben přes vybrané"
+  (samé svorky = žádný hřeben a hláška) a hřeben z knihovny; posun přichytí začátek na nejbližší přístroj
+  do ½ modulu. Uložené hřebeny se otevřením nemění.
+- Hřeben z knihovny přes vybrané přístroje nese položku výrobce (`knih` + `p`, ne u obecných vestavěných) — delší kus
+  = v materiálu „zkrátit na N pólů – kus z délky M", kratší = upozornění „potřeba K kusy za sebou" (beze změny).
+- **Hledání v knihovně podle typu a objednacího čísla** (`rozvHledText`, `rozvHledShoda`): název, výrobce, řada,
+  typ, **`obj`**, poznámka, kategorie; číslo se najde i bez teček, mezer a pomlček (`rozvHledKompakt` — „6725616"
+  = „672.5616"). Editor (Přístroje i Skříně, placeholder „Hledat – název, typ, obj. č.") a **nové pole Hledat ve
+  správě knihovny** (`__rzSF.q`, „Smazat všech N nalezených" bere i hledání). Řádky knihovny ukazují „obj. č. …"
+  (u skříní s názvem i typ).
+- **Objednací číslo = samostatné pole `obj`** (jen vyplněné; `rozvPolozkaNorm`, `rozvValidovat`). Dřív alias
+  `objednaci_cislo` mířil do `typ`, takže CSV s oběma sloupci jedno přepsalo druhým. CSV sloupec
+  **`objednaci_cislo`** (aliasy obj_cislo, obj, obj_c, katalogove_cislo, kat_cislo, objednaci_kod) jde do `obj`, **jen
+  když soubor má i sloupec typ** — starší CSV jen s objednacím číslem se načte jako dřív (do typu). Knihovnu
+  importovanou dřív je potřeba naimportovat znovu.
+- **Víčka zásuvek kolmo k čelu** — viz „Kolize" v oddílu editoru čela zásuvkové skříně.
+
+Test: `testy/test-rozvadec-hreben-delka.js` (15 kontrol — skutečná myš: natažení přes svorky, kraj přes svorky a na
+FA11, Ctrl+Z, přichycení s mezerou, Navrhnout, přes vybrané, knihovna delší / kratší, panel Kdo koho napájí),
+`testy/test-knihovna-hledani.js` (12 — import obou sloupců i starého CSV, editor obě karty, správa).
+**Upraveno:** `test-zs-celo.js` (víčko kolmo / naplocho), `test-rozvadec-psc.js` (šablona 66 sloupců).
+
 ### Propojovací hřebeny 2P a 4P (2026-11-27)
 
 Zadání uživatele: knihovna výrobců má hřebeny OEZ S2L a S4L a import je odmítal (program znal
@@ -4566,9 +4597,12 @@ Zadání uživatele 2026-11-26 (snímky a GIF schváleny: „Výkres schválen")
   i čela se žlutým vodítkem (`zsPrichytit`, `.zs-vodx` / `.zs-vody`), blok se táhne celý, tažení = jedno ZPĚT;
   šipky 5 mm / Shift 1 mm. **Při stisku se překresluje jen čelo na místě (`zsPrekreslitCelo`, `zsCeloPrekreslit`
   ponechá tentýž prvek `<svg>`)** — nahrazený prvek by ztratil prst (setPointerCapture) a dlouhý stisk.
-- **Kolize (jen nález, neblokuje)** `zsKolizeDuvody`: mimo čelo, okno DIN, jiná zásuvka, **víčko** (narazí na okno,
-  zásuvku, rukojeť). Prostor pro víčko `zsVicko`: `p.vicko` z knihovny / zadaný, jinak **výchozí návrh programu**
-  CEE 16 A 60 · 32 A 70 · 63 A 90 · domovní 35 mm — ověřte u výrobce.
+- **Kolize (jen nález, neblokuje)** `zsKolizeDuvody`: mimo čelo, okno DIN, jiná zásuvka (obrys příruby), **víčko
+  jen u zásuvky „naplocho"** (narazí na okno, zásuvku, rukojeť). **Od 2026-11-27 se víčko ve výchozím stavu
+  odklápí KOLMO k čelu** (v praxi se při zapojení zvedne dopředu) — `zsVicko` vrátí `mm: 0`, žádný čárkovaný
+  prostor, žádná kolize víčka. Jen s vyplněným `p.vicko` (vicko_mm z knihovny, nebo zaškrtávátko „Víčko se
+  odklápí naplocho nahoru" ve vlastnostech zásuvky, které vyplní návrh `zsVickoNavrh`: CEE 16 A 60 · 32 A 70 ·
+  63 A 90 · domovní 35 mm — ověřte u výrobce) se prostor kreslí a hlídá.
 - **Kontroly** (`zsKontroly` v `rzsKontrola`, klikatelné): jistič In > zásuvka In, 1P na 4P/5P, 3P na 230 V,
   Un ≠ napětí vývodu (chyby), zásuvka bez napájení (upozornění), jistič bez vývodu i zásuvky, součet In proti
   vidlici (tipy). Jistič, který napájí zásuvku, se nehlásí jako vývod bez názvu / kabelu.
@@ -4586,7 +4620,7 @@ Zadání uživatele 2026-11-26 (snímky a GIF schváleny: „Výkres schválen")
   natáhne tažením (L jen z jističe, N z N, PE z PE), `celo.vodice = [{ uid, a, b: { u, s }, prurez }]` jen po
   natažení, **⚡ Zapojit automaticky** podle „Napájí ji", vodič L určuje „Napájí ji". Vodiče k zásuvkám jdou do
   **svorkového plánu** (`zsVodiceTabHtml`, i PDF) a **kusovníku** (`rzvMaterial`, „– k zásuvkám na čele N ks").
-- Nové volitelné klíče knihovny / CSV: `vicko_mm`, `vyrez_mm`, `roztec_sroubu_mm` (šablona 65 sloupců).
+- Nové volitelné klíče knihovny / CSV: `vicko_mm`, `vyrez_mm`, `roztec_sroubu_mm` (šablona 65 sloupců; od 2026-11-27 66 — `objednaci_cislo`).
 - **Nabídka otevřená dlouhým stiskem** (obecně, `ktOtevrit`): zvednutí prstu nad položkou ji nespustí — platí až
   další klepnutí (dřív se tak na telefonu spustila položka pod prstem).
 

@@ -1,7 +1,7 @@
 // Editor čela zásuvkové skříně „jako profesionální program" (2026-11-26, bloky „ZÁSUVKOVÁ SKŘÍŇ — editor čela").
 // Skutečnou myší: vložení zásuvky s vybraným jističem na DIN, výběr (klik, Ctrl, Shift, obdélník, Ctrl+A, Esc,
 // klik do prázdna), kontextové menu zásuvky a prázdného čela, zarovnání a rozmístění, tažení s přichycením
-// a žlutým vodítkem = jedno ZPĚT, šipky 5 / 1 mm, kolize víčka (nález, neblokuje), „Zásuvka s jističem"
+// a žlutým vodítkem = jedno ZPĚT, šipky 5 / 1 mm, víčko kolmo / naplocho (nález, neblokuje), „Zásuvka s jističem"
 // (jedno ZPĚT), kontroly (In, póly, Un, bez napájení), klik na nález, přečíslování, štítky na čelo,
 // vrtací plán (měřítko, kóty) a šablona 1:1 na listy A4, pohled Zapojení a natažení vodičů, Zapojit
 // automaticky, vodiče ve svorkovém plánu a kusovníku. Dotykem (telefon 375 px): dlouhý stisk = menu,
@@ -110,13 +110,22 @@ const ukaz = p => p.evaluate(() => { document.querySelectorAll('.toast').forEach
   check('šipka 5 mm, Shift+šipka 1 mm', p5.x === 259 && p5.y === 439, JSON.stringify(p5));
   await p.keyboard.press('Control+z'); await p.keyboard.press('Control+z'); await w(150); await p.keyboard.press('Escape');
 
-  // ── 6. kolize víčka ──
-  await p.evaluate(() => rozvZmena('t', () => { zsZasNajit('z1').pos = { x: 64, y: 380 }; }));
-  const kv = await p.evaluate(() => ({ d: Object.values(zsKolizeDuvody(zsData())).map(x => x.join(' | ')).join(' | '), n: rzsKontrola().filter(n => /-XZ2/.test(n.text) && /víčko/.test(n.text)).length, odh: zsVicko(zsZasNajit('z1')).odhad, cerv: !!document.querySelector('#zs-celo [data-zasuvka="z1"] .zs-kol, #zs-celo .zs-kol') }));
-  check('kolize víčka: „víčko se neodklopí – narazí na zásuvku", nález v Co ještě chybí, víčko výchozí návrh', /víčko se neodklopí – narazí na zásuvku -XZ2/.test(kv.d) && kv.n >= 1 && kv.odh, JSON.stringify(kv));
-  await p.evaluate(() => rozvZmena('t', () => { zsZasNajit('z1').pos.vicko = 0; zsZasNajit('z1').p.vicko = 20; }));
-  check('prostor pro víčko z knihovny / zadaný (20 mm) má přednost před návrhem', await p.evaluate(() => !zsVicko(zsZasNajit('z1')).odhad && zsVicko(zsZasNajit('z1')).mm === 20));
-  await p.keyboard.press('Control+z'); await p.keyboard.press('Control+z'); await w(150);
+  // ── 6. víčko (2026-11-27): výchozí kolmo k čelu = nic nezabírá; naplocho jen se zaškrtnutím ──
+  await p.evaluate(() => rozvZmena('t', () => { zsZasNajit('z1').pos = { x: 64, y: 380 }; zsZasNajit('z2').pos = { x: 64, y: 290 }; }));
+  const kv0 = await p.evaluate(() => { zsVyberNastavit(['z1']); zsPrekreslit(); rozvVlastnostiVykreslit();
+    return { d: Object.values(zsKolizeDuvody(zsData())).map(x => x.join(' | ')).join(' | '), n: rzsKontrola().filter(n => /víčko/.test(n.text)).length,
+      v: zsVicko(zsZasNajit('z1')), prostor: !!document.querySelector('#zs-celo [data-zasuvka="z1"] title') && /odklopení víčka/.test(document.querySelector('#zs-celo [data-zasuvka="z1"]').innerHTML),
+      ch: !!document.querySelector('#rz-vlastnosti [data-zsp="vickoNaplocho"]') && !document.querySelector('#rz-vlastnosti [data-zsp="vickoNaplocho"]').checked }; });
+  check('víčko výchozí kolmo: žádná kolize víčka, žádný nález, žádný čárkovaný prostor, zaškrtávátko „naplocho" nezaškrtnuté', !/víčko/.test(kv0.d) && kv0.n === 0 && kv0.v.mm === 0 && !kv0.v.naplocho && !kv0.prostor && kv0.ch, JSON.stringify(kv0));
+  await p.evaluate(() => { const c = document.querySelector('#rz-vlastnosti [data-zsp="vickoNaplocho"]'); c.checked = true; c.dispatchEvent(new Event('change', { bubbles: true })); });
+  await w(200);
+  const kv = await p.evaluate(() => ({ d: Object.values(zsKolizeDuvody(zsData())).map(x => x.join(' | ')).join(' | '), n: rzsKontrola().filter(n => /víčko/.test(n.text)).length, v: zsVicko(zsZasNajit('z1')) }));
+  check('„víčko se odklápí naplocho nahoru" = prostor z návrhu (32 A → 70 mm) a kolize „víčko se neodklopí – narazí na zásuvku" v Co ještě chybí', /víčko se neodklopí – narazí na zásuvku -XZ\d/.test(kv.d) && kv.n >= 1 && kv.v.naplocho && kv.v.mm === 70, JSON.stringify(kv));
+  await p.evaluate(() => rozvZmena('t', () => { zsZasNajit('z1').p.vicko = 20; }));
+  check('prostor pro víčko zadaný (20 mm) platí', await p.evaluate(() => zsVicko(zsZasNajit('z1')).mm === 20));
+  await p.keyboard.press('Control+z'); await p.keyboard.press('Control+z'); await p.keyboard.press('Control+z'); await w(150);
+  check('Ctrl+Z vrátí víčko i posun', await p.evaluate(() => zsZasNajit('z1').p.vicko == null && zsZasNajit('z2').pos.y !== 290));
+  await p.evaluate(() => { zsVyberZrusit(); });
 
   // ── 7. Zásuvka s jističem (klik) ──
   const pred = await p.evaluate(() => ({ z: __rz.celo.zasuvky.length, j: __rz.rady.reduce((a, r) => a + r.prvky.length, 0) }));

@@ -352,7 +352,7 @@ function pomocnik() {
     return r;
   });
   check('šablona CSV: jen hlavička, středníky, UTF-8 s BOM, typ text/csv', imp.sablona.type === 'text/csv' && /\.csv$/.test(imp.sablona.name) &&
-    imp.sablona.bom === '239,187,191' && /^druh;kategorie;nazev;vyrobce;rada;typ;poly;in;charakteristika;/.test(imp.sablona.text) &&
+    imp.sablona.bom === '239,187,191' && /^druh;kategorie;nazev;vyrobce;rada;typ;objednaci_cislo;poly;in;charakteristika;/.test(imp.sablona.text) &&
     imp.sablona.text.trim().split('\n').length === 1, JSON.stringify(imp.sablona).slice(0, 120));
   check('import CSV: náhled před uložením (3 položky, nové 3) a do té doby nic neuloží', imp.nahled.open && /Načte se 3/.test(imp.nahled.text) &&
     /nových 3/.test(imp.nahled.text) && imp.nahled.btn === '✓ Uložit do knihovny (3)' && imp.predUlozenim === 2, imp.nahled.text.replace(/\n/g, ' | '));
