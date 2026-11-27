@@ -2194,6 +2194,7 @@ html.dark .rz-iso-chyba{background:#3a1e1b!important}
 .rz-st-pokyn{position:absolute;font-size:8pt;color:#333}
 .rz-st-useka{display:inline-block;width:50mm;height:2mm;border:.2mm solid #000;border-top:none;vertical-align:middle;margin-left:2mm}
 .rz-vice{display:block;width:100%;margin:.3rem 0}
+.rz-sf-q{width:100%;max-width:28rem;margin:.3rem 0}
 .rz-sf-radek{display:flex;flex-wrap:wrap;gap:.2rem 1rem;margin:.3rem 0}
 .rz-sf-radek .rz-f-l>span{flex:0 0 auto}
 .rz-sf-radek .rz-f-l select{min-width:10rem}
@@ -32271,6 +32272,8 @@ function rozvPolozkaNorm(o, druh) {
     if (r.kat !== 'JINE') delete r.ozn;   // předponu si nese jen „Ostatní přístroj"
     if (r.kat === 'QF') r.pvCelkem = true;   // u MCCB je Pv celkem za přístroj, ne na pól
   }
+  var ob = String(o.obj != null ? o.obj : o.objCislo != null ? o.objCislo : '').trim();   // objednací číslo (2026-11-27), jen vyplněné
+  if (ob) r.obj = ob;
   if (!r.zdroj) r.zdroj = 'vlastni';
   if (d === 'skrin' && ['domovni', 'prumyslova', 'historicka'].indexOf(r.typSkrine) === -1) r.typSkrine = 'domovni';
   if (d === 'skrin') {   // zásuvková skříň (2026-11-25): svorkovnice od výroby, rukojeť — jen vyplněné
@@ -32484,9 +32487,7 @@ function rozvKnihovnaVse() {
     return __rozvKnihovnaVseCache.vse;
   }
   var vse = rozvVestavene().concat(psc ? pscVestavene() : [], (DOK.rozvKnihovna || []).map(function (x) { return rozvPolozkaNorm(x); }));
-  vse.forEach(function (it) {
-    it._h = rozvNorm([rozvNazev(it), it.vyrobce, it.rada, it.typ, it.pozn, (rozvKat(it.kat) || {}).nazev, it.kat].join(' '));
-  });
+  vse.forEach(function (it) { it._h = rozvHledText(it); it._hc = rozvHledKompakt(it._h); });
   __rozvKnihovnaVseCache = { psc: psc, zdroj: DOK.rozvKnihovna, vse: vse };
   return vse;
 }
@@ -32534,6 +32535,17 @@ function rozvFiltrVychozi(tab) {
 var __rzF = rozvFiltrVychozi('pristroje');
 
 function rozvNorm(s) { return String(s == null ? '' : s).toLowerCase().normalize('NFD').replace(/[̀-ͯ]/g, '').replace(/×/g, 'x'); }
+// Hledání v knihovně (2026-11-27): název, výrobce, řada, typ, objednací číslo, poznámka, kategorie.
+// Objednací číslo se najde i bez teček, mezer a pomlček („6725616" = „672.5616") — porovnává se
+// i „kompaktní" text bez nich.
+function rozvHledText(it) { return rozvNorm([rozvNazev(it), it.vyrobce, it.rada, it.typ, it.obj, it.pozn, (rozvKat(it.kat) || {}).nazev, it.kat].join(' ')); }
+function rozvHledKompakt(h) { return String(h).replace(/[\s.\-\/_]+/g, ''); }
+function rozvHledSlova(q) { q = rozvNorm(q).trim(); return q ? q.split(/\s+/) : []; }
+function rozvHledShoda(it, slova) {
+  if (!slova.length) return true;
+  var h = it._h !== undefined ? it._h : rozvHledText(it), hc = it._hc !== undefined ? it._hc : rozvHledKompakt(h);
+  return slova.every(function (w) { if (h.indexOf(w) !== -1) return true; var c = rozvHledKompakt(w); return c.length >= 2 && hc.indexOf(c) !== -1; });
+}
 
 function rozvFiltrovat(vse, f) {
   var q = rozvNorm(f.q).trim(), slova = q ? q.split(/\s+/) : [];
@@ -32561,9 +32573,7 @@ function rozvFiltrovat(vse, f) {
       if (f.provedeni && it.provedeni !== f.provedeni) return false;
       if (f.material && it.material !== f.material) return false;
     }
-    if (!slova.length) return true;
-    var h = it._h !== undefined ? it._h : rozvNorm([rozvNazev(it), it.vyrobce, it.rada, it.typ, it.pozn, (rozvKat(it.kat) || {}).nazev, it.kat].join(' '));
-    return slova.every(function (w) { return h.indexOf(w) !== -1; });
+    return rozvHledShoda(it, slova);
   }).sort(function (a, b) {
     // oblíbené nahoru, jinak pořadí knihovny
     return (rozvOblibena(b.id) ? 1 : 0) - (rozvOblibena(a.id) ? 1 : 0);
@@ -32636,7 +32646,7 @@ function rozvKnihovnaPanelHtml() {
       '<button class="rz-tab" data-action="tdRTab" data-tab="skrine">' + (rozvKnihPsc() ? '🗄 Pole a skříně' : '🗄 Skříně') + '</button></div>' +
     '<div class="rz-rychle" id="rz-rychle"></div>' +
     '<button class="add-row rz-velikost-btn" id="rz-velikost-btn" data-action="tdRVelikost" title="Skříň, která v knihovně není: řady × moduly, nebo u starého rozvaděče bez modulů DIN lišty × délka">📐 Vlastní velikost skříně</button>' +
-    '<input type="search" class="dk-in rz-f" data-f="q" id="rz-hledat" placeholder="🔍 Hledat v knihovně" autocomplete="off">' +
+    '<input type="search" class="dk-in rz-f" data-f="q" id="rz-hledat" placeholder="🔍 Hledat – název, typ, obj. č." autocomplete="off">' +
     '<div class="rz-filtry-hlavni" id="rz-filtry-hlavni"></div>' +
     '<details class="rz-filtry" id="rz-filtry"><summary>Další filtry <span id="rz-filtry-pocet"></span></summary><div id="rz-filtry-obsah"></div></details>' +
     '<div class="rz-kn-pocet" id="rz-kn-pocet"></div>' +
@@ -32726,6 +32736,8 @@ function rozvPolozkaHtml(it) {
     ? [it.rady && it.modulu ? it.rady + ' × ' + it.modulu + ' M' : '', it.typSkrine !== 'domovni' ? rozvTypSkrineNazev(it.typSkrine).toLowerCase().replace(/é$/, 'á') : '',
        it.vyrobce, it.ip, rozvZdrojText(it)]
     : [k ? k.nazev : it.kat, it.vyrobce, rozvRozmerText(it), rozvZdrojText(it)];
+  if (skrin && it.nazev && it.typ) meta.splice(meta.indexOf(it.vyrobce) + 1, 0, it.typ);   // typ / obj. č. skříně (2026-11-27)
+  if (it.obj) meta.splice(Math.max(0, meta.indexOf(it.vyrobce)) + 1, 0, 'obj. č. ' + it.obj);
   meta = meta.filter(Boolean).map(esc).join(' · ') + (it.overeno ? ' · <span class="rz-overeno">✓ ověřeno</span>' : ' · <span class="rz-neovereno">neověřeno</span>');
   var vybr = __rz && (__rz.knihVyber === it.id);
   return '<div class="rz-polozka' + (vybr ? ' vybrana' : '') + (skrin && __rz && __rz.skrin && __rz.skrin.knih === it.id ? ' pouzita' : '') +
@@ -37628,6 +37640,32 @@ function rzhSvg(rz, o) {
   return h;
 }
 
+// Hřeben se ZKRACUJE na délku přesně přes přístroje, které propojuje (2026-11-27 LAB):
+// rozsah [a, b] v modulech se přichytí na začátek prvního a konec posledního přístroje,
+// jehož střed v rozsahu leží — jen souvislý úsek přístrojů, na které hřeben patří
+// (ne svorky X, rezervy, příslušenství, mezery). `kotva` (modul) vybere úsek, ve kterém
+// tah začal; bez ní nejdelší. Vrací { od, do } nebo null.
+function rzhNaHreben(x) { return !!(x && x.p && x.p.kat !== 'X' && x.p.kat !== 'REZ' && x.p.kat !== 'PRISL' && rzpFaziX(x) > 0); }
+function rzhPrichytit(rada, a, b, kotva, rz) {
+  rz = rz || __rz; var r = rz && rz.rady[rada]; if (!r) return null;
+  var poz = rozvPozice(r), pr = r.prvky || [], useky = [], u = null;
+  pr.forEach(function (x, i) {
+    var p0 = poz[i], w = rozvW(x), st = p0 + w / 2;
+    var ok = rzhNaHreben(x) && st >= a - 1e-6 && st <= b + 1e-6;
+    if (ok && u && p0 > u.do + 0.05) { useky.push(u); u = null; }
+    if (!ok) { if (u) { useky.push(u); u = null; } return; }
+    if (!u) u = { od: p0, do: p0 + w, n: 0 };
+    u.do = p0 + w; u.n++;
+  });
+  if (u) useky.push(u);
+  if (!useky.length) return null;
+  var vyb = null;
+  if (kotva != null) useky.forEach(function (q) { var d = kotva < q.od ? q.od - kotva : kotva > q.do ? kotva - q.do : 0; if (!vyb || d < vyb.d) vyb = { q: q, d: d }; });
+  else useky.forEach(function (q) { if (!vyb || q.do - q.od > vyb.q.do - vyb.q.od) vyb = { q: q }; });
+  var q = vyb.q, od = Math.round(q.od * 2) / 2;
+  return { od: od, do: od + Math.max(1, Math.round(q.do - od)) };
+}
+
 // ── data a změny ────────────────────────────────────────────────────────
 function rzhNovy(rada, od, dd, poly, o) {
   o = o || {};
@@ -37723,7 +37761,7 @@ function rzhNavrhy(jenRada) {
     konec();
   });
   return out.map(function (q) {
-    var od = Math.floor(q.od * 2 + 1e-6) / 2, dd = od + Math.max(1, Math.ceil(q.do - od - 1e-6));
+    var pp = rzhPrichytit(q.rada, q.od, q.do, q.od) || { od: Math.floor(q.od * 2 + 1e-6) / 2, do: q.do }, od = pp.od, dd = pp.do;
     var fz = rozvJePrivod(q.z) ? 3 : rzpFaziX(rzpX(q.z)), poly = rzhPolyPristroju(q.rada, od, dd) || (fz >= 3 ? '3' : rzhPolyNavrh(q.rada, od, dd));
     var h = rzhNovy(q.rada, od, dd, poly);
     var S = rzpStav(__rz), vs = function (u) { var r = S.vys[u]; return r && r.pod && r.vstup === 'b' ? 't' : 'b'; };
@@ -37798,6 +37836,7 @@ function rzhTahPohyb(d) {
   if (d.druh === 'hrNovy') {
     var a = Math.min(d.m0, q.m), b = Math.max(d.m0, q.m), od = Math.max(0, Math.floor(a * 2) / 2), n = Math.max(1, Math.round(b - od));
     var dd = Math.min(kon, od + n); od = Math.max(0, Math.min(od, dd - 1));
+    var pp = rzhPrichytit(d.r, a, b, d.m0); if (pp) { od = pp.od; dd = pp.do; }
     __rz.hrNahled = { uid: '', rada: d.r, od: od, do: dd, poly: rzhPolyNavrh(d.r, od, dd), strana: rzhStranaVychozi(), prurez: 10, krytky: [] };
     rozvSvgPrekreslit();
     rzhBublina(d, __rz.hrNahled);
@@ -37808,10 +37847,15 @@ function rzhTahPohyb(d) {
   if (d.druh === 'hrKraj') {
     if (d.kraj === 'P') { h.od = o.od; h.do = Math.max(o.od + 1, Math.min(kon, o.od + Math.max(1, Math.round(q.m - o.od)))); }
     else { h.do = o.do; h.od = Math.min(o.do - 1, Math.max(0, o.do - Math.max(1, Math.round(o.do - q.m)))); }
+    var pk = d.kraj === 'P' ? rzhPrichytit(o.rada, o.od, q.m, o.od + 0.5) : rzhPrichytit(o.rada, q.m, o.do, o.do - 0.5);   // přichytit na přístroje
+    if (pk) { if (d.kraj === 'P') h.do = Math.max(h.od + 1, pk.do); else h.od = Math.min(h.do - 1, pk.od); }
     var dj = Math.round(o.od - h.od);   // krytky drží svůj zub
     h.krytky = (o.krytky || []).map(function (j) { return j + dj; }).filter(function (j) { return j >= 0 && j < rzhPolu(h); });
   } else {
     var dm = Math.round((q.m - d.m0) * 2) / 2, od2 = Math.max(0, Math.min(kon - n0, o.od + dm));
+    var rp = __rz.rady[o.rada], pz = rp ? rozvPozice(rp) : [], nej = null;   // začátek přichytit na nejbližší přístroj
+    (rp ? rp.prvky : []).forEach(function (x, i) { if (rzhNaHreben(x) && (nej == null || Math.abs(pz[i] - od2) < Math.abs(nej - od2))) nej = pz[i]; });
+    if (nej != null && Math.abs(nej - od2) <= 0.5 + 1e-6) od2 = Math.round(nej * 2) / 2;
     h.od = od2; h.do = od2 + n0;
   }
   rozvSvgPrekreslit();
@@ -37859,8 +37903,9 @@ TD_AKCE.tdRHrVybrane = function () {
   var r = s[0].r; if (s.some(function (q) { return q.r !== r; })) { showToast('Hřeben vede jen po jedné řadě — vyberte přístroje v jedné řadě.', { timeout: 4000 }); return; }
   var poz = rozvPozice(__rz.rady[r]), a = Infinity, b = -Infinity;
   s.forEach(function (q) { a = Math.min(a, poz[q.i]); b = Math.max(b, poz[q.i] + rozvW(q.x)); });
-  var od = Math.floor(a * 2 + 1e-6) / 2, dd = od + Math.max(1, Math.ceil(b - od - 1e-6));
-  rzhPridat(rzhNovy(r, od, dd, rzhPolyNavrh(r, od, dd)), 'Hřeben přes vybrané');
+  var pp = rzhPrichytit(r, a, b, a);
+  if (!pp) { showToast('Hřeben vede přes jističe a jiné přístroje — ne přes svorky ani rezervy.', { timeout: 4000 }); return; }
+  rzhPridat(rzhNovy(r, pp.od, pp.do, rzhPolyNavrh(r, pp.od, pp.do)), 'Hřeben přes vybrané');
 };
 
 // ── hřeben z knihovny (položka druh:'hreben', 2026-11-18) ───────────────
@@ -37984,7 +38029,9 @@ function rzhZKnihovny(it) {
   if (s.length && s.every(function (q) { return q.r === s[0].r; })) {
     var poz = rozvPozice(__rz.rady[s[0].r]), a = Infinity, b = -Infinity;
     s.forEach(function (q) { a = Math.min(a, poz[q.i]); b = Math.max(b, poz[q.i] + rozvW(q.x)); });
-    var od = Math.floor(a * 2 + 1e-6) / 2, h = rzhNovy(s[0].r, od, od + Math.max(1, Math.ceil(b - od - 1e-6)), poly, { prurez: +String(it.prurez || '').replace(/[^\d]/g, '') || 10 });
+    var pp = rzhPrichytit(s[0].r, a, b, a) || { od: Math.floor(a * 2 + 1e-6) / 2, do: Math.floor(a * 2 + 1e-6) / 2 + Math.max(1, Math.ceil(b - a - 1e-6)) };
+    var h = rzhNovy(s[0].r, pp.od, pp.do, poly, { prurez: +String(it.prurez || '').replace(/[^\d]/g, '') || 10 });
+    if (it.zdroj !== 'vestaveny' && it.id) { h.knih = it.id; h.p = dokKopie(it); }   // hřeben výrobce: kontrola délky a materiál
     if (+it.In > 0) h.In = +it.In;
     if (+String(it.prurez || '').replace(/[^\d]/g, '')) h.prurezRucne = true;
     return rzhPridat(h, 'Hřeben z knihovny');
@@ -38076,7 +38123,8 @@ function rzhMaterial(d) {
     var n = rzhPolu(h), kr = rzhZuby(h, rz).filter(function (z) { return z.krytka || !z.x; }).length;
     var dk = rzhKnihKontrola(h), ks = dk ? Math.ceil(n * ROZV_MODUL_MM / rzhKnihDelka(h).maxMm) : 1;
     out.push('Propojovací hřeben ' + RZH_POLY[h.poly].t + ' ' + h.prurez + ' mm²' + (h.p ? ' (' + [h.p.vyrobce, h.p.typ || h.p.rada].filter(Boolean).join(' ') + ')' : '') + ', ' +
-      n + ' ' + (n < 5 && n > 1 ? 'póly' : 'pólů') + (n < RZH_POLU && !h.p ? ' (zkrátit z ' + RZH_POLU + ')' : '') + ', ' + ks + ' ks' + (kr ? ' + krytky ' + kr + ' ks' : ''));
+      n + ' ' + (n < 5 && n > 1 ? 'póly' : 'pólů') + (n < RZH_POLU && !h.p ? ' (zkrátit z ' + RZH_POLU + ')' : '') +
+      (h.p && !dk && +h.p.polu > n ? ' (zkrátit na ' + n + ' ' + (n < 5 && n > 1 ? 'póly' : 'pólů') + ' – kus z délky ' + (+h.p.polu) + ')' : '') + ', ' + ks + ' ks' + (kr ? ' + krytky ' + kr + ' ks' : ''));
   });
   return out;
 }
@@ -46285,7 +46333,7 @@ function rozvSpravaVykreslit() {
     '<div class="rz-sprava-seznam">' + (vidim.length ? vidim.slice(0, zobr).map(function (it) {
       return '<div class="dok-vzor-radek" data-kid="' + esc(it.id) + '"><span class="dok-vzor-n"><b>' + esc(rozvNazev(it)) + '</b>' +
         '<span class="dok-stitek dok-stitek-vlastni">' + esc(rozvZdrojText(it)) + '</span>' + (it.overeno ? '<span class="dok-stitek">ověřeno</span>' : '') +
-        '<span class="dok-vzor-kody">' + esc([it.druh === 'skrin' ? 'skříň' : it.druh === 'pole' ? 'pole PSC' : (rozvKat(it.kat) || {}).nazev, it.vyrobce, it.typ,
+        '<span class="dok-vzor-kody">' + esc([it.druh === 'skrin' ? 'skříň' : it.druh === 'pole' ? 'pole PSC' : (rozvKat(it.kat) || {}).nazev, it.vyrobce, it.typ, it.obj ? 'obj. č. ' + it.obj : '',
           it.druh === 'skrin' ? (it.rady + ' × ' + it.modulu + ' M') : it.druh === 'pole' ? rozvCisloText(it.sirkaMm) + ' × ' + rozvCisloText(it.vyskaMm) + ' mm'
           : rozvRozmerText(it)].filter(Boolean).join(' · ')) + '</span></span>' +
         '<span class="dok-p-akce"><button class="dok-mini" data-action="tdRPolUpravit">✎ Upravit</button>' +
@@ -46297,10 +46345,12 @@ function rozvSpravaVykreslit() {
 // Filtr ve správě knihovny (na seznamu rozvaděčů) — hlavně výrobce
 // a kategorie, aby šlo zkontrolovat a smazat import jednoho výrobce.
 // Jen v paměti, jako filtry v editoru.
-var __rzSF = { vyrobce: '', skup: '', limit: ROZV_STRANKA };
+var __rzSF = { vyrobce: '', skup: '', q: '', limit: ROZV_STRANKA };
 function rozvSpravaFiltrovat(moje) {
   var sk = __rzSF.skup && __rzSF.skup !== 'skrin' && __rzSF.skup !== 'pole' ? rozvSkupina(__rzSF.skup) : null;
+  var slova = rozvHledSlova(__rzSF.q);
   return moje.filter(function (it) {
+    if (!rozvHledShoda(it, slova)) return false;
     if (__rzSF.vyrobce && it.vyrobce !== __rzSF.vyrobce) return false;
     if (__rzSF.skup === 'skrin' || __rzSF.skup === 'pole' || __rzSF.skup === 'hreben' || __rzSF.skup === 'vlozka') return it.druh === __rzSF.skup;
     if (__rzSF.skup && (it.druh !== 'pristroj' || (sk && sk.kat && sk.kat.indexOf(it.kat) === -1))) return false;
@@ -46313,8 +46363,9 @@ function rozvSpravaFiltryHtml(moje) {
   var vyr = rozvVolbyZDat(moje, 'vyrobce', __rzSF.vyrobce);
   var skup = rozvSkupinyKat().filter(function (g) { return g.k; }).map(function (g) { return [g.k, g.nazev]; }).concat([['skrin', 'Skříně'], ['hreben', 'Propojovací hřebeny'], ['vlozka', 'Pojistkové vložky']])
     .concat(rozvKnihPsc() ? [['pole', 'Pole a skříně PSC']] : []);
-  var aktivni = __rzSF.vyrobce || __rzSF.skup;
-  return '<div class="rz-sf-radek">' +
+  var aktivni = __rzSF.vyrobce || __rzSF.skup || String(__rzSF.q || '').trim();
+  return '<input type="search" class="dk-in rz-sf-q" id="rz-sf-q" placeholder="Hledat – název, typ, objednací číslo…" value="' + esc(__rzSF.q || '') + '" autocomplete="off">' +
+    '<div class="rz-sf-radek">' +
       '<label class="rz-f-l"><span>Výrobce</span><select class="dk-in rz-sf" data-sf="vyrobce">' + rozvVolby(vyr, __rzSF.vyrobce, 'všichni') + '</select></label>' +
       '<label class="rz-f-l"><span>Kategorie</span><select class="dk-in rz-sf" data-sf="skup"><option value="">všechny</option>' +
         skup.map(function (g) { return '<option value="' + g[0] + '"' + (__rzSF.skup === g[0] ? ' selected' : '') + '>' + esc(g[1]) + '</option>'; }).join('') +
@@ -46331,13 +46382,20 @@ document.addEventListener('change', function (e) {
   __rzSF.limit = ROZV_STRANKA;
   rozvSpravaVykreslit();
 });
+document.addEventListener('input', function (e) {
+  var t = e.target; if (!t || t.id !== 'rz-sf-q') return;
+  var c = t.selectionStart;
+  __rzSF.q = t.value; __rzSF.limit = ROZV_STRANKA;
+  rozvSpravaVykreslit();
+  var n = document.getElementById('rz-sf-q'); if (n) { n.focus(); try { n.setSelectionRange(c, c); } catch (er) {} }
+});
 TD_AKCE.tdRSpravaVice = function () { __rzSF.limit = (__rzSF.limit || ROZV_STRANKA) + ROZV_STRANKA; rozvSpravaVykreslit(); };
 TD_AKCE.tdRPolSmazatNalezene = async function () {
   await dokNacist();
   var moje = DOK.rozvKnihovna.map(function (x) { return rozvPolozkaNorm(x); });
   var ids = rozvSpravaFiltrovat(moje).map(function (it) { return it.id; });
   if (!ids.length) return;
-  var popis = [__rzSF.vyrobce ? 'výrobce „' + __rzSF.vyrobce + '"' : '',
+  var popis = [String(__rzSF.q || '').trim() ? 'hledání „' + String(__rzSF.q).trim() + '"' : '', __rzSF.vyrobce ? 'výrobce „' + __rzSF.vyrobce + '"' : '',
     __rzSF.skup ? 'kategorie ' + (__rzSF.skup === 'skrin' ? 'Skříně' : __rzSF.skup === 'hreben' ? 'Propojovací hřebeny' : __rzSF.skup === 'vlozka' ? 'Pojistkové vložky' : __rzSF.skup === 'pole' ? 'Pole a skříně PSC' : rozvSkupina(__rzSF.skup).nazev) : ''].filter(Boolean).join(', ');
   if (!confirm('Smazat z knihovny ' + ids.length + ' ' + (ids.length === 1 ? 'položku' : ids.length < 5 ? 'položky' : 'položek') +
       (popis ? ' (' + popis + ')' : '') + '?\n\nNavržené rozvaděče se nezmění — mají vlastní kopii. Smazání jde vzít zpět.')) return;
@@ -46527,6 +46585,7 @@ function rozvValidovat(raw) {
     r.svorkovnice = svv; r.rukojet = rozvAno(o.rukojet) ? 'ano' : '';
   }
   ['nazev', 'vyrobce', 'rada', 'typ', 'pozn'].forEach(function (k) { r[k] = String(o[k] == null ? '' : o[k]).trim(); });
+  var obc = String(o.obj == null ? '' : o.obj).trim(); if (obc) r.obj = obc;
   r.overeno = o.overeno === true || rozvAno(o.overeno);
   r.zdroj = o.zdroj || 'vlastni';
   if (o.id) r.id = o.id;
@@ -46543,6 +46602,7 @@ var ROZV_CSV = [
   ['vyrobce', 'vyrobce', ['vyrobce']],
   ['rada', 'rada', ['rada', 'serie']],
   ['typ', 'typ', ['typ', 'objednacicislo', 'objcislo', 'typobjcislo']],
+  ['objednaci_cislo', 'obj', ['objednacicislo', 'objcislo', 'obj', 'objc', 'katalogovecislo', 'katcislo', 'objednacikod']],   // jen když je v souboru i sloupec typ (2026-11-27)
   ['poly', 'poly', ['poly', 'pocetpolu']],
   ['in', 'In', ['in', 'jmenovityproud', 'proud']],
   ['charakteristika', 'char', ['charakteristika', 'char']],
@@ -46656,8 +46716,10 @@ function rozvImportRozebrat(text, nazevSouboru) {
   vysl.format = 'CSV';
   var radky = rozvCsvRadky(t);
   if (radky.length < 2) { vysl.chyby.push({ radek: 1, text: 'v souboru je jen hlavička nebo nic — pod hlavičku patří řádky s položkami' }); return vysl; }
-  var mapa = radky[0].map(function (h) {
-    var k = rozvCsvKlic(h);
+  var klice = radky[0].map(rozvCsvKlic), maTyp = klice.indexOf('typ') !== -1 || klice.indexOf('typobjcislo') !== -1;
+  var objAl = ROZV_CSV.filter(function (c) { return c[1] === 'obj'; })[0][2];
+  var mapa = klice.map(function (k) {
+    if (maTyp && objAl.indexOf(k) !== -1) return 'obj';   // typ i objednací číslo — každé zvlášť (dřív obj. č. přepsalo typ)
     for (var i = 0; i < ROZV_CSV.length; i++) if (ROZV_CSV[i][2].indexOf(k) !== -1) return ROZV_CSV[i][1];
     return null;
   });
@@ -47251,12 +47313,15 @@ function zsZasKresba(z, cx, cy, k, zT) {
   return h;
 }
 function zsZasPos(d, z, i) { return z.pos || { x: 50 + (i % 3) * 110, y: zsGeo(d).oy + zsGeo(d).ovys + 60 + Math.floor(i / 3) * 110 }; }
-// Prostor pro odklopení víčka (mm nad přírubou): z knihovny (p.vicko), jinak VÝCHOZÍ NÁVRH programu —
-// CEE 16 A 60 mm, 32 A 70 mm, 63 A 90 mm, domovní 35 mm (víčko se odklápí nahoru na pantu; ověřte u výrobce).
+// Víčko zásuvky (2026-11-27 LAB): v praxi se víčko CEE při zapojení zvedne přibližně KOLMO k čelu
+// (dopředu), takže na čele nic nezabírá — výchozí `mm: 0`, žádný prostor se nekreslí ani nehlídá.
+// Jen zásuvka s vyplněným `p.vicko` (vicko_mm, volba „víčko se odklápí naplocho nahoru") má prostor
+// pro odklopení nad přírubou, a jen ten se kreslí a hlídá.
+function zsVickoNavrh(p) { return zsDruh(p) === 'dom' ? 35 : +p.In >= 63 ? 90 : +p.In >= 32 ? 70 : 60; }   // výchozí návrh pro „naplocho" (ověřte u výrobce)
 function zsVicko(z) {
   var p = z.p || {}, v = rozvCislo(String(p.vicko == null ? '' : p.vicko));
-  if (v !== '' && v > 0) return { mm: v, odhad: false };
-  return { mm: zsDruh(p) === 'dom' ? 35 : +p.In >= 63 ? 90 : +p.In >= 32 ? 70 : 60, odhad: true };
+  if (v !== '' && v > 0) return { mm: v, odhad: false, naplocho: true };
+  return { mm: 0, odhad: false, naplocho: false };
 }
 function zsZasBox(d, z, i) {
   var p = zsZasPos(d, z, i), a = zsZasPul(z);
@@ -47579,7 +47644,7 @@ function zsCeloEditorSvg(d, o) {
     }
     if (vyb.indexOf(z.uid) !== -1) {
       h += '<rect class="zs-vybrana" x="' + n(cx - a - 1.2) + '" y="' + n(cy - a - 1.2) + '" width="' + n(2 * a + 2.4) + '" height="' + n(2 * a + 2.4) + '" rx="0.8" fill="#2B579A" fill-opacity=".1" stroke="#2B579A" stroke-width="0.6" pointer-events="none"/>';
-      if (vyb.length === 1 && !zap) h += '<rect x="' + n(cx - a) + '" y="' + n(cy - a - zsVicko(z).mm * k) + '" width="' + n(2 * a) + '" height="' + n(zsVicko(z).mm * k) + '" fill="none" stroke="#2B579A" stroke-width="0.25" stroke-dasharray="0.8 0.6" pointer-events="none"><title>prostor pro odklopení víčka' + (zsVicko(z).odhad ? ' (výchozí návrh)' : '') + '</title></rect>';
+      if (vyb.length === 1 && !zap && zsVicko(z).naplocho) h += '<rect x="' + n(cx - a) + '" y="' + n(cy - a - zsVicko(z).mm * k) + '" width="' + n(2 * a) + '" height="' + n(zsVicko(z).mm * k) + '" fill="none" stroke="#2B579A" stroke-width="0.25" stroke-dasharray="0.8 0.6" pointer-events="none"><title>prostor pro odklopení víčka' + (zsVicko(z).odhad ? ' (výchozí návrh)' : '') + '</title></rect>';
     }
     h += '</g>';
   });
@@ -47763,7 +47828,8 @@ function zsZasPanelHtml(z) {
     '<div class="g2">' + inp('x', 'Střed x (mm)', pos.x != null ? rozvCisloText(pos.x) : '') + inp('y', 'Střed y (mm)', pos.y != null ? rozvCisloText(pos.y) : '') + '</div>' +
     '<details class="rp-dalsi"><summary>Výroba (vrtací plán, víčko)</summary>' +
       inp('vyrez', 'Výřez / otvor v čele (mm)', p.vyrez, 'např. Ø 56 nebo 70×70') + inp('roztecSroubu', 'Rozteč montážních šroubů (mm)', p.roztecSroubu, 'např. 60 nebo 60×50') +
-      inp('vicko', 'Prostor pro odklopení víčka (mm)', p.vicko, v.odhad ? 'výchozí návrh ' + v.mm + ' mm' : '') + '</details>' +
+      '<label class="teren-radek"><input type="checkbox" data-zsp="vickoNaplocho"' + (v.naplocho ? ' checked' : '') + '> <span>Víčko se odklápí naplocho nahoru (zabírá místo nad zásuvkou)</span></label>' +
+      (v.naplocho ? inp('vicko', 'Prostor pro odklopení víčka (mm)', p.vicko, 'např. ' + zsVickoNavrh(p)) : '<div class="zs-celo-pozn">Víčko se odklápí kolmo k čelu (dopředu) – na čele nic nezabírá.</div>') + '</details>' +
     '<div class="rz-v-akce"><button type="button" class="dok-mini" data-action="tdZsDup">⧉ Duplikovat</button>' +
       '<button type="button" class="dok-mini" data-action="tdZsSmazat">🗑 Smazat zásuvku</button>' +
       '<button type="button" class="dok-mini" data-action="tdZsHotovo">✓ Hotovo</button></div>';
@@ -47910,6 +47976,7 @@ document.addEventListener('change', function (e) {
     else if (k === 'napajen') { if (v) z.napajen = v; else delete z.napajen; zsVodiceDleNapajeni(z); }
     else if (k === 'fazeJ') { var J = zsJisticNajit(z.napajen); if (J) { if (v) J.faze = v; else delete J.faze; } }
     else if (k === 'x' || k === 'y') { var p = z.pos || zsZasPos(zsData(), z, 0), n = rozvCislo(v); if (n !== '') { z.pos = { x: p.x, y: p.y }; z.pos[k] = n; } }
+    else if (k === 'vickoNaplocho') { if (el.checked) z.p.vicko = zsVickoNavrh(z.p); else delete z.p.vicko; }
     else if (k === 'In' || k === 'ue' || k === 'vicko') { var c = rozvCislo(v); if (c === '' && k === 'vicko') delete z.p.vicko; else z.p[k] = c; }
     else if (k === 'vyrez' || k === 'roztecSroubu') { if (v) z.p[k] = v; else delete z.p[k]; }
     else z.p[k] = v;
