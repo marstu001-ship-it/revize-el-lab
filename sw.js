@@ -1,4 +1,4 @@
-var CACHE_NAME = 'revize-el-lab-v1.104-20261127';
+var CACHE_NAME = 'revize-el-lab-v1.105-20261127';
 // LAB: ostrý program (/revize-el/) sdílí s labem původ, a tedy i úložiště
 // cache. Lab proto maže JEN své staré cache (revize-el-lab-…) a čte JEN ze
 // své (zCache), nikdy z cache ostrého programu. Rozsah SW je složka, ze
